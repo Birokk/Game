@@ -926,7 +926,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .pf-me{position:relative;z-index:1;display:flex;align-items:center;gap:22px;min-width:0}
 .pf-who{display:grid;gap:6px;min-width:0}
 .pf-who b{font-family:var(--display);font-weight:400;font-size:34px;line-height:1}
-.pf-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,auto);gap:8px}
+.pf-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,auto);gap:8px}
 .pf-stats div{display:grid;justify-items:center;gap:2px;padding:8px 12px;border-radius:12px;background:rgba(8,12,30,.6);border:1px solid var(--edge-soft)}
 .pf-stats b{font-family:var(--display);font-weight:400;font-size:22px;line-height:1}
 .pf-stats span{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
@@ -1309,6 +1309,18 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .ic-mini img.cut{object-position:50% 12%}
 .cs-skins button.sk .sk-eq{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#e8ff7a;color:#22300a}
 .cs-skins button.sk .sk-eq .ic{width:12px;height:12px}
+
+/* achievements */
+.ach-list{display:grid;gap:8px}
+.ach{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--glass);border:1px solid var(--edge-soft)}
+.ach-ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);color:var(--faint)}
+.ach.ready{border-color:var(--gold);box-shadow:0 0 14px rgba(255,211,107,.25)}
+.ach.ready .ach-ic{background:radial-gradient(circle at 35% 30%,#fff4c2,#ffd36b 60%,#e08a1c);color:var(--gold-ink)}
+.ach.got .ach-ic{background:var(--mint);color:var(--mint-ink)}
+.ach.got{opacity:.7}
+.ach .bar i{background:var(--gold)}
+.ach .btn .cost .cic{width:15px;height:15px}
+@media (max-width:820px){.pf-stats{grid-template-columns:repeat(3,auto)}}
 </style>
 </head>
 <body>
@@ -1379,6 +1391,8 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
     <button class="ev ts" data-open="quests" style="--ec:#4fd1a5"><span class="evo"><span data-ic="quests"></span></span><span class="el">Quests</span><time>Daily</time></button>
     <button class="ev ts" data-open="bag" style="--ec:#a78bfa"><span class="evo"><span data-ic="bag"></span></span><span class="el">Bag</span></button>
     <button class="ev ts" data-open="team" style="--ec:#c58bff"><span class="evo"><span data-ic="team"></span></span><span class="el">Team</span></button>
+    <button class="ev ts" data-open="ach"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Achievements</span><span class="dot-n" id="achDot" hidden></span></button>
+    <button class="ev ts" data-open="redeem"><span class="evo"><span data-ic="gift"></span></span><span class="el">Redeem</span></button>
   </nav>
 
   <button class="hm portal" id="enterPlaza" aria-label="Enter the plaza"><span class="swirl"></span><span class="rim"></span><span class="plbl ts">Enter<br>Plaza</span></button>
@@ -1589,6 +1603,7 @@ function sampleState() {
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
+    ach: [], redeemed: [],
     equip: {},
     bt: {}, btPaid: {}, freePull: {},
     account: null, support: [], titleNews: null, loadArts: [],
@@ -1645,7 +1660,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.equip = d.equip || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
@@ -1913,6 +1928,7 @@ function renderMenu() {
   $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} · ${curIcon('wishes')}${fmt(S.wallet.wishes)} · ${curIcon('pearls')}${COST[1]} each`;
   $('#sumDot').hidden = !(canPull(10, 'limited') || canPull(10, 'standard') || freeReady('limited') || freeReady('standard'));
   $('#loginDot').hidden = !loginReady();
+  $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
@@ -2217,7 +2233,7 @@ function openSettings() {
     <label class="switch">Music<input type="checkbox" id="setMusic" ${S.settings.music ? 'checked' : ''}><i></i></label>
     <label class="switch">Sound effects<input type="checkbox" id="setSfx" ${S.settings.sfx ? 'checked' : ''}><i></i></label>
     <label class="field"><span>Graphics</span><select class="input" id="setGfx">${['high', 'medium', 'low'].map(g => `<option value="${g}" ${S.settings.gfx === g ? 'selected' : ''}>${g[0].toUpperCase() + g.slice(1)}</option>`).join('')}</select></label>
-    <div class="row" style="justify-content:space-between"><span class="tiny">Audio and graphics settings are placeholders for now.</span><span class="row" style="gap:6px"><button type="button" class="btn ghost sm" id="setTitle">${icon('back')}Title screen</button><button type="button" class="btn ghost sm" data-open="admin">${icon('wrench')}Admin panel</button></span></div>
+    <div class="row" style="justify-content:space-between"><span class="tiny">Audio and graphics settings are placeholders for now.</span><span class="row" style="gap:6px"><button type="button" class="btn ghost sm" id="setRedeem">${icon('gift')}Redeem code</button><button type="button" class="btn ghost sm" id="setTitle">${icon('back')}Title screen</button><button type="button" class="btn ghost sm" data-open="admin">${icon('wrench')}Admin panel</button></span></div>
   </form>`, onMount: () => {
     $('#setName').addEventListener('input', e => { S.player.name = e.target.value.trim() || 'Traveler'; player.name = S.player.name; renderMenu(); persist(); });
     $('#setNames').onchange = e => { S.settings.names = e.target.checked; persist(); };
@@ -2227,6 +2243,7 @@ function openSettings() {
     $('#setPullFit').onchange = e => { S.settings.pullFit = e.target.value === 'fit'; persist(); };
     $('#setForm').onsubmit = e => e.preventDefault();
     $('#setTitle').onclick = showTitle;
+    $('#setRedeem').onclick = openRedeem;
   } });
 }
 
@@ -2430,6 +2447,62 @@ function showHatch(r, item, res) {
   setTimeout(() => el.onclick = () => el.remove(), 1600);
 }
 
+/* ---------- achievements: each pays 1 pearl once ---------- */
+const ACH_PEARLS = 1;
+const ownedOf = t => S.pool.filter(e => e.type === t && owns(e.id));
+const totalPulls = () => S.gacha.limited.total + S.gacha.standard.total;
+const ACH = [
+  { id: 'pull1', name: 'First Wish', desc: 'Summon once', n: () => totalPulls(), goal: 1 },
+  { id: 'pull100', name: 'Star Gazer', desc: 'Summon 100 times', n: () => totalPulls(), goal: 100 },
+  { id: 'char1', name: 'New Friend', desc: 'Own a character', n: () => ownedOf('character').length, goal: 1 },
+  { id: 'char3', name: 'Growing Circle', desc: 'Own 3 characters', n: () => ownedOf('character').length, goal: 3 },
+  { id: 'ur', name: 'Lucky Star', desc: 'Own a UR character', n: () => ownedOf('character').filter(e => e.rarity === 5).length, goal: 1 },
+  { id: 'star6', name: 'Shining Bright', desc: `Raise a character to ${MAX_STARS} stars`, n: () => Math.max(0, ...ownedOf('character').map(e => starsOf(e.id))), goal: MAX_STARS },
+  { id: 'pet', name: 'Egg Whisperer', desc: 'Hatch a pet', n: () => ownedOf('pet').length, goal: 1 },
+  { id: 'skin', name: 'Fashionista', desc: 'Own a skin', n: () => ownedOf('skin').length, goal: 1 },
+  { id: 'bond5', name: 'Heart to Heart', desc: 'Reach bond level 5 with anyone', n: () => Math.max(0, ...S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 5 },
+  { id: 'spin', name: 'Wheel of Fortune', desc: 'Spin the daily wheel', n: () => S.spin.last ? 1 : 0, goal: 1 }
+].map(a => ({ ...a, ok: () => a.n() >= a.goal }));
+function openAch() {
+  openModal({ title: 'Achievements', ic: 'trophy', kind: 'ach', body: '<div id="achRoot"></div>', onMount: renderAch });
+}
+function renderAch() {
+  const root = $('#achRoot'); if (!root) return;
+  const done = S.ach.length, ready = ACH.filter(a => a.ok() && !S.ach.includes(a.id));
+  root.innerHTML = `<div class="stack">
+    <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.length * ACH_PEARLS)}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
+    <div class="ach-list">${ACH.map(a => { const got = S.ach.includes(a.id), ok = a.ok(), v = Math.min(a.goal, a.n());
+      return `<div class="ach ${got ? 'got' : ok ? 'ready' : ''}"><span class="ach-ic">${icon(got ? 'check' : 'trophy')}</span>
+        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span></div>
+        ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(ACH_PEARLS)}</button>`}</div>`; }).join('')}</div></div>`;
+  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += ACH_PEARLS; } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
+  root.querySelectorAll('[data-ach]').forEach(b => b.onclick = () => claim([b.dataset.ach]));
+  const all = $('#achAll'); if (all) all.onclick = () => claim(ready.map(a => a.id));
+}
+
+/* ---------- redeem codes ---------- */
+const CODES = { TESTBLANK: { pearls: 30 } };
+function openRedeem() {
+  openModal({ title: 'Redeem code', ic: 'gift', body: `<form class="form" id="rdForm">
+    <p class="desc">Enter a gift code to claim its rewards. Each code works once per account.</p>
+    <label class="field"><span>Code</span><input class="input" id="rdIn" maxlength="24" autocomplete="off" placeholder="e.g. TESTBLANK" style="text-transform:uppercase;letter-spacing:.12em"></label>
+    <div class="row" style="justify-content:space-between"><span class="err" id="rdErr" hidden></span><button class="btn gold" type="submit" style="margin-left:auto">Redeem</button></div>
+  </form>`, onMount: () => {
+    const inp = $('#rdIn'); inp.focus();
+    $('#rdForm').onsubmit = e => {
+      e.preventDefault();
+      const code = inp.value.trim().toUpperCase(), err = $('#rdErr'), r = CODES[code];
+      const fail = m => { err.textContent = m; err.hidden = false; };
+      if (!code) return fail('Type a code first.');
+      if (!r) return fail("That code doesn't exist or has expired.");
+      if (S.redeemed.includes(code)) return fail('You already redeemed this code.');
+      S.redeemed.push(code); Object.entries(r).forEach(([k, v]) => S.wallet[k] = (S.wallet[k] || 0) + v);
+      persist(); renderMenu(); refreshSummon(); closeModal();
+      toast(`Code redeemed: ${Object.entries(r).map(([k, v]) => `${fmt(v)} ${k}`).join(', ')}.`);
+    };
+  } });
+}
+
 /* ---------- profile: avatar, frame, title, namecard, showcase of up to 4 characters ---------- */
 const ownedChars = () => S.pool.filter(e => e.type === 'character' && owns(e.id));
 const UNLOCK = {
@@ -2517,9 +2590,10 @@ function renderProfile() {
       </div>
       <div class="pf-stats">
         <div><b>${chars.length}/${allChars.length}</b><span>Characters</span></div>
+        <div><b>${ownedOf('pet').length}/${S.pool.filter(e => e.type === 'pet').length}</b><span>Pets</span></div>
+        <div><b>${S.ach.length}/${ACH.length}</b><span>Achievements</span></div>
         <div><b>${urs}</b><span>URs owned</span></div>
         <div><b>${best}★</b><span>Best stars</span></div>
-        <div><b>${S.login.streak}</b><span>Login streak</span></div>
       </div>
     </div>
     <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="tiny">Show off up to 4 characters you own</span></div>
@@ -3738,6 +3812,8 @@ document.addEventListener('click', e => {
   else if (k === 'profile') openProfile();
   else if (k === 'login') openLogin();
   else if (k === 'spin') openSpin();
+  else if (k === 'ach') openAch();
+  else if (k === 'redeem') openRedeem();
   else if (k === 'buytickets') openBuyTickets(t.dataset.tkbk);
   else if (k === 'skins') openCollection('skin');
   else if (PLACEHOLDERS[k]) openPlaceholder(k);
