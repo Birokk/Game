@@ -16,7 +16,8 @@
   --glass:rgba(18,26,56,.34); --glass-hi:rgba(255,255,255,.16); --glass-deep:rgba(15,21,44,.66);
   --edge:rgba(255,255,255,.24); --edge-soft:rgba(255,255,255,.12); --field:rgba(4,8,22,.38);
   --mint:#7ef3d4; --mint-ink:#06352b; --gold:#ffd36b; --gold-ink:#4a2a00; --pearl:#efe6ff; --pink:#ff9ec4; --danger:#ff8a9a;
-  --r3:#74c7ff; --r4:#ffaa5c; --r5:#d07bff;
+  --r3:#74c7ff; --r4:#ffaa5c; --r5:#d07bff; --r6:#ff4f7b;
+  --mr:linear-gradient(120deg,#ff2d6f,#ff7aa8 50%,#ffc2d4);
   --ur:linear-gradient(120deg,#a855f7,#ff6ec7 50%,#3ee6d0);
   --display:"Cinzel",Georgia,"Times New Roman",serif;
   --body:"Cinzel",Georgia,"Times New Roman",serif;
@@ -423,7 +424,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .detail-art{border-radius:22px;overflow:hidden;border:2px solid var(--rc);background:linear-gradient(160deg,color-mix(in srgb,var(--rc) 35%,var(--ink-2)),var(--ink-2))}
 .detail-art img{width:100%;aspect-ratio:9/16;object-fit:cover;object-position:50% 50%;display:block}
 .detail h3{font-size:36px;line-height:1}
-.r3{--rc:var(--r3)} .r4{--rc:var(--r4)} .r5{--rc:var(--r5)}
+.r3{--rc:var(--r3)} .r4{--rc:var(--r4)} .r5{--rc:var(--r5)} .r6{--rc:var(--r6)}
 
 /* wallpaper picker */
 .wpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
@@ -1084,8 +1085,8 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .wheel-wrap{position:relative;width:min(320px,80vw);aspect-ratio:1}
 .wheel{position:absolute;inset:0;border-radius:50%;border:6px solid #e8b04a;box-shadow:0 0 0 3px #1e1426,0 0 30px rgba(255,211,107,.35),inset 0 0 30px rgba(0,0,0,.4);transition:transform 5s cubic-bezier(.12,.8,.18,1);overflow:hidden}
 .wseg{position:absolute;inset:0;transform:rotate(var(--a))}
-.wseg::before{content:"";position:absolute;left:50%;top:0;height:50%;width:1px;background:rgba(255,255,255,.18);transform:rotate(22.5deg);transform-origin:50% 100%}
-.wseg span{position:absolute;left:50%;top:7%;transform:translateX(-50%);display:grid;justify-items:center;gap:1px}
+.wseg::before{content:"";position:absolute;left:50%;top:0;height:50%;width:1px;background:rgba(255,255,255,.18);transform:rotate(var(--h));transform-origin:50% 100%}
+.wseg span{position:absolute;left:50%;top:7%;transform:translateX(-50%) scale(var(--k,1));transform-origin:50% 0;display:grid;justify-items:center;gap:1px}
 .wseg .cic{width:28px;height:28px}
 .wseg b{font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.8)}
 .wseg.jack b{color:#3a2400;text-shadow:none}
@@ -1265,6 +1266,22 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .bt-stars.r5 .bt-star.on{border-color:#ff6ec7;box-shadow:0 0 16px rgba(255,110,199,.45)}
 .bt-stars.r5 .bt-star.on .bs{color:transparent;background:linear-gradient(135deg,#c58bff,#ff6ec7 50%,#3ee6d0);-webkit-background-clip:text;background-clip:text;text-shadow:none;filter:drop-shadow(0 0 6px rgba(255,110,199,.9)) drop-shadow(0 0 12px rgba(62,230,208,.7))}
 .sx-pull.free{background:linear-gradient(180deg,#d9fff4,#7ef3d4);color:var(--mint-ink)}
+
+/* MR rarity (marriage skins) */
+.rtag.r6{background:linear-gradient(90deg,#ff2d6f,#ff7aa8,#ffc2d4,#ff2d6f);background-size:200% 100%;color:#fff;text-shadow:0 1px 1px rgba(90,0,30,.5);box-shadow:0 0 12px rgba(255,79,123,.6);animation:shimmer 3s linear infinite}
+.card.r6,.scard.r6{border-color:transparent;background:linear-gradient(180deg,color-mix(in srgb,#ff4f7b 30%,var(--ink-2)),var(--ink-2)) padding-box,var(--mr) border-box;box-shadow:0 0 16px rgba(255,79,123,.45)}
+.seg label.r6:has(input:checked){background:var(--mr);color:#fff}
+.sg.r6{--sg1:#ffb3c8;--sg2:#ff2d6f}
+.sg.vow2 .sg-art{height:100%;filter:drop-shadow(0 0 40px rgba(255,45,111,.55))}
+.sg.vow2 .sg-art.chibi{height:100%}
+.sg-hearts i{position:absolute;bottom:-30px;font-style:normal;color:#ff7aa8;text-shadow:0 0 10px #ff2d6f;animation:heartUp 5s linear infinite;z-index:1;pointer-events:none}
+.sg-kick{display:inline-flex;align-items:center;gap:6px;font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:#ffc2d4;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.sg-kick .cic{width:20px;height:20px}
+.sg-name i .rtag{font-style:normal;vertical-align:4px;margin-left:6px}
+.mr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.mr-card{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;padding:12px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft)}
+.mr-art{aspect-ratio:9/16;border-radius:10px;overflow:hidden;display:grid;place-items:center;text-align:center;padding:2px;border:2px solid transparent;background:linear-gradient(var(--ink-2),var(--ink-2)) padding-box,var(--mr) border-box}
+.mr-art img{width:100%;height:100%;object-fit:cover;border-radius:8px}
 </style>
 </head>
 <body>
@@ -1512,8 +1529,8 @@ const ICON_SLOTS = [
 ];
 const CUR_KEYS = ['coins', 'pearls', 'tickets', 'wishes', 'rings', 'bottles'];
 
-const RARITY = { 3:{ color:'#74c7ff' }, 4:{ color:'#ffaa5c' }, 5:{ color:'#c77dff' } };
-const RNAME = { 4: 'SSR', 5: 'UR' };
+const RARITY = { 3:{ color:'#74c7ff' }, 4:{ color:'#ffaa5c' }, 5:{ color:'#c77dff' }, 6:{ color:'#ff4f7b' } };
+const RNAME = { 4: 'SSR', 5: 'UR', 6: 'MR' };
 const rtag = (r, cls = '') => RNAME[r] ? `<span class="rtag r${r} ${cls}">${RNAME[r]}</span>` : '';
 const TYPES = { character:'Character', skin:'Skin', pet:'Pet', collectible:'Collectible', item:'Item' };
 const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
@@ -1603,7 +1620,7 @@ let S = (() => {
         s.bond = d.bond || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
-        s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
+        s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
         s.pets = { ...fresh.pets, ...(d.pets || {}) }; s.pets.frags = { ...fresh.pets.frags, ...s.pets.frags };
@@ -2017,18 +2034,19 @@ function showLoading(done) {
 }
 
 /* new outfit popup: shown after buying a skin */
-function showSkinGet(e) {
-  const owner = e.parent && findEntry(e.parent), skinName = owner ? e.name.replace(owner.name + ' · ', '') : e.name, art = mediaArt(e);
-  const el = document.createElement('div'); el.className = `sg r${e.rarity}`;
-  const words = 'NEW OUTFIT · EXQUISITE FASHION · '.repeat(4);
+function showSkinGet(e, o = {}) {
+  const owner = e.parent && findEntry(e.parent), skinName = o.sub || (owner ? e.name.replace(owner.name + ' · ', '') : e.name), art = mediaArt(e);
+  const el = document.createElement('div'); el.className = `sg r${o.vow ? 6 : e.rarity} ${o.vow ? 'vow2' : ''}`;
+  const words = (o.vow ? 'ETERNAL VOW · TILL THE LAST LANTERN · ' : 'NEW OUTFIT · EXQUISITE FASHION · ').repeat(4);
   el.innerHTML = `<div class="sg-bg"></div><div class="sg-band"></div>
     <div class="sg-words"><span>${words}</span><span>${words}</span></div>
     <div class="sg-streaks">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i};left:${8 + i * 14 + Math.random() * 6}%"></i>`).join('')}</div>
     <div class="sg-line"></div>
     <div class="sg-sparks">${Array.from({ length: 26 }, () => `<i style="left:${Math.random() * 100}%;animation-delay:${(-Math.random() * 3).toFixed(2)}s;animation-duration:${(2 + Math.random() * 2.5).toFixed(2)}s"></i>`).join('')}</div>
     <img class="sg-art ${art ? '' : 'chibi'}" src="${getSplash(e)}" alt="${esc(e.name)}">
-    <div class="sg-name"><b>${esc(owner ? owner.name : e.name)}</b><i>${esc(skinName)}</i></div>
-    <div class="sg-bonus"><span class="sg-lbl">Bonus reward</span><span class="sg-item r${e.rarity}" data-tip="${esc(`<b>Avatar: ${esc(e.name)}</b><span>Use this outfit's art as your profile avatar.</span>`)}">${thumbImg(e)}</span></div>
+    ${o.vow ? `<div class="sg-hearts">${Array.from({ length: 16 }, () => `<i style="left:${Math.random() * 100}%;animation-delay:${(-Math.random() * 4).toFixed(2)}s;font-size:${(14 + Math.random() * 18).toFixed(0)}px">♥</i>`).join('')}</div>` : ''}
+    <div class="sg-name">${o.vow ? `<span class="sg-kick">${curIcon('rings')} Married</span>` : ''}<b>${esc(owner ? owner.name : e.name)}</b><i>${esc(skinName)} ${e.type === 'skin' ? rtag(e.rarity) : ''}</i></div>
+    <div class="sg-bonus"><span class="sg-lbl">${o.vow ? 'Vow rewards' : 'Bonus reward'}</span><span class="row" style="gap:8px;align-items:center"><span class="sg-item r${e.rarity}" data-tip="${esc(`<b>Avatar: ${esc(e.name)}</b><span>Use this outfit's art as your profile avatar.</span>`)}">${thumbImg(e)}</span>${o.vow ? `${badgeHTML(BADGES.find(b => b.id === 'married'), true, 44)}${badgeHTML(BADGES.find(b => b.id === 'bond10'), true, 44)}` : ''}</span></div>
     <button class="sg-go" id="sgGo">Go use</button>
     <div class="sg-hint">Press empty area to close</div>
     <button class="sg-x" aria-label="Close">${icon('close')}</button>
@@ -2043,7 +2061,7 @@ function showSkinGet(e) {
     toast(`${e.name} is now your wallpaper and plaza look.`);
   };
   el.querySelector('.sg-share').onclick = () => {
-    const text = `I just got ${e.name} in Blank: Project!`;
+    const text = o.vow ? `I married ${owner ? owner.name : e.name} in Blank: Project!` : `I just got ${e.name} in Blank: Project!`;
     try { navigator.clipboard.writeText(text).then(() => toast('Copied to share.'), () => toast(text)); } catch (err) { toast(text); }
   };
 }
@@ -2538,15 +2556,8 @@ function marry(id) {
   const skin = e.weddingSkin && findEntry(e.weddingSkin), newSkin = skin && !owns(skin.id);
   if (newSkin) S.owned[skin.id] = 1;
   persist(); closeModal(); renderMenu(); refreshCharacters();
-  const el = document.createElement('div'); el.className = 'vow';
-  el.innerHTML = `${Array.from({ length: 18 }, (_, i) => `<i style="--x:${Math.random() * 100}%;--d:${(Math.random() * 2).toFixed(2)}s;--s:${(14 + Math.random() * 20).toFixed(0)}px">♥</i>`).join('')}
-    ${mediaArt(e) ? `<img class="cs-blur" src="${mediaArt(e)}" alt="">` : ''}<img class="vow-art ${mediaArt(e) ? '' : 'chibi'}" src="${getSplash(e)}" alt=""><div class="vow-shade"></div>
-    <div class="vow-card"><span class="vow-ring">${curIcon('rings')}</span><div class="eyebrow">Eternal vow</div><h2>You married ${esc(e.name)}</h2>
-      <p>${skin ? `${newSkin ? 'Unlocked' : 'You already own'} the wedding outfit <b>${esc(skin.name)}</b>.` : 'Their wedding outfit arrives in a future update.'}</p>
-      <div class="row" style="justify-content:center">${badgeHTML(BADGES.find(b => b.id === 'married'), true, 56)}${badgeHTML(BADGES.find(b => b.id === 'bond10'), true, 56)}</div></div>
-    <div class="rv-hint">Tap to continue</div>`;
-  document.body.appendChild(el);
-  setTimeout(() => el.onclick = () => el.remove(), 900);
+  // with an MR wedding skin the popup shows it; otherwise the character's own art
+  showSkinGet(skin || e, { vow: true, sub: skin ? null : 'Wedding outfit coming soon' });
 }
 
 /* ---------- badges: faceted crystal crests; top tiers get wings and a glow ---------- */
@@ -2656,13 +2667,19 @@ const SPIN = [
 const spinReady = () => S.spin.last !== dayKey();
 const spinName = s => s.name || `${fmt(s.n)} ${s.give === 'coins' ? 'gold coins' : s.n === 1 ? 'pearl' : 'pearls'}`;
 let spinAngle = 0;
+/* slice size follows the chance: rarer prizes get smaller slices (square-root scale keeps the 1% slice visible) */
+function spinSlices() {
+  const sz = SPIN.map(s => Math.sqrt(s.w)), tot = sz.reduce((a, b) => a + b, 0);
+  let a0 = 0;
+  return sz.map(v => { const d = v / tot * 360, r = { a0, sz: d, mid: a0 + d / 2 }; a0 += d; return r; });
+}
 function openSpin() {
-  const seg = 360 / SPIN.length;
-  const conic = SPIN.map((s, i) => `${s.jackpot ? '#e8b04a' : i % 2 ? '#2a2f6a' : '#3d2a6e'} ${i * seg}deg ${(i + 1) * seg}deg`).join(',');
+  const SL = spinSlices();
+  const conic = SPIN.map((s, i) => `${s.jackpot ? '#e8b04a' : i % 2 ? '#2a2f6a' : '#3d2a6e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
   openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
-      <div class="wheel" id="wheel" style="background:conic-gradient(from ${-seg / 2}deg,${conic});transform:rotate(${spinAngle}deg)">
-        ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${i * seg}deg"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
+      <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">
+        ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
       </div>
       <button class="wheel-hub" id="spinGo" ${spinReady() ? '' : 'disabled'}>${spinReady() ? 'Spin' : 'Done'}</button></div>
     <div class="tiny" id="spinNote">${spinReady() ? 'One free spin every day.' : 'You already spun today. Come back tomorrow.'}</div>
@@ -2676,7 +2693,7 @@ function openSpin() {
       // the reward is granted right away so closing the window mid-spin loses nothing
       S.spin.last = dayKey(); S.wallet[s.give] += s.n; persist(); renderMenu();
       $('#spinGo').disabled = true; $('#spinGo').textContent = '…';
-      spinAngle = spinAngle - (spinAngle % 360) + 360 * 6 + (360 - i * seg) % 360 + (Math.random() - .5) * seg * .6;
+      spinAngle = spinAngle - (spinAngle % 360) + 360 * 6 + (360 - SL[i].mid) % 360 + (Math.random() - .5) * SL[i].sz * .6;
       const wh = $('#wheel'); wh.style.transform = `rotate(${spinAngle}deg)`;
       wh.addEventListener('transitionend', () => {
         if (!$('#spinNote')) return;
@@ -3207,7 +3224,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -3219,6 +3236,7 @@ function renderAdminTab() {
   if (adminTab === 'banners') return renderBannersTab();
   if (adminTab === 'wallet') return renderWalletTab();
   if (adminTab === 'title') return renderTitleTab();
+  if (adminTab === 'mr') return renderMRTab();
   renderPoolTab();
 }
 
@@ -3244,7 +3262,7 @@ function renderPoolTab() {
           <label class="field" id="adParentWrap" hidden><span>Skin for</span><select class="input" id="adParent"></select></label>
           <div id="adSkins" hidden></div>
           <label class="field" id="adWedWrap" hidden><span>Wedding skin (unlocks when married)</span><select class="input" id="adWed"></select></label>
-          <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
+          <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5, 6].map(r => `<label class="r${r}" ${r === 6 ? 'id="adMR"' : ''}><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
           <label class="field"><span>Description</span><textarea class="input" id="adDesc" maxlength="240" placeholder="One or two lines of lore"></textarea></label>
           <fieldset class="looks"><legend class="lbl-sm" id="lkLegend">Plaza look</legend>
             <label id="lkKindWrap" hidden>Pet<select class="input" id="lkKind">${Object.entries(PET_KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
@@ -3357,6 +3375,8 @@ function adminPreview() {
   $('#lkLegend').textContent = pet ? 'Pet look' : 'Plaza look'; $('#lkKindWrap').hidden = !pet; $('#lkStyleWrap').hidden = $('#lkPantsWrap').hidden = pet;
   $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5;
+  $('#adMR').hidden = $('#adType').value !== 'skin';
+  if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
 }
 async function saveAdmin(ev) {
   ev.preventDefault();
@@ -3442,7 +3462,7 @@ function showImport() {
     const pool = d && (Array.isArray(d) ? d : d.pool);
     if (!Array.isArray(pool) || !pool.every(e => e && e.name && e.id)) { err.hidden = false; err.textContent = 'That text is not valid game data. Paste the full text from Copy data.'; return; }
     for (const e of pool) {
-      e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) ? +e.rarity : 4;
+      e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) || (+e.rarity === 6 && e.type === 'skin') ? +e.rarity : 4;
       delete e.element; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
       for (const k of ['art', 'art3', 'art6']) { if (e[k] && e[k].startsWith('data:')) { await mediaSet(`${k}:${e.id}`, e[k]); e[k] = `idb:${k}:${e.id}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
@@ -3506,6 +3526,37 @@ function renderIconsTab() {
   document.querySelectorAll('[data-ireset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.ireset); iconsChanged(); toast('Icon reset to default.'); });
 }
 function iconsChanged() { hydrateIcons(); renderMenu(); renderIconsTab(); const mi = modalEl && modalEl.querySelector('.m-ic'); if (mi) mi.innerHTML = icon('wrench'); }
+
+/* marriage skins tab: one MR skin per character, unlocked by marrying them */
+function mrSkinOf(c) { const e = c.weddingSkin && findEntry(c.weddingSkin); return e && e.type === 'skin' ? e : null; }
+function renderMRTab() {
+  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
+  $('#adPanel').innerHTML = `<div class="stack">
+    <div><h3>Marriage skins <span class="rtag r6">MR</span></h3><p class="tiny">Upload the MR splash art for each character's wedding outfit. Marrying the character (bond level ${BOND_MAX} + 1 ring) unlocks it and plays the pink-red new outfit animation. Use 9:16 art; it is shown big in the middle of the screen.</p></div>
+    <div class="mr-grid">${chars.map(c => { const k = mrSkinOf(c), art = k && artFrom(k.art);
+      return `<div class="mr-card"><div class="mr-art">${art ? `<img src="${art}" alt="">` : `<span class="tiny">No MR art yet</span>`}</div>
+        <div style="display:grid;gap:6px;min-width:0"><b>${esc(c.name)}</b>${k ? `<span class="tiny">${esc(k.name)}</span>` : '<span class="tiny">No marriage skin</span>'}
+          <label class="field"><span>Outfit name</span><input class="input" data-mrname="${esc(c.id)}" maxlength="30" value="${esc(k ? k.name.replace(c.name + ' · ', '') : 'Eternal Vow')}"></label>
+          <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${art ? 'Replace' : 'Upload'} MR art<input type="file" accept="image/*" class="sr" data-mrup="${esc(c.id)}"></label>${k ? `<button class="btn ghost sm" data-mrsave="${esc(c.id)}">Save name</button><button class="btn ghost sm" data-mrprev="${esc(c.id)}">Preview</button><button class="btn danger sm" data-mrdel="${esc(c.id)}">Remove</button>` : ''}</div></div></div>`; }).join('') || '<div class="empty">Add characters in the Game pool first.</div>'}</div></div>`;
+  const ensure = cid => {
+    const c = findEntry(cid), name = `${c.name} · ${(document.querySelector(`[data-mrname="${cid}"]`).value.trim() || 'Eternal Vow')}`;
+    let k = mrSkinOf(c);
+    if (!k) { k = { id: `mr-${cid}`, type: 'skin', name, rarity: 6, parent: cid, art: null, pullable: false, desc: `Wedding outfit for ${c.name}. Unlocked by marriage.`, look: { ...c.look } }; S.pool.push(k); c.weddingSkin = k.id; }
+    k.name = name; k.rarity = 6; k.pullable = false;
+    return k;
+  };
+  document.querySelectorAll('[data-mrup]').forEach(inp => inp.onchange = async () => {
+    try { const k = ensure(inp.dataset.mrup); await mediaSet('art:' + k.id, await resizeImage(inp.files[0], 1600)); k.art = 'idb:art:' + k.id; persist(); renderMRTab(); renderMenu(); toast(`MR art saved for ${findEntry(inp.dataset.mrup).name}.`); }
+    catch (e) { toast(e.message); }
+  });
+  document.querySelectorAll('[data-mrsave]').forEach(b => b.onclick = () => { ensure(b.dataset.mrsave); persist(); renderMRTab(); toast('Saved.'); });
+  document.querySelectorAll('[data-mrprev]').forEach(b => b.onclick = () => { closeModal(); showSkinGet(mrSkinOf(findEntry(b.dataset.mrprev)), { vow: true }); });
+  document.querySelectorAll('[data-mrdel]').forEach(b => b.onclick = async () => {
+    const c = findEntry(b.dataset.mrdel), k = mrSkinOf(c); if (!k) return;
+    await mediaDel('art:' + k.id); S.pool = S.pool.filter(x => x.id !== k.id); delete S.owned[k.id]; c.weddingSkin = null; if (S.wallpaper === k.id) S.wallpaper = null;
+    persist(); renderMRTab(); renderMenu(); toast('Marriage skin removed.');
+  });
+}
 
 /* title screen tab */
 function renderTitleTab() {
