@@ -1354,13 +1354,13 @@ const CUR_KEYS = ['coins', 'pearls', 'tickets', 'rings', 'bottles'];
 const RARITY = { 3:{ color:'#74c7ff' }, 4:{ color:'#ffaa5c' }, 5:{ color:'#c77dff' } };
 const RNAME = { 4: 'SSR', 5: 'UR' };
 const rtag = (r, cls = '') => RNAME[r] ? `<span class="rtag r${r} ${cls}">${RNAME[r]}</span>` : '';
-const ELEMENTS = { Fire:'#ff7a59', Water:'#4fc3f7', Wind:'#6ee7b7', Earth:'#d9a35b', Light:'#ffe17a', Dark:'#a78bfa' };
 const TYPES = { character:'Character', skin:'Skin', pet:'Pet', collectible:'Collectible', item:'Item' };
 const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
 
 const COST = { 1: 3, 10: 30 };
 const HARD_PITY = 50, BASE5 = 0.02, BASE4 = 0.051, COIN_DROP = 500;
-const MAX_STARS = 6, OVERFLOW_PEARLS = 15;
+const MAX_STARS = 6, OVERFLOW_PEARLS = { 4: 2, 5: 15 };
+const overflowOf = e => OVERFLOW_PEARLS[e.rarity] || OVERFLOW_PEARLS[4];
 const starsOf = id => Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1));
 const starRow = (n, pop = -1) => `<span class="stars6" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''}">★</span>`).join('')}</span>`;
 const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_UR = .08;
@@ -1388,31 +1388,31 @@ function sampleState() {
     pets: { frags: { ssr: 0, ur: 0 }, eggs: [], inc: [null, null, null] },
     profile: { avatar: null, frame: 'simple', title: 'newcomer', card: 'pearl', showcase: [null, null, null, null], uid: 100000 + Math.floor(Math.random() * 900000) },
     pool: [
-      { id:'aria', type:'character', name:'Aria', rarity:5, element:'Light', parent:null, art:null, pullable:true, sample:true,
+      { id:'aria', type:'character', name:'Aria', rarity:5, parent:null, art:null, pullable:true, sample:true,
         desc:'A starlight idol who sings the plaza awake every morning.', look:{ hair:'#ffcf4a', style:1, skin:'#ffe0c7', shirt:'#ff7eb6', pants:'#ffffff' } },
-      { id:'luna', type:'character', name:'Luna', rarity:4, element:'Dark', parent:null, art:null, pullable:true, sample:true,
+      { id:'luna', type:'character', name:'Luna', rarity:4, parent:null, art:null, pullable:true, sample:true,
         desc:'Quiet night-shift librarian who knows every secret path in the hedge maze.', look:{ hair:'#a066ff', style:3, skin:'#f6c9a4', shirt:'#3a2a66', pants:'#221a40' } },
-      { id:'kenji', type:'character', name:'Kenji', rarity:4, element:'Fire', parent:null, art:null, pullable:true, sample:true,
+      { id:'kenji', type:'character', name:'Kenji', rarity:4, parent:null, art:null, pullable:true, sample:true,
         desc:'Volleyball captain. Will challenge anyone who walks onto the sand court.', look:{ hair:'#ff5f3d', style:2, skin:'#d9a07a', shirt:'#2b2b3a', pants:'#5a6b8a' } },
-      { id:'mochi', type:'character', name:'Mochi', rarity:4, element:'Water', parent:null, art:null, pullable:true, sample:true,
+      { id:'mochi', type:'character', name:'Mochi', rarity:4, parent:null, art:null, pullable:true, sample:true,
         desc:'Runs the fountain café and hands out free bubble tea on event days.', look:{ hair:'#3fd0c9', style:4, skin:'#ffe0c7', shirt:'#9be7ff', pants:'#2f5d8a' } },
-      { id:'aria-beach', type:'skin', name:'Aria · Beach Day', rarity:4, element:'Light', parent:'aria', art:null, pullable:true, sample:true,
+      { id:'aria-beach', type:'skin', name:'Aria · Beach Day', rarity:4, parent:'aria', art:null, pullable:true, sample:true,
         desc:'Summer outfit for Aria, first sold during the beach event.', look:{ hair:'#ffcf4a', style:3, skin:'#ffe0c7', shirt:'#4fd1ff', pants:'#ffe08a' } },
-      { id:'celeste', type:'character', name:'Celeste', rarity:5, element:'Water', parent:null, art:null, pullable:true, standard:true, sample:true,
+      { id:'celeste', type:'character', name:'Celeste', rarity:5, parent:null, art:null, pullable:true, standard:true, sample:true,
         desc:'Tide-reader who keeps the plaza fountain full of wishing pearls.', look:{ hair:'#7fd3ff', style:1, skin:'#ffe0c7', shirt:'#3a5bd9', pants:'#e8f4ff' } },
-      { id:'rook', type:'character', name:'Rook', rarity:5, element:'Dark', parent:null, art:null, pullable:true, standard:true, sample:true,
+      { id:'rook', type:'character', name:'Rook', rarity:5, parent:null, art:null, pullable:true, standard:true, sample:true,
         desc:'A masked courier who only takes deliveries after midnight.', look:{ hair:'#2b2b3a', style:2, skin:'#d9a07a', shirt:'#6b3fa0', pants:'#1e1a2e' } },
-      { id:'pet-dragon', type:'pet', name:'Aurora Dragon', rarity:5, element:'Light', parent:null, art:null, pullable:false, sample:true,
+      { id:'pet-dragon', type:'pet', name:'Aurora Dragon', rarity:5, parent:null, art:null, pullable:false, sample:true,
         desc:'A tiny dragon that hoards shiny pearls and naps on warm lanterns.', look:{ kind:'dragon', body:'#9b7bff', accent:'#3ee6d0', belly:'#ffe9b0' } },
-      { id:'pet-phoenix', type:'pet', name:'Ember Phoenix', rarity:5, element:'Fire', parent:null, art:null, pullable:false, sample:true,
+      { id:'pet-phoenix', type:'pet', name:'Ember Phoenix', rarity:5, parent:null, art:null, pullable:false, sample:true,
         desc:'Hatched from the last firework of the festival. Its tail never cools.', look:{ kind:'bird', body:'#ff7a3d', accent:'#ffd36b', belly:'#fff1c4' } },
-      { id:'pet-fox', type:'pet', name:'Maple Fox', rarity:4, element:'Fire', parent:null, art:null, pullable:false, sample:true,
+      { id:'pet-fox', type:'pet', name:'Maple Fox', rarity:4, parent:null, art:null, pullable:false, sample:true,
         desc:'Hides in leaf piles in the Maple Garden and pops out to say hi.', look:{ kind:'fox', body:'#ff8a3a', accent:'#c8461b', belly:'#fff4e0' } },
-      { id:'pet-cat', type:'pet', name:'Pearl Cat', rarity:4, element:'Water', parent:null, art:null, pullable:false, sample:true,
+      { id:'pet-cat', type:'pet', name:'Pearl Cat', rarity:4, parent:null, art:null, pullable:false, sample:true,
         desc:'Sits by the pond all day, staring at the floating lanterns.', look:{ kind:'cat', body:'#c9d4f5', accent:'#7f8bb3', belly:'#ffffff' } },
-      { id:'pet-bunny', type:'pet', name:'Mochi Bunny', rarity:4, element:'Light', parent:null, art:null, pullable:false, sample:true,
+      { id:'pet-bunny', type:'pet', name:'Mochi Bunny', rarity:4, parent:null, art:null, pullable:false, sample:true,
         desc:'Soft, round and always hungry for sweet rice cakes.', look:{ kind:'bunny', body:'#ffe0ea', accent:'#ff9ec4', belly:'#ffffff' } },
-      { id:'pet-owl', type:'pet', name:'Lantern Owl', rarity:4, element:'Dark', parent:null, art:null, pullable:false, sample:true,
+      { id:'pet-owl', type:'pet', name:'Lantern Owl', rarity:4, parent:null, art:null, pullable:false, sample:true,
         desc:'Keeps watch over the Night Market until the last stall closes.', look:{ kind:'owl', body:'#8a5a3c', accent:'#ffd36b', belly:'#f3e2c4' } }
     ]
   };
@@ -1436,7 +1436,7 @@ let S = (() => {
         s.bond = d.bond || {}; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
-        s.pool.forEach(e => { if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
+        s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
         s.pets = { ...fresh.pets, ...(d.pets || {}) }; s.pets.frags = { ...fresh.pets.frags, ...s.pets.frags };
@@ -1901,7 +1901,7 @@ function openCollection(filter = 'all') {
 }
 const cardHTML = e => {
   const n = S.owned[e.id] || 0;
-  return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starRow(starsOf(e.id)) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]} · ${esc(e.element)}</div></div></button>`;
+  return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starRow(starsOf(e.id)) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]}</div></div></button>`;
 };
 const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
@@ -1928,16 +1928,17 @@ function renderDetail(id, backTo) {
         <div class="eyebrow">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>
         <h3>${esc(e.name)}</h3>
         <div>${rtag(e.rarity, 'lg')}</div>
-        <div class="chips"><span class="chip" style="--el:${ELEMENTS[e.element] || '#fff'}"><i></i>${esc(e.element)}</span><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
-        ${n ? `<div class="stars-big">${starRow(starsOf(e.id))}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies give ${OVERFLOW_PEARLS} pearls each.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
+        <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
+        ${n ? `<div class="stars-big">${starRow(starsOf(e.id))}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies give ${overflowOf(e)} pearls each.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>
-        <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button><button class="btn ghost" id="dWear">${icon('chars')}Use as my plaza look</button>` : ''}${e.type === 'character' ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
-        ${n ? '' : '<p class="tiny">Pull this on the banner to set it as your wallpaper or plaza look.</p>'}
+        <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button><button class="btn ghost" id="dWear">${icon('chars')}Use as my plaza look</button>` : ''}${e.type === 'skin' && !n ? `<button class="btn gold" id="dBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>` : ''}${e.type === 'character' ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
+        ${n ? '' : `<p class="tiny">${e.type === 'skin' ? 'Buy or pull' : 'Pull'} this on the banner to set it as your wallpaper or plaza look.</p>`}
       </div>
     </div>`;
   $('#dBack').onclick = () => renderCollection(backTo || 'all');
   const w = $('#dWear');
   if (w) w.onclick = () => { S.player.look = { ...e.look }; player.look = S.player.look; persist(); renderMenu(); toast(`Your plaza avatar now looks like ${e.name}.`); };
+  const db = $('#dBuy'); if (db) db.onclick = () => buySkin(e.id);
   const wl = $('#dWall');
   if (wl) wl.onclick = () => { S.wallpaper = e.id; persist(); applyWallpaper(); toast(`${e.name} is now your wallpaper.`); };
 }
@@ -1954,10 +1955,19 @@ const petsOf = r => S.pool.filter(e => e.type === 'pet' && e.rarity === EGG[r].r
 const hatchCost = inc => Math.max(2, Math.ceil((inc.ends - Date.now()) / 12e4));
 const fmtLeft = ms => { const m = Math.ceil(ms / 6e4); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
 /* duplicate rules shared by summons and hatching: first copy 0 stars, +1 star per copy up to 6, then pearls */
+/* skins can also be bought outright */
+const SKIN_PRICE = 60;
+function buySkin(id) {
+  const e = findEntry(id); if (!e || e.type !== 'skin' || owns(id)) return;
+  if (S.wallet.pearls < SKIN_PRICE) { toast(`${e.name} costs ${SKIN_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
+  S.wallet.pearls -= SKIN_PRICE; S.owned[id] = 1; persist(); renderMenu(); refreshSummon(); refreshCharacters();
+  if ($('#colRoot')) renderDetail(id, 'skin');
+  toast(`Bought ${e.name} for ${SKIN_PRICE} pearls.`);
+}
 function grantEntry(item) {
   const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
   const starUp = prev && prev - 1 < MAX_STARS ? prev : 0;
-  const pearls = prev && !starUp ? OVERFLOW_PEARLS : 0; S.wallet.pearls += pearls;
+  const pearls = prev && !starUp ? overflowOf(item) : 0; S.wallet.pearls += pearls;
   return { isNew: !prev, starUp, pearls };
 }
 
@@ -2041,7 +2051,7 @@ function showHatch(r, item, res) {
   const el = document.createElement('div'); el.className = `hatch r${item.rarity}`;
   el.innerHTML = `<div class="hatch-rays"></div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
     <div class="hatch-pet"><img src="${getSplash(item)}" alt="${esc(item.name)}"></div>
-    <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')} · ${esc(item.element)}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
+    <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
       ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · +${res.pearls} ${curIcon('pearls')}</span></div>`}</div>
     <div class="rv-hint">Tap to continue</div>`;
   document.body.appendChild(el);
@@ -2361,7 +2371,6 @@ function openSpin() {
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
 const charList = () => S.pool.filter(e => e.type === 'character').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
-const bannerOf = e => e.pullable === false ? 'Not in summons' : e.id === S.featuredId ? 'Limited banner' : e.rarity === 5 ? (e.standard ? 'Permanent banner' : 'Not on a banner') : 'Both banners';
 function openCharacters(id) {
   const list = charList();
   if (!list.length) { toast('There are no characters yet. Add some in the admin panel.'); return; }
@@ -2382,21 +2391,19 @@ function renderCharacters() {
   csEl.className = `cs r${c.rarity}`;
   const tabs = [['home', 'home', 'Home'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
-      <div class="cs-elem ts">${esc(c.element)}</div>
+      <div class="cs-elem ts">${TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
       ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity}">${RNAME[c.rarity]}</span>` : ''}
     </div>
     <div class="cs-sep"></div>
     <div class="cs-traits">${starRow(st)}
-      <span class="trait ts"><i style="--el:${ELEMENTS[c.element] || '#fff'}"></i>${esc(c.element)}</span>
-      <span class="trait ts"><i class="ic-t">${icon('sparkle')}</i>${esc(bannerOf(c))}</span>
       ${bondOf(c.id).married ? `<span class="trait ts"><i class="ic-t" style="--el:#ff9ec4">${curIcon('rings')}</i>Married</span>` : ''}
     </div>
     <div class="cs-badges"><span class="lbl-sm">Badges · ${BADGES.filter(b => b.ok(c)).length}/${BADGES.length}</span><div class="row">${badgeRow(c, 40)}</div></div>
     <div class="cs-sep"></div>`;
   let body;
   if (csTab === 'home') {
-    const next = !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies give ${OVERFLOW_PEARLS} pearls each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
+    const next = !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies give ${overflowOf(c)} pearls each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
     body = `<div class="cs-boxes">
         <div class="cs-box"><span class="lbl-sm">Stars</span><b><em>${st}</em>/${MAX_STARS}</b></div>
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
@@ -2409,6 +2416,7 @@ function renderCharacters() {
       ${csSkin ? `<div class="cs-pill" style="color:var(--gold)">Previewing skin: ${esc(shown.name)}${shownOwned ? '' : ' (not owned)'}</div>` : ''}
       <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shown.id ? 'Wallpaper set' : 'Set as wallpaper'}</button><button class="btn ghost" id="csWear">${icon('chars')}Use as plaza look</button></div>`
+        : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
   } else if (csTab === 'bond') {
     const bd = bondOf(c.id), lv = bondLv(c.id), full = lv >= BOND_MAX, lo = BOND_XP[lv], hi = BOND_XP[Math.min(BOND_MAX, lv + 1)];
@@ -2431,11 +2439,8 @@ function renderCharacters() {
     body = `<div class="cs-card"><dl class="kv">
         <dt>Name</dt><dd>${esc(c.name)}</dd>
         <dt>Rarity</dt><dd>${rtag(c.rarity)}</dd>
-        <dt>Element</dt><dd style="color:${ELEMENTS[c.element] || '#fff'}">${esc(c.element)}</dd>
         <dt>Type</dt><dd>${TYPES[c.type]}</dd>
-        <dt>Found on</dt><dd>${esc(bannerOf(c))}</dd>
         <dt>Stars</dt><dd>${starRow(st)}</dd>
-        <dt>Skins</dt><dd>${skins.length ? skins.map(s => esc(s.name.replace(c.name + ' · ', ''))).join(', ') : 'None yet'}</dd>
         <dt>Bond</dt><dd>Lv ${bondLv(c.id)}${bondOf(c.id).married ? ' · Married' : ''}</dd>
       </dl></div>
       <div class="cs-card"><div class="lbl-sm" style="margin-bottom:6px">Profile</div><p>${esc(c.desc || 'No description yet.')}</p></div>
@@ -2452,13 +2457,13 @@ function renderCharacters() {
       <button class="rbtn ${csSkins ? 'on' : ''}" id="csSkinBtn" aria-label="Skins">${icon('hanger')}</button>
       <button class="rbtn" id="csViewBtn" aria-label="View the art without the menu">${icon('eye')}</button>
     </div>
-    ${csSkins ? `<div class="cs-skins glass-deep cs-ui"><div class="lbl-sm">Outfits</div><div class="grid">${[c, ...skins].map(s => `<button class="sk r${s.rarity} ${s.id === shown.id ? 'on' : ''} ${owns(s.id) ? '' : 'locked'}" data-sk="${esc(s.id)}"><img src="${getArt(s)}" alt=""><span>${s === c ? 'Default' : esc(s.name.replace(c.name + ' · ', ''))}</span></button>`).join('')}</div>
+    ${csSkins ? `<div class="cs-skins glass-deep cs-ui"><div class="lbl-sm">Outfits</div><div class="grid">${[c, ...skins].map(s => `<button class="sk r${s.rarity} ${s.id === shown.id ? 'on' : ''} ${owns(s.id) ? '' : 'locked'}" data-sk="${esc(s.id)}" ${owns(s.id) || s === c ? '' : `data-tip="${esc(`<b>${esc(s.name)}</b><span>Not owned. Buy it for ${SKIN_PRICE} pearls.</span>`)}"`}><img src="${getArt(s)}" alt=""><span>${s === c ? 'Default' : esc(s.name.replace(c.name + ' · ', ''))}</span></button>`).join('')}</div>
       ${skins.length ? '' : '<p class="tiny">No skins for this character yet.</p>'}</div>` : ''}
     <section class="cs-panel cs-ui">${head}${body}</section>`;
   $('#csBack').onclick = closeCharacters;
   $('#csHelp').onclick = () => openModal({ title: 'Characters', ic: 'chars', body: `<div class="stack">
       <p class="desc">Pick a character on the left. <b>Home</b> shows stars and outfits, <b>Bond</b> is where you give gifts and, at bond level 10, propose with a ring, and <b>Character Info</b> has their profile. Badges under the name show what you've achieved with each character.</p>
-      <p class="desc">Every duplicate copy adds a star, up to ${MAX_STARS}. After that each copy gives ${OVERFLOW_PEARLS} pearls.</p>
+      <p class="desc">Every duplicate copy adds a star, up to ${MAX_STARS}. After that each copy gives ${OVERFLOW_PEARLS[5]} pearls for a UR or ${OVERFLOW_PEARLS[4]} for an SSR.</p>
       <p class="desc">The hanger button switches between outfits, and the eye button hides the menu so you can look at the art.</p></div>` });
   csEl.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { csId = b.dataset.cs; csSkin = null; renderCharacters(); });
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; renderCharacters(); });
@@ -2466,6 +2471,7 @@ function renderCharacters() {
   $('#csSkinBtn').onclick = () => { csSkins = !csSkins; renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
+  const bs = $('#csBuySkin'); if (bs) bs.onclick = () => buySkin(shown.id);
   csEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { S.artPick[c.id] = b.dataset.art; persist(); applyWallpaper(); renderMenu(); renderCharacters(); toast(`Now showing ${c.name}'s ${ASC.find(a => a.k === b.dataset.art).label.toLowerCase()} splash art.`); });
   const br = $('#csRing'); if (br) br.onclick = buyRing;
   $('#csViewBtn').onclick = e => { e.stopPropagation(); csView = true; csEl.classList.add('viewing'); };
@@ -2612,7 +2618,7 @@ function openRates(bk, histOpen) {
       <tr><td>${rtag(4)}</td><td>5.1% · at least one every 10 pulls</td></tr>
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
-    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS} pearls. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
+    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS[5]} pearls (UR) or ${OVERFLOW_PEARLS[4]} (SSR). If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
     <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
       <div class="hist">${hist.length ? hist.map(h => `<div class="r${h.rarity}"><span>${h.rarity >= 4 ? rtag(h.rarity) : '<span class="cost">' + curIcon('coins') + '</span>'} ${esc(h.name)}</span><time>${t(h)}</time></div>`).join('') : '<p class="tiny">No pulls yet.</p>'}</div>
     </details>
@@ -2625,10 +2631,10 @@ const PAL = { 3: ['#5aa9ff', '#9fd3ff', '#ffffff'], 4: ['#ff8a2a', '#ffb067', '#
 const TIER_BURST = { 3: 1, 4: 1.55, 5: 2.1 }, TIER_REVEAL = { 3: 1.6, 4: 2.6, 5: 3.2 };
 const rpick = a => a[Math.floor(Math.random() * a.length)];
 function resultView(r) {
-  if (r.kind === 'coins') return { name: `${fmt(r.amount)} gold coins`, type: 'Gold coins', element: null, img: null };
-  if (r.kind === 'frag') return { name: `${EGG[r.frag].name} fragment`, type: 'Egg fragment', element: null, img: null };
-  const e = findEntry(r.id) || { name: '?', type: 'item', element: '' };
-  return { name: e.name, type: TYPES[e.type], element: e.element, img: getSplash(e), card: getArt(e) };
+  if (r.kind === 'coins') return { name: `${fmt(r.amount)} gold coins`, type: 'Gold coins', img: null };
+  if (r.kind === 'frag') return { name: `${EGG[r.frag].name} fragment`, type: 'Egg fragment', img: null };
+  const e = findEntry(r.id) || { name: '?', type: 'item' };
+  return { name: e.name, type: TYPES[e.type], img: getSplash(e), card: getArt(e) };
 }
 /* sparkle sprites: pre-rendered once per color so the reveal can draw hundreds cheaply */
 const SPR = new Map();
@@ -2812,13 +2818,13 @@ function advancePull() {
     ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
     <div class="rv-flash"></div><div class="rv-sweep"></div>
     <div class="rv-info">
-      <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}${v.element ? ' · ' + esc(v.element) : ''}</div>
+      <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}</div>
       <div class="rv-name">${esc(v.name)}</div>
       ${r.kind === 'entry' ? `<div class="rv-tier">${rtag(r.rarity, 'xl')}</div>` : ''}
       ${r.lost ? `<span class="rv-badge dupe">Lost the 50/50 · next UR is guaranteed</span>` : ''}
       ${r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
         : r.starUp ? `<div class="rv-up">${starRow(r.starUp, r.starUp - 1)}<span>${r.starUp === MAX_STARS ? 'Max stars reached' : `Star ${r.starUp} of ${MAX_STARS}`}</span></div>`
-        : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · +${OVERFLOW_PEARLS} ${curIcon('pearls')}</span></div>`) : ''}
+        : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · +${r.pearls} ${curIcon('pearls')}</span></div>`) : ''}
     </div>
     ${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}
     <div class="rv-hint">Tap to continue</div>
@@ -2893,10 +2899,7 @@ function renderPoolTab() {
           </div>
         </div>
         <div class="ad-fields">
-          <div class="two">
-            <label class="field"><span>Type</span><select class="input" id="adType">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
-            <label class="field"><span>Element</span><select class="input" id="adEl">${Object.keys(ELEMENTS).map(k => `<option>${k}</option>`).join('')}</select></label>
-          </div>
+          <label class="field"><span>Type</span><select class="input" id="adType">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
           <label class="field"><span>Name</span><input class="input" id="adName" maxlength="40" placeholder="e.g. Sora"><span class="err" id="adNameErr" hidden>Give it a name first.</span></label>
           <label class="field" id="adParentWrap" hidden><span>Skin for</span><select class="input" id="adParent"></select></label>
           <div id="adSkins" hidden></div>
@@ -2928,7 +2931,7 @@ function renderPoolTab() {
       </details>
     </aside>
   </div>`;
-  ['adType', 'adEl', 'adName', 'adParent', 'adDesc', 'lkHair', 'lkStyle', 'lkSkin', 'lkShirt', 'lkPants', 'lkKind'].forEach(id => $('#' + id).addEventListener('input', adminPreview));
+  ['adType', 'adName', 'adParent', 'adDesc', 'lkHair', 'lkStyle', 'lkSkin', 'lkShirt', 'lkPants', 'lkKind'].forEach(id => $('#' + id).addEventListener('input', adminPreview));
   $('#adRarity').addEventListener('change', adminPreview);
   $('#adType').addEventListener('change', adminPreview);
   $('#adArt').addEventListener('change', async ev => {
@@ -2951,7 +2954,6 @@ function fillAdminForm(entry) {
   adminAsc = { art3: entry ? artFrom(entry.art3) : null, art6: entry ? artFrom(entry.art6) : null };
   const lk = entry ? { ...blankLook(), ...entry.look } : blankLook();
   $('#adType').value = entry ? entry.type : 'character';
-  $('#adEl').value = entry ? entry.element : 'Fire';
   $('#adName').value = entry ? entry.name : '';
   $('#adDesc').value = entry ? entry.desc || '' : '';
   $('#lkHair').value = lk.hair; $('#lkStyle').value = lk.style; $('#lkSkin').value = lk.skin; $('#lkShirt').value = lk.shirt; $('#lkPants').value = lk.pants;
@@ -2972,11 +2974,11 @@ function fillAdminForm(entry) {
   adminPreview();
   renderAdminList();
 }
-/* start a new skin for a character: type, owner, element, rarity and look come pre-filled */
+/* start a new skin for a character: type, owner, rarity and look come pre-filled */
 function newSkinFor(cid) {
   const c = findEntry(cid); if (!c) return;
   fillAdminForm(null);
-  $('#adType').value = 'skin'; fillParentOptions(cid); $('#adEl').value = c.element; $('#adName').value = `${c.name} · `;
+  $('#adType').value = 'skin'; fillParentOptions(cid); $('#adName').value = `${c.name} · `;
   document.querySelectorAll('input[name=adR]').forEach(i => i.checked = +i.value === c.rarity);
   const lk = { ...blankLook(), ...c.look };
   $('#lkHair').value = lk.hair; $('#lkStyle').value = lk.style; $('#lkSkin').value = lk.skin; $('#lkShirt').value = lk.shirt; $('#lkPants').value = lk.pants;
@@ -3021,7 +3023,7 @@ async function saveAdmin(ev) {
   const name = $('#adName').value.trim();
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
-  const data = { type, name, rarity: adminRarity(), element: $('#adEl').value, desc: $('#adDesc').value.trim(),
+  const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
     parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked,
     weddingSkin: type === 'character' ? ($('#adWed').value || null) : null };
   const wasEdit = !!adminEditId;
@@ -3052,7 +3054,7 @@ function renderAdminList() {
   const list = [...S.pool].sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   el.innerHTML = list.length ? list.map(e => `<div class="ad-row r${e.rarity} ${e.id === adminEditId ? 'editing' : ''}">
       <img src="${getArt(e)}" alt="">
-      <div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="mt">${RNAME[e.rarity] || ''} ${TYPES[e.type]} · ${esc(e.element)}${e.pullable === false ? ' · not pullable' : ''}${e.id === S.featuredId ? ' · <span class="feat">Limited</span>' : ''}${e.standard && e.rarity === 5 ? ' · <span class="feat">Permanent</span>' : ''}</div></div>
+      <div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="mt">${RNAME[e.rarity] || ''} ${TYPES[e.type]}${e.pullable === false ? ' · not pullable' : ''}${e.id === S.featuredId ? ' · <span class="feat">Limited</span>' : ''}${e.standard && e.rarity === 5 ? ' · <span class="feat">Permanent</span>' : ''}</div></div>
       <div class="acts">${e.type === 'character' ? `<button class="iconbtn" data-newskin="${esc(e.id)}" aria-label="Add a skin for ${esc(e.name)}" data-tip="${esc(`<b>Add a skin</b><span>New skin for ${esc(e.name)}</span>`)}">${icon('skins')}</button>` : ''}<button class="iconbtn" data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.name)}">${icon('edit')}</button><button class="iconbtn" data-del="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">${icon('trash')}</button></div>
       ${adminConfirm === e.id ? `<div class="confirm">Delete ${esc(e.name)}? This can't be undone. <button class="btn danger sm" data-yes="${esc(e.id)}">Delete</button><button class="btn ghost sm" data-no>Keep</button></div>` : ''}
     </div>`).join('') : '<div class="empty">The pool is empty. Add your first character on the left.</div>';
@@ -3101,7 +3103,7 @@ function showImport() {
     if (!Array.isArray(pool) || !pool.every(e => e && e.name && e.id)) { err.hidden = false; err.textContent = 'That text is not valid game data. Paste the full text from Copy data.'; return; }
     for (const e of pool) {
       e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) ? +e.rarity : 4;
-      e.element = ELEMENTS[e.element] ? e.element : 'Light'; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
+      delete e.element; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
       for (const k of ['art', 'art3', 'art6']) { if (e[k] && e[k].startsWith('data:')) { await mediaSet(`${k}:${e.id}`, e[k]); e[k] = `idb:${k}:${e.id}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
@@ -3136,7 +3138,7 @@ function renderBannersTab() {
         <p class="tiny">Switch on the URs that belong here. When this banner drops a UR, each of them has the same chance. Around 7 works well.</p></div>
       <label class="field"><span>Banner name</span><input class="input" id="bnStdName" maxlength="30" value="${esc(S.banners.standard.name)}"></label>
       <div class="ad-list">${urs.length ? urs.map(u => `<label class="ban-row"><img src="${getArt(u)}" alt="">
-          <span style="min-width:0"><span class="nm" style="display:block">${esc(u.name)}</span><span class="mt">${u.id === S.featuredId ? 'Featured on limited · ' : ''}${u.pullable === false ? 'Not pullable' : esc(u.element)}</span></span>
+          <span style="min-width:0"><span class="nm" style="display:block">${esc(u.name)}</span><span class="mt">${u.id === S.featuredId ? 'Featured on limited · ' : ''}${u.pullable === false ? 'Not pullable' : 'UR character'}</span></span>
           <input type="checkbox" data-std="${esc(u.id)}" ${u.standard ? 'checked' : ''} aria-label="${esc(u.name)} on the permanent banner"><i></i></label>`).join('') : '<div class="empty">No URs yet. Add some in the Game pool tab.</div>'}</div>
       <p class="tiny">All ${pullableSSRs().length} pullable SSRs appear on both banners.</p>
     </section>
