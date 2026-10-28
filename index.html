@@ -1218,8 +1218,8 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 @keyframes sgStreak{0%{opacity:0;transform:skewX(-28deg) translateX(-40px)}40%{opacity:1}100%{opacity:.45;transform:skewX(-28deg)}}
 .sg-sparks i{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--sg1),0 0 14px var(--sg2);animation:rise linear infinite}
 /* the art is half the screen wide; on wide screens the bottom of tall art runs off the edge so the face stays in view */
-.sg-art{position:absolute;z-index:1;left:50%;top:-2%;bottom:auto;width:max(50vw,calc(102vh * 9 / 16));height:auto;max-width:none;aspect-ratio:9/16;object-fit:contain;object-position:50% 0;transform:translateX(-50%);filter:drop-shadow(0 0 30px color-mix(in srgb,var(--sg2) 60%,transparent));animation:sgArt .8s .25s cubic-bezier(.2,1.2,.4,1) both}
-.sg-art.chibi{width:calc(100vh * 9 / 16);top:auto;bottom:0}
+.sg-art{position:absolute;z-index:1;left:50%;top:-2%;bottom:auto;width:max(56vw,calc(108vh * 9 / 16));height:auto;max-width:none;aspect-ratio:9/16;object-fit:contain;object-position:50% 0;transform:translateX(-50%);filter:drop-shadow(0 0 30px color-mix(in srgb,var(--sg2) 60%,transparent));animation:sgArt .8s .25s cubic-bezier(.2,1.2,.4,1) both}
+.sg-art.chibi{width:calc(106vh * 9 / 16);top:auto;bottom:-2%}
 @keyframes sgArt{from{opacity:0;transform:translateX(-50%) translateY(28px) scale(.94)}}
 .sg-name{position:absolute;z-index:2;left:8%;top:30%;display:grid;gap:2px;animation:sgIn .6s .5s cubic-bezier(.2,1.1,.4,1) both;pointer-events:none}
 .sg-name b{font-family:var(--display);font-size:clamp(32px,4.6vw,58px);line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 20px rgba(0,0,0,.6)}
