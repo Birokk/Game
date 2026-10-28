@@ -7,7 +7,8 @@ Browser gacha game, built step by step. Everything lives in one self-contained f
 - Keep the visual style: dark frosted-glass UI (tokens in `:root`), fonts Lilita One (display) and Nunito (body).
 
 ## What exists
-- **Main screen:** full-screen wallpaper (default "Pearl Tide" or the splash art of an owned character/skin), glass buttons for Events, Quests, Friends, Ranking, Shop, Bag, Team, Skins, Characters, Mail, Settings, Admin. Most of those screens are templates.
+- **Main screen (home):** full-screen wallpaper (default "Pearl Tide" or the splash art of an owned character/skin; chibi wallpapers show the whole character) with HUD pieces floating over it: level ring + name + collection count, Wallpaper and **Hide UI** buttons (hides everything except the wallpaper; any tap or Esc brings it back), currencies, Mail/Settings/Admin, a world-chat ticker (bots), a limited-summon promo card, round event icons (Pearl Wish, Events, Ranking, Friends / Shop, Quests, Bag, Team), an Enter Plaza portal, bottom tabs (Characters, Skins, Collection), a UR pity card and the Summon button. Red diamond dots mark things to do. Events, Quests, Friends, Ranking, Shop, Bag and Team are still templates.
+- **Character screen:** full-screen (`openCharacters`): roster of round avatars on the left, splash art in the middle, tabs Home (copies, stars, skins, wallpaper / plaza look), Bond (placeholder for a future update) and Character Info (profile). Hanger button switches outfits (skins), eye button hides the UI to view the art. No combat stats by design.
 - **Currencies:** gold coins, pearls, summon tickets (tickets do nothing yet).
 - **Rarities:** UR (purple/pink/turquoise) and SSR (light orange). The lowest tier is a 500 gold coin drop instead of a character.
 - **Summons:** 3 pearls per pull, 30 per ×10.
