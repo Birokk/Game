@@ -642,8 +642,9 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   linear-gradient(160deg,#1c1338,#0a0d22 60%,#1a0c1f)}
 .cs-rays{position:absolute;left:46%;top:52%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,255,255,.05) 0 5deg,transparent 5deg 16deg);animation:spin 60s linear infinite}
 .cs.r5 .cs-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,rgba(168,85,247,.22) 44%,rgba(255,110,199,.22) 48%,rgba(62,230,208,.2) 52%,transparent 58%)}
-.cs-art{position:absolute;left:46%;bottom:0;height:100%;aspect-ratio:9/16;max-width:none;transform:translateX(-50%);object-fit:cover;object-position:50% 20%;animation:rvZoom .6s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px color-mix(in srgb,var(--rc) 40%,transparent))}
-.cs-art.chibi{height:86%;bottom:2%}
+.cs-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:rvZoom .6s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px color-mix(in srgb,var(--rc) 40%,transparent))}
+.cs-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.55)}
+.cs-art.chibi{inset:auto;left:46%;bottom:2%;width:auto;height:86%;aspect-ratio:9/16;transform:translateX(-50%)}
 .cs-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(6,8,20,.55),transparent 28%,transparent 60%,rgba(6,8,20,.7) 80%)}
 .cs-ui{transition:opacity .3s,transform .3s}
 .cs.viewing .cs-ui{opacity:0;pointer-events:none}
@@ -755,14 +756,95 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .cs-tab{font-size:17px;gap:8px}
   .cs-tab .ti{width:34px;height:34px}
   .cs-tab .soon{display:none}
-  .cs-art{left:62%;height:62%;bottom:auto;top:calc(150px + var(--st))}
-  .cs-art.chibi{height:52%;bottom:auto}
+  .cs-art{object-position:50% 0}
+  .cs-art.chibi{left:62%;height:52%;bottom:auto;top:calc(150px + var(--st))}
   .cs-panel{top:auto;left:var(--sl);right:var(--sl);width:auto;max-height:44%;padding:14px;border-radius:20px;background:rgba(8,12,30,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   .cs-name{font-size:32px}
   .cs-badge{font-size:28px}
   .cs-side{right:var(--sr);bottom:auto;top:calc(176px + var(--st))}
   .cs-side .rbtn{width:44px;height:44px}
   .cs-skins{right:calc(var(--sr) + 56px);bottom:auto;top:calc(176px + var(--st))}
+}
+/* ---------- Summon screen (full screen) ---------- */
+.sx{position:fixed;inset:0;z-index:45;overflow:hidden;animation:fade .25s;color:#fff;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:max(16px,env(safe-area-inset-left,0px));--sr:max(18px,env(safe-area-inset-right,0px));
+  background:radial-gradient(ellipse at 58% 70%,color-mix(in srgb,var(--rc) 35%,transparent),transparent 60%),
+  radial-gradient(circle at 20% 30%,rgba(255,255,255,.75) 1px,transparent 1.5px) 0 0/140px 140px,radial-gradient(circle at 70% 60%,rgba(255,255,255,.45) 1px,transparent 1.5px) 0 0/95px 95px,
+  linear-gradient(180deg,#0d1230,#151b45 55%,#2a2f6a 82%,#c9d4f5)}
+.sx-word{position:absolute;left:12%;top:2%;font-family:var(--display);font-size:clamp(90px,16vw,240px);line-height:1;color:rgba(255,255,255,.04);white-space:nowrap;pointer-events:none}
+.sx-line{position:absolute;z-index:1;left:14%;right:16%;top:4%;bottom:0;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+.sx-fig{position:relative;flex:none;height:92%;aspect-ratio:9/16;margin:0 -5.5%;animation:sxIn .7s cubic-bezier(.2,.9,.3,1) both;animation-delay:calc(var(--i) * .08s)}
+.sx-fig.main{height:100%;z-index:2}
+.sx-fig.chibi{height:58%;margin:0 -4%;bottom:6%}
+.sx-fig.chibi.main{height:70%}
+.sx-fig img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;display:block;filter:drop-shadow(0 0 30px rgba(0,0,0,.35))}
+.sx-fig.art img{object-fit:cover;object-position:50% 15%;-webkit-mask:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);mask:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent)}
+@keyframes sxIn{from{opacity:0;transform:translateY(24px) scale(.97)}}
+.sx-fade{position:absolute;left:0;right:0;bottom:0;height:34%;pointer-events:none;background:linear-gradient(transparent,rgba(13,18,48,.55) 50%,rgba(13,18,48,.85))}
+.sx-top{position:absolute;top:calc(14px + var(--st));left:var(--sl);display:flex;gap:12px;z-index:3}
+.sx-cur{position:absolute;top:calc(14px + var(--st));right:var(--sr);display:flex;gap:10px;z-index:3}
+.sx-cur .cur{min-width:150px;background:rgba(8,12,30,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.sx-tabs{position:absolute;left:var(--sl);top:calc(84px + var(--st));display:grid;gap:16px;z-index:3}
+.sx-tab{position:relative;width:250px;height:92px;border-radius:8px;overflow:hidden;text-align:left;border:3px solid rgba(255,255,255,.25);background:linear-gradient(110deg,#2a3aa0,#5a7ae0);box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .2s,border-color .2s}
+.sx-tab:hover{transform:translateX(3px)}
+.sx-tab.on{border-color:#ffd84a;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 22px rgba(255,216,74,.55)}
+.sx-tab.lim{background:linear-gradient(110deg,#3a1a7e,#8a4ae0 55%,#ff6ec7)}
+.sx-tab img{position:absolute;right:0;top:0;width:55%;height:100%;object-fit:cover;object-position:50% 10%;-webkit-mask:linear-gradient(90deg,transparent,#000 40%);mask:linear-gradient(90deg,transparent,#000 40%)}
+.sx-tab img.chibi{top:-75%;height:300%;object-position:50% 0}
+.sx-tab b{position:absolute;left:14px;bottom:10px;font-family:var(--display);font-weight:400;font-style:italic;font-size:24px;line-height:.9;text-transform:uppercase;letter-spacing:.02em;color:#fff;
+  text-shadow:0 2px 0 rgba(20,10,60,.7),0 0 12px rgba(120,160,255,.6);max-width:150px}
+.sx-tab small{position:absolute;left:14px;top:8px;font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.sx-tab .dot-n{top:6px;right:8px}
+.sx-title{position:absolute;right:var(--sr);top:22%;z-index:2;display:grid;justify-items:end;gap:6px;text-align:right;max-width:min(640px,60vw)}
+.sx-title h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing:.01em;text-shadow:0 3px 0 rgba(10,15,40,.6),0 0 30px rgba(10,15,40,.6)}
+.sx-title p{margin:0;font-family:var(--display);font-size:clamp(18px,2vw,28px);line-height:1.2}
+.sx-title p .g{color:var(--gold)}
+.sx-title p .u{background:var(--ur);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 rgba(0,0,0,.6))}
+.sx-title .lim-time{margin-top:6px;font-size:13px}
+.sx-title .chip{font-size:13px}
+.sx-rule{position:absolute;left:var(--sl);right:var(--sr);bottom:calc(112px + var(--sb));height:1px;background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,.25) 30%,rgba(255,255,255,.25) 70%,rgba(255,255,255,.7));z-index:2}
+.sx-rule::before,.sx-rule::after{content:"◇◇";position:absolute;top:-9px;font-size:10px;letter-spacing:-2px;color:rgba(255,255,255,.8)}
+.sx-rule::before{left:-2px}.sx-rule::after{right:-2px}
+.sx-bl{position:absolute;left:var(--sl);bottom:calc(14px + var(--sb));display:flex;gap:18px;z-index:3}
+.sx-rb{position:relative;display:grid;justify-items:center;gap:2px;font-family:var(--display);font-size:16px;letter-spacing:.02em}
+.sx-rb .c{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.4),rgba(160,175,220,.25));border:2px solid rgba(255,255,255,.6);box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .2s}
+.sx-rb:hover .c{transform:translateY(-2px)}
+.sx-rb .c .ic{width:28px;height:28px}
+.sx-skip{position:absolute;left:50%;bottom:calc(44px + var(--sb));transform:translateX(-50%);display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:20px;cursor:pointer;z-index:3}
+.sx-skip input{position:absolute;opacity:0;pointer-events:none}
+.sx-skip i{width:28px;height:28px;border-radius:6px;background:rgba(8,12,30,.7);border:2px solid rgba(255,255,255,.5);display:grid;place-items:center}
+.sx-skip input:checked+i{background:var(--mint);border-color:var(--mint)}
+.sx-skip input:checked+i::after{content:"✓";color:var(--mint-ink);font-family:var(--body);font-weight:900;font-size:17px}
+.sx-skip input:focus-visible+i{outline:2px solid var(--mint);outline-offset:2px}
+.sx-br{position:absolute;right:var(--sr);bottom:calc(22px + var(--sb));display:flex;gap:16px;z-index:3}
+.sx-pull{position:relative;white-space:nowrap;height:64px;min-width:250px;padding:0 26px;border-radius:999px 999px 999px 999px;display:flex;align-items:center;justify-content:center;gap:12px;font-family:var(--display);font-size:28px;letter-spacing:.01em;
+  background:linear-gradient(180deg,#ffffff,#dfe5f5);color:#3a3550;box-shadow:inset 0 2px 0 #fff,0 8px 24px rgba(0,0,0,.35);transition:transform .15s,filter .2s;clip-path:polygon(4% 0,100% 0,96% 100%,0 100%)}
+.sx-pull:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.sx-pull.gold{background:linear-gradient(180deg,#fff4c2,#ffd36b 55%,#f0a83a);color:#5a3a00}
+.sx-pull .cost{font-family:var(--body);font-weight:900;font-size:20px;gap:6px}
+.sx-pull .cost .cic{width:26px;height:26px}
+.sx-pull .dot-n{top:8px;right:22px}
+.sx-note{position:absolute;right:var(--sr);bottom:calc(4px + var(--sb));font-size:11px;font-weight:800;color:rgba(255,255,255,.7);z-index:3}
+@media (max-width:820px){
+  .sx-tabs{top:calc(70px + var(--st));display:flex;gap:10px;right:var(--sr)}
+  .sx-tab{width:auto;flex:1;height:70px}
+  .sx-tab b{font-size:17px}
+  .sx-cur{top:calc(140px + var(--st));left:var(--sl);right:auto}
+  .sx-cur .cur{min-width:0}
+  .sx-line{left:-10%;right:-10%;top:30%;bottom:150px}
+  .sx-title{z-index:2}
+  .sx-title{top:calc(190px + var(--st));max-width:none;left:var(--sl)}
+  .sx-title h2{font-size:34px}
+  .sx-title p{font-size:16px}
+  .sx-rule{bottom:calc(150px + var(--sb))}
+  .sx-bl{bottom:calc(76px + var(--sb));gap:10px}
+  .sx-rb .c{width:46px;height:46px}
+  .sx-rb{font-size:13px}
+  .sx-skip{left:auto;right:var(--sr);transform:none;bottom:calc(92px + var(--sb));font-size:16px}
+  .sx-br{left:var(--sl);bottom:calc(14px + var(--sb));gap:10px}
+  .sx-pull{min-width:0;flex:1;height:54px;font-size:18px;padding:0 10px;gap:6px}
+  .sx-pull .cost{font-size:15px}
+  .sx-note{display:none}
 }
 </style>
 </head>
@@ -1495,7 +1577,7 @@ function renderCharacters() {
       <div class="row"><button class="btn ghost sm" data-open="admin">${icon('edit')}Edit in admin</button></div>`;
   }
   csEl.innerHTML = `<div class="cs-bg"><div class="cs-rays"></div></div>
-    <img class="cs-art ${art ? '' : 'chibi'}" src="${getSplash(shown)}" alt="${esc(shown.name)}">
+    ${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="cs-art ${art ? '' : 'chibi'}" src="${getSplash(shown)}" alt="${esc(shown.name)}">
     <div class="cs-shade"></div>
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
@@ -1577,47 +1659,76 @@ function doPull(n, bk = curBanner) {
   const results = Array.from({ length: n }, () => rollOne(bk));
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk);
+  if (S.settings.skipPull) showSummary();
 }
 
-function openSummon(bk) { if (bk) curBanner = bk; openModal({ title: 'Summon', ic: 'sparkle', kind: 'summon', wide: true, body: '<div id="smRoot"></div>', onMount: renderSummon }); }
-function refreshSummon() { if (modalEl && modalEl.dataset.kind === 'summon') renderSummon(); }
+/* summon screen: full screen, banner tabs on the left, character lineup, pull buttons along the bottom */
+let smEl = null;
+function openSummon(bk) {
+  if (bk) curBanner = bk;
+  closeModal();
+  if (!smEl) {
+    smEl = document.createElement('div'); smEl.setAttribute('role', 'dialog'); smEl.setAttribute('aria-label', 'Summon');
+    document.body.appendChild(smEl);
+  }
+  renderSummon();
+}
+function closeSummon() { if (smEl) { smEl.remove(); smEl = null; } }
+function refreshSummon() { if (smEl) renderSummon(); }
 function renderSummon() {
-  const root = $('#smRoot'); if (!root) return;
+  if (!smEl) return;
   const bk = curBanner, g = S.gacha[bk], lim = bk === 'limited';
   const f = limitedUR(), std = standardURs(), ssr = pullableSSRs();
+  // lineup: the featured UR in the middle with SSRs beside it, or every UR on the permanent banner
+  let line = lim ? (f ? [f] : std.slice(0, 1)) : std.slice(0, 5);
+  if (lim) { const side = ssr.filter(e => e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
+  const mid = lim ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
+  const left = HARD_PITY - g.pity5;
+  const tabArt = e => e ? `<img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">` : '';
+  const dot = S.wallet.pearls >= COST[10] ? '<span class="dot-n"></span>' : '';
+  smEl.className = 'sx r5';
+  smEl.innerHTML = `<div class="sx-word">${lim ? 'LIMITED' : 'PEARL WISH'}</div>
+    <div class="sx-line">${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
+    <div class="sx-fade"></div>
+    <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
+    <div class="sx-cur">${['tickets', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="shop" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
+    <nav class="sx-tabs" aria-label="Banners">
+      <button class="sx-tab ${lim ? '' : 'on'}" data-bk="standard"><small>Permanent</small>${tabArt(std[0])}<b>${esc(bannerName('standard'))}</b>${dot}</button>
+      <button class="sx-tab lim ${lim ? 'on' : ''}" data-bk="limited"><small>Limited · ${shortLeft()}</small>${tabArt(f)}<b>${f ? esc(f.name) : 'Limited'}<br>Summon</b>${dot}</button>
+    </nav>
+    <div class="sx-title">
+      <h2>${lim ? `${f ? esc(f.name) : 'Limited'} Summon` : esc(bannerName('standard'))}</h2>
+      ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
+      <p>Guaranteed <span class="u">UR</span> ${lim && f ? (g.guarantee ? `<span class="g">${esc(f.name)}</span>` : 'character') : 'character'}</p>
+      ${lim && f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span><span class="lim-time">${icon('clock')}Ends in ${shortLeft()}</span>`
+        : `<span class="chip">${std.length} URs · equal chance each · always open</span>`}`
+      : `<p>No UR on this banner yet.</p><button class="btn ghost sm" data-open="admin" data-adtab="banners">${icon('wrench')}Set it up in admin</button>`}
+    </div>
+    <div class="sx-rule"></div>
+    <div class="sx-bl">
+      <button class="sx-rb ts" id="sxRates"><span class="c">${icon('info')}</span>Rates</button>
+      <button class="sx-rb ts" id="sxHist"><span class="c">${icon('clock')}</span>History</button>
+      <button class="sx-rb ts" data-open="shop"><span class="c">${icon('shop')}</span>Shop</button>
+    </div>
+    <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
+    <div class="sx-br">
+      <button class="sx-pull" data-pull="1">Summon 1 ${costHTML(COST[1])}</button>
+      <button class="sx-pull gold" data-pull="10">Summon 10 ${costHTML(COST[10])}${dot}</button>
+    </div>
+    <div class="sx-note">UR pity ${g.pity5}/${HARD_PITY} · SSR pity ${g.pity4}/10 · ${fmt(g.total)} pulls on this banner</div>`;
+  $('#sxBack').onclick = closeSummon;
+  smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; renderSummon(); });
+  smEl.querySelectorAll('[data-pull]').forEach(b => b.onclick = () => doPull(+b.dataset.pull, bk));
+  $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
+  $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
+  $('#sxHist').onclick = () => openRates(bk, true);
+}
+/* rates, pity and history for one banner */
+function openRates(bk, histOpen) {
+  const g = S.gacha[bk], lim = bk === 'limited', f = limitedUR(), std = standardURs();
   const t = e => new Date(e.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const hist = S.gacha.history.filter(h => (h.banner || 'limited') === bk);
-  const thumbs = (list, r) => list.length ? `<div class="rateups r${r}">${list.map(u => `<img src="${getArt(u)}" alt="${esc(u.name)}" title="${esc(u.name)}">`).join('')}</div>` : '<p class="tiny">None yet. Add some in the admin panel.</p>';
-  let hero;
-  if (lim) {
-    hero = f ? `<div class="sm-hero r5">
-        <div class="sm-art"><img src="${getArt(f)}" alt="${esc(f.name)}"></div>
-        <div class="stack" style="gap:8px;align-content:start">
-          <div class="eyebrow">${esc(bannerName('limited'))} · rate up</div>
-          <h3 style="font-size:32px">${esc(f.name)}</h3>
-          <div>${rtag(5, 'lg')}</div>
-          <div class="timer">${icon('clock')}<span>${timeLeft()}</span></div>
-          ${g.guarantee ? `<span class="chip gold" style="justify-self:start">Next UR is guaranteed ${esc(f.name)}</span>` : `<span class="chip" style="justify-self:start">50/50 on your next UR</span>`}
-          <div><div class="lbl-sm" style="margin-bottom:6px">SSRs in this banner</div>${thumbs(ssr.slice(0, 8), 4)}</div>
-        </div>
-      </div>` : `<div class="empty">The limited banner has no featured UR. Pick one in the <button class="link" data-open="admin" data-adtab="banners">admin panel</button>.</div>`;
-  } else {
-    hero = `<div class="stack" style="gap:10px">
-        <div><div class="eyebrow">Permanent banner</div><h3 style="font-size:32px">${esc(bannerName('standard'))}</h3></div>
-        <div class="lbl-sm">${std.length} UR${std.length === 1 ? '' : 's'} · equal chance each</div>
-        ${std.length ? `<div class="std-strip">${std.map(u => `<figure class="r5"><img src="${getArt(u)}" alt=""><figcaption>${esc(u.name)}</figcaption></figure>`).join('')}</div>` : '<div class="empty">No URs on the permanent banner yet. Add them in the <button class="link" data-open="admin" data-adtab="banners">admin panel</button>.</div>'}
-        <div><div class="lbl-sm" style="margin-bottom:6px">SSRs</div>${thumbs(ssr.slice(0, 8), 4)}</div>
-      </div>`;
-  }
-  root.innerHTML = `<div class="stack">
-    <div class="tabs" style="margin:0">${BANNER_KEYS.map(k => `<button class="tab ${k === bk ? 'on' : ''}" data-bk="${k}">${k === 'limited' ? `Limited · ${esc(f ? f.name : bannerName(k))}` : `Permanent · ${esc(bannerName(k))}`}</button>`).join('')}</div>
-    ${hero}
-    <div class="balance"><span>Your pearls</span><b>${curIcon('pearls')}${fmt(S.wallet.pearls)}</b></div>
-    <div class="pulls">
-      <button class="btn ghost" data-pull="1">Pull ×1${costHTML(COST[1])}</button>
-      <button class="btn gold" data-pull="10">Pull ×10${costHTML(COST[10])}</button>
-    </div>
-    ${S.wallet.pearls < COST[1] ? `<div class="notice">You're out of pearls. Claim your mail, or top up in the admin panel while testing.</div>` : ''}
+  openModal({ title: lim ? 'Limited summon' : bannerName('standard'), ic: 'sparkle', body: `<div class="stack">
     <div class="pity">
       <div class="r5"><div class="row" style="justify-content:space-between"><span>UR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity5} / ${HARD_PITY}</span></div><div class="bar"><i style="width:${g.pity5 / HARD_PITY * 100}%"></i></div></div>
       <div class="r4"><div class="row" style="justify-content:space-between"><span>SSR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity4} / 10</span></div><div class="bar"><i style="width:${g.pity4 * 10}%"></i></div></div>
@@ -1628,12 +1739,10 @@ function renderSummon() {
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>${fmt(COIN_DROP)} coins · everything else</td></tr>
     </table>
     <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS} pearls. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
-    <details><summary>History · ${fmt(g.total)} pulls on this banner</summary>
+    <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
       <div class="hist">${hist.length ? hist.map(h => `<div class="r${h.rarity}"><span>${h.rarity >= 4 ? rtag(h.rarity) : '<span class="cost">' + curIcon('coins') + '</span>'} ${esc(h.name)}</span><time>${t(h)}</time></div>`).join('') : '<p class="tiny">No pulls yet.</p>'}</div>
     </details>
-  </div>`;
-  root.querySelectorAll('[data-pull]').forEach(b => b.onclick = () => doPull(+b.dataset.pull, bk));
-  root.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; renderSummon(); });
+  </div>` });
 }
 
 /* pull animation */
@@ -2963,6 +3072,7 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape') {
     if (modalEl) { closeModal(); return; }
+    if (smEl) { closeSummon(); return; }
     if (csEl) { if (csView) { csView = false; csEl.classList.remove('viewing'); } else closeCharacters(); return; }
     if (uiHidden) { setUiHidden(false); return; }
     if (!emotesEl.hidden) { emotesEl.hidden = true; return; }
