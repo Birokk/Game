@@ -871,6 +871,108 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .sx-feat button.on{box-shadow:0 0 0 2px #ffd84a}
 .sx-feat img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 14%;background:var(--ink-2)}
 .sx-feat img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
+/* ---------- profile: avatar frames, titles, namecards, showcase ---------- */
+.avf{position:relative;width:var(--s);height:var(--s);flex:none;border-radius:50%;display:grid;place-items:center}
+.avf .avi{position:relative;width:100%;height:100%;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 40% 30%,#3d4378,#141a38)}
+.avf .avi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.avf .avi img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
+.avf::before,.avf::after{content:"";position:absolute;pointer-events:none}
+/* 1 · Silver Ring: clean and simple */
+.avf.f-simple .avi{box-shadow:0 0 0 2px rgba(255,255,255,.9),0 0 0 4px rgba(10,15,31,.45)}
+/* 2 · Gilded Crest: thick gold band with a gem on top */
+.avf.f-gold::before{inset:calc(var(--s) * -.07);border-radius:50%;background:conic-gradient(from 200deg,#fff3c2,#e8b04a,#9a6a14,#ffe08a,#c98f2a,#fff6d0,#b07a1c,#fff3c2);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--s) * .09),#000 calc(100% - var(--s) * .085));mask:radial-gradient(farthest-side,transparent calc(100% - var(--s) * .09),#000 calc(100% - var(--s) * .085));
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.avf.f-gold::after{top:calc(var(--s) * -.13);left:50%;width:calc(var(--s) * .16);height:calc(var(--s) * .16);transform:translateX(-50%) rotate(45deg);border-radius:2px;
+  background:radial-gradient(circle at 35% 35%,#ffd0dc,#ff3d6a 55%,#8a0f2a);border:2px solid #f2c45a;box-shadow:0 0 8px rgba(255,61,106,.7)}
+/* 3 · Prism Halo (premium): spinning rainbow ring, outer glow and a twinkling star */
+.avf.f-prism::before{inset:calc(var(--s) * -.08);border-radius:50%;background:conic-gradient(#a855f7,#ff6ec7,#ffd36b,#3ee6d0,#5a8cff,#a855f7);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--s) * .08),#000 calc(100% - var(--s) * .075));mask:radial-gradient(farthest-side,transparent calc(100% - var(--s) * .08),#000 calc(100% - var(--s) * .075));
+  filter:drop-shadow(0 0 calc(var(--s) * .08) rgba(255,110,199,.9)) drop-shadow(0 0 calc(var(--s) * .14) rgba(62,230,208,.6));animation:spin 4s linear infinite}
+.avf.f-prism::after{content:"✦";top:calc(var(--s) * -.16);right:calc(var(--s) * -.08);font-size:calc(var(--s) * .3);line-height:1;color:#fff;text-shadow:0 0 6px #ff6ec7,0 0 12px #3ee6d0;animation:twinkle 1.8s ease-in-out infinite}
+.avf.f-prism .avi{box-shadow:inset 0 0 calc(var(--s) * .12) rgba(255,110,199,.45)}
+@keyframes twinkle{0%,100%{opacity:.4;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
+
+/* titles */
+.ttl{display:inline-flex;align-items:center;justify-self:start;padding:2px 12px;border-radius:999px;font-family:var(--display);font-weight:400;font-size:15px;letter-spacing:.04em;line-height:1.4;white-space:nowrap}
+.ttl.t-plain{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#e8ecff}
+.ttl.t-aqua{background:rgba(20,60,80,.55);border:1px solid rgba(126,243,212,.6);color:#b9fff0;text-shadow:0 0 8px rgba(126,243,212,.9);box-shadow:0 0 12px rgba(126,243,212,.35)}
+.ttl.t-ember{background:linear-gradient(90deg,#b8222b,#ff7a3d);color:#fff4d0;text-shadow:0 1px 0 rgba(90,10,10,.6);box-shadow:0 0 14px rgba(255,110,60,.55)}
+.ttl.t-violet{background:rgba(40,20,80,.6);border:1px solid #c58bff;color:#e9d6ff;text-shadow:0 0 10px #a855f7;box-shadow:0 0 16px rgba(168,85,247,.5)}
+.ttl.t-gold{background:linear-gradient(180deg,#3a2a08,#1e1604);border:1px solid #e8b04a;box-shadow:0 0 16px rgba(255,211,107,.5)}
+.ttl.t-gold,.ttl.t-prism{position:relative}
+.ttl.t-gold>*,.ttl.t-gold{color:#ffe08a;text-shadow:0 0 10px rgba(255,211,107,.9)}
+.ttl.t-prism{background:linear-gradient(90deg,#a855f7,#ff6ec7,#ffd36b,#3ee6d0,#a855f7);background-size:250% 100%;animation:shimmer 3s linear infinite;color:#fff;text-shadow:0 1px 2px rgba(60,0,80,.6),0 0 10px rgba(255,255,255,.7);box-shadow:0 0 18px rgba(255,110,199,.6),0 0 30px rgba(62,230,208,.35)}
+
+/* namecards */
+.nc{position:absolute;inset:0;overflow:hidden;border-radius:inherit}
+.nc img{position:absolute;right:0;top:0;width:60%;height:100%;object-fit:cover;object-position:50% 15%;-webkit-mask:linear-gradient(90deg,transparent,#000 40%);mask:linear-gradient(90deg,transparent,#000 40%)}
+.nc img.chibi{top:-72%;height:290%;object-position:50% 0}
+.nc-char{background:linear-gradient(110deg,#141a38,#2a2f6a)}
+.nc-pearl{background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.55) 0 7%,rgba(220,200,255,.25) 12%,transparent 22%),linear-gradient(180deg,#1b2768,#4d3a9e 50%,#c776b8 85%,#ffb3cf)}
+.nc-pearl::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:radial-gradient(ellipse at 30% 100%,rgba(255,255,255,.18),transparent 60%),radial-gradient(ellipse at 80% 110%,rgba(255,255,255,.15),transparent 55%)}
+.nc-starlit{background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.9) 1px,transparent 1.6px) 0 0/60px 60px,radial-gradient(circle at 70% 60%,rgba(200,220,255,.7) 1px,transparent 1.6px) 0 0/43px 43px,radial-gradient(ellipse at 75% 40%,rgba(90,140,255,.35),transparent 60%),linear-gradient(160deg,#060a24,#121a4a 60%,#1e1450)}
+.nc-lantern{background:radial-gradient(circle at 12% 30%,#ffb070 0 3%,#e8392f 3.5% 6%,transparent 9%),radial-gradient(circle at 34% 18%,#ffb070 0 2.5%,#e8392f 3% 5%,transparent 8%),radial-gradient(circle at 58% 32%,#ffb070 0 3%,#e8392f 3.5% 6%,transparent 9%),radial-gradient(circle at 84% 16%,#ffb070 0 2.5%,#e8392f 3% 5%,transparent 8%),
+  radial-gradient(ellipse at 50% 120%,rgba(255,170,80,.55),transparent 60%),linear-gradient(180deg,#2a1020,#4a1a24 55%,#8a3a1a)}
+.nc-maple{background:radial-gradient(ellipse at 15% 20%,#ff8a3a 0 10%,transparent 24%),radial-gradient(ellipse at 85% 30%,#e2581f 0 12%,transparent 26%),radial-gradient(ellipse at 60% 90%,#ffb055 0 8%,transparent 22%),linear-gradient(140deg,#3a1408,#8a2a10 50%,#c8461b)}
+.nc-aurora{background:linear-gradient(115deg,#1a0f3a,#3a1a6e 30%,#6b3fd1 45%,#ff6ec7 60%,#ffd36b 72%,#3ee6d0 86%,#1a0f3a);background-size:300% 100%;animation:shimmer 8s linear infinite}
+.nc-aurora::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.9) 1px,transparent 1.6px) 0 0/50px 50px,linear-gradient(transparent 40%,rgba(10,5,30,.45))}
+
+.pf-card{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;min-height:170px;padding:26px 26px;border-radius:22px;overflow:hidden;border:1px solid var(--edge)}
+.pf-card::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,12,30,.55),transparent 55%);pointer-events:none}
+.pf-me{position:relative;z-index:1;display:flex;align-items:center;gap:22px;min-width:0}
+.pf-who{display:grid;gap:6px;min-width:0}
+.pf-who b{font-family:var(--display);font-weight:400;font-size:34px;line-height:1}
+.pf-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,auto);gap:8px}
+.pf-stats div{display:grid;justify-items:center;gap:2px;padding:8px 12px;border-radius:12px;background:rgba(8,12,30,.6);border:1px solid var(--edge-soft)}
+.pf-stats b{font-family:var(--display);font-weight:400;font-size:22px;line-height:1}
+.pf-stats span{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.pf-show{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.pf-slot{position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;border:2px solid var(--rc,var(--edge));background:linear-gradient(180deg,color-mix(in srgb,var(--rc,#7f8bb3) 30%,var(--ink-2)),var(--ink-2));transition:transform .2s}
+.pf-slot.r5{border-color:transparent;background:linear-gradient(180deg,color-mix(in srgb,#a855f7 32%,var(--ink-2)),var(--ink-2)) padding-box,var(--ur) border-box}
+.pf-slot:hover{transform:translateY(-3px)}
+.pf-slot.on{box-shadow:0 0 0 3px var(--mint)}
+.pf-slot.none{border-style:dashed}
+.pf-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.pf-sl{position:absolute;left:0;right:0;bottom:0;display:grid;gap:2px;justify-items:start;padding:20px 10px 8px;background:linear-gradient(transparent,rgba(5,8,20,.9));text-align:left}
+.pf-sl b{font-size:14px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.pf-sl .stars6{font-size:11px}
+.pf-add{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:4px;color:var(--muted);font-weight:900;font-size:13px}
+.pf-add .ic{width:30px;height:30px}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.pf-grid.wide{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.pf-opt{position:relative;display:grid;justify-items:center;align-content:start;gap:10px;padding:16px 8px 10px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft);transition:background .2s,transform .2s}
+.pf-opt:hover:not(:disabled){background:var(--glass-hi);transform:translateY(-2px)}
+.pf-opt.on{border-color:var(--mint);box-shadow:0 0 0 2px color-mix(in srgb,var(--mint) 40%,transparent)}
+.pf-opt.locked{cursor:not-allowed}
+.pf-opt.locked>*:not(.pf-lock){opacity:.4}
+.pf-ol{font-size:12px;font-weight:900;text-align:center;line-height:1.2}
+.pf-ol:empty{display:none}
+.prem{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;background:var(--ur);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#fff;vertical-align:1px}
+.pf-lock{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:var(--gold)}
+.pf-lock .ic{width:13px;height:13px}
+.pf-tt{min-height:34px;display:grid;place-items:center}
+.pf-nc{position:relative;display:block;width:100%;aspect-ratio:3/1;border-radius:10px;overflow:hidden}
+.pf-thumb{display:block;width:64px;height:64px;border-radius:50%;overflow:hidden;position:relative;border:2px solid var(--rc)}
+.pf-thumb.r5{border-color:#ff6ec7}
+.pf-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.pf-thumb img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
+.pf-empty{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;border:2px dashed var(--edge);color:var(--muted)}
+/* home: profile block */
+.hm-me{display:flex;align-items:center;gap:12px;text-align:left;border-radius:999px;padding:2px 10px 2px 2px;transition:background .2s}
+.hm-me:hover{background:rgba(255,255,255,.08)}
+.hm-me .lvb{position:absolute;right:-4px;bottom:-4px;z-index:2;min-width:24px;height:20px;padding:0 6px;border-radius:999px;background:var(--gold);color:var(--gold-ink);font-size:11px;font-weight:900;display:grid;place-items:center;border:2px solid #141a38}
+.hm-me .avf{margin:4px}
+.hm-id .ttl{font-size:13px;padding:1px 10px}
+@media (max-width:820px){
+  .pf-card{padding:18px}
+  .pf-me{gap:14px}
+  .pf-who b{font-size:24px}
+  .pf-stats{grid-template-columns:repeat(2,auto)}
+  .pf-show{gap:8px}
+  .hm-me{gap:8px}
+}
+@media (max-width:520px){.pf-show{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -889,11 +991,8 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 
 <main class="menu is-open" id="menu" aria-label="Main menu">
   <header class="hm hm-tl">
-    <div class="lvring ts" aria-label="Level 12">12<small>LEVEL</small></div>
-    <div class="hm-id ts">
-      <div class="hm-name" id="pname">Traveler</div>
-      <div class="hm-sub" title="Characters and skins collected"><span data-ic="sparkle"></span><span id="hmCollect">0/0</span></div>
-    </div>
+    <button class="hm-me" data-open="profile" aria-label="Open your profile"><span style="position:relative;display:block" id="hmAvatar"></span>
+      <span class="hm-id ts"><span class="hm-name" id="pname">Traveler</span><span id="hmTitle"></span></span></button>
     <div class="hm-tools">
       <button class="tool ts" data-open="wallpaper"><span class="tc glass"><span data-ic="image"></span></span>Wallpaper</button>
       <button class="tool ts" id="hideUi" aria-label="Hide the menu and show only the wallpaper"><span class="tc glass"><span data-ic="eyeOff"></span></span>Hide UI</button>
@@ -930,6 +1029,8 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   <nav class="hm hm-tabs" aria-label="Collection">
     <button class="tabb ts" data-open="characters">Characters<span class="dot-n" id="charDot" hidden></span></button>
     <button class="tabb ts" data-open="skins">Skins</button>
+    <button class="tabb ts" data-open="pets">Pets</button>
+    <button class="tabb ts" data-open="collectibles">Collectibles</button>
     <button class="tabb ts" data-open="collection">Collection</button>
   </nav>
 
@@ -1091,12 +1192,12 @@ const RARITY = { 3:{ color:'#74c7ff' }, 4:{ color:'#ffaa5c' }, 5:{ color:'#c77df
 const RNAME = { 4: 'SSR', 5: 'UR' };
 const rtag = (r, cls = '') => RNAME[r] ? `<span class="rtag r${r} ${cls}">${RNAME[r]}</span>` : '';
 const ELEMENTS = { Fire:'#ff7a59', Water:'#4fc3f7', Wind:'#6ee7b7', Earth:'#d9a35b', Light:'#ffe17a', Dark:'#a78bfa' };
-const TYPES = { character:'Character', skin:'Skin', weapon:'Weapon', item:'Item' };
+const TYPES = { character:'Character', skin:'Skin', pet:'Pet', collectible:'Collectible', item:'Item' };
 const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
 
 const COST = { 1: 3, 10: 30 };
 const HARD_PITY = 50, BASE5 = 0.02, BASE4 = 0.051, COIN_DROP = 500;
-const MAX_STARS = 6, OVERFLOW_PEARLS = 67;
+const MAX_STARS = 6, OVERFLOW_PEARLS = 15;
 const starsOf = id => Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1));
 const starRow = (n, pop = -1) => `<span class="stars6" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''}">★</span>`).join('')}</span>`;
 const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 };
@@ -1117,6 +1218,7 @@ function sampleState() {
     mailClaimed: [],
     stamina: { v: 240, t: Date.now() },
     login: { last: null, streak: 0 },
+    profile: { avatar: null, frame: 'simple', title: 'newcomer', card: 'pearl', showcase: [null, null, null, null], uid: 100000 + Math.floor(Math.random() * 900000) },
     pool: [
       { id:'aria', type:'character', name:'Aria', rarity:5, element:'Light', parent:null, art:null, pullable:true, sample:true,
         desc:'A starlight idol who sings the plaza awake every morning.', look:{ hair:'#ffcf4a', style:1, skin:'#ffe0c7', shirt:'#ff7eb6', pants:'#ffffff' } },
@@ -1152,7 +1254,8 @@ let S = (() => {
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
-        s.pool.forEach(e => { if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
+        s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
+        s.pool.forEach(e => { if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         s.version = 3;
         return s;
@@ -1322,8 +1425,8 @@ function shortLeft() {
 const thumbImg = (e, cls = '') => `<img src="${getArt(e)}" alt="" class="${mediaArt(e) ? 'art' : 'chibi'} ${cls}">`;
 function renderMenu() {
   $('#pname').textContent = S.player.name;
-  const coll = S.pool.filter(e => e.type === 'character' || e.type === 'skin');
-  $('#hmCollect').textContent = `${coll.filter(e => owns(e.id)).length}/${coll.length}`;
+  $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
+  $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<button class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b></button>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets (1 pull each)']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="shop" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = MAILS.filter(m => !S.mailClaimed.includes(m.id)).length;
@@ -1536,14 +1639,15 @@ const cardHTML = e => {
   const n = S.owned[e.id] || 0;
   return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starRow(starsOf(e.id)) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]} · ${esc(e.element)}</div></div></button>`;
 };
+const FUTURE = { pet: 'Pets', collectible: 'Collectibles' };
 function renderCollection(filter) {
   const root = $('#colRoot'); if (!root) return;
-  const tabs = [['all', 'All'], ['character', 'Characters'], ['skin', 'Skins'], ['weapon', 'Weapons'], ['item', 'Items']];
+  const tabs = [['all', 'All'], ['character', 'Characters'], ['skin', 'Skins'], ['pet', 'Pets'], ['collectible', 'Collectibles'], ['item', 'Items']];
   const inTab = k => S.pool.filter(e => k === 'all' || e.type === k);
   const list = inTab(filter).filter(e => !colOwnedOnly || owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   root.innerHTML = `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === filter ? 'on' : ''}" data-tab="${k}">${l}<span>${inTab(k).filter(e => owns(e.id)).length}/${inTab(k).length}</span></button>`).join('')}
       <label class="switch">Owned only<input type="checkbox" id="colOwned" ${colOwnedOnly ? 'checked' : ''}><i></i></label></div>
-    ${list.length ? `<div class="cards">${list.map(cardHTML).join('')}</div>` : `<div class="empty">${colOwnedOnly ? 'You don\'t own anything here yet. <button class="link" data-open="summon">Try the banner</button>.' : 'Nothing here yet. Add some in the <button class="link" data-open="admin">admin panel</button>.'}</div>`}`;
+    ${list.length ? `<div class="cards">${list.map(cardHTML).join('')}</div>` : `<div class="empty">${colOwnedOnly ? 'You don\'t own anything here yet. <button class="link" data-open="summon">Try the banner</button>.' : FUTURE[filter] ? `${FUTURE[filter]} arrive in a future update.` : 'Nothing here yet. Add some in the <button class="link" data-open="admin">admin panel</button>.'}</div>`}`;
   root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => renderCollection(b.dataset.tab));
   root.querySelectorAll('[data-card]').forEach(b => b.onclick = () => renderDetail(b.dataset.card, filter));
   $('#colOwned').onchange = e => { colOwnedOnly = e.target.checked; renderCollection(filter); };
@@ -1572,6 +1676,118 @@ function renderDetail(id, backTo) {
   if (w) w.onclick = () => { S.player.look = { ...e.look }; player.look = S.player.look; persist(); renderMenu(); toast(`Your plaza avatar now looks like ${e.name}.`); };
   const wl = $('#dWall');
   if (wl) wl.onclick = () => { S.wallpaper = e.id; persist(); applyWallpaper(); toast(`${e.name} is now your wallpaper.`); };
+}
+
+/* ---------- profile: avatar, frame, title, namecard, showcase of up to 4 characters ---------- */
+const ownedChars = () => S.pool.filter(e => e.type === 'character' && owns(e.id));
+const UNLOCK = {
+  always: [() => true, ''],
+  login: [() => S.login.streak >= 1, 'Claim a daily login reward'],
+  chars3: [() => ownedChars().length >= 3, 'Own 3 characters'],
+  ur: [() => ownedChars().some(e => e.rarity === 5), 'Own a UR character'],
+  max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`]
+};
+const unlocked = o => UNLOCK[o.need][0]();
+const TITLES = [
+  { id: 'newcomer', name: 'Newcomer', cls: 't-plain', need: 'always' },
+  { id: 'wanderer', name: 'Plaza Wanderer', cls: 't-aqua', need: 'always' },
+  { id: 'lantern', name: 'Lantern Keeper', cls: 't-ember', need: 'login' },
+  { id: 'collector', name: 'Star Collector', cls: 't-violet', need: 'chars3' },
+  { id: 'lucky', name: 'Lucky Star', cls: 't-gold', need: 'ur' },
+  { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' }
+];
+const FRAMES = [
+  { id: 'simple', name: 'Silver Ring', need: 'always' },
+  { id: 'gold', name: 'Gilded Crest', need: 'chars3' },
+  { id: 'prism', name: 'Prism Halo', need: 'ur', premium: true }
+];
+const CARDS = [
+  { id: 'pearl', name: 'Pearl Tide', need: 'always' },
+  { id: 'starlit', name: 'Starlit Sky', need: 'always' },
+  { id: 'lantern', name: 'Lantern Night', need: 'login' },
+  { id: 'maple', name: 'Maple Autumn', need: 'chars3' },
+  { id: 'aurora', name: 'Prism Aurora', need: 'ur', premium: true }
+];
+const titleOf = () => TITLES.find(t => t.id === S.profile.title && unlocked(t)) || TITLES[0];
+const frameOf = () => FRAMES.find(f => f.id === S.profile.frame && unlocked(f)) || FRAMES[0];
+const avatarEntry = () => { const e = S.profile.avatar && findEntry(S.profile.avatar); return e && owns(e.id) ? e : null; };
+const titleHTML = (t = titleOf()) => `<span class="ttl ${t.cls}">${esc(t.name)}</span>`;
+/* avatar picture inside a frame; size in px */
+function avatarHTML(size, entry = avatarEntry(), frame = frameOf().id) {
+  const img = entry ? thumbImg(entry) : `<img src="${portrait(S.player.look, 4)}" alt="" class="chibi">`;
+  return `<span class="avf f-${frame}" style="--s:${size}px"><span class="avi">${img}</span></span>`;
+}
+/* namecard background: a design, or the art of an owned character ("char:<id>") */
+function cardBG(id) {
+  if (id && id.startsWith('char:')) { const e = findEntry(id.slice(5)); if (e && owns(e.id)) return { cls: 'nc-char', img: getSplash(e), art: !!mediaArt(e) }; }
+  const c = CARDS.find(k => k.id === id && unlocked(k)) || CARDS[0];
+  return { cls: 'nc-' + c.id };
+}
+const cardLayer = bg => `<span class="nc ${bg.cls}">${bg.img ? `<img src="${bg.img}" alt="" class="${bg.art ? '' : 'chibi'}">` : ''}</span>`;
+
+let pfTab = 'avatar', pfSlot = -1;
+function openProfile() {
+  pfTab = 'avatar'; pfSlot = -1;
+  openModal({ title: 'Profile', ic: 'chars', wide: true, kind: 'profile', body: '<div id="pfRoot"></div>', onMount: renderProfile });
+}
+function renderProfile() {
+  const root = $('#pfRoot'); if (!root) return;
+  const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character');
+  P.showcase = P.showcase.map(id => id && findEntry(id) && owns(id) ? id : null);
+  const urs = chars.filter(e => e.rarity === 5).length, best = Math.max(0, ...chars.map(e => starsOf(e.id)));
+  const lockTag = o => unlocked(o) ? '' : `<span class="pf-lock">${icon('lock')}${esc(UNLOCK[o.need][1])}</span>`;
+  const opt = (on, locked, inner, data, label) => `<button class="pf-opt ${on ? 'on' : ''} ${locked ? 'locked' : ''}" ${locked ? 'disabled' : data}>${inner}<span class="pf-ol">${label}</span></button>`;
+  let opts;
+  if (pfSlot >= 0) {
+    opts = `<p class="tiny">Pick a character for showcase slot ${pfSlot + 1}.</p><div class="pf-grid">
+      ${opt(!P.showcase[pfSlot], false, `<span class="pf-empty">${icon('close')}</span>`, 'data-show=""', 'Empty slot')}
+      ${chars.map(e => opt(P.showcase[pfSlot] === e.id, false, `<span class="pf-thumb r${e.rarity}">${thumbImg(e)}</span>`, `data-show="${esc(e.id)}"`, esc(e.name))).join('')}</div>
+      ${chars.length ? '' : '<div class="empty">You don\'t own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>'}`;
+  } else if (pfTab === 'avatar') {
+    const list = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && owns(e.id));
+    opts = `<p class="tiny">Use the art of any character or skin you own as your avatar.</p><div class="pf-grid">
+      ${opt(!avatarEntry(), false, avatarHTML(64, null), 'data-av=""', 'Plaza look')}
+      ${list.map(e => opt(avatarEntry() === e, false, avatarHTML(64, e), `data-av="${esc(e.id)}"`, esc(e.name))).join('')}</div>`;
+  } else if (pfTab === 'frame') {
+    opts = `<div class="pf-grid">${FRAMES.map(f => opt(frameOf() === f, !unlocked(f), avatarHTML(64, avatarEntry(), f.id) + lockTag(f), `data-fr="${f.id}"`, `${esc(f.name)}${f.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}</div>`;
+  } else if (pfTab === 'title') {
+    opts = `<div class="pf-grid wide">${TITLES.map(t => opt(titleOf() === t, !unlocked(t), `<span class="pf-tt">${titleHTML(t)}</span>${lockTag(t)}`, `data-tt="${t.id}"`, '')).join('')}</div>`;
+  } else {
+    const cur = cardBG(P.card);
+    opts = `<p class="tiny">Namecard designs, or the art of a character you own.</p><div class="pf-grid wide">
+      ${CARDS.map(k => opt(cur.cls === 'nc-' + k.id, !unlocked(k), `<span class="pf-nc">${cardLayer({ cls: 'nc-' + k.id })}</span>${lockTag(k)}`, `data-nc="${k.id}"`, `${esc(k.name)}${k.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}
+      ${chars.map(e => opt(P.card === 'char:' + e.id && cur.cls === 'nc-char', false, `<span class="pf-nc">${cardLayer(cardBG('char:' + e.id))}</span>`, `data-nc="char:${esc(e.id)}"`, esc(e.name))).join('')}</div>`;
+  }
+  root.innerHTML = `<div class="stack">
+    <div class="pf-card">${cardLayer(cardBG(P.card))}
+      <div class="pf-me">${avatarHTML(108)}
+        <div class="pf-who"><span class="lbl-sm ts" style="color:#fff">Lv 12 · UID ${P.uid}</span><b class="ts">${esc(S.player.name)}</b>${titleHTML()}</div>
+      </div>
+      <div class="pf-stats">
+        <div><b>${chars.length}/${allChars.length}</b><span>Characters</span></div>
+        <div><b>${urs}</b><span>URs owned</span></div>
+        <div><b>${best}★</b><span>Best stars</span></div>
+        <div><b>${S.login.streak}</b><span>Login streak</span></div>
+      </div>
+    </div>
+    <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="tiny">Show off up to 4 characters you own</span></div>
+      <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id);
+        return `<button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt=""><span class="pf-sl">${rtag(e.rarity)}<b>${esc(e.name)}</b>${starRow(starsOf(e.id))}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>`; }).join('')}</div></div>
+    <div class="tabs" style="margin:0">${[['avatar', 'Avatar'], ['frame', 'Avatar frame'], ['title', 'Title'], ['card', 'Namecard']].map(([k, l]) => `<button class="tab ${pfSlot < 0 && pfTab === k ? 'on' : ''}" data-pft="${k}">${l}</button>`).join('')}</div>
+    ${opts}
+  </div>`;
+  const save = () => { persist(); renderMenu(); renderProfile(); };
+  root.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; pfSlot = -1; renderProfile(); });
+  root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { pfSlot = pfSlot === +b.dataset.slot ? -1 : +b.dataset.slot; renderProfile(); });
+  root.querySelectorAll('[data-show]').forEach(b => b.onclick = () => {
+    const id = b.dataset.show || null;
+    if (id) P.showcase = P.showcase.map(x => x === id ? null : x);   // a character can only sit in one slot
+    P.showcase[pfSlot] = id; pfSlot = -1; save();
+  });
+  root.querySelectorAll('[data-av]').forEach(b => b.onclick = () => { P.avatar = b.dataset.av || null; save(); });
+  root.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { P.frame = b.dataset.fr; save(); });
+  root.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { P.title = b.dataset.tt; save(); });
+  root.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { P.card = b.dataset.nc; save(); });
 }
 
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
@@ -2250,7 +2466,7 @@ function showImport() {
     const pool = d && (Array.isArray(d) ? d : d.pool);
     if (!Array.isArray(pool) || !pool.every(e => e && e.name && e.id)) { err.hidden = false; err.textContent = 'That text is not valid game data. Paste the full text from Copy data.'; return; }
     for (const e of pool) {
-      e.type = TYPES[e.type] ? e.type : 'character'; e.rarity = [4, 5].includes(+e.rarity) ? +e.rarity : 4;
+      e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) ? +e.rarity : 4;
       e.element = ELEMENTS[e.element] ? e.element : 'Light'; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
       if (e.art && e.art.startsWith('data:')) { await mediaSet('art:' + e.id, e.art); e.art = 'idb:art:' + e.id; } else if (e.art && !MEDIA.has(e.art.slice(4))) e.art = null;
     }
@@ -2359,6 +2575,9 @@ document.addEventListener('click', e => {
   else if (k === 'wallpaper') openWallpaper();
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('all');
+  else if (k === 'pets') openCollection('pet');
+  else if (k === 'collectibles') openCollection('collectible');
+  else if (k === 'profile') openProfile();
   else if (k === 'login') openLogin();
   else if (k === 'skins') openCollection('skin');
   else if (PLACEHOLDERS[k]) openPlaceholder(k);
