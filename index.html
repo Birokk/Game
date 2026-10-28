@@ -1302,6 +1302,13 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .sk-prev.wide{width:96px;aspect-ratio:16/9}
 .sk-prev img{width:100%;height:100%;object-fit:cover}
 @media (max-width:820px){.sk-row{grid-template-columns:minmax(0,1fr)}}
+
+/* custom icons and equipped outfit marker */
+img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:none!important}
+.ic-mini{width:48px!important;aspect-ratio:1!important;border-radius:50%!important}
+.ic-mini img.cut{object-position:50% 12%}
+.cs-skins button.sk .sk-eq{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#e8ff7a;color:#22300a}
+.cs-skins button.sk .sk-eq .ic{width:12px;height:12px}
 </style>
 </head>
 <body>
@@ -1582,6 +1589,7 @@ function sampleState() {
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
+    equip: {},
     bt: {}, btPaid: {}, freePull: {},
     account: null, support: [], titleNews: null, loadArts: [],
     artPick: {},
@@ -1637,7 +1645,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.equip = d.equip || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
@@ -1887,7 +1895,13 @@ function shortLeft() {
   const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), p = n => String(n).padStart(2, '0');
   return d ? `${d}d ${p(h)}h` : `${p(h)}h ${p(m)}m`;
 }
-const thumbImg = (e, cls = '') => `<img src="${getArt(e)}" alt="" class="${mediaArt(e) ? 'art' : 'chibi'} ${cls}">`;
+/* outfit equipped on a character (owned skins only) */
+const equippedOf = c => { const k = c && S.equip[c.id] && findEntry(S.equip[c.id]); return k && k.parent === c.id && owns(k.id) ? k : null; };
+/* small round pictures (roster, avatars, chips): the custom icon if set, else the art; characters use their equipped outfit */
+const thumbImg = (e, cls = '') => {
+  const t = (e && e.type === 'character' && equippedOf(e)) || e, ic = artFrom(t.icon);
+  return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${getArt(t)}" alt="" class="${mediaArt(t) ? 'art' : 'chibi'} ${cls}">`;
+};
 function renderMenu() {
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
@@ -2757,7 +2771,7 @@ function closeCharacters() { if (csEl) { csEl.remove(); csEl = null; } }
 function refreshCharacters() { if (csEl) renderCharacters(); }
 function renderCharacters() {
   const c = findEntry(csId); if (!csEl || !c) return closeCharacters();
-  const shown = (csSkin && findEntry(csSkin)) || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
+  const eq = equippedOf(c), shown = (csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
   const art = mediaArt(shown), shownOwned = owns(shown.id);
   csEl.className = `cs r${c.rarity}`;
   const tabs = [['home', 'home', 'Home'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
@@ -2785,8 +2799,9 @@ function renderCharacters() {
       ${!csSkin && ASC.some(a => a.k !== 'base' && artFrom(c[a.k])) ? `<div class="cs-arts"><span class="lbl-sm">Splash art</span><div class="row">${ASC.filter(a => a.k === 'base' || artFrom(c[a.k])).map(a => {
         const open = ascOpen(c, a), on = artKey(c) === a.k, src = a.k === 'base' ? (artFrom(c.art) || getArt({ ...c, art: null, art3: null, art6: null, type: 'x' })) : artFrom(c[a.k]);
         return `<button class="art-chip ${on ? 'on' : ''} ${open ? '' : 'locked'}" data-art="${a.k}" ${open ? '' : 'disabled'} data-tip="${esc(`<b>${a.label} splash art</b><span>${open ? 'Tap to use this art everywhere.' : `Requirement: raise ${esc(c.name)} to ${a.stars} stars`}</span>`)}"><img src="${src}" alt=""><span>${a.label}${open ? '' : ` ${icon('lock')}`}</span></button>`; }).join('')}</div></div>` : ''}
-      ${csSkin ? `<div class="cs-pill" style="color:var(--gold)">Previewing skin: ${esc(shown.name)}${shownOwned ? '' : ' (not owned)'}</div>` : ''}
+      ${shown !== (eq || c) ? `<div class="cs-pill" style="color:var(--gold)">Previewing ${shown === c ? 'default outfit' : esc(shown.name)}${shownOwned ? '' : ' (not owned)'}</div>` : eq ? `<div class="cs-pill" style="color:#e8ff7a">Wearing ${esc(eq.name)}</div>` : ''}
       <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
+      ${shownOwned && n ? (shown === (eq || c) ? `<button class="btn ghost" disabled>${icon('check')}${shown === c ? 'Default outfit equipped' : 'Outfit equipped'}</button>` : `<button class="btn gold" id="csEquip">${icon('hanger')}${shown === c ? 'Equip default outfit' : `Equip ${esc(shown.name.replace(c.name + ' · ', ''))}`}</button>`) : ''}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shown.id ? 'Wallpaper set' : 'Set as wallpaper'}</button><button class="btn ghost" id="csWear">${icon('chars')}Use as plaza look</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
@@ -2837,7 +2852,7 @@ function renderCharacters() {
       <button class="rbtn ${csSkins ? 'on' : ''}" id="csSkinBtn" aria-label="Skins">${icon('hanger')}</button>
       <button class="rbtn" id="csViewBtn" aria-label="View the art without the menu">${icon('eye')}</button>
     </div>
-    ${csSkins ? `<div class="cs-skins glass-deep cs-ui"><div class="lbl-sm">Outfits</div><div class="grid">${[c, ...skins].map(s => `<button class="sk r${s.rarity} ${s.id === shown.id ? 'on' : ''} ${owns(s.id) ? '' : 'locked'}" data-sk="${esc(s.id)}" ${owns(s.id) || s === c ? '' : `data-tip="${esc(`<b>${esc(s.name)}</b><span>${buyable(s) ? `Not owned. Buy it for ${SKIN_PRICE} pearls.` : 'Not owned. Unlocked by marriage.'}</span>`)}"`}><img src="${getArt(s)}" alt=""><span>${s === c ? 'Default' : esc(s.name.replace(c.name + ' · ', ''))}</span></button>`).join('')}</div>
+    ${csSkins ? `<div class="cs-skins glass-deep cs-ui"><div class="lbl-sm">Outfits</div><div class="grid">${[c, ...skins].map(s => `<button class="sk r${s.rarity} ${s.id === shown.id ? 'on' : ''} ${owns(s.id) ? '' : 'locked'}" data-sk="${esc(s.id)}" ${owns(s.id) || s === c ? '' : `data-tip="${esc(`<b>${esc(s.name)}</b><span>${buyable(s) ? `Not owned. Buy it for ${SKIN_PRICE} pearls.` : 'Not owned. Unlocked by marriage.'}</span>`)}"`}><img src="${getArt(s)}" alt=""><span>${s === c ? 'Default' : esc(s.name.replace(c.name + ' · ', ''))}</span>${s === (eq || c) ? `<em class="sk-eq">${icon('check')}</em>` : ''}</button>`).join('')}</div>
       ${skins.length ? '' : '<p class="tiny">No skins for this character yet.</p>'}</div>` : ''}
     <section class="cs-panel cs-ui">${head}${body}</section>`;
   $('#csBack').onclick = closeCharacters;
@@ -2847,7 +2862,7 @@ function renderCharacters() {
       <p class="desc">The hanger button switches between outfits, and the eye button hides the menu so you can look at the art.</p></div>` });
   csEl.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { csId = b.dataset.cs; csSkin = null; renderCharacters(); });
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; renderCharacters(); });
-  csEl.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { csSkin = b.dataset.sk === c.id ? null : b.dataset.sk; renderCharacters(); });
+  csEl.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { csSkin = b.dataset.sk; renderCharacters(); });
   $('#csSkinBtn').onclick = () => { csSkins = !csSkins; renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
@@ -2857,6 +2872,10 @@ function renderCharacters() {
   const br = $('#csRing'); if (br) br.onclick = buyRing;
   const mp = $('#csMRPrev'); if (mp) mp.onclick = () => previewMR(c);
   $('#csViewBtn').onclick = e => { e.stopPropagation(); csView = true; csEl.classList.add('viewing'); };
+  const eqb = $('#csEquip'); if (eqb) eqb.onclick = () => {
+    if (shown === c) delete S.equip[c.id]; else S.equip[c.id] = shown.id;
+    csSkin = null; persist(); renderMenu(); renderCharacters(); toast(shown === c ? `${c.name} is wearing the default outfit.` : `${c.name} is now wearing ${shown.name.replace(c.name + ' · ', '')}.`);
+  };
   const w = $('#csWall'); if (w) w.onclick = () => { S.wallpaper = shown.id; persist(); applyWallpaper(); renderCharacters(); toast(`${shown.name} is now your wallpaper.`); };
   const wr = $('#csWear'); if (wr) wr.onclick = () => { S.player.look = { ...shown.look }; player.look = S.player.look; persist(); renderMenu(); toast(`Your plaza avatar now looks like ${shown.name}.`); };
   const on = csEl.querySelector('.cs-av.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -3254,7 +3273,7 @@ function closePull(silent) {
 /* =========================================================
    ADMIN
    ========================================================= */
-let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null };
+let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null }, adminIcon = null;
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
@@ -3287,6 +3306,10 @@ function renderPoolTab() {
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
           <p class="tiny">Use 9:16 art, for example 900×1600 PNG. Larger images are scaled to 1600px tall. Without art, a chibi is drawn from the plaza look.</p>
+          <div class="asc-slots"><div class="lbl-sm">Icon</div><p class="tiny">Square picture used in the character menu, avatars and small portraits. Without one, it is cut from the art.</p>
+            <div class="asc-slot"><span class="mini ic-mini"><img id="adP_icon" alt=""></span><div style="display:grid;gap:4px"><b>Icon</b><span class="tiny" id="adS_icon"></span>
+              <div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}Upload<input type="file" accept="image/*" class="sr" id="adIconUp"></label><button type="button" class="link" id="adIconX">Remove</button></div></div></div>
+          </div>
           <div class="asc-slots" id="adAscWrap"><div class="lbl-sm">Star splash arts</div><p class="tiny">Unlock at 3★ and 6★. Leave empty to keep the base art.</p>
             ${['art3', 'art6'].map(k => `<div class="asc-slot"><span class="mini"><img id="adP_${k}" alt=""></span><div style="display:grid;gap:4px"><b>${k === 'art3' ? '3★' : '6★'} art</b><span class="tiny" id="adS_${k}"></span>
               <div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}Upload<input type="file" accept="image/*" class="sr" data-asc="${k}"></label><button type="button" class="link" data-ascx="${k}">Remove</button></div></div></div>`).join('')}
@@ -3335,6 +3358,8 @@ function renderPoolTab() {
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
   document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], 1600); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
+  $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
+  $('#adIconX').onclick = () => { adminIcon = null; adminPreview(); };
   $('#adCancel').onclick = () => fillAdminForm(null);
   $('#adForm').addEventListener('submit', saveAdmin);
   $('#adCopy').onclick = copyData;
@@ -3346,6 +3371,7 @@ function fillAdminForm(entry) {
   adminEditId = entry ? entry.id : null;
   adminArt = entry ? artFrom(entry.art) : null;
   adminAsc = { art3: entry ? artFrom(entry.art3) : null, art6: entry ? artFrom(entry.art6) : null };
+  adminIcon = entry ? artFrom(entry.icon) : null;
   const lk = entry ? { ...blankLook(), ...entry.look } : blankLook();
   $('#adType').value = entry ? entry.type : 'character';
   $('#adName').value = entry ? entry.name : '';
@@ -3398,6 +3424,7 @@ function adminPreview() {
   $('#adWedWrap').hidden = $('#adType').value !== 'character';
   const isChar = $('#adType').value === 'character';
   $('#adAscWrap').hidden = !isChar;
+  $('#adP_icon').src = adminIcon || adminArt || chibiSplash(readLook()); $('#adP_icon').classList.toggle('cut', !adminIcon); $('#adS_icon').textContent = adminIcon ? 'Uploaded' : 'Cut from the art'; $('#adIconX').hidden = !adminIcon;
   ['art3', 'art6'].forEach(k => { $('#adP_' + k).src = adminAsc[k] || adminArt || chibiSplash(readLook()); $('#adP_' + k).style.opacity = adminAsc[k] ? 1 : .35; $('#adS_' + k).textContent = adminAsc[k] ? 'Uploaded' : 'Uses the base art'; document.querySelector(`[data-ascx="${k}"]`).hidden = !adminAsc[k]; });
   const ed = adminEditId && findEntry(adminEditId), sk = $('#adSkins');
   sk.hidden = !(ed && isChar && ed.type === 'character');
@@ -3433,6 +3460,9 @@ async function saveAdmin(ev) {
   const key = 'art:' + entry.id;
   if (adminArt && adminArt !== MEDIA.get(key)) { await mediaSet(key, adminArt); entry.art = 'idb:' + key; }
   else if (!adminArt && entry.art) { await mediaDel(key); entry.art = null; }
+  const fk = 'face:' + entry.id;
+  if (adminIcon) { if (adminIcon !== MEDIA.get(fk)) await mediaSet(fk, adminIcon); entry.icon = 'idb:' + fk; }
+  else if (entry.icon) { await mediaDel(fk); entry.icon = null; }
   for (const k of ['art3', 'art6']) {
     const kk = `${k}:${entry.id}`;
     if (entry.type === 'character' && adminAsc[k]) { if (adminAsc[k] !== MEDIA.get(kk)) await mediaSet(kk, adminAsc[k]); entry[k] = 'idb:' + kk; }
@@ -3466,7 +3496,7 @@ function renderAdminList() {
     delete S.owned[id];
     if (S.featuredId === id) S.featuredId = null;
     if (S.wallpaper === id) S.wallpaper = null;
-    await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); await mediaDel('get:' + id); delete S.artPick[id];
+    await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); await mediaDel('get:' + id); await mediaDel('face:' + id); delete S.artPick[id]; delete S.equip[id]; for (const c in S.equip) if (S.equip[c] === id) delete S.equip[c];
     adminConfirm = null; persist(); renderMenu();
     if (adminEditId === id) fillAdminForm(null); else { fillParentOptions($('#adParent').value); renderAdminList(); }
     toast(`Deleted ${e ? e.name : 'entry'}.`);
@@ -3477,7 +3507,7 @@ function exportData() {
     format: 'prismplaza-2',
     featuredId: S.featuredId,
     banners: S.banners,
-    pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6), getArt: artFrom(e.getArt) })),
+    pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6), getArt: artFrom(e.getArt), icon: artFrom(e.icon) })),
     icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v]))
   });
 }
@@ -3500,7 +3530,7 @@ function showImport() {
     for (const e of pool) {
       e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) || (+e.rarity === 6 && e.type === 'skin') ? +e.rarity : 4;
       delete e.element; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
-      for (const k of ['art', 'art3', 'art6', 'getArt']) { const mk = `${k === 'getArt' ? 'get' : k}:${e.id}`; if (e[k] && e[k].startsWith('data:')) { await mediaSet(mk, e[k]); e[k] = `idb:${mk}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
+      for (const k of ['art', 'art3', 'art6', 'getArt', 'icon']) { const mk = `${k === 'getArt' ? 'get' : k === 'icon' ? 'face' : k}:${e.id}`; if (e[k] && e[k].startsWith('data:')) { await mediaSet(mk, e[k]); e[k] = `idb:${mk}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
     S.pool = pool; S.featuredId = d.featuredId || null; if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
