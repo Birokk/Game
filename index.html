@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Prism Plaza</title>
+<title>Blank: Project</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1216,25 +1216,37 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .sg-streaks i{position:absolute;top:-20%;width:6%;height:140%;transform:skewX(-28deg);background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--sg1) 28%,transparent),transparent);opacity:0;animation:sgStreak 1.2s calc(.2s + var(--i) * .06s) ease-out forwards}
 @keyframes sgStreak{0%{opacity:0;transform:skewX(-28deg) translateX(-40px)}40%{opacity:1}100%{opacity:.45;transform:skewX(-28deg)}}
 .sg-sparks i{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--sg1),0 0 14px var(--sg2);animation:rise linear infinite}
-.sg-art{position:absolute;left:50%;bottom:0;height:100%;max-width:none;aspect-ratio:9/16;transform:translateX(-50%);object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 30px color-mix(in srgb,var(--sg2) 60%,transparent));animation:sgArt .8s .25s cubic-bezier(.2,1.2,.4,1) both}
-.sg-art.chibi{height:86%;bottom:4%}
-@keyframes sgArt{from{opacity:0;transform:translateX(-50%) translateY(30px) scale(.94)}}
-.sg-name{position:absolute;left:8%;top:30%;display:grid;gap:2px;animation:sgIn .6s .5s cubic-bezier(.2,1.1,.4,1) both;pointer-events:none}
+.sg-art{position:absolute;z-index:1;left:50%;top:50%;bottom:auto;height:110%;max-width:none;aspect-ratio:9/16;transform:translateX(-50%);object-fit:contain;object-position:50% 50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 30px color-mix(in srgb,var(--sg2) 60%,transparent));animation:sgArt .8s .25s cubic-bezier(.2,1.2,.4,1) both}
+.sg-art.chibi{height:100%;top:54%}
+@keyframes sgArt{from{opacity:0;transform:translate(-50%,-46%) scale(.92)}}
+.sg-name{position:absolute;z-index:2;left:8%;top:30%;display:grid;gap:2px;animation:sgIn .6s .5s cubic-bezier(.2,1.1,.4,1) both;pointer-events:none}
 .sg-name b{font-family:var(--display);font-size:clamp(32px,4.6vw,58px);line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 20px rgba(0,0,0,.6)}
 .sg-name i{font-family:var(--display);font-size:clamp(16px,2vw,24px);color:var(--sg1);text-shadow:0 2px 6px rgba(0,0,0,.8);padding-left:1.4em;white-space:nowrap}
 @keyframes sgIn{from{opacity:0;transform:translateX(-40px)}}
-.sg-bonus{position:absolute;left:8%;bottom:24%;display:grid;gap:8px;animation:sgIn .5s .7s both}
+.sg-bonus{position:absolute;z-index:2;left:8%;bottom:24%;display:grid;gap:8px;animation:sgIn .5s .7s both}
 .sg-lbl{padding:3px 14px 3px 10px;border-left:3px solid var(--sg1);background:linear-gradient(90deg,rgba(8,8,20,.75),transparent);font-family:var(--display);font-size:15px}
 .sg-item{position:relative;width:56px;height:56px;border-radius:10px;overflow:hidden;border:2px solid var(--sg1);background:var(--ink-2);box-shadow:0 0 14px color-mix(in srgb,var(--sg1) 60%,transparent);cursor:help}
 .sg-item img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
 .sg-item img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
-.sg-go{position:absolute;left:8%;bottom:calc(8% + env(safe-area-inset-bottom,0px));width:min(220px,40vw);height:44px;border-radius:999px;font-family:var(--display);font-size:20px;color:#2a2440;background:linear-gradient(180deg,#fff,#d9deee);box-shadow:inset 0 2px 0 #fff,0 6px 18px rgba(0,0,0,.4);animation:sgIn .5s .8s both}
+.sg-go{position:absolute;z-index:2;left:8%;bottom:calc(8% + env(safe-area-inset-bottom,0px));width:min(220px,40vw);height:44px;border-radius:999px;font-family:var(--display);font-size:20px;color:#2a2440;background:linear-gradient(180deg,#fff,#d9deee);box-shadow:inset 0 2px 0 #fff,0 6px 18px rgba(0,0,0,.4);animation:sgIn .5s .8s both}
 .sg-go:hover{filter:brightness(1.05)}
-.sg-hint{position:absolute;left:0;right:0;bottom:calc(8% + env(safe-area-inset-bottom,0px));text-align:center;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.9);pointer-events:none;animation:fade 1s 1s reverse both}
+.sg-hint{position:absolute;z-index:2;left:0;right:0;bottom:calc(8% + env(safe-area-inset-bottom,0px));text-align:center;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.9);pointer-events:none;animation:fade 1s 1s reverse both}
 .sg-hint{animation:sgWordsIn .6s 1s both;opacity:0}
 .sg-x{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));right:max(18px,env(safe-area-inset-right,0px));width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(8,8,20,.6);border:2px solid rgba(255,255,255,.7)}
 .sg-share{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(7% + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(8,8,20,.6);border:2px solid rgba(255,255,255,.7)}
-@media (max-width:820px){.sg-name{top:12%;left:6%}.sg-art{height:78%;bottom:14%}.sg-art.chibi{height:52%;bottom:22%}.sg-bonus{bottom:22%;left:6%}.sg-go{left:6%}.sg-hint{bottom:2%}}
+@media (max-width:820px){.sg-name{top:12%;left:6%}.sg-art{height:84%;top:48%}.sg-art.chibi{height:62%;top:50%}.sg-bonus{bottom:22%;left:6%}.sg-go{left:6%}.sg-hint{bottom:2%}}
+
+/* bond level heart (icon customizable in admin → Icons) */
+.bond-heart .hrt{position:relative;width:70px;height:70px;background:none;border-radius:0;box-shadow:none;filter:drop-shadow(0 0 12px rgba(255,111,145,.55))}
+.bond-heart .hrt .cic{position:absolute;inset:0;width:100%;height:100%}
+.bond-heart .hrt b{position:relative;font-family:var(--display);font-weight:400;font-size:24px;color:#fff;text-shadow:0 1px 3px rgba(90,10,40,.8);margin-top:-4px}
+.bond-tag{position:relative;display:inline-grid;place-items:center;width:34px;height:34px;flex:none;cursor:help}
+.bond-tag .cic{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 0 6px rgba(255,111,145,.5))}
+.bond-tag b{position:relative;font-family:var(--display);font-weight:400;font-size:13px;color:#fff;text-shadow:0 1px 2px rgba(90,10,40,.9);margin-top:-2px}
+.bond-tag.sm{width:26px;height:26px;vertical-align:middle}
+.bond-tag.sm b{font-size:11px}
+.bond-tag.av{position:absolute;top:-4px;right:-8px;width:26px;height:26px}
+.bond-tag.av b{font-size:11px}
 </style>
 </head>
 <body>
@@ -1244,19 +1256,19 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   <div class="wp-stars"></div>
   <div class="wp-moon"></div>
   <div class="wp-glow"></div>
-  <div class="wp-name" id="wpName">Prism Plaza</div>
+  <div class="wp-name" id="wpName">Blank: Project</div>
   <div class="wp-pearls" id="wpPearls"></div>
   <svg class="wp-waves" viewBox="0 0 1440 320" preserveAspectRatio="none"><path d="M0 190C240 130 480 250 720 190S1200 130 1440 190V320H0Z" fill="rgba(255,255,255,.07)"/><path d="M0 245C300 195 540 295 840 245S1260 205 1440 245V320H0Z" fill="rgba(255,255,255,.09)"/></svg>
   <img class="wp-blur" id="wpBlur" alt="" hidden>
   <img class="wp-splash" id="wpSplash" alt="" hidden>
 </div>
 
-<div class="title" id="title" role="dialog" aria-label="Prism Plaza title screen">
+<div class="title" id="title" role="dialog" aria-label="Blank: Project title screen">
   <div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div><div class="tt-rays"></div></div>
   <img class="tt-img" id="ttImg" alt="" hidden>
   <div class="tt-shade"></div>
   <div class="tt-motes" id="ttMotes"></div>
-  <div class="tt-logo"><span class="tt-kicker">✦ A Lantern Festival Gacha ✦</span><h1>Prism Plaza</h1><span class="tt-sub">Collect · Bond · Celebrate</span></div>
+  <div class="tt-logo"><span class="tt-kicker">✦ A Lantern Festival Gacha ✦</span><h1>Blank: Project</h1><span class="tt-sub">Collect · Bond · Celebrate</span></div>
   <div class="tt-center">
     <button class="tt-start" id="ttStart">Tap to start</button>
     <div class="tt-who" id="ttWho"></div>
@@ -1268,7 +1280,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
     <button class="tt-ib" id="ttRepair"><span data-ic="wrench"></span>Repair</button>
     <button class="tt-ib" id="ttTerms"><span data-ic="info"></span>Terms</button>
   </nav>
-  <div class="tt-foot"><span>v0.9.0 · Server: Prism-1</span><span id="ttUid"></span><span>© 2026 Prism Plaza</span></div>
+  <div class="tt-foot"><span>v0.9.0 · Server: Blank-1</span><span id="ttUid"></span><span>© 2026 Blank: Project</span></div>
 </div>
 
 <main class="menu is-open" id="menu" aria-label="Main menu">
@@ -1344,7 +1356,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
       <button class="minimap glass" id="minimapBtn" aria-label="Open the map"><canvas id="minimap"></canvas><span id="miniLabel">Pearl Fountain</span></button>
     </div>
   </div>
-  <div class="zone-title" id="zoneTitle" aria-live="polite"><span class="eyebrow">Prism Plaza</span><b></b><small></small></div>
+  <div class="zone-title" id="zoneTitle" aria-live="polite"><span class="eyebrow">Blank: Project</span><b></b><small></small></div>
   <div class="hint glass" id="hint">WASD or arrow keys to walk · tap the ground to move · M for map · Esc for menu</div>
   <div class="hud-bottom">
     <div class="chatlog glass" id="chatlog" aria-live="polite"></div>
@@ -1362,7 +1374,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 
 <script>
 /* =========================================================
-   Prism Plaza — gacha template
+   Blank: Project — gacha template
    Sections: helpers · media store · data · art · menu & wallpaper · modals · gacha · admin · world
    ========================================================= */
 const $ = (s, r = document) => r.querySelector(s);
@@ -1466,6 +1478,7 @@ CUR_SVG.gsweets = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path
 CUR_SVG.gbracelet = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true">' + Array.from({ length: 10 }, (_, i) => { const a = i / 10 * Math.PI * 2; return `<circle cx="${(12 + Math.cos(a) * 7).toFixed(1)}" cy="${(12 + Math.sin(a) * 7).toFixed(1)}" r="2.4" fill="${i % 3 ? '#f6eeff' : '#ffc6e4'}" stroke="#8f7fc9" stroke-width=".8"/>`; }).join('') + '</svg>';
 CUR_SVG.gplush = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.7 6.2 20l1.4-6.4-4.9-4.4 6.5-.7z" fill="#ffd36b" stroke="#a8761a" stroke-width="1.1" stroke-linejoin="round"/><circle cx="10" cy="11" r=".9" fill="#3a2630"/><circle cx="14" cy="11" r=".9" fill="#3a2630"/><path d="M10.6 13.3q1.4 1 2.8 0" stroke="#3a2630" stroke-width=".8" fill="none"/><circle cx="8.4" cy="12.8" r=".9" fill="#ff9ec4"/><circle cx="15.6" cy="12.8" r=".9" fill="#ff9ec4"/></svg>';
 CUR_SVG.bottles = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9.5" y="2.5" width="5" height="3" rx="1" fill="#a8714a" stroke="#5a3424" stroke-width=".9"/><path d="M10 5.5h4v3.2c3 1.2 4.5 3.6 4.5 6.3a6.5 6.5 0 0 1-13 0c0-2.7 1.5-5.1 4.5-6.3z" fill="#e6fff7" stroke="#2f8a6a" stroke-width="1.1"/><path d="M6.6 14.5h10.8a5.4 5.4 0 0 1-10.8 0z" fill="#7ef3d4"/><path d="M12.6 11.2l-2.2 3.4h1.8l-.8 3.2 2.6-3.9h-1.8z" fill="#d9ff7a" stroke="#2f6a2a" stroke-width=".5"/></svg>';
+CUR_SVG.bondheart = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="bondHG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffd6e6"/><stop offset=".5" stop-color="#ff6f91"/><stop offset="1" stop-color="#b8325a"/></radialGradient></defs><path d="M12 21C5 16.3 2.5 12.6 2.5 9A4.7 4.7 0 0 1 12 6.4 4.7 4.7 0 0 1 21.5 9c0 3.6-2.5 7.3-9.5 12z" fill="url(#bondHG)" stroke="#7a1f3e" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.5 8.2a2.4 2.4 0 0 1 2.6-1.6" stroke="#fff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".85"/></svg>';
 const customIcon = k => MEDIA.get('icon:' + k);
 const icon = n => customIcon(n) ? `<img class="ic" src="${customIcon(n)}" alt="">` : `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const curIcon = k => customIcon(k) ? `<img class="cic" src="${customIcon(k)}" alt="">` : CUR_SVG[k];
@@ -1474,7 +1487,7 @@ function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forE
 const ICON_SLOTS = [
   ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie']]],
   ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
-  ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['lock', 'Locked']]],
+  ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
   ['Small UI', [['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected']]]
 ];
@@ -1902,7 +1915,7 @@ function applyWallpaper() {
     if (e) { const src = getSplash(e); if (img.getAttribute('src') !== src) img.src = src; img.hidden = false; }
     else { img.hidden = true; img.removeAttribute('src'); }
   });
-  $('#wpName').textContent = e ? e.name : 'Prism Plaza';
+  $('#wpName').textContent = e ? e.name : 'Blank: Project';
 }
 (function seedPearls() {
   const box = $('#wpPearls'); let h = '';
@@ -1927,7 +1940,7 @@ $('#openMenu').onclick = () => setMenu(true);
 /* ---------- title screen: wallpaper (set in admin), tap to start, guest login, notice / support / repair / terms ---------- */
 const titleEl = $('#title');
 let titleOn = true;
-const DEFAULT_NEWS = 'Welcome to Prism Plaza! | The lantern festival is open. Claim your daily login and spin the wheel every day.\nLimited banner: Aria | Aria is on rate-up until the banner ends.\nPets have arrived | Catch eggs in the plaza and hatch them in the Pets screen.';
+const DEFAULT_NEWS = 'Welcome to Blank: Project! | The lantern festival is open. Claim your daily login and spin the wheel every day.\nLimited banner: Aria | Aria is on rate-up until the banner ends.\nPets have arrived | Catch eggs in the plaza and hatch them in the Pets screen.';
 (function seedMotes() { let h = ''; for (let i = 0; i < 24; i++) { const d = 8 + Math.random() * 12; h += `<i style="left:${Math.random() * 100}%;width:${3 + Math.random() * 5}px;animation-duration:${d}s;animation-delay:${-Math.random() * d}s"></i>`; } $('#ttMotes').innerHTML = h; })();
 function renderTitle() {
   const bg = MEDIA.get('title:bg'), img = $('#ttImg');
@@ -1963,7 +1976,7 @@ function showLoading(done) {
   const art = loadingArt(), el = document.createElement('div');
   el.className = 'loading';
   el.innerHTML = `${art ? `${art.fit === 'contain' ? `<img class="cs-blur" src="${art.src}" alt="">` : ''}<img class="ld-img ${art.fit}" src="${art.src}" alt="">` : '<div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div></div>'}
-    <div class="ld-shade"></div><div class="ld-logo">Prism Plaza</div>
+    <div class="ld-shade"></div><div class="ld-logo">Blank: Project</div>
     <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(LOAD_TIPS))}</p>
       <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">Loading</span><span class="ld-pct">0%</span></div>
       <div class="ld-bar"><i></i></div></div>`;
@@ -2006,7 +2019,7 @@ function showSkinGet(e) {
     toast(`${e.name} is now your wallpaper and plaza look.`);
   };
   el.querySelector('.sg-share').onclick = () => {
-    const text = `I just got ${e.name} in Prism Plaza!`;
+    const text = `I just got ${e.name} in Blank: Project!`;
     try { navigator.clipboard.writeText(text).then(() => toast('Copied to share.'), () => toast(text)); } catch (err) { toast(text); }
   };
 }
@@ -2028,7 +2041,7 @@ titleEl.addEventListener('click', e => {
 $('#ttStart').onclick = () => { if (S.account) enterGame(); else openSignIn(); };
 $('#ttNews').onclick = openNews;
 $('#ttSupport').onclick = openSupport;
-$('#ttTerms').onclick = () => openModal({ title: 'Terms & privacy', ic: 'info', body: `<div class="stack"><p class="desc">Prism Plaza is in development. Your progress, art and settings are stored only in this browser. Nothing is sent to a server yet.</p>
+$('#ttTerms').onclick = () => openModal({ title: 'Terms & privacy', ic: 'info', body: `<div class="stack"><p class="desc">Blank: Project is in development. Your progress, art and settings are stored only in this browser. Nothing is sent to a server yet.</p>
   <p class="desc">Summon rates are listed on every banner's Rates page. Paid currency isn't sold yet.</p><p class="tiny">Full terms of service and a privacy policy will be published before launch.</p></div>` });
 $('#ttRepair').onclick = () => openModal({ title: 'Repair', ic: 'wrench', body: `<div class="stack"><p class="desc">Something looks wrong? Repair reloads the game and its images. Your progress is kept.</p>
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancel</button><button class="btn mint" id="rpGo">Repair and reload</button></div></div>`,
@@ -2096,7 +2109,7 @@ function openPlaceholder(key) {
 
 /* mail */
 const MAILS = [
-  { id:'welcome', from:'Plaza Team', title:'Welcome to Prism Plaza!', body:'A starter gift to begin your collection.', reward:{ pearls:60, coins:1000 }, date:'Oct 28' },
+  { id:'welcome', from:'Plaza Team', title:'Welcome to Blank: Project!', body:'A starter gift to begin your collection.', reward:{ pearls:60, coins:1000 }, date:'Oct 28' },
   { id:'maint', from:'Plaza Team', title:'Maintenance compensation', body:'Thanks for your patience during the update.', reward:{ pearls:9 }, date:'Oct 26' },
   { id:'event', from:'Events', title:'Halloween banner opens Oct 31', body:'A spooky limited banner with two new skins.', reward:null, date:'Oct 25' }
 ];
@@ -2455,6 +2468,7 @@ const GIFTS = {
   plush: { name: 'Star Plushie', xp: 400, price: 10000 }
 };
 const bondOf = id => S.bond[id] || { xp: 0, married: null };
+const bondTag = (id, cls = '') => `<span class="bond-tag ${cls}" data-tip="${esc(`<b>Bond level ${bondLv(id)}</b><span>Give gifts to raise it. Level ${BOND_MAX} unlocks marriage.</span>`)}">${curIcon('bondheart')}<b>${bondLv(id)}</b></span>`;
 function bondLv(id) { const xp = bondOf(id).xp; let l = 0; while (l < BOND_MAX && xp >= BOND_XP[l + 1]) l++; return l; }
 function giveGift(id, g) {
   const e = findEntry(id); if (!e || !owns(id)) return;
@@ -2667,6 +2681,7 @@ function renderCharacters() {
     </div>
     <div class="cs-sep"></div>
     <div class="cs-traits">${starRow(st)}
+      ${bondTag(c.id, 'ts')}
       ${bondOf(c.id).married ? `<span class="trait ts"><i class="ic-t" style="--el:#ff9ec4">${curIcon('rings')}</i>Married</span>` : ''}
     </div>
     <div class="cs-badges"><span class="lbl-sm">Badges · ${BADGES.filter(b => b.ok(c)).length}/${BADGES.length}</span><div class="row">${badgeRow(c, 40)}</div></div>
@@ -2691,7 +2706,7 @@ function renderCharacters() {
   } else if (csTab === 'bond') {
     const bd = bondOf(c.id), lv = bondLv(c.id), full = lv >= BOND_MAX, lo = BOND_XP[lv], hi = BOND_XP[Math.min(BOND_MAX, lv + 1)];
     const wed = c.weddingSkin && findEntry(c.weddingSkin);
-    body = `<div class="cs-card bond-heart"><span class="hrt">${lv}</span>
+    body = `<div class="cs-card bond-heart"><span class="hrt">${curIcon('bondheart')}<b>${lv}</b></span>
         <div style="display:grid;gap:6px;flex:1"><b style="font-family:var(--display);font-weight:400;font-size:22px">Bond Lv. ${lv}${bd.married ? ' · Married' : ''}</b>
           <span class="bar" style="--rc:#ff6f91"><i style="width:${full ? 100 : (bd.xp - lo) / (hi - lo) * 100}%"></i></span>
           <span class="tiny">${full ? 'Max bond reached' : `${bd.xp - lo} / ${hi - lo} bond to level ${lv + 1}`}</span></div></div>
@@ -2711,7 +2726,7 @@ function renderCharacters() {
         <dt>Rarity</dt><dd>${rtag(c.rarity)}</dd>
         <dt>Type</dt><dd>${TYPES[c.type]}</dd>
         <dt>Stars</dt><dd>${starRow(st)}</dd>
-        <dt>Bond</dt><dd>Lv ${bondLv(c.id)}${bondOf(c.id).married ? ' · Married' : ''}</dd>
+        <dt>Bond</dt><dd>${bondTag(c.id, 'sm')}${bondOf(c.id).married ? ' · Married' : ''}</dd>
       </dl></div>
       <div class="cs-card"><div class="lbl-sm" style="margin-bottom:6px">Profile</div><p>${esc(c.desc || 'No description yet.')}</p></div>
       <div class="row"><button class="btn ghost sm" data-open="admin">${icon('edit')}Edit in admin</button></div>`;
@@ -2721,7 +2736,7 @@ function renderCharacters() {
     <div class="cs-shade"></div>
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
-        <span class="ring"><span>${thumbImg(e)}</span></span>${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starRow(starsOf(e.id))}</button>`; }).join('')}</nav>
+        <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starRow(starsOf(e.id))}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}</button>`).join('')}</nav>
     <div class="cs-side cs-ui">
       <button class="rbtn ${csSkins ? 'on' : ''}" id="csSkinBtn" aria-label="Skins">${icon('hanger')}</button>
@@ -3426,7 +3441,7 @@ function renderIconsTab() {
   $('#adPanel').innerHTML = `<p class="tiny">Upload your own image for any icon. Square PNG or SVG with a transparent background works best; images are scaled to 128px. Reset puts the default back.</p>
     ${ICON_SLOTS.map(([group, slots]) => `<h3 style="margin-top:16px">${group}</h3><div class="icon-grid">${slots.map(([k, label]) => {
       const custom = !!customIcon(k);
-      return `<div class="islot"><div class="iprev">${CUR_KEYS.includes(k) ? curIcon(k) : icon(k)}</div>
+      return `<div class="islot"><div class="iprev">${CUR_SVG[k] ? curIcon(k) : icon(k)}</div>
         <div class="iname">${label}<span class="${custom ? 'cust' : ''}">${custom ? 'Custom' : 'Default'}</span></div>
         <div class="acts"><label class="btn ghost sm">Upload<input type="file" accept="image/*" class="sr" data-iup="${k}"></label>${custom ? `<button class="btn ghost sm" data-ireset="${k}" aria-label="Reset ${label} icon">Reset</button>` : ''}</div></div>`;
     }).join('')}</div>`).join('')}`;
@@ -4122,7 +4137,7 @@ function say(e, text) {
   logChat(e.name, text, e === player ? 'var(--mint)' : e.look.hair === '#2b2b3a' ? '#c9d2f5' : e.look.hair, false);
 }
 function emote(e, em) { e.emote = { e: em, until: now + 3 }; }
-logChat('', 'Welcome to Prism Plaza. The other players here are demo bots until multiplayer is connected.', '', true);
+logChat('', 'Welcome to Blank: Project. The other players here are demo bots until multiplayer is connected.', '', true);
 
 $('#chatForm').addEventListener('submit', ev => {
   ev.preventDefault();
