@@ -1175,6 +1175,66 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 @media (max-width:820px){.dt-hero{min-height:72vh}.dt-art{object-position:50% 0}.dt-art.chibi{right:50%;transform:translateX(50%);height:70%;top:0;bottom:auto}.dt-shade{background:linear-gradient(transparent 30%,rgba(5,8,20,.9) 70%)}.dt-info{max-width:none;padding:18px}}
 .tt-prev{aspect-ratio:16/9;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(180deg,#070a24,#1a1450 45%,#5a2a6e 75%,#d8708a);border:1px solid var(--edge-soft)}
 .tt-prev img{width:100%;height:100%;object-fit:cover}
+/* ---------- loading screen ---------- */
+.loading{position:fixed;inset:0;z-index:49;overflow:hidden;background:#070a1c;color:#fff;animation:fade .35s;transition:opacity .5s}
+.loading.out{opacity:0;pointer-events:none}
+.ld-img{position:absolute;inset:0;width:100%;height:100%;animation:wpZoom 6s ease-out both}
+.ld-img.cover{object-fit:cover;object-position:50% 30%}
+.ld-img.contain{object-fit:contain}
+.loading .cs-blur{position:absolute}
+.ld-shade{position:absolute;inset:0;background:radial-gradient(ellipse 120% 90% at 50% 40%,transparent 50%,rgba(4,6,18,.6)),linear-gradient(transparent 55%,rgba(4,6,18,.9))}
+.ld-logo{position:absolute;left:max(20px,env(safe-area-inset-left,0px));top:calc(18px + env(safe-area-inset-top,0px));font-family:var(--display);font-size:26px;letter-spacing:.06em;background:linear-gradient(180deg,#fff 30%,#ffe6b0 60%,#e8b04a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
+.ld-bottom{position:absolute;left:max(20px,env(safe-area-inset-left,0px));right:max(20px,env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+.ld-tip{margin:0;max-width:640px;font-size:14px;color:rgba(255,255,255,.85);text-shadow:0 1px 4px rgba(0,0,0,.9)}
+.ld-tip b{font-family:var(--display);color:var(--gold);margin-right:6px}
+.ld-row{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:15px;letter-spacing:.12em}
+.ld-pct{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--gold)}
+.ld-prism{width:18px;height:18px;transform:rotate(45deg);background:conic-gradient(#a855f7,#ff6ec7,#ffd36b,#3ee6d0,#a855f7);box-shadow:0 0 12px rgba(255,110,199,.7);animation:spin 1.4s linear infinite}
+.ld-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}
+.ld-bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#e8b04a,#fff3c2,#e8b04a);box-shadow:0 0 12px rgba(255,211,107,.8)}
+.ld-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.ld-thumb{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid var(--edge-soft)}
+.ld-thumb img{width:100%;height:100%;object-fit:cover}
+.ld-thumb button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:rgba(8,12,30,.8)}
+.ld-thumb button .ic{width:13px;height:13px}
+
+/* ---------- new outfit popup ---------- */
+.sg{position:fixed;inset:0;z-index:96;overflow:hidden;color:#fff;cursor:pointer;--sg1:#ffd36b;--sg2:#ff9a2a;animation:fade .3s;transition:opacity .35s}
+.sg.r5{--sg1:#ff9ce0;--sg2:#a855f7}
+.sg.out{opacity:0}
+.sg-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 55%,color-mix(in srgb,var(--sg2) 40%,transparent),transparent 70%),rgba(6,6,14,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.sg-band{position:absolute;left:-10%;right:-10%;top:30%;height:44%;transform:skewY(-6deg) scaleX(0);transform-origin:0 50%;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--sg2) 45%,transparent) 30%,color-mix(in srgb,var(--sg1) 55%,transparent) 50%,color-mix(in srgb,var(--sg2) 45%,transparent) 70%,transparent);animation:sgBand .55s .05s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes sgBand{to{transform:skewY(-6deg) scaleX(1)}}
+.sg-words{position:absolute;left:0;right:0;top:27%;display:grid;gap:0;transform:skewY(-6deg);opacity:0;animation:fade .6s .3s reverse both;pointer-events:none}
+.sg-words{animation:sgWordsIn .6s .3s forwards}
+@keyframes sgWordsIn{to{opacity:1}}
+.sg-words span{display:block;white-space:nowrap;font-family:var(--display);font-style:italic;font-size:clamp(60px,11vw,150px);line-height:1;letter-spacing:.02em;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.22);animation:sgSlide 26s linear infinite}
+.sg-words span:last-child{animation-direction:reverse;-webkit-text-stroke-color:rgba(255,255,255,.14)}
+@keyframes sgSlide{to{transform:translateX(-50%)}}
+.sg-line{position:absolute;left:0;right:0;top:50%;height:3px;transform:scaleX(0);background:linear-gradient(90deg,transparent,var(--sg1) 15%,#fff 50%,var(--sg1) 85%,transparent);box-shadow:0 0 18px var(--sg1),0 0 40px var(--sg2);animation:sgLine .7s .15s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes sgLine{to{transform:scaleX(1)}}
+.sg-streaks i{position:absolute;top:-20%;width:6%;height:140%;transform:skewX(-28deg);background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--sg1) 28%,transparent),transparent);opacity:0;animation:sgStreak 1.2s calc(.2s + var(--i) * .06s) ease-out forwards}
+@keyframes sgStreak{0%{opacity:0;transform:skewX(-28deg) translateX(-40px)}40%{opacity:1}100%{opacity:.45;transform:skewX(-28deg)}}
+.sg-sparks i{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--sg1),0 0 14px var(--sg2);animation:rise linear infinite}
+.sg-art{position:absolute;left:50%;bottom:0;height:100%;max-width:none;aspect-ratio:9/16;transform:translateX(-50%);object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 30px color-mix(in srgb,var(--sg2) 60%,transparent));animation:sgArt .8s .25s cubic-bezier(.2,1.2,.4,1) both}
+.sg-art.chibi{height:86%;bottom:4%}
+@keyframes sgArt{from{opacity:0;transform:translateX(-50%) translateY(30px) scale(.94)}}
+.sg-name{position:absolute;left:8%;top:30%;display:grid;gap:2px;animation:sgIn .6s .5s cubic-bezier(.2,1.1,.4,1) both;pointer-events:none}
+.sg-name b{font-family:var(--display);font-size:clamp(32px,4.6vw,58px);line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 20px rgba(0,0,0,.6)}
+.sg-name i{font-family:var(--display);font-size:clamp(16px,2vw,24px);color:var(--sg1);text-shadow:0 2px 6px rgba(0,0,0,.8);padding-left:1.4em;white-space:nowrap}
+@keyframes sgIn{from{opacity:0;transform:translateX(-40px)}}
+.sg-bonus{position:absolute;left:8%;bottom:24%;display:grid;gap:8px;animation:sgIn .5s .7s both}
+.sg-lbl{padding:3px 14px 3px 10px;border-left:3px solid var(--sg1);background:linear-gradient(90deg,rgba(8,8,20,.75),transparent);font-family:var(--display);font-size:15px}
+.sg-item{position:relative;width:56px;height:56px;border-radius:10px;overflow:hidden;border:2px solid var(--sg1);background:var(--ink-2);box-shadow:0 0 14px color-mix(in srgb,var(--sg1) 60%,transparent);cursor:help}
+.sg-item img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.sg-item img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
+.sg-go{position:absolute;left:8%;bottom:calc(8% + env(safe-area-inset-bottom,0px));width:min(220px,40vw);height:44px;border-radius:999px;font-family:var(--display);font-size:20px;color:#2a2440;background:linear-gradient(180deg,#fff,#d9deee);box-shadow:inset 0 2px 0 #fff,0 6px 18px rgba(0,0,0,.4);animation:sgIn .5s .8s both}
+.sg-go:hover{filter:brightness(1.05)}
+.sg-hint{position:absolute;left:0;right:0;bottom:calc(8% + env(safe-area-inset-bottom,0px));text-align:center;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.9);pointer-events:none;animation:fade 1s 1s reverse both}
+.sg-hint{animation:sgWordsIn .6s 1s both;opacity:0}
+.sg-x{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));right:max(18px,env(safe-area-inset-right,0px));width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(8,8,20,.6);border:2px solid rgba(255,255,255,.7)}
+.sg-share{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(7% + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(8,8,20,.6);border:2px solid rgba(255,255,255,.7)}
+@media (max-width:820px){.sg-name{top:12%;left:6%}.sg-art{height:78%;bottom:14%}.sg-art.chibi{height:52%;bottom:22%}.sg-bonus{bottom:22%;left:6%}.sg-go{left:6%}.sg-hint{bottom:2%}}
 </style>
 </head>
 <body>
@@ -1449,7 +1509,7 @@ function sampleState() {
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
-    account: null, support: [], titleNews: null,
+    account: null, support: [], titleNews: null, loadArts: [],
     artPick: {},
     spin: { last: null },
     gifts: { sweets: 0, bracelet: 0, plush: 0 },
@@ -1879,10 +1939,76 @@ function renderTitle() {
 }
 function showTitle() { titleOn = true; closeModal(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
 function enterGame() {
-  titleOn = false; closeModal(); titleEl.classList.add('leaving');
-  setTimeout(() => { titleEl.hidden = true; }, 600);
-  renderMenu();
-  if (loginReady()) setTimeout(openLogin, 650);
+  titleOn = false; closeModal(); renderMenu();
+  showLoading(() => { if (loginReady()) setTimeout(openLogin, 450); });
+  setTimeout(() => { titleEl.hidden = true; }, 400);
+}
+/* loading screen after sign-in: a random wallpaper from the admin list, a progress bar and a tip */
+const LOAD_TIPS = [
+  'Every duplicate adds a star. At 3★ and 6★ some characters reveal new splash art.',
+  'Losing the 50/50 on the limited banner guarantees the featured UR next time.',
+  'Eggs hide around the plaza. Walk into one to catch it.',
+  'Give gifts to raise bond. At bond level 10 you can propose with a ring.',
+  'Spin the daily wheel for a 1% chance at a marriage ring.',
+  'Tap your avatar to change your title, frame and namecard.',
+  'Hide UI on the home screen to enjoy your wallpaper.'
+];
+function loadingArt() {
+  const own = (S.loadArts || []).map(k => MEDIA.get(k)).filter(Boolean);
+  if (own.length) return { src: rpick(own), fit: 'cover' };
+  const arts = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && mediaArt(e)).map(mediaArt);   // fallback: uploaded character art
+  return arts.length ? { src: rpick(arts), fit: 'contain' } : null;
+}
+function showLoading(done) {
+  const art = loadingArt(), el = document.createElement('div');
+  el.className = 'loading';
+  el.innerHTML = `${art ? `${art.fit === 'contain' ? `<img class="cs-blur" src="${art.src}" alt="">` : ''}<img class="ld-img ${art.fit}" src="${art.src}" alt="">` : '<div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div></div>'}
+    <div class="ld-shade"></div><div class="ld-logo">Prism Plaza</div>
+    <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(LOAD_TIPS))}</p>
+      <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">Loading</span><span class="ld-pct">0%</span></div>
+      <div class="ld-bar"><i></i></div></div>`;
+  document.body.appendChild(el);
+  const bar = el.querySelector('.ld-bar i'), pct = el.querySelector('.ld-pct'), t0 = performance.now(), dur = 2300 + Math.random() * 700;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), v = Math.round((1 - Math.pow(1 - k, 2.2)) * 100);
+    bar.style.width = v + '%'; pct.textContent = v + '%';
+    if (k < 1) return requestAnimationFrame(step);
+    el.querySelector('.ld-txt').textContent = 'Ready';
+    setTimeout(() => { el.classList.add('out'); done && done(); setTimeout(() => el.remove(), 500); }, 250);
+  };
+  requestAnimationFrame(step);
+}
+
+/* new outfit popup: shown after buying a skin */
+function showSkinGet(e) {
+  const owner = e.parent && findEntry(e.parent), skinName = owner ? e.name.replace(owner.name + ' · ', '') : e.name, art = mediaArt(e);
+  const el = document.createElement('div'); el.className = `sg r${e.rarity}`;
+  const words = 'NEW OUTFIT · EXQUISITE FASHION · '.repeat(4);
+  el.innerHTML = `<div class="sg-bg"></div><div class="sg-band"></div>
+    <div class="sg-words"><span>${words}</span><span>${words}</span></div>
+    <div class="sg-streaks">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i};left:${8 + i * 14 + Math.random() * 6}%"></i>`).join('')}</div>
+    <div class="sg-line"></div>
+    <div class="sg-sparks">${Array.from({ length: 26 }, () => `<i style="left:${Math.random() * 100}%;animation-delay:${(-Math.random() * 3).toFixed(2)}s;animation-duration:${(2 + Math.random() * 2.5).toFixed(2)}s"></i>`).join('')}</div>
+    <img class="sg-art ${art ? '' : 'chibi'}" src="${getSplash(e)}" alt="${esc(e.name)}">
+    <div class="sg-name"><b>${esc(owner ? owner.name : e.name)}</b><i>${esc(skinName)}</i></div>
+    <div class="sg-bonus"><span class="sg-lbl">Bonus reward</span><span class="sg-item r${e.rarity}" data-tip="${esc(`<b>Avatar: ${esc(e.name)}</b><span>Use this outfit's art as your profile avatar.</span>`)}">${thumbImg(e)}</span></div>
+    <button class="sg-go" id="sgGo">Go use</button>
+    <div class="sg-hint">Press empty area to close</div>
+    <button class="sg-x" aria-label="Close">${icon('close')}</button>
+    <button class="sg-share" aria-label="Share">${icon('send')}</button>`;
+  document.body.appendChild(el);
+  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 350); };
+  setTimeout(() => el.addEventListener('click', ev => { if (!ev.target.closest('button, .sg-item')) close(); }), 700);
+  el.querySelector('.sg-x').onclick = close;
+  el.querySelector('#sgGo').onclick = () => {
+    S.wallpaper = e.id; S.player.look = { ...e.look }; player.look = S.player.look;
+    persist(); applyWallpaper(); renderMenu(); refreshCharacters(); close();
+    toast(`${e.name} is now your wallpaper and plaza look.`);
+  };
+  el.querySelector('.sg-share').onclick = () => {
+    const text = `I just got ${e.name} in Prism Plaza!`;
+    try { navigator.clipboard.writeText(text).then(() => toast('Copied to share.'), () => toast(text)); } catch (err) { toast(text); }
+  };
 }
 /* login: only guest for now; email and store sign-in come with the server */
 function openSignIn() {
@@ -2106,7 +2232,7 @@ function buySkin(id) {
   if (S.wallet.pearls < SKIN_PRICE) { toast(`${e.name} costs ${SKIN_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   S.wallet.pearls -= SKIN_PRICE; S.owned[id] = 1; persist(); renderMenu(); refreshSummon(); refreshCharacters();
   if ($('#colRoot')) renderDetail(id, 'skin');
-  toast(`Bought ${e.name} for ${SKIN_PRICE} pearls.`);
+  showSkinGet(e);
 }
 function grantEntry(item) {
   const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
@@ -3322,6 +3448,11 @@ function renderTitleTab() {
       <div class="row"><label class="btn mint sm">${icon('upload')}Upload wallpaper<input type="file" accept="image/*" class="sr" id="ttUp"></label>${bg ? '<button class="btn ghost sm" id="ttDel">Remove</button>' : ''}<button class="btn ghost sm" id="ttShow">Show title screen</button></div>
     </section>
     <section class="stack" style="align-content:start">
+      <div><h3>Loading screen wallpapers</h3><p class="tiny">One is picked at random each time the game loads after signing in. Wide art works best. Without any, uploaded character art is used.</p></div>
+      <div class="ld-thumbs">${S.loadArts.filter(k => MEDIA.get(k)).map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-ldel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No loading wallpapers yet.</span>'}</div>
+      <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="ldUp" multiple></label><button class="btn ghost sm" id="ldTest">Preview loading screen</button></div>
+    </section>
+    <section class="stack" style="align-content:start">
       <div><h3>Notice board</h3><p class="tiny">One notice per line: <b>Title | text</b>. Shown from the Notice button on the title screen.</p></div>
       <textarea class="input" id="ttNewsIn" style="min-height:160px">${esc(S.titleNews || DEFAULT_NEWS)}</textarea>
       <div class="row"><button class="btn mint sm" id="ttNewsSave">Save notices</button><button class="btn ghost sm" id="ttNewsReset">Reset to default</button></div>
@@ -3330,6 +3461,12 @@ function renderTitleTab() {
   $('#ttUp').onchange = async ev => { try { await mediaSet('title:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg')); renderTitle(); renderTitleTab(); toast('Title wallpaper updated.'); } catch (e) { toast(e.message); } };
   const del = $('#ttDel'); if (del) del.onclick = async () => { await mediaDel('title:bg'); renderTitle(); renderTitleTab(); toast('Back to the default title background.'); };
   $('#ttShow').onclick = showTitle;
+  $('#ldUp').onchange = async ev => {
+    try { for (const f of ev.target.files) { const k = `load:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg')); S.loadArts.push(k); } persist(); renderTitleTab(); toast('Loading wallpapers added.'); }
+    catch (e) { toast(e.message); }
+  };
+  document.querySelectorAll('[data-ldel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.ldel); S.loadArts = S.loadArts.filter(k => k !== b.dataset.ldel); persist(); renderTitleTab(); });
+  $('#ldTest').onclick = () => { closeModal(); showLoading(); };
   $('#ttNewsSave').onclick = () => { S.titleNews = $('#ttNewsIn').value.trim() || null; persist(); toast('Notices saved.'); };
   $('#ttNewsReset').onclick = () => { S.titleNews = null; persist(); renderTitleTab(); };
 }
