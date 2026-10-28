@@ -1282,6 +1282,26 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .mr-card{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;padding:12px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft)}
 .mr-art{aspect-ratio:9/16;border-radius:10px;overflow:hidden;display:grid;place-items:center;text-align:center;padding:2px;border:2px solid transparent;background:linear-gradient(var(--ink-2),var(--ink-2)) padding-box,var(--mr) border-box}
 .mr-art img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+
+/* MR preview (black and white until owned) and the skins admin tab */
+.mrp{position:fixed;inset:0;z-index:95;overflow:hidden;cursor:pointer;color:#fff;background:#0b0718;animation:fade .3s}
+.mrp .cs-blur{position:absolute}
+.mrp-art{position:absolute;left:50%;top:50%;width:64vw;max-height:100vh;object-fit:contain;transform:translate(-50%,-50%)}
+.mrp-art.chibi{width:calc(100vh * 9 / 16)}
+.mrp:not(.got) .mrp-art{filter:grayscale(1) brightness(.85)}
+.mrp:not(.got) .cs-blur{filter:grayscale(1) blur(40px) brightness(.45)}
+.mrp-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,4,16,.8),transparent 40%),linear-gradient(transparent 60%,rgba(6,4,16,.7))}
+.mrp-info{position:absolute;left:6%;bottom:16%;display:grid;gap:8px;justify-items:start;max-width:min(380px,80vw)}
+.mrp-info b{font-family:var(--display);font-weight:400;font-size:clamp(28px,4vw,44px);line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.mrp.got .mrp-art{filter:drop-shadow(0 0 30px rgba(255,45,111,.5))}
+.sk-group{display:grid;gap:8px;padding:12px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft)}
+.sk-row{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border-left:3px solid var(--rc)}
+.sk-head{display:grid;gap:3px;justify-items:start}
+.sk-slot{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+.sk-prev{width:46px;aspect-ratio:9/16;border-radius:8px;overflow:hidden;display:grid;place-items:center;text-align:center;background:var(--ink-2);border:1px solid var(--edge-soft);font-size:9px}
+.sk-prev.wide{width:96px;aspect-ratio:16/9}
+.sk-prev img{width:100%;height:100%;object-fit:cover}
+@media (max-width:820px){.sk-row{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -2043,7 +2063,7 @@ function showSkinGet(e, o = {}) {
     <div class="sg-streaks">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i};left:${8 + i * 14 + Math.random() * 6}%"></i>`).join('')}</div>
     <div class="sg-line"></div>
     <div class="sg-sparks">${Array.from({ length: 26 }, () => `<i style="left:${Math.random() * 100}%;animation-delay:${(-Math.random() * 3).toFixed(2)}s;animation-duration:${(2 + Math.random() * 2.5).toFixed(2)}s"></i>`).join('')}</div>
-    <img class="sg-art ${art ? '' : 'chibi'}" src="${getSplash(e)}" alt="${esc(e.name)}">
+    <img class="sg-art ${art || artFrom(e.getArt) ? '' : 'chibi'}" src="${artFrom(e.getArt) || getSplash(e)}" alt="${esc(e.name)}">
     ${o.vow ? `<div class="sg-hearts">${Array.from({ length: 16 }, () => `<i style="left:${Math.random() * 100}%;animation-delay:${(-Math.random() * 4).toFixed(2)}s;font-size:${(14 + Math.random() * 18).toFixed(0)}px">♥</i>`).join('')}</div>` : ''}
     <div class="sg-name">${o.vow ? `<span class="sg-kick">${curIcon('rings')} Married</span>` : ''}<b>${esc(owner ? owner.name : e.name)}</b><i>${esc(skinName)} ${e.type === 'skin' ? rtag(e.rarity) : ''}</i></div>
     <div class="sg-bonus"><span class="sg-lbl">${o.vow ? 'Vow rewards' : 'Bonus reward'}</span><span class="row" style="gap:8px;align-items:center"><span class="sg-item r${e.rarity}" data-tip="${esc(`<b>Avatar: ${esc(e.name)}</b><span>Use this outfit's art as your profile avatar.</span>`)}">${thumbImg(e)}</span>${o.vow ? `${badgeHTML(BADGES.find(b => b.id === 'married'), true, 44)}${badgeHTML(BADGES.find(b => b.id === 'bond10'), true, 44)}` : ''}</span></div>
@@ -2256,8 +2276,8 @@ function renderDetail(id, backTo) {
         <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
         ${n && hasStars(e) ? `<div class="stars-big">${starsFor(e)}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies give ${overflowOf(e)} pearls each.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>
-        <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button><button class="btn ghost" id="dWear">${icon('chars')}Use as my plaza look</button>` : ''}${e.type === 'skin' && !n ? `<button class="btn gold" id="dBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>` : ''}${e.type === 'character' && n ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
-        ${n ? '' : `<p class="tiny">${e.type === 'skin' ? 'Buy or pull' : 'Pull'} this on the banner to unlock it.</p>`}
+        <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button><button class="btn ghost" id="dWear">${icon('chars')}Use as my plaza look</button>` : ''}${buyable(e) && !n ? `<button class="btn gold" id="dBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>` : ''}${e.type === 'character' && n ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
+        ${n ? '' : `<p class="tiny">${e.rarity === 6 ? 'Marry this character to unlock it.' : e.type === 'skin' ? 'Buy or pull this on the banner to unlock it.' : 'Pull this on the banner to unlock it.'}</p>`}
       </div>
     </div>`;
   $('#dBack').onclick = () => renderCollection(backTo || 'all');
@@ -2282,8 +2302,21 @@ const fmtLeft = ms => { const m = Math.ceil(ms / 6e4); return m >= 60 ? `${Math.
 /* duplicate rules shared by summons and hatching: first copy 0 stars, +1 star per copy up to 6, then pearls */
 /* skins can also be bought outright */
 const SKIN_PRICE = 60;
+/* black-and-white preview of a character's MR wedding skin, shown in full once you own it */
+function previewMR(c) {
+  const k = mrSkinOf(c); if (!k) return;
+  const got = owns(k.id), art = artFrom(k.art);
+  const el = document.createElement('div'); el.className = `mrp ${got ? 'got' : ''}`;
+  el.innerHTML = `${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="mrp-art ${art ? '' : 'chibi'}" src="${getSplash(k)}" alt="${esc(k.name)}"><div class="mrp-shade"></div>
+    <div class="mrp-info"><span class="sg-kick">${curIcon('rings')} Wedding outfit</span><b>${esc(k.name)}</b>${rtag(6, 'lg')}<span class="tiny">${got ? 'You own this outfit.' : `Preview. Reach bond level ${BOND_MAX} with ${esc(c.name)} and marry them with a ring to unlock it.`}</span></div>
+    <div class="rv-hint">Tap to close</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.onclick = () => el.remove(), 300);
+}
+const buyable = e => e && e.type === 'skin' && e.rarity !== 6;
 function buySkin(id) {
   const e = findEntry(id); if (!e || e.type !== 'skin' || owns(id)) return;
+  if (!buyable(e)) { toast(`${e.name} can't be bought. Marry ${(findEntry(e.parent) || {}).name || 'the character'} to unlock it.`); return; }
   if (S.wallet.pearls < SKIN_PRICE) { toast(`${e.name} costs ${SKIN_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   S.wallet.pearls -= SKIN_PRICE; S.owned[id] = 1; persist(); renderMenu(); refreshSummon(); refreshCharacters();
   if ($('#colRoot')) renderDetail(id, 'skin');
@@ -2755,6 +2788,7 @@ function renderCharacters() {
       ${csSkin ? `<div class="cs-pill" style="color:var(--gold)">Previewing skin: ${esc(shown.name)}${shownOwned ? '' : ' (not owned)'}</div>` : ''}
       <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shown.id ? 'Wallpaper set' : 'Set as wallpaper'}</button><button class="btn ghost" id="csWear">${icon('chars')}Use as plaza look</button></div>`
+        : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
   } else if (csTab === 'bt') {
@@ -2777,7 +2811,7 @@ function renderCharacters() {
         <div class="top">${curIcon('rings')}<div>${bd.married ? `<b>Married to ${esc(c.name)}</b><span class="tiny">Since ${new Date(bd.married).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>`
           : `<b>Marriage</b><span class="tiny">${full ? 'Bond is full. Propose with 1 ring.' : `Unlocks at bond level ${BOND_MAX}.`} You have ${S.wallet.rings} ring${S.wallet.rings === 1 ? '' : 's'}.</span>`}</div></div>
         ${bd.married ? '' : `<div class="row">${full && n ? `<button class="btn gold sm" id="csPropose" ${S.wallet.rings ? '' : 'disabled'}>${curIcon('rings')}Propose</button>` : ''}<button class="btn ghost sm" id="csRing">Buy a ring · ${costHTML(RING_PRICE)}</button></div>`}
-        <span class="tiny">Wedding outfit: ${wed ? esc(wed.name) : 'coming in a future update'}</span>
+        <div class="row" style="justify-content:space-between"><span class="tiny">Wedding outfit: ${wed ? `${esc(wed.name)} ${rtag(wed.rarity)}` : 'coming in a future update'}</span>${wed ? `<button class="btn ghost sm" id="csMRPrev">${icon('eye')}Preview MR skin</button>` : ''}</div>
       </div>
       <div class="bond-track">${[[3, 'Profile story (coming soon)'], [5, 'Close Bond badge'], [8, 'Memory art (coming soon)'], [10, 'Soulbound badge · marriage']].map(([l, r]) =>
         `<div class="bond-node ${lv >= l ? 'done' : ''}"><b>Lv ${l}</b><span>${r}</span>${icon(lv >= l ? 'check' : 'lock')}</div>`).join('')}</div>`;
@@ -2803,7 +2837,7 @@ function renderCharacters() {
       <button class="rbtn ${csSkins ? 'on' : ''}" id="csSkinBtn" aria-label="Skins">${icon('hanger')}</button>
       <button class="rbtn" id="csViewBtn" aria-label="View the art without the menu">${icon('eye')}</button>
     </div>
-    ${csSkins ? `<div class="cs-skins glass-deep cs-ui"><div class="lbl-sm">Outfits</div><div class="grid">${[c, ...skins].map(s => `<button class="sk r${s.rarity} ${s.id === shown.id ? 'on' : ''} ${owns(s.id) ? '' : 'locked'}" data-sk="${esc(s.id)}" ${owns(s.id) || s === c ? '' : `data-tip="${esc(`<b>${esc(s.name)}</b><span>Not owned. Buy it for ${SKIN_PRICE} pearls.</span>`)}"`}><img src="${getArt(s)}" alt=""><span>${s === c ? 'Default' : esc(s.name.replace(c.name + ' · ', ''))}</span></button>`).join('')}</div>
+    ${csSkins ? `<div class="cs-skins glass-deep cs-ui"><div class="lbl-sm">Outfits</div><div class="grid">${[c, ...skins].map(s => `<button class="sk r${s.rarity} ${s.id === shown.id ? 'on' : ''} ${owns(s.id) ? '' : 'locked'}" data-sk="${esc(s.id)}" ${owns(s.id) || s === c ? '' : `data-tip="${esc(`<b>${esc(s.name)}</b><span>${buyable(s) ? `Not owned. Buy it for ${SKIN_PRICE} pearls.` : 'Not owned. Unlocked by marriage.'}</span>`)}"`}><img src="${getArt(s)}" alt=""><span>${s === c ? 'Default' : esc(s.name.replace(c.name + ' · ', ''))}</span></button>`).join('')}</div>
       ${skins.length ? '' : '<p class="tiny">No skins for this character yet.</p>'}</div>` : ''}
     <section class="cs-panel cs-ui">${head}${body}</section>`;
   $('#csBack').onclick = closeCharacters;
@@ -2821,6 +2855,7 @@ function renderCharacters() {
   const bs = $('#csBuySkin'); if (bs) bs.onclick = () => buySkin(shown.id);
   csEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { S.artPick[c.id] = b.dataset.art; persist(); applyWallpaper(); renderMenu(); renderCharacters(); toast(`Now showing ${c.name}'s ${ASC.find(a => a.k === b.dataset.art).label.toLowerCase()} splash art.`); });
   const br = $('#csRing'); if (br) br.onclick = buyRing;
+  const mp = $('#csMRPrev'); if (mp) mp.onclick = () => previewMR(c);
   $('#csViewBtn').onclick = e => { e.stopPropagation(); csView = true; csEl.classList.add('viewing'); };
   const w = $('#csWall'); if (w) w.onclick = () => { S.wallpaper = shown.id; persist(); applyWallpaper(); renderCharacters(); toast(`${shown.name} is now your wallpaper.`); };
   const wr = $('#csWear'); if (wr) wr.onclick = () => { S.player.look = { ...shown.look }; player.look = S.player.look; persist(); renderMenu(); toast(`Your plaza avatar now looks like ${shown.name}.`); };
@@ -3224,7 +3259,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -3237,6 +3272,7 @@ function renderAdminTab() {
   if (adminTab === 'wallet') return renderWalletTab();
   if (adminTab === 'title') return renderTitleTab();
   if (adminTab === 'mr') return renderMRTab();
+  if (adminTab === 'skins') return renderSkinsTab();
   renderPoolTab();
 }
 
@@ -3430,7 +3466,7 @@ function renderAdminList() {
     delete S.owned[id];
     if (S.featuredId === id) S.featuredId = null;
     if (S.wallpaper === id) S.wallpaper = null;
-    await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); delete S.artPick[id];
+    await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); await mediaDel('get:' + id); delete S.artPick[id];
     adminConfirm = null; persist(); renderMenu();
     if (adminEditId === id) fillAdminForm(null); else { fillParentOptions($('#adParent').value); renderAdminList(); }
     toast(`Deleted ${e ? e.name : 'entry'}.`);
@@ -3441,7 +3477,7 @@ function exportData() {
     format: 'prismplaza-2',
     featuredId: S.featuredId,
     banners: S.banners,
-    pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6) })),
+    pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6), getArt: artFrom(e.getArt) })),
     icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v]))
   });
 }
@@ -3464,7 +3500,7 @@ function showImport() {
     for (const e of pool) {
       e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) || (+e.rarity === 6 && e.type === 'skin') ? +e.rarity : 4;
       delete e.element; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
-      for (const k of ['art', 'art3', 'art6']) { if (e[k] && e[k].startsWith('data:')) { await mediaSet(`${k}:${e.id}`, e[k]); e[k] = `idb:${k}:${e.id}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
+      for (const k of ['art', 'art3', 'art6', 'getArt']) { const mk = `${k === 'getArt' ? 'get' : k}:${e.id}`; if (e[k] && e[k].startsWith('data:')) { await mediaSet(mk, e[k]); e[k] = `idb:${mk}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
     S.pool = pool; S.featuredId = d.featuredId || null; if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
@@ -3526,6 +3562,31 @@ function renderIconsTab() {
   document.querySelectorAll('[data-ireset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.ireset); iconsChanged(); toast('Icon reset to default.'); });
 }
 function iconsChanged() { hydrateIcons(); renderMenu(); renderIconsTab(); const mi = modalEl && modalEl.querySelector('.m-ic'); if (mi) mi.innerHTML = icon('wrench'); }
+
+/* skins tab: per skin a full art (used everywhere) and an unlock art (only on the new outfit popup) */
+function renderSkinsTab() {
+  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => a.name.localeCompare(b.name));
+  const slot = (k, key, label, hint) => { const a = artFrom(k[key]);
+    return `<div class="sk-slot"><div class="sk-prev ${key === 'getArt' ? 'wide' : ''}">${a ? `<img src="${a}" alt="">` : `<span class="tiny">${key === 'getArt' ? 'Uses the full art' : 'Chibi'}</span>`}</div>
+      <div style="display:grid;gap:4px"><b>${label}</b><span class="tiny">${hint}</span><div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}${a ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-skup="${esc(k.id)}" data-skkey="${key}"></label>${a ? `<button class="link" data-skx="${esc(k.id)}" data-skkey="${key}">Remove</button>` : ''}</div></div></div>`; };
+  $('#adPanel').innerHTML = `<div class="stack">
+    <div><h3>Skins</h3><p class="tiny"><b>Full art</b> is the skin's splash art everywhere (character screen, wallpaper, collection, pulls). <b>Unlock art</b> only appears in the "new outfit" animation when the skin is bought or received; without it the full art is used. MR wedding skins are listed here too.</p></div>
+    ${chars.map(c => { const list = S.pool.filter(x => x.type === 'skin' && x.parent === c.id);
+      return `<div class="sk-group"><div class="ad-head" style="margin:0"><h3 style="font-size:16px">${esc(c.name)}</h3><button class="btn mint sm" data-newsk="${esc(c.id)}">${icon('plus')}New skin</button></div>
+        ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head"><b>${esc(k.name.replace(c.name + ' · ', ''))}</b>${rtag(k.rarity)}<span class="tiny">${k.rarity === 6 ? 'Unlocked by marriage' : `Buyable for ${SKIN_PRICE} pearls`}</span><button class="link" data-skpv="${esc(k.id)}">Preview animation</button></div>
+          ${slot(k, 'art', 'Full art', 'Shown everywhere')}${slot(k, 'getArt', 'Unlock art', 'Only when bought or received')}</div>`).join('') : '<p class="tiny">No skins yet.</p>'}</div>`; }).join('')}
+  </div>`;
+  document.querySelectorAll('[data-skup]').forEach(inp => inp.onchange = async () => {
+    const k = findEntry(inp.dataset.skup), key = inp.dataset.skkey, mk = `${key === 'art' ? 'art' : 'get'}:${k.id}`;
+    try { await mediaSet(mk, await resizeImage(inp.files[0], key === 'art' ? 1600 : 1920)); k[key] = 'idb:' + mk; persist(); renderSkinsTab(); renderMenu(); toast('Art saved.'); }
+    catch (e) { toast(e.message); }
+  });
+  document.querySelectorAll('[data-skx]').forEach(b => b.onclick = async () => {
+    const k = findEntry(b.dataset.skx), key = b.dataset.skkey; await mediaDel(`${key === 'art' ? 'art' : 'get'}:${k.id}`); k[key] = null; persist(); renderSkinsTab(); renderMenu();
+  });
+  document.querySelectorAll('[data-skpv]').forEach(b => b.onclick = () => { const k = findEntry(b.dataset.skpv); closeModal(); showSkinGet(k, k.rarity === 6 ? { vow: true } : {}); });
+  document.querySelectorAll('[data-newsk]').forEach(b => b.onclick = () => { adminTab = 'pool'; renderAdminTab(); newSkinFor(b.dataset.newsk); });
+}
 
 /* marriage skins tab: one MR skin per character, unlocked by marrying them */
 function mrSkinOf(c) { const e = c.weddingSkin && findEntry(c.weddingSkin); return e && e.type === 'skin' ? e : null; }
