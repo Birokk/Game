@@ -1126,6 +1126,55 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .sx-tab b,.sx-tab small,.sx-tab .dot-n{z-index:2}
 .promo::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(4,6,18,.6),rgba(4,6,18,.2) 55%,transparent 75%);pointer-events:none}
 .promo .pt{z-index:2}
+/* ---------- title screen ---------- */
+.title{position:fixed;inset:0;z-index:48;overflow:hidden;cursor:pointer;color:#fff;background:#070a1c;transition:opacity .6s ease,transform .6s ease}
+.title.leaving{opacity:0;transform:scale(1.04);pointer-events:none}
+.tt-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 85%,rgba(255,150,90,.35),transparent 55%),linear-gradient(180deg,#070a24,#1a1450 45%,#5a2a6e 75%,#d8708a)}
+.tt-moon{position:absolute;left:50%;top:8%;width:min(46vw,520px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle at 36% 32%,#fff,#f4ecff 25%,#d8c6ff 55%,#9a84e0);box-shadow:0 0 120px 30px rgba(220,200,255,.3);opacity:.8}
+.tt-rays{position:absolute;left:50%;top:30%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,255,255,.035) 0 4deg,transparent 4deg 12deg);animation:spin 90s linear infinite}
+.tt-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;animation:wpZoom 24s ease-in-out infinite alternate}
+.title.has-img .tt-bg{opacity:0}
+.tt-shade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 120% 90% at 50% 45%,transparent 45%,rgba(4,6,18,.7)),linear-gradient(transparent 55%,rgba(4,6,18,.75))}
+.tt-motes{position:absolute;inset:0;pointer-events:none}
+.tt-motes i{position:absolute;bottom:-10px;aspect-ratio:1;border-radius:50%;background:#ffd99a;box-shadow:0 0 10px #ffb070;animation:rise linear infinite;opacity:.7}
+.tt-logo{position:absolute;left:50%;top:16%;transform:translateX(-50%);display:grid;justify-items:center;gap:6px;text-align:center;width:max-content;max-width:calc(100% - 32px);pointer-events:none}
+.tt-logo h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(48px,9vw,120px);line-height:1;letter-spacing:.04em;
+  background:linear-gradient(180deg,#fff 30%,#ffe6b0 60%,#e8b04a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 rgba(30,10,40,.55)) drop-shadow(0 0 30px rgba(255,200,120,.45))}
+.tt-kicker{font-size:clamp(11px,1.4vw,14px);letter-spacing:.3em;text-transform:uppercase;color:#ffe6b0;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+.tt-sub{font-size:clamp(13px,1.6vw,18px);letter-spacing:.24em;color:rgba(255,255,255,.85);text-shadow:0 2px 6px rgba(0,0,0,.8)}
+.tt-center{position:absolute;left:50%;bottom:16%;transform:translateX(-50%);display:grid;justify-items:center;gap:12px;width:max-content;max-width:calc(100% - 32px);text-align:center}
+.tt-start{font-family:var(--display);font-size:clamp(22px,3vw,34px);letter-spacing:.2em;text-transform:uppercase;color:#fff;padding:10px 40px;border-radius:999px;
+  background:linear-gradient(90deg,transparent,rgba(8,12,30,.6) 20%,rgba(8,12,30,.6) 80%,transparent);text-shadow:0 0 18px rgba(255,211,107,.9),0 2px 4px rgba(0,0,0,.8);animation:ttPulse 2.2s ease-in-out infinite}
+@keyframes ttPulse{0%,100%{opacity:.55}50%{opacity:1}}
+.tt-who{font-size:13px;color:rgba(255,255,255,.85);text-shadow:0 1px 4px rgba(0,0,0,.9)}
+.tt-who b{color:var(--gold)}
+.tt-side{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(16px + env(safe-area-inset-top,0px));display:grid;gap:10px}
+.tt-ib{display:grid;justify-items:center;gap:3px;width:64px;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.tt-ib .ic{width:22px;height:22px;padding:11px;box-sizing:content-box;border-radius:50%;background:rgba(8,12,30,.5);border:1.5px solid rgba(255,255,255,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s}
+.tt-ib:hover .ic{background:rgba(255,255,255,.18)}
+.tt-foot{position:absolute;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;gap:12px;padding:0 max(16px,env(safe-area-inset-left,0px));font-size:11px;color:rgba(255,255,255,.6);font-family:var(--read);font-weight:700;pointer-events:none}
+.signin{width:100%;justify-content:flex-start;height:50px}
+.signin .soon{margin-left:auto;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.12)}
+.faq{padding:10px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--edge-soft);margin-bottom:6px}
+.faq p{margin:8px 0 0}
+@media (max-width:820px){.tt-side{grid-auto-flow:column;top:auto;bottom:calc(36px + env(safe-area-inset-bottom,0px));left:50%;right:auto;transform:translateX(-50%)}.tt-center{bottom:26%}.tt-foot{font-size:10px}.tt-ib{width:56px}}
+
+/* ---------- collection detail: splash art fills the tab, info on top ---------- */
+.dt-hero{position:relative;min-height:min(68vh,620px);border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;border:2px solid var(--rc);background:linear-gradient(160deg,color-mix(in srgb,var(--rc) 30%,var(--ink-2)),#070a1c)}
+.dt-hero.r5{border-color:transparent;background:linear-gradient(160deg,color-mix(in srgb,#a855f7 30%,var(--ink-2)),#070a1c) padding-box,var(--ur) border-box}
+.dt-hero .cs-blur{inset:-60px}
+.dt-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:72% 50%}
+.dt-art.chibi{inset:auto;right:4%;bottom:0;width:auto;height:94%;aspect-ratio:9/16;object-position:50% 100%}
+.dt-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(5,8,20,.88),rgba(5,8,20,.55) 42%,transparent 72%),linear-gradient(transparent 60%,rgba(5,8,20,.6))}
+.dt-info{position:relative;z-index:1;display:grid;gap:10px;align-content:end;max-width:min(470px,58%);padding:26px 28px}
+.dt-info h3{font-size:clamp(30px,4vw,44px);line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.dt-info .desc{text-shadow:0 1px 4px rgba(0,0,0,.9);color:#dfe4f7}
+.dt-hero.unowned .dt-art{filter:grayscale(1) brightness(.8)}
+.dt-hero.unowned .cs-blur{filter:grayscale(1) blur(40px) brightness(.45)}
+.dt-hero.unowned{border-color:rgba(255,255,255,.2);background:linear-gradient(160deg,#2a2e3e,#070a1c)}
+@media (max-width:820px){.dt-hero{min-height:72vh}.dt-art{object-position:50% 0}.dt-art.chibi{right:50%;transform:translateX(50%);height:70%;top:0;bottom:auto}.dt-shade{background:linear-gradient(transparent 30%,rgba(5,8,20,.9) 70%)}.dt-info{max-width:none;padding:18px}}
+.tt-prev{aspect-ratio:16/9;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(180deg,#070a24,#1a1450 45%,#5a2a6e 75%,#d8708a);border:1px solid var(--edge-soft)}
+.tt-prev img{width:100%;height:100%;object-fit:cover}
 </style>
 </head>
 <body>
@@ -1140,6 +1189,26 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   <svg class="wp-waves" viewBox="0 0 1440 320" preserveAspectRatio="none"><path d="M0 190C240 130 480 250 720 190S1200 130 1440 190V320H0Z" fill="rgba(255,255,255,.07)"/><path d="M0 245C300 195 540 295 840 245S1260 205 1440 245V320H0Z" fill="rgba(255,255,255,.09)"/></svg>
   <img class="wp-blur" id="wpBlur" alt="" hidden>
   <img class="wp-splash" id="wpSplash" alt="" hidden>
+</div>
+
+<div class="title" id="title" role="dialog" aria-label="Prism Plaza title screen">
+  <div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div><div class="tt-rays"></div></div>
+  <img class="tt-img" id="ttImg" alt="" hidden>
+  <div class="tt-shade"></div>
+  <div class="tt-motes" id="ttMotes"></div>
+  <div class="tt-logo"><span class="tt-kicker">✦ A Lantern Festival Gacha ✦</span><h1>Prism Plaza</h1><span class="tt-sub">Collect · Bond · Celebrate</span></div>
+  <div class="tt-center">
+    <button class="tt-start" id="ttStart">Tap to start</button>
+    <div class="tt-who" id="ttWho"></div>
+  </div>
+  <nav class="tt-side" aria-label="Title menu">
+    <button class="tt-ib" id="ttNews"><span data-ic="mail"></span>Notice</button>
+    <button class="tt-ib" id="ttSupport"><span data-ic="chat"></span>Support</button>
+    <button class="tt-ib" data-open="settings"><span data-ic="gear"></span>Settings</button>
+    <button class="tt-ib" id="ttRepair"><span data-ic="wrench"></span>Repair</button>
+    <button class="tt-ib" id="ttTerms"><span data-ic="info"></span>Terms</button>
+  </nav>
+  <div class="tt-foot"><span>v0.9.0 · Server: Prism-1</span><span id="ttUid"></span><span>© 2026 Prism Plaza</span></div>
 </div>
 
 <main class="menu is-open" id="menu" aria-label="Main menu">
@@ -1380,6 +1449,7 @@ function sampleState() {
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
+    account: null, support: [], titleNews: null,
     artPick: {},
     spin: { last: null },
     gifts: { sweets: 0, bracelet: 0, plush: 0 },
@@ -1433,7 +1503,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
@@ -1794,6 +1864,78 @@ function setMenu(open) {
 $('#enterPlaza').onclick = () => setMenu(false);
 $('#openMenu').onclick = () => setMenu(true);
 
+/* ---------- title screen: wallpaper (set in admin), tap to start, guest login, notice / support / repair / terms ---------- */
+const titleEl = $('#title');
+let titleOn = true;
+const DEFAULT_NEWS = 'Welcome to Prism Plaza! | The lantern festival is open. Claim your daily login and spin the wheel every day.\nLimited banner: Aria | Aria is on rate-up until the banner ends.\nPets have arrived | Catch eggs in the plaza and hatch them in the Pets screen.';
+(function seedMotes() { let h = ''; for (let i = 0; i < 24; i++) { const d = 8 + Math.random() * 12; h += `<i style="left:${Math.random() * 100}%;width:${3 + Math.random() * 5}px;animation-duration:${d}s;animation-delay:${-Math.random() * d}s"></i>`; } $('#ttMotes').innerHTML = h; })();
+function renderTitle() {
+  const bg = MEDIA.get('title:bg'), img = $('#ttImg');
+  img.hidden = !bg; if (bg) img.src = bg; else img.removeAttribute('src');
+  titleEl.classList.toggle('has-img', !!bg);
+  $('#ttWho').innerHTML = S.account ? `Signed in as <b>${esc(S.player.name)}</b> · Guest · <button class="link" id="ttSwitch">Switch account</button>` : 'Not signed in';
+  $('#ttUid').textContent = S.account ? `UID ${S.profile.uid}` : '';
+  const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); openSignIn(); };
+}
+function showTitle() { titleOn = true; closeModal(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
+function enterGame() {
+  titleOn = false; closeModal(); titleEl.classList.add('leaving');
+  setTimeout(() => { titleEl.hidden = true; }, 600);
+  renderMenu();
+  if (loginReady()) setTimeout(openLogin, 650);
+}
+/* login: only guest for now; email and store sign-in come with the server */
+function openSignIn() {
+  openModal({ title: 'Sign in', ic: 'chars', body: `<div class="stack">
+    <p class="desc">Choose how to play. Your progress is saved in this browser for now.</p>
+    <button class="btn gold signin" id="siGuest">${icon('chars')}Play as guest</button>
+    <button class="btn ghost signin" disabled>${icon('mail')}Sign in with email<span class="soon">Soon</span></button>
+    <button class="btn ghost signin" disabled>${icon('sparkle')}Sign in with Google<span class="soon">Soon</span></button>
+    <button class="btn ghost signin" disabled>${icon('sparkle')}Sign in with Apple<span class="soon">Soon</span></button>
+    <p class="tiny">Guest progress can't move between devices yet. Linking an account will be possible once accounts launch.</p></div>`,
+    onMount: () => { $('#siGuest').onclick = () => { S.account = { type: 'guest', since: S.account?.since || Date.now() }; persist(); renderTitle(); enterGame(); toast(`Welcome, ${S.player.name}!`); }; } });
+}
+titleEl.addEventListener('click', e => {
+  if (e.target.closest('button, a, .tt-side')) return;
+  if (S.account) enterGame(); else openSignIn();
+});
+$('#ttStart').onclick = () => { if (S.account) enterGame(); else openSignIn(); };
+$('#ttNews').onclick = openNews;
+$('#ttSupport').onclick = openSupport;
+$('#ttTerms').onclick = () => openModal({ title: 'Terms & privacy', ic: 'info', body: `<div class="stack"><p class="desc">Prism Plaza is in development. Your progress, art and settings are stored only in this browser. Nothing is sent to a server yet.</p>
+  <p class="desc">Summon rates are listed on every banner's Rates page. Paid currency isn't sold yet.</p><p class="tiny">Full terms of service and a privacy policy will be published before launch.</p></div>` });
+$('#ttRepair').onclick = () => openModal({ title: 'Repair', ic: 'wrench', body: `<div class="stack"><p class="desc">Something looks wrong? Repair reloads the game and its images. Your progress is kept.</p>
+  <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancel</button><button class="btn mint" id="rpGo">Repair and reload</button></div></div>`,
+  onMount: () => { $('#rpGo').onclick = () => { persist(); location.reload(); }; modalEl.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal); } });
+function openNews() {
+  const items = (S.titleNews || DEFAULT_NEWS).split('\n').map(l => l.split('|').map(x => x.trim())).filter(x => x[0]);
+  openModal({ title: 'Notice', ic: 'mail', body: `<div class="mail">${items.map(([t, b]) => `<div class="mail-row"><div style="min-width:0"><div class="meta">Plaza Team</div><h4>${esc(t)}</h4>${b ? `<p>${esc(b)}</p>` : ''}</div></div>`).join('')}</div>` });
+}
+/* customer service: FAQ and a contact form; messages are kept locally until a support server exists */
+function openSupport() {
+  const faq = [
+    ['I lost my progress', 'Progress is saved in this browser. Clearing site data or switching browsers starts a new game. Use the same browser to keep playing.'],
+    ['How do pity and the 50/50 work?', 'Open a banner and tap Rates. A UR is guaranteed by pull 50, and losing the 50/50 on the limited banner guarantees the featured UR next time.'],
+    ['How do I get pets?', 'Catch eggs in the plaza or combine 10 egg fragments from summons, then hatch them in the Pets screen.'],
+    ['A purchase or reward is missing', 'Check your Mail first. If it is still missing, send us a message below with your UID.']
+  ];
+  openModal({ title: 'Customer service', ic: 'chat', body: `<div class="stack">
+    <div><h3 style="margin-bottom:8px">Frequently asked</h3>${faq.map(([q, a]) => `<details class="faq"><summary>${esc(q)}</summary><p class="desc">${esc(a)}</p></details>`).join('')}</div>
+    <form class="form" id="csForm"><h3>Contact us</h3>
+      <label class="field"><span>Topic</span><select class="input" id="csTopic"><option>Account and login</option><option>Summons and rewards</option><option>Bug report</option><option>Suggestion</option><option>Other</option></select></label>
+      <label class="field"><span>Message</span><textarea class="input" id="csMsg" maxlength="600" placeholder="Tell us what happened"></textarea></label>
+      <div class="row" style="justify-content:space-between"><span class="tiny">UID ${S.profile.uid} is attached to your message.</span><button class="btn mint" type="submit">Send</button></div>
+      ${S.support.length ? `<p class="tiny">${S.support.length} message${S.support.length === 1 ? '' : 's'} waiting to be delivered.</p>` : ''}
+    </form></div>`, onMount: () => {
+    $('#csForm').onsubmit = e => {
+      e.preventDefault();
+      const msg = $('#csMsg').value.trim(); if (!msg) { $('#csMsg').focus(); return; }
+      S.support.push({ topic: $('#csTopic').value, msg, t: Date.now() }); persist(); closeModal();
+      toast('Message saved. It will be delivered when customer service goes online.');
+    };
+  } });
+}
+
 /* ---------- modals ---------- */
 let modalEl = null;
 function openModal({ title, ic, body, wide, kind, onMount }) {
@@ -1860,7 +2002,7 @@ function openSettings() {
     <label class="switch">Music<input type="checkbox" id="setMusic" ${S.settings.music ? 'checked' : ''}><i></i></label>
     <label class="switch">Sound effects<input type="checkbox" id="setSfx" ${S.settings.sfx ? 'checked' : ''}><i></i></label>
     <label class="field"><span>Graphics</span><select class="input" id="setGfx">${['high', 'medium', 'low'].map(g => `<option value="${g}" ${S.settings.gfx === g ? 'selected' : ''}>${g[0].toUpperCase() + g.slice(1)}</option>`).join('')}</select></label>
-    <div class="row" style="justify-content:space-between"><span class="tiny">Audio and graphics settings are placeholders for now.</span><button type="button" class="btn ghost sm" data-open="admin">${icon('wrench')}Admin panel</button></div>
+    <div class="row" style="justify-content:space-between"><span class="tiny">Audio and graphics settings are placeholders for now.</span><span class="row" style="gap:6px"><button type="button" class="btn ghost sm" id="setTitle">${icon('back')}Title screen</button><button type="button" class="btn ghost sm" data-open="admin">${icon('wrench')}Admin panel</button></span></div>
   </form>`, onMount: () => {
     $('#setName').addEventListener('input', e => { S.player.name = e.target.value.trim() || 'Traveler'; player.name = S.player.name; renderMenu(); persist(); });
     $('#setNames').onchange = e => { S.settings.names = e.target.checked; persist(); };
@@ -1869,6 +2011,7 @@ function openSettings() {
     $('#setGfx').onchange = e => { S.settings.gfx = e.target.value; persist(); };
     $('#setPullFit').onchange = e => { S.settings.pullFit = e.target.value === 'fit'; persist(); };
     $('#setForm').onsubmit = e => e.preventDefault();
+    $('#setTitle').onclick = showTitle;
   } });
 }
 
@@ -1921,18 +2064,19 @@ function renderDetail(id, backTo) {
   const parent = e.parent && findEntry(e.parent);
   const n = S.owned[e.id] || 0;
   const wearable = (e.type === 'character' || e.type === 'skin') && n;
+  const art = mediaArt(e);
   root.innerHTML = `<button class="btn ghost sm" id="dBack" style="margin-bottom:14px">${icon('back')}Back</button>
-    <div class="detail r${e.rarity}">
-      <div class="detail-art"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>
-      <div class="stack" style="align-content:start;gap:10px">
-        <div class="eyebrow">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>
+    <div class="dt-hero r${e.rarity} ${n ? '' : 'unowned'}">
+      ${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="dt-art ${art ? '' : 'chibi'}" src="${getSplash(e)}" alt="${esc(e.name)}"><div class="dt-shade"></div>
+      <div class="dt-info">
+        <div class="eyebrow ts" style="color:#fff">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>
         <h3>${esc(e.name)}</h3>
         <div>${rtag(e.rarity, 'lg')}</div>
         <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
         ${n ? `<div class="stars-big">${starRow(starsOf(e.id))}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies give ${overflowOf(e)} pearls each.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>
-        <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button><button class="btn ghost" id="dWear">${icon('chars')}Use as my plaza look</button>` : ''}${e.type === 'skin' && !n ? `<button class="btn gold" id="dBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>` : ''}${e.type === 'character' ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
-        ${n ? '' : `<p class="tiny">${e.type === 'skin' ? 'Buy or pull' : 'Pull'} this on the banner to set it as your wallpaper or plaza look.</p>`}
+        <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button><button class="btn ghost" id="dWear">${icon('chars')}Use as my plaza look</button>` : ''}${e.type === 'skin' && !n ? `<button class="btn gold" id="dBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>` : ''}${e.type === 'character' && n ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
+        ${n ? '' : `<p class="tiny">${e.type === 'skin' ? 'Buy or pull' : 'Pull'} this on the banner to unlock it.</p>`}
       </div>
     </div>`;
   $('#dBack').onclick = () => renderCollection(backTo || 'all');
@@ -2369,12 +2513,12 @@ function openSpin() {
 
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
-const charList = () => S.pool.filter(e => e.type === 'character').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
 function openCharacters(id) {
   const list = charList();
-  if (!list.length) { toast('There are no characters yet. Add some in the admin panel.'); return; }
-  csId = id && findEntry(id) ? id : csId && findEntry(csId) ? csId : list[0].id;
+  if (!list.length) { toast("You don't own any characters yet. Summon on a banner to get your first one."); return; }
+  csId = id && owns(id) ? id : csId && owns(csId) ? csId : list[0].id;
   csTab = 'home'; csSkin = null; csView = false; csSkins = false;
   closeModal(); closeCharacters();
   csEl = document.createElement('div'); csEl.className = 'cs'; csEl.setAttribute('role', 'dialog'); csEl.setAttribute('aria-label', 'Characters');
@@ -2868,7 +3012,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -2879,6 +3023,7 @@ function renderAdminTab() {
   if (adminTab === 'icons') return renderIconsTab();
   if (adminTab === 'banners') return renderBannersTab();
   if (adminTab === 'wallet') return renderWalletTab();
+  if (adminTab === 'title') return renderTitleTab();
   renderPoolTab();
 }
 
@@ -3166,6 +3311,28 @@ function renderIconsTab() {
   document.querySelectorAll('[data-ireset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.ireset); iconsChanged(); toast('Icon reset to default.'); });
 }
 function iconsChanged() { hydrateIcons(); renderMenu(); renderIconsTab(); const mi = modalEl && modalEl.querySelector('.m-ic'); if (mi) mi.innerHTML = icon('wrench'); }
+
+/* title screen tab */
+function renderTitleTab() {
+  const bg = MEDIA.get('title:bg');
+  $('#adPanel').innerHTML = `<div class="admin">
+    <section class="stack" style="align-content:start">
+      <div><h3>Title screen wallpaper</h3><p class="tiny">Shown behind the logo and "Tap to start". Use wide art, for example 1920×1080; it fills the screen. Without one, the default moonlit sky is used.</p></div>
+      <div class="tt-prev">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">Default background</span>'}</div>
+      <div class="row"><label class="btn mint sm">${icon('upload')}Upload wallpaper<input type="file" accept="image/*" class="sr" id="ttUp"></label>${bg ? '<button class="btn ghost sm" id="ttDel">Remove</button>' : ''}<button class="btn ghost sm" id="ttShow">Show title screen</button></div>
+    </section>
+    <section class="stack" style="align-content:start">
+      <div><h3>Notice board</h3><p class="tiny">One notice per line: <b>Title | text</b>. Shown from the Notice button on the title screen.</p></div>
+      <textarea class="input" id="ttNewsIn" style="min-height:160px">${esc(S.titleNews || DEFAULT_NEWS)}</textarea>
+      <div class="row"><button class="btn mint sm" id="ttNewsSave">Save notices</button><button class="btn ghost sm" id="ttNewsReset">Reset to default</button></div>
+      ${S.support.length ? `<div><h3>Support messages · ${S.support.length}</h3><div class="hist">${S.support.slice().reverse().map(m => `<div><span>${esc(m.topic)}: ${esc(m.msg.slice(0, 60))}</span><time>${new Date(m.t).toLocaleDateString('en-GB')}</time></div>`).join('')}</div></div>` : ''}
+    </section></div>`;
+  $('#ttUp').onchange = async ev => { try { await mediaSet('title:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg')); renderTitle(); renderTitleTab(); toast('Title wallpaper updated.'); } catch (e) { toast(e.message); } };
+  const del = $('#ttDel'); if (del) del.onclick = async () => { await mediaDel('title:bg'); renderTitle(); renderTitleTab(); toast('Back to the default title background.'); };
+  $('#ttShow').onclick = showTitle;
+  $('#ttNewsSave').onclick = () => { S.titleNews = $('#ttNewsIn').value.trim() || null; persist(); toast('Notices saved.'); };
+  $('#ttNewsReset').onclick = () => { S.titleNews = null; persist(); renderTitleTab(); };
+}
 
 /* wallet tab */
 function renderWalletTab() {
@@ -4009,6 +4176,11 @@ $('#minimapBtn').onclick = openMap;
 const keys = new Set();
 const typing = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '');
 document.addEventListener('keydown', e => {
+  if (titleOn && !pullEl) {
+    if (e.key === 'Escape' && modalEl) closeModal();
+    else if (!modalEl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $('#ttStart').click(); }
+    return;
+  }
   if (pullEl) {
     if (e.key === 'Escape') { if (pullState && pullState.phase === 'summary') closePull(); else showSummary(); }
     else if ((e.key === ' ' || e.key === 'Enter') && pullState && pullState.phase !== 'summary') { e.preventDefault(); tapPull(); }
@@ -4330,7 +4502,7 @@ function loop(t) {
   renderMenu();
   menuEl.inert = false;
   tickWorld(); setInterval(() => { if (menuOpen) tickWorld(); }, 6000);
-  if (loginReady()) openLogin();
+  renderTitle();
   requestAnimationFrame(loop);
 })();
 setInterval(() => { if (menuOpen && !modalEl) renderMenu(); }, 60000);
