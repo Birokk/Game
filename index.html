@@ -58,8 +58,9 @@ img.ic,img.cic{object-fit:contain}
 .wp-pearls{position:absolute;inset:0}
 .wp-pearls i{position:absolute;bottom:-12%;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff,#f4ecff 30%,#cdb9f5 70%,rgba(160,140,230,.5));box-shadow:0 0 14px rgba(230,210,255,.5);animation:rise linear infinite;opacity:.75}
 @keyframes rise{from{transform:translate(0,0)}50%{transform:translate(18px,-60vh)}to{transform:translate(-8px,-125vh)}}
-.wp-blur{display:none!important}
-.wp-splash{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;animation:wpZoom 20s ease-in-out infinite alternate}
+.wp-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.6)}
+.wallpaper.chibi .wp-blur{display:none!important}
+.wp-splash{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:wpZoom 20s ease-in-out infinite alternate}
 .wallpaper.chibi .wp-splash{top:auto;bottom:4%;height:78%;object-fit:contain;object-position:50% 100%;transform-origin:50% 100%}
 @keyframes wpZoom{to{transform:scale(1.05)}}
 @keyframes breathe{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-8px)}}
@@ -495,7 +496,6 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .admin,.detail{grid-template-columns:minmax(0,1fr)}
   .detail-art{max-width:280px}
   .rv-info{left:16px;right:16px;max-width:none;bottom:12%}
-  .wp-splash{object-position:50% 25%}
   .rv-coin{right:50%;transform:translate(50%,-60%)}
 }
 @media (max-width:520px){
@@ -704,7 +704,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .trait i::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--el,#fff);box-shadow:0 0 8px var(--el,#fff)}
 .trait i.ic-t::after{display:none}
 .trait i .ic{width:16px;height:16px}
-.cs-boxes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cs-boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .cs-box{padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
 .cs-box .lbl-sm{display:block}
 .cs-box b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.1}
@@ -846,6 +846,31 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .sx-pull .cost{font-size:15px}
   .sx-note{display:none}
 }
+
+/* minimalist round menu icons, stamina pill, daily login, summon hero art */
+.ev .evo{background:rgba(8,12,30,.4);border:1.5px solid rgba(255,255,255,.55);box-shadow:0 4px 14px rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.ev:hover .evo{background:rgba(255,255,255,.16);border-color:#fff;transform:translateY(-2px)}
+.ev .evo .ic{width:25px;height:25px;filter:none}
+.ev .el{margin-top:5px}
+#stamPill{cursor:pointer;min-width:126px}
+#stamPill .cic{width:22px;height:22px}
+.login-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.login-day{position:relative;display:grid;justify-items:center;gap:4px;padding:12px 4px 10px;border-radius:14px;background:var(--glass);border:1px solid var(--edge-soft)}
+.login-day .cic{width:30px;height:30px}
+.login-day b{font-size:14px}
+.login-day.now{border-color:var(--gold);box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 40%,transparent),0 0 18px rgba(255,211,107,.35)}
+.login-day.done{opacity:.55}
+.login-day .chk{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:grid;place-items:center}
+.login-day .chk .ic{width:12px;height:12px}
+@media (max-width:520px){.login-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sx-hero{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:rvZoom .7s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px rgba(0,0,0,.35))}
+.sx .cs-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.55)}
+.sx-feat{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:4px}
+.sx-feat button{width:48px;height:48px;border-radius:50%;overflow:hidden;padding:2px;background:var(--ur);opacity:.7;transition:opacity .2s,transform .2s}
+.sx-feat button.on,.sx-feat button:hover{opacity:1;transform:scale(1.06)}
+.sx-feat button.on{box-shadow:0 0 0 2px #ffd84a}
+.sx-feat img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 14%;background:var(--ink-2)}
+.sx-feat img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
 </style>
 </head>
 <body>
@@ -886,7 +911,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   <nav class="hm hm-left" aria-label="Banners and activities">
     <div id="promo"></div>
     <div class="ev-grid">
-      <button class="ev ts" data-open="summon" data-banner="standard" style="--ec:#3ee6d0"><span class="evo" id="stdOrb"></span><span class="el">Pearl Wish</span><time>Always open</time></button>
+      <button class="ev ts" data-open="login"><span class="evo"><span data-ic="gift"></span></span><span class="el">Daily Login</span><time>+1 pull</time><span class="dot-n" id="loginDot" hidden></span></button>
       <button class="ev ts" data-open="events" style="--ec:#ff6f91"><span class="evo"><span data-ic="calendar"></span></span><span class="el">Events</span><time>Oct 31</time></button>
       <button class="ev ts" data-open="ranking" style="--ec:#ffb84a"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Ranking</span></button>
       <button class="ev ts" data-open="friends" style="--ec:#5aa9ff"><span class="evo"><span data-ic="friends"></span></span><span class="el">Friends</span></button>
@@ -1038,6 +1063,8 @@ const ICONS = {
   heart:'<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
   info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/>',
   hanger:'<path d="M12 8.5a2.2 2.2 0 1 1 2.2-2.2c0 1.2-1 1.6-2.2 2.4v1.1"/><path d="M12 9.8L3.4 16a1 1 0 0 0 .6 1.8h16a1 1 0 0 0 .6-1.8z"/>',
+  gift:'<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M3 9h18M12 9v11M12 9c-1.5-3.5-6-3.8-6-1.5S10 9 12 9zM12 9c1.5-3.5 6-3.8 6-1.5S14 9 12 9z"/>',
+  bolt:'<path d="M13 3L5 13.5h6L10 21l9-11.5h-6z"/>',
   lock:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'
 };
 const CUR_SVG = {
@@ -1045,14 +1072,15 @@ const CUR_SVG = {
   pearls:'<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="pearlG" cx="34%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".4" stop-color="#f6eeff"/><stop offset=".75" stop-color="#cfbdf5"/><stop offset="1" stop-color="#9c88dc"/></radialGradient></defs><circle cx="12" cy="12" r="8.6" fill="url(#pearlG)" stroke="#8f7fc9" stroke-width="1"/><ellipse cx="9" cy="8.6" rx="2.6" ry="1.6" fill="#fff" opacity=".95"/><path d="M15.5 16.2a5 5 0 0 1-4 1.4" stroke="#ffc6e4" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>',
   tickets:'<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z" fill="#ffa8cc" stroke="#d65f93" stroke-width="1.3"/><path d="M15 6.5v11" stroke="#d65f93" stroke-width="1.3" stroke-dasharray="2 2"/></svg>'
 };
+CUR_SVG.stamina = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#1f6b4a" stroke="#7ef3d4" stroke-width="1.3"/><path d="M13.2 4.8L7.6 13h4l-1 6.2 5.8-8.4h-4.1z" fill="#d9ff7a" stroke="#4a8a2a" stroke-width=".8" stroke-linejoin="round"/></svg>';
 const customIcon = k => MEDIA.get('icon:' + k);
 const icon = n => customIcon(n) ? `<img class="ic" src="${customIcon(n)}" alt="">` : `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const curIcon = k => customIcon(k) ? `<img class="cic" src="${customIcon(k)}" alt="">` : CUR_SVG[k];
 const costHTML = n => `<span class="cost">${curIcon('pearls')}${n}</span>`;
 function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); }); }
 const ICON_SLOTS = [
-  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets']]],
-  ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
+  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets'], ['stamina', 'Stamina']]],
+  ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
   ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['lock', 'Locked']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
   ['Small UI', [['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected']]]
@@ -1087,6 +1115,8 @@ function sampleState() {
     banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, standard: { name: 'Pearl Wish' } },
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
+    stamina: { v: 240, t: Date.now() },
+    login: { last: null, streak: 0 },
     pool: [
       { id:'aria', type:'character', name:'Aria', rarity:5, element:'Light', parent:null, art:null, pullable:true, sample:true,
         desc:'A starlight idol who sings the plaza awake every morning.', look:{ hair:'#ffcf4a', style:1, skin:'#ffe0c7', shirt:'#ff7eb6', pants:'#ffffff' } },
@@ -1121,6 +1151,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
+        s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.pool.forEach(e => { if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         s.version = 3;
@@ -1275,7 +1306,6 @@ function toast(msg) {
 /* ---------- main menu & wallpaper ---------- */
 const menuEl = $('#menu'), hudEl = $('#hud'), wpEl = $('#wallpaper');
 let menuOpen = true, stdRotate = 0;
-setInterval(() => { const std = standardURs(); const orb = $('#stdOrb'); if (!orb || std.length < 2 || !menuOpen) return; stdRotate++; orb.innerHTML = thumbImg(std[stdRotate % std.length]); }, 3500);
 function timeLeft() {
   const end = new Date((S.banners.limited.end || '2026-11-11') + 'T23:59:00');
   const ms = end - Date.now();
@@ -1294,23 +1324,62 @@ function renderMenu() {
   $('#pname').textContent = S.player.name;
   const coll = S.pool.filter(e => e.type === 'character' || e.type === 'skin');
   $('#hmCollect').textContent = `${coll.filter(e => owns(e.id)).length}/${coll.length}`;
-  $('#wallet').innerHTML = [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets']].map(([k, l]) =>
+  $('#wallet').innerHTML = `<button class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b></button>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets (1 pull each)']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="shop" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = MAILS.filter(m => !S.mailClaimed.includes(m.id)).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
-  $('#summonCost').innerHTML = `${curIcon('pearls')}${COST[1]} per pull · ${COST[10]} for ×10`;
-  $('#sumDot').hidden = S.wallet.pearls < COST[10];
+  $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} pull${S.wallet.tickets === 1 ? '' : 's'} · ${curIcon('pearls')}${COST[1]} each`;
+  $('#sumDot').hidden = !canPull(10);
+  $('#loginDot').hidden = !loginReady();
+  $('#stamPill').onclick = () => toast(`Stamina refills 1 every 6 minutes, up to ${STAMINA_MAX}.`);
+  renderStamina();
   const f = limitedUR(), std = standardURs(), sf = std.length ? std[stdRotate % std.length] : null, gl = S.gacha.limited;
   $('#promo').innerHTML = `<button class="promo" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
       ${f ? `<img src="${getSplash(f)}" alt="" class="${mediaArt(f) ? '' : 'chibi'}">` : ''}
       <span class="pt ts"><span class="eyebrow">Limited summon</span><b>${f ? esc(f.name) : esc(bannerName('limited'))}</b><time>${icon('clock').replace('class="ic"', 'class="ic" style="width:11px;height:11px;vertical-align:-1px"')} ${shortLeft()}</time></span>
     </button>`;
-  $('#stdOrb').innerHTML = sf ? thumbImg(sf).replace('<img', '<img id="stdArt"') : icon('sparkle');
   $('#pityCard').innerHTML = `<span class="row"><span>${f ? esc(f.name) : 'Limited'} · UR pity</span><span style="color:var(--gold)">${gl.pity5} / ${HARD_PITY}</span></span>
     <span class="bar r5"><i style="width:${gl.pity5 / HARD_PITY * 100}%;background:var(--ur)"></i></span>
     <span class="tiny" style="color:var(--muted)">${gl.guarantee ? 'Next UR is guaranteed featured' : '50/50 on your next UR'}</span>`;
   $('#limTime').innerHTML = `${icon('clock')}Limited ends in ${shortLeft()}`;
   applyWallpaper();
+}
+
+/* stamina: 240 max, +1 every 6 minutes (nothing spends it yet) */
+const STAMINA_MAX = 240, STAMINA_MS = 6 * 60 * 1000;
+function stamina() {
+  const st = S.stamina, now = Date.now();
+  if (st.v >= STAMINA_MAX) { st.t = now; return st.v; }
+  const k = Math.floor((now - st.t) / STAMINA_MS);
+  if (k > 0) { st.v = Math.min(STAMINA_MAX, st.v + k); st.t = st.v >= STAMINA_MAX ? now : st.t + k * STAMINA_MS; persist(); }
+  return st.v;
+}
+function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); S.stamina.v -= n; persist(); renderStamina(); return true; }
+function renderStamina() {
+  const el = $('#stamVal'); if (!el) return;
+  const v = stamina(), left = STAMINA_MS - (Date.now() - S.stamina.t), m = Math.floor(left / 6e4), sec = Math.floor(left % 6e4 / 1e3);
+  el.innerHTML = `${v}<span style="color:var(--muted);font-weight:800">/${STAMINA_MAX}</span>`;
+  $('#stamPill').title = v >= STAMINA_MAX ? 'Stamina is full' : `Stamina · +1 in ${m}:${String(sec).padStart(2, '0')}`;
+}
+setInterval(() => { if (menuOpen) renderStamina(); }, 1000);
+
+/* daily login: one free summon ticket (= 1 pull) every day, on a 7-day calendar */
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const loginReady = () => S.login.last !== dayKey();
+function openLogin() {
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const ready = loginReady(), next = ready ? (S.login.last === dayKey(y) ? S.login.streak + 1 : 1) : S.login.streak;
+  const today = (next - 1) % 7 + 1;
+  openModal({ title: 'Daily login', ic: 'gift', kind: 'login', body: `<div class="stack">
+    <p class="desc">Log in every day for a free summon ticket. One ticket is one pull on any banner.</p>
+    <div class="login-grid">${Array.from({ length: 7 }, (_, i) => { const d = i + 1, done = d < today || (d === today && !ready);
+      return `<div class="login-day ${done ? 'done' : ''} ${d === today && ready ? 'now' : ''}"><span class="lbl-sm">Day ${d}</span>${curIcon('tickets')}<b>×1</b>${done ? `<span class="chk">${icon('check')}</span>` : ''}</div>`; }).join('')}</div>
+    <div class="row" style="justify-content:space-between"><span class="tiny">${S.login.streak ? `Login streak: ${ready ? next - 1 : next} day${(ready ? next - 1 : next) === 1 ? '' : 's'}` : 'Start your streak today.'}</span>
+      ${ready ? `<button class="btn gold" id="loginClaim">${icon('gift')}Claim 1 pull</button>` : '<button class="btn ghost" disabled>Come back tomorrow</button>'}</div>
+  </div>`, onMount: () => {
+    const b = $('#loginClaim'); if (!b) return;
+    b.onclick = () => { S.wallet.tickets += 1; S.login = { last: dayKey(), streak: next }; persist(); renderMenu(); refreshSummon(); openLogin(); toast('Claimed 1 summon ticket. That is 1 free pull.'); };
+  } });
 }
 
 /* world chat ticker: the demo bots chat here until multiplayer exists */
@@ -1544,7 +1613,6 @@ function renderCharacters() {
   if (csTab === 'home') {
     const next = !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies give ${OVERFLOW_PEARLS} pearls each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
     body = `<div class="cs-boxes">
-        <div class="cs-box"><span class="lbl-sm">Copies</span><b>${n ? `<em>${n}</em>` : '0'}</b></div>
         <div class="cs-box"><span class="lbl-sm">Stars</span><b><em>${st}</em>/${MAX_STARS}</b></div>
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
@@ -1569,7 +1637,6 @@ function renderCharacters() {
         <dt>Element</dt><dd style="color:${ELEMENTS[c.element] || '#fff'}">${esc(c.element)}</dd>
         <dt>Type</dt><dd>${TYPES[c.type]}</dd>
         <dt>Found on</dt><dd>${esc(bannerOf(c))}</dd>
-        <dt>Copies owned</dt><dd>${n}</dd>
         <dt>Stars</dt><dd>${starRow(st)}</dd>
         <dt>Skins</dt><dd>${skins.length ? skins.map(s => esc(s.name.replace(c.name + ' · ', ''))).join(', ') : 'None yet'}</dd>
       </dl></div>
@@ -1581,7 +1648,7 @@ function renderCharacters() {
     <div class="cs-shade"></div>
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
-        <span class="ring"><span>${thumbImg(e)}</span></span>${o ? `<span class="cnt">×${S.owned[e.id]}</span>` : `<span class="lockic">${icon('lock')}</span>`}${starRow(starsOf(e.id))}</button>`; }).join('')}</nav>
+        <span class="ring"><span>${thumbImg(e)}</span></span>${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starRow(starsOf(e.id))}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}${k === 'bond' ? '<span class="soon">Soon</span>' : ''}</button>`).join('')}</nav>
     <div class="cs-side cs-ui">
       <button class="rbtn ${csSkins ? 'on' : ''}" id="csSkinBtn" aria-label="Skins">${icon('hanger')}</button>
@@ -1616,6 +1683,10 @@ const limitedUR = () => { const f = findEntry(S.featuredId); return f && f.rarit
 const standardURs = () => S.pool.filter(e => e.rarity === 5 && e.pullable !== false && e.standard);
 const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== false);
 const bannerName = bk => bk === 'limited' ? (S.banners.limited.name || 'Limited Banner') : (S.banners.standard.name || 'Pearl Wish');
+/* a summon is paid with summon tickets (1 ticket = 1 pull) when you have enough, otherwise with pearls */
+const payFor = n => S.wallet.tickets >= n ? { k: 'tickets', amt: n } : { k: 'pearls', amt: COST[n] };
+const canPull = n => S.wallet.tickets >= n || S.wallet.pearls >= COST[n];
+const payHTML = n => { const p = payFor(n); return `<span class="cost">${curIcon(p.k)}${p.k === 'tickets' ? '×' + p.amt : p.amt}</span>`; };
 function rollOne(bk) {
   const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
   const r = Math.random(), p5 = rate5(g.pity5);
@@ -1654,8 +1725,8 @@ function rollOne(bk) {
 function doPull(n, bk = curBanner) {
   const cost = COST[n];
   if (!S.pool.some(e => e.pullable !== false)) { toast('The summon pool is empty. Add entries in the admin panel.'); return; }
-  if (S.wallet.pearls < cost) { toast(`You need ${cost} pearls for this pull and have ${fmt(S.wallet.pearls)}.`); return; }
-  S.wallet.pearls -= cost;
+  if (!canPull(n)) { toast(`You need ${n} summon ticket${n > 1 ? 's' : ''} or ${cost} pearls for this pull.`); return; }
+  const pay = payFor(n); S.wallet[pay.k] -= pay.amt;
   const results = Array.from({ length: n }, () => rollOne(bk));
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk);
@@ -1663,7 +1734,7 @@ function doPull(n, bk = curBanner) {
 }
 
 /* summon screen: full screen, banner tabs on the left, character lineup, pull buttons along the bottom */
-let smEl = null;
+let smEl = null, smFocus = 0;
 function openSummon(bk) {
   if (bk) curBanner = bk;
   closeModal();
@@ -1685,13 +1756,16 @@ function renderSummon() {
   const mid = lim ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
   const left = HARD_PITY - g.pity5;
   const tabArt = e => e ? `<img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">` : '';
-  const dot = S.wallet.pearls >= COST[10] ? '<span class="dot-n"></span>' : '';
+  const dot = canPull(10) ? '<span class="dot-n"></span>' : '';
+  // a hero with uploaded art fills the screen (whole, never cropped); chibis stand in a lineup
+  const hero = lim ? f : std[smFocus % Math.max(1, std.length)], heroArt = hero && mediaArt(hero);
   smEl.className = 'sx r5';
   smEl.innerHTML = `<div class="sx-word">${lim ? 'LIMITED' : 'PEARL WISH'}</div>
-    <div class="sx-line">${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
+    ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
+    <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
     <div class="sx-fade"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
-    <div class="sx-cur">${['tickets', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="shop" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
+    <div class="sx-cur">${['tickets', 'pearls'].map(k => `<div class="cur" title="${k === 'tickets' ? 'Summon tickets: 1 ticket = 1 pull' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="shop" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
     <nav class="sx-tabs" aria-label="Banners">
       <button class="sx-tab ${lim ? '' : 'on'}" data-bk="standard"><small>Permanent</small>${tabArt(std[0])}<b>${esc(bannerName('standard'))}</b>${dot}</button>
       <button class="sx-tab lim ${lim ? 'on' : ''}" data-bk="limited"><small>Limited · ${shortLeft()}</small>${tabArt(f)}<b>${f ? esc(f.name) : 'Limited'}<br>Summon</b>${dot}</button>
@@ -1701,7 +1775,7 @@ function renderSummon() {
       ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
       <p>Guaranteed <span class="u">UR</span> ${lim && f ? (g.guarantee ? `<span class="g">${esc(f.name)}</span>` : 'character') : 'character'}</p>
       ${lim && f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span><span class="lim-time">${icon('clock')}Ends in ${shortLeft()}</span>`
-        : `<span class="chip">${std.length} URs · equal chance each · always open</span>`}`
+        : `<span class="chip">${std.length} URs · equal chance each · always open</span><div class="sx-feat">${std.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${thumbImg(u)}</button>`).join('')}</div>`}`
       : `<p>No UR on this banner yet.</p><button class="btn ghost sm" data-open="admin" data-adtab="banners">${icon('wrench')}Set it up in admin</button>`}
     </div>
     <div class="sx-rule"></div>
@@ -1712,11 +1786,12 @@ function renderSummon() {
     </div>
     <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
     <div class="sx-br">
-      <button class="sx-pull" data-pull="1">Summon 1 ${costHTML(COST[1])}</button>
-      <button class="sx-pull gold" data-pull="10">Summon 10 ${costHTML(COST[10])}${dot}</button>
+      <button class="sx-pull" data-pull="1">Summon 1 ${payHTML(1)}</button>
+      <button class="sx-pull gold" data-pull="10">Summon 10 ${payHTML(10)}${dot}</button>
     </div>
     <div class="sx-note">UR pity ${g.pity5}/${HARD_PITY} · SSR pity ${g.pity4}/10 · ${fmt(g.total)} pulls on this banner</div>`;
   $('#sxBack').onclick = closeSummon;
+  smEl.querySelectorAll('[data-focus]').forEach(b => b.onclick = () => { smFocus = +b.dataset.focus; renderSummon(); });
   smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; renderSummon(); });
   smEl.querySelectorAll('[data-pull]').forEach(b => b.onclick = () => doPull(+b.dataset.pull, bk));
   $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
@@ -1964,7 +2039,7 @@ function showSummary() {
       ${r.isNew ? '<span class="new">NEW</span>' : ''}
       <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.pearls ? `<span class="dp">+${r.pearls} pearls</span>` : ''}</div></div>`; }).join('')}</div>
     <div class="row" style="justify-content:center">
-      <button class="btn gold" id="pullAgain">Pull ×${st.n} again${costHTML(COST[st.n])}</button>
+      <button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n)}</button>
       <button class="btn ghost" id="pullDone">Done</button>
     </div>
     <p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>
@@ -2247,7 +2322,7 @@ function renderWalletTab() {
   $('#adPanel').innerHTML = `<div class="stack">
     <div><h3>Wallet</h3><p class="tiny">Set balances for testing. Changes apply right away.</p></div>
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
-    <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button></div>
+    <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -2262,6 +2337,9 @@ function renderWalletTab() {
   $('#wForm').onsubmit = e => e.preventDefault();
   $('#wSave').onclick = () => { CUR_KEYS.forEach(k => { const v = Math.max(0, Math.floor(+$('#w_' + k).value || 0)); S.wallet[k] = v; }); persist(); renderMenu(); refreshSummon(); toast('Wallet saved.'); };
   $('#wAdd').onclick = () => { S.wallet.pearls += 300; persist(); renderMenu(); renderWalletTab(); toast('Added 300 pearls.'); };
+  $('#wStam').onclick = () => toast(spendStamina(60) ? `Spent 60 stamina. ${S.stamina.v}/${STAMINA_MAX} left.` : 'Not enough stamina.');
+  $('#wFill').onclick = () => { S.stamina = { v: STAMINA_MAX, t: Date.now() }; persist(); renderStamina(); toast('Stamina refilled.'); };
+  $('#wLogin').onclick = () => { S.login.last = null; persist(); renderMenu(); toast('Daily login can be claimed again.'); };
   $('#wPity').onclick = () => { Object.assign(S.gacha.limited, { pity5: 0, pity4: 0, guarantee: false }); Object.assign(S.gacha.standard, { pity5: 0, pity4: 0 }); persist(); renderWalletTab(); toast('Pity reset.'); };
   $('#wClear').onclick = () => {
     $('#wConfirm').innerHTML = `<div class="confirm">Remove every character and skin you own and clear pull history? <button class="btn danger sm" id="wClearGo">Clear</button><button class="btn ghost sm" id="wClearNo">Cancel</button></div>`;
@@ -2281,6 +2359,7 @@ document.addEventListener('click', e => {
   else if (k === 'wallpaper') openWallpaper();
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('all');
+  else if (k === 'login') openLogin();
   else if (k === 'skins') openCollection('skin');
   else if (PLACEHOLDERS[k]) openPlaceholder(k);
 });
@@ -3351,6 +3430,7 @@ function loop(t) {
   renderMenu();
   menuEl.inert = false;
   tickWorld(); setInterval(() => { if (menuOpen) tickWorld(); }, 6000);
+  if (loginReady()) openLogin();
   requestAnimationFrame(loop);
 })();
 setInterval(() => { if (menuOpen && !modalEl) renderMenu(); }, 60000);
