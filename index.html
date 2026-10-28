@@ -1053,7 +1053,11 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .vow{position:fixed;inset:0;z-index:95;overflow:hidden;cursor:pointer;color:#fff;display:grid;place-items:center;animation:fade .4s;background:radial-gradient(circle at 50% 45%,rgba(255,110,199,.4),rgba(168,85,247,.2) 40%,transparent 70%),#0b0718}
 .vow i{position:absolute;bottom:-40px;left:var(--x);font-style:normal;font-size:var(--s);color:#ff9ec4;text-shadow:0 0 10px #ff6ec7;animation:heartUp 4s var(--d) linear infinite}
 @keyframes heartUp{to{transform:translateY(-115vh) rotate(25deg);opacity:0}}
-.vow-art{position:absolute;left:50%;bottom:0;height:92%;aspect-ratio:9/16;transform:translateX(-50%);object-fit:contain;object-position:50% 100%;opacity:.35;animation:rvZoom 1s both}
+.vow-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:rvZoom 1s both}
+.vow-art.chibi{inset:auto;left:50%;bottom:0;width:auto;height:90%;aspect-ratio:9/16;transform:translateX(-50%);object-position:50% 100%}
+.vow-shade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 120% 90% at 50% 40%,transparent 50%,rgba(6,4,16,.65)),linear-gradient(transparent 45%,rgba(6,4,16,.8))}
+.vow{place-items:end center;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+.vow i{z-index:1}
 .vow-card{position:relative;display:grid;justify-items:center;gap:8px;text-align:center;padding:24px 30px;border-radius:24px;background:rgba(10,8,30,.6);border:1px solid rgba(255,158,196,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 0 40px rgba(255,110,199,.35);animation:pop .6s .2s both;max-width:min(460px,calc(100% - 32px))}
 .vow-card h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.05}
 .vow-card p{margin:0;color:var(--muted)}
@@ -1098,6 +1102,30 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 #stamPill{cursor:pointer}
 /* readable font for longer text */
 .desc,.tiny,p,input,textarea,select,.chatlog,.cs-card p,.hint,.ticker span,.tip span,.kv dd{font-family:var(--read)}
+
+/* star splash arts, quick skins, banner text backdrops */
+.cs-arts{display:grid;gap:6px}
+.art-chip{position:relative;width:64px;display:grid;gap:3px;justify-items:center;padding:3px;border-radius:12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);font-size:12px;transition:border-color .2s,transform .2s}
+.art-chip:hover:not(:disabled){transform:translateY(-2px)}
+.art-chip img{width:100%;aspect-ratio:9/16;object-fit:cover;object-position:50% 15%;border-radius:9px;display:block}
+.art-chip span{display:inline-flex;align-items:center;gap:3px}
+.art-chip .ic{width:12px;height:12px}
+.art-chip.on{border-color:#e8ff7a;box-shadow:0 0 12px rgba(200,255,90,.45)}
+.art-chip.locked{cursor:not-allowed}
+.art-chip.locked img{filter:grayscale(1) brightness(.4) blur(1px)}
+.asc-slots{display:grid;gap:8px;margin-top:6px;padding-top:10px;border-top:1px solid var(--edge-soft)}
+.asc-slot{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;align-items:center}
+.asc-slot .mini{width:48px;aspect-ratio:9/16;border-radius:8px;overflow:hidden;background:var(--ink-2);border:1px solid var(--edge-soft)}
+.asc-slot .mini img{width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block}
+.skin-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.skin-chips .chip{cursor:pointer}
+.sx-vig{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 125% 95% at 50% 45%,transparent 50%,rgba(4,6,18,.72)),linear-gradient(90deg,rgba(4,6,18,.5),transparent 26%,transparent 48%,rgba(4,6,18,.62) 82%)}
+.sx-title::before{content:"";position:absolute;z-index:-1;inset:-60px -40px -60px -140px;background:radial-gradient(ellipse at 72% 50%,rgba(4,6,18,.78),rgba(4,6,18,.45) 45%,transparent 72%);pointer-events:none}
+.sx-title p,.sx-title h2{text-shadow:0 2px 8px rgba(0,0,0,.9),0 0 24px rgba(4,6,18,.8)}
+.sx-tab::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(4,6,18,.7),rgba(4,6,18,.25) 55%,transparent 80%);pointer-events:none}
+.sx-tab b,.sx-tab small,.sx-tab .dot-n{z-index:2}
+.promo::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(4,6,18,.6),rgba(4,6,18,.2) 55%,transparent 75%);pointer-events:none}
+.promo .pt{z-index:2}
 </style>
 </head>
 <body>
@@ -1352,6 +1380,7 @@ function sampleState() {
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
+    artPick: {},
     spin: { last: null },
     gifts: { sweets: 0, bracelet: 0, plush: 0 },
     stamina: { v: 240, t: Date.now() },
@@ -1404,7 +1433,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
@@ -1616,7 +1645,17 @@ function chibiSplash(look) {
   splashCache.set(key, url);
   return url;
 }
-const mediaArt = e => !e || !e.art ? null : e.art.startsWith('idb:') ? (MEDIA.get(e.art.slice(4)) || null) : e.art.startsWith('data:') ? e.art : null;
+const artFrom = ref => !ref ? null : ref.startsWith('idb:') ? (MEDIA.get(ref.slice(4)) || null) : ref.startsWith('data:') ? ref : null;
+/* characters can have extra splash arts that unlock at 3 and 6 stars; the player chooses which one shows */
+const ASC = [{ k: 'base', stars: 0, label: 'Base' }, { k: 'art3', stars: 3, label: '3★' }, { k: 'art6', stars: 6, label: '6★' }];
+const ascOpen = (e, a) => a.k === 'base' || (!!artFrom(e[a.k]) && owns(e.id) && starsOf(e.id) >= a.stars);
+function artKey(e) {
+  const p = ASC.find(a => a.k === S.artPick[e.id]);
+  if (p && ascOpen(e, p)) return p.k;
+  for (let i = ASC.length - 1; i > 0; i--) if (ascOpen(e, ASC[i])) return ASC[i].k;   // default: the highest unlocked
+  return 'base';
+}
+const mediaArt = e => { if (!e) return null; const k = e.type === 'character' ? artKey(e) : 'base'; return (k !== 'base' && artFrom(e[k])) || artFrom(e.art); };
 const getArt = e => mediaArt(e) || portrait(e.look || S.player.look, e.rarity);
 const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
 
@@ -2172,7 +2211,7 @@ function marry(id) {
   persist(); closeModal(); renderMenu(); refreshCharacters();
   const el = document.createElement('div'); el.className = 'vow';
   el.innerHTML = `${Array.from({ length: 18 }, (_, i) => `<i style="--x:${Math.random() * 100}%;--d:${(Math.random() * 2).toFixed(2)}s;--s:${(14 + Math.random() * 20).toFixed(0)}px">♥</i>`).join('')}
-    <img class="vow-art ${mediaArt(e) ? '' : 'chibi'}" src="${getSplash(e)}" alt="">
+    ${mediaArt(e) ? `<img class="cs-blur" src="${mediaArt(e)}" alt="">` : ''}<img class="vow-art ${mediaArt(e) ? '' : 'chibi'}" src="${getSplash(e)}" alt=""><div class="vow-shade"></div>
     <div class="vow-card"><span class="vow-ring">${curIcon('rings')}</span><div class="eyebrow">Eternal vow</div><h2>You married ${esc(e.name)}</h2>
       <p>${skin ? `${newSkin ? 'Unlocked' : 'You already own'} the wedding outfit <b>${esc(skin.name)}</b>.` : 'Their wedding outfit arrives in a future update.'}</p>
       <div class="row" style="justify-content:center">${badgeHTML(BADGES.find(b => b.id === 'married'), true, 56)}${badgeHTML(BADGES.find(b => b.id === 'bond10'), true, 56)}</div></div>
@@ -2364,6 +2403,9 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
       <div class="cs-pill">${next}</div>
+      ${!csSkin && ASC.some(a => a.k !== 'base' && artFrom(c[a.k])) ? `<div class="cs-arts"><span class="lbl-sm">Splash art</span><div class="row">${ASC.filter(a => a.k === 'base' || artFrom(c[a.k])).map(a => {
+        const open = ascOpen(c, a), on = artKey(c) === a.k, src = a.k === 'base' ? (artFrom(c.art) || getArt({ ...c, art: null, art3: null, art6: null, type: 'x' })) : artFrom(c[a.k]);
+        return `<button class="art-chip ${on ? 'on' : ''} ${open ? '' : 'locked'}" data-art="${a.k}" ${open ? '' : 'disabled'} data-tip="${esc(`<b>${a.label} splash art</b><span>${open ? 'Tap to use this art everywhere.' : `Requirement: raise ${esc(c.name)} to ${a.stars} stars`}</span>`)}"><img src="${src}" alt=""><span>${a.label}${open ? '' : ` ${icon('lock')}`}</span></button>`; }).join('')}</div></div>` : ''}
       ${csSkin ? `<div class="cs-pill" style="color:var(--gold)">Previewing skin: ${esc(shown.name)}${shownOwned ? '' : ' (not owned)'}</div>` : ''}
       <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shown.id ? 'Wallpaper set' : 'Set as wallpaper'}</button><button class="btn ghost" id="csWear">${icon('chars')}Use as plaza look</button></div>`
@@ -2424,6 +2466,7 @@ function renderCharacters() {
   $('#csSkinBtn').onclick = () => { csSkins = !csSkins; renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
+  csEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { S.artPick[c.id] = b.dataset.art; persist(); applyWallpaper(); renderMenu(); renderCharacters(); toast(`Now showing ${c.name}'s ${ASC.find(a => a.k === b.dataset.art).label.toLowerCase()} splash art.`); });
   const br = $('#csRing'); if (br) br.onclick = buyRing;
   $('#csViewBtn').onclick = e => { e.stopPropagation(); csView = true; csEl.classList.add('viewing'); };
   const w = $('#csWall'); if (w) w.onclick = () => { S.wallpaper = shown.id; persist(); applyWallpaper(); renderCharacters(); toast(`${shown.name} is now your wallpaper.`); };
@@ -2519,7 +2562,7 @@ function renderSummon() {
   smEl.innerHTML = `<div class="sx-word">${lim ? 'LIMITED' : 'PEARL WISH'}</div>
     ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
     <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
-    <div class="sx-fade"></div>
+    <div class="sx-fade"></div><div class="sx-vig"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
     <div class="sx-cur">${['tickets', 'pearls'].map(k => `<div class="cur" title="${k === 'tickets' ? 'Summon tickets: 1 ticket = 1 pull' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' ? 'buytickets' : 'shop'}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
     <nav class="sx-tabs" aria-label="Banners">
@@ -2814,7 +2857,7 @@ function closePull(silent) {
 /* =========================================================
    ADMIN
    ========================================================= */
-let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null;
+let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null };
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
@@ -2844,6 +2887,10 @@ function renderPoolTab() {
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
           <p class="tiny">Use 9:16 art, for example 900×1600 PNG. Larger images are scaled to 1600px tall. Without art, a chibi is drawn from the plaza look.</p>
+          <div class="asc-slots" id="adAscWrap"><div class="lbl-sm">Star splash arts</div><p class="tiny">Unlock at 3★ and 6★. Leave empty to keep the base art.</p>
+            ${['art3', 'art6'].map(k => `<div class="asc-slot"><span class="mini"><img id="adP_${k}" alt=""></span><div style="display:grid;gap:4px"><b>${k === 'art3' ? '3★' : '6★'} art</b><span class="tiny" id="adS_${k}"></span>
+              <div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}Upload<input type="file" accept="image/*" class="sr" data-asc="${k}"></label><button type="button" class="link" data-ascx="${k}">Remove</button></div></div></div>`).join('')}
+          </div>
         </div>
         <div class="ad-fields">
           <div class="two">
@@ -2852,6 +2899,7 @@ function renderPoolTab() {
           </div>
           <label class="field"><span>Name</span><input class="input" id="adName" maxlength="40" placeholder="e.g. Sora"><span class="err" id="adNameErr" hidden>Give it a name first.</span></label>
           <label class="field" id="adParentWrap" hidden><span>Skin for</span><select class="input" id="adParent"></select></label>
+          <div id="adSkins" hidden></div>
           <label class="field" id="adWedWrap" hidden><span>Wedding skin (unlocks when married)</span><select class="input" id="adWed"></select></label>
           <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
           <label class="field"><span>Description</span><textarea class="input" id="adDesc" maxlength="240" placeholder="One or two lines of lore"></textarea></label>
@@ -2888,6 +2936,8 @@ function renderPoolTab() {
     catch (e) { toast(e.message); }
   });
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
+  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], 1600); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adCancel').onclick = () => fillAdminForm(null);
   $('#adForm').addEventListener('submit', saveAdmin);
   $('#adCopy').onclick = copyData;
@@ -2897,7 +2947,8 @@ function renderPoolTab() {
 }
 function fillAdminForm(entry) {
   adminEditId = entry ? entry.id : null;
-  adminArt = entry ? mediaArt(entry) : null;
+  adminArt = entry ? artFrom(entry.art) : null;
+  adminAsc = { art3: entry ? artFrom(entry.art3) : null, art6: entry ? artFrom(entry.art6) : null };
   const lk = entry ? { ...blankLook(), ...entry.look } : blankLook();
   $('#adType').value = entry ? entry.type : 'character';
   $('#adEl').value = entry ? entry.element : 'Fire';
@@ -2921,6 +2972,18 @@ function fillAdminForm(entry) {
   adminPreview();
   renderAdminList();
 }
+/* start a new skin for a character: type, owner, element, rarity and look come pre-filled */
+function newSkinFor(cid) {
+  const c = findEntry(cid); if (!c) return;
+  fillAdminForm(null);
+  $('#adType').value = 'skin'; fillParentOptions(cid); $('#adEl').value = c.element; $('#adName').value = `${c.name} · `;
+  document.querySelectorAll('input[name=adR]').forEach(i => i.checked = +i.value === c.rarity);
+  const lk = { ...blankLook(), ...c.look };
+  $('#lkHair').value = lk.hair; $('#lkStyle').value = lk.style; $('#lkSkin').value = lk.skin; $('#lkShirt').value = lk.shirt; $('#lkPants').value = lk.pants;
+  $('#adTitle').textContent = `New skin for ${c.name}`; $('#adCancel').hidden = false;
+  adminPreview();
+  const n = $('#adName'); n.focus(); n.setSelectionRange(n.value.length, n.value.length);
+}
 function fillParentOptions(sel) {
   const chars = S.pool.filter(e => e.type === 'character');
   $('#adParent').innerHTML = chars.length ? chars.map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('') : '<option value="">Add a character first</option>';
@@ -2937,6 +3000,17 @@ function adminPreview() {
   $('#adUpLbl').textContent = adminArt ? 'Replace splash art' : 'Upload splash art';
   $('#adParentWrap').hidden = $('#adType').value !== 'skin';
   $('#adWedWrap').hidden = $('#adType').value !== 'character';
+  const isChar = $('#adType').value === 'character';
+  $('#adAscWrap').hidden = !isChar;
+  ['art3', 'art6'].forEach(k => { $('#adP_' + k).src = adminAsc[k] || adminArt || chibiSplash(readLook()); $('#adP_' + k).style.opacity = adminAsc[k] ? 1 : .35; $('#adS_' + k).textContent = adminAsc[k] ? 'Uploaded' : 'Uses the base art'; document.querySelector(`[data-ascx="${k}"]`).hidden = !adminAsc[k]; });
+  const ed = adminEditId && findEntry(adminEditId), sk = $('#adSkins');
+  sk.hidden = !(ed && isChar && ed.type === 'character');
+  if (!sk.hidden) {
+    const list = S.pool.filter(x => x.type === 'skin' && x.parent === ed.id);
+    sk.innerHTML = `<div class="field"><span>Skins of ${esc(ed.name)}</span><div class="skin-chips">${list.map(x => `<button type="button" class="chip" data-editskin="${esc(x.id)}">${esc(x.name.replace(ed.name + ' · ', ''))}</button>`).join('')}<button type="button" class="btn mint sm" data-newskin="${esc(ed.id)}">${icon('plus')}Add a skin</button></div></div>`;
+    sk.querySelectorAll('[data-editskin]').forEach(b => b.onclick = () => fillAdminForm(findEntry(b.dataset.editskin)));
+    sk.querySelector('[data-newskin]').onclick = () => newSkinFor(ed.id);
+  }
   const pet = $('#adType').value === 'pet';
   $('#lkLegend').textContent = pet ? 'Pet look' : 'Plaza look'; $('#lkKindWrap').hidden = !pet; $('#lkStyleWrap').hidden = $('#lkPantsWrap').hidden = pet;
   $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
@@ -2961,6 +3035,11 @@ async function saveAdmin(ev) {
   const key = 'art:' + entry.id;
   if (adminArt && adminArt !== MEDIA.get(key)) { await mediaSet(key, adminArt); entry.art = 'idb:' + key; }
   else if (!adminArt && entry.art) { await mediaDel(key); entry.art = null; }
+  for (const k of ['art3', 'art6']) {
+    const kk = `${k}:${entry.id}`;
+    if (entry.type === 'character' && adminAsc[k]) { if (adminAsc[k] !== MEDIA.get(kk)) await mediaSet(kk, adminAsc[k]); entry[k] = 'idb:' + kk; }
+    else if (entry[k]) { await mediaDel(kk); entry[k] = null; }
+  }
   if (entry.rarity === 5 && $('#adFeat').checked) S.featuredId = entry.id;
   else if (S.featuredId === entry.id) S.featuredId = null;
   persist(); renderMenu();
@@ -2974,10 +3053,11 @@ function renderAdminList() {
   el.innerHTML = list.length ? list.map(e => `<div class="ad-row r${e.rarity} ${e.id === adminEditId ? 'editing' : ''}">
       <img src="${getArt(e)}" alt="">
       <div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="mt">${RNAME[e.rarity] || ''} ${TYPES[e.type]} · ${esc(e.element)}${e.pullable === false ? ' · not pullable' : ''}${e.id === S.featuredId ? ' · <span class="feat">Limited</span>' : ''}${e.standard && e.rarity === 5 ? ' · <span class="feat">Permanent</span>' : ''}</div></div>
-      <div class="acts"><button class="iconbtn" data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.name)}">${icon('edit')}</button><button class="iconbtn" data-del="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">${icon('trash')}</button></div>
+      <div class="acts">${e.type === 'character' ? `<button class="iconbtn" data-newskin="${esc(e.id)}" aria-label="Add a skin for ${esc(e.name)}" data-tip="${esc(`<b>Add a skin</b><span>New skin for ${esc(e.name)}</span>`)}">${icon('skins')}</button>` : ''}<button class="iconbtn" data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.name)}">${icon('edit')}</button><button class="iconbtn" data-del="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">${icon('trash')}</button></div>
       ${adminConfirm === e.id ? `<div class="confirm">Delete ${esc(e.name)}? This can't be undone. <button class="btn danger sm" data-yes="${esc(e.id)}">Delete</button><button class="btn ghost sm" data-no>Keep</button></div>` : ''}
     </div>`).join('') : '<div class="empty">The pool is empty. Add your first character on the left.</div>';
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { adminConfirm = null; fillAdminForm(findEntry(b.dataset.edit)); });
+  el.querySelectorAll('[data-newskin]').forEach(b => b.onclick = () => { adminConfirm = null; newSkinFor(b.dataset.newskin); });
   el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { adminConfirm = b.dataset.del; renderAdminList(); });
   el.querySelectorAll('[data-no]').forEach(b => b.onclick = () => { adminConfirm = null; renderAdminList(); });
   el.querySelectorAll('[data-yes]').forEach(b => b.onclick = async () => {
@@ -2988,7 +3068,7 @@ function renderAdminList() {
     delete S.owned[id];
     if (S.featuredId === id) S.featuredId = null;
     if (S.wallpaper === id) S.wallpaper = null;
-    await mediaDel('art:' + id);
+    await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); delete S.artPick[id];
     adminConfirm = null; persist(); renderMenu();
     if (adminEditId === id) fillAdminForm(null); else { fillParentOptions($('#adParent').value); renderAdminList(); }
     toast(`Deleted ${e ? e.name : 'entry'}.`);
@@ -2999,7 +3079,7 @@ function exportData() {
     format: 'prismplaza-2',
     featuredId: S.featuredId,
     banners: S.banners,
-    pool: S.pool.map(e => ({ ...e, art: mediaArt(e) })),
+    pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6) })),
     icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v]))
   });
 }
@@ -3022,7 +3102,7 @@ function showImport() {
     for (const e of pool) {
       e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) ? +e.rarity : 4;
       e.element = ELEMENTS[e.element] ? e.element : 'Light'; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
-      if (e.art && e.art.startsWith('data:')) { await mediaSet('art:' + e.id, e.art); e.art = 'idb:art:' + e.id; } else if (e.art && !MEDIA.has(e.art.slice(4))) e.art = null;
+      for (const k of ['art', 'art3', 'art6']) { if (e[k] && e[k].startsWith('data:')) { await mediaSet(`${k}:${e.id}`, e[k]); e[k] = `idb:${k}:${e.id}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
     S.pool = pool; S.featuredId = d.featuredId || null; if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
