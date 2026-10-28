@@ -19,7 +19,8 @@ Browser gacha game, built step by step. Everything lives in one self-contained f
 - **Pull animation:** shooting star, charge orb, UR/SSR stamp, full-screen 9:16 splash reveal with layered canvas sparkles in the rarity colors. Taps can't skip the intro (Skip button does).
 - **Character art:** 9:16 PNG splash art, uploaded in the admin panel (scaled to 1600px tall). Without art, a chibi is drawn from the entry's "plaza look".
 - **Admin panel:** Game pool (add/edit characters, skins, weapons, items), Banners (limited featured UR + end date, permanent UR list), Icons (replace any icon with an image), Wallet & summons (test balances, reset pity).
-- **Plaza (world):** 2.5D isometric canvas world with chibi players, chat bubbles and emotes. Five areas (Pearl Fountain, Hedge Maze, Whisper Grove, Bloom Garden, Sunset Court) with a teleport map (M), minimap, area titles and a people list. Other players are bots; there is no real multiplayer yet.
+- **Plaza (world):** 2.5D isometric lantern-festival town at night (canvas, all art procedural): warm stone paving with baked lamp light, tiled-roof houses with glowing lattice windows, lantern strings, street lamps, market stalls, red carpets, maple trees, a pond with floating lanterns, fireworks and drifting leaves/confetti. Two ground levels: the Tea Terrace is one level up (`hgt`, `stairs`, `heightAt`), and walkers use BFS pathfinding (`findPath`) so they take the stairs. Five areas (Lantern Square, Tea Terrace, Night Market, Maple Garden, Firework Stage) with a teleport map (M), minimap, area titles and a people list. Other players are bots; there is no real multiplayer yet.
+- **Chibi style:** `drawChibi` draws big-head chibis (outlined, big anime eyes, pointed fringe, 5 hair styles); it's used in the plaza and for card portraits/splashes when an entry has no uploaded art.
 
 ## Data
 - Game state: `localStorage` key `prismplaza.v1` (object `S`).
