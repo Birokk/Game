@@ -973,6 +973,55 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .hm-me{gap:8px}
 }
 @media (max-width:520px){.pf-show{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---------- pets: eggs, incubators, hatch reveal ---------- */
+.egg{position:relative;display:inline-block;width:54px;height:68px;flex:none;border-radius:50% 50% 50% 50%/62% 62% 40% 40%;border:2px solid rgba(48,26,40,.85);overflow:hidden}
+.egg.ssr{background:radial-gradient(circle at 30% 30%,#ffb067 0 8%,transparent 9%),radial-gradient(circle at 68% 52%,#ff8a2a 0 9%,transparent 10%),radial-gradient(circle at 38% 72%,#ffb067 0 7%,transparent 8%),radial-gradient(circle at 36% 28%,#fffaf0,#ffe9c8 55%,#f3c58a);box-shadow:0 0 18px rgba(255,170,92,.45)}
+.egg.ur{background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.85),transparent 30%),linear-gradient(160deg,#c58bff,#ff6ec7 45%,#ffd36b 70%,#3ee6d0);box-shadow:0 0 22px rgba(255,110,199,.6),0 0 40px rgba(62,230,208,.35)}
+.egg.ur::after{content:"✦";position:absolute;right:10%;top:14%;font-size:13px;color:#fff;text-shadow:0 0 6px #fff;animation:twinkle 1.6s ease-in-out infinite}
+.egg i{position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.45) 48%,transparent 56%);background-size:250% 100%;animation:sweep 3s linear infinite}
+.egg.sm{width:34px;height:43px}
+.egg.idle{animation:eggIdle 3s ease-in-out infinite}
+.egg.shake{animation:eggShake .6s ease-in-out infinite}
+@keyframes eggIdle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg) translateY(-2px)}}
+@keyframes eggShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(4deg)}}
+.pet-inv{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.frag-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft)}
+.frag-row>.cic{width:40px;height:40px}
+.frag-row .bar i{background:var(--rc)}
+.frag-row.r5 .bar i{background:var(--ur)}
+.egg-bag{grid-column:1/-1;display:grid;gap:8px;padding:12px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft)}
+.egg-count{flex:1;min-width:240px;display:flex;align-items:center;gap:12px}
+.egg-count>span:nth-child(2){display:grid;flex:1}
+.incs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.inc{display:grid;justify-items:center;align-content:start;gap:8px;padding:16px 12px;border-radius:18px;background:var(--glass);border:1px solid var(--edge-soft);text-align:center}
+.inc .inc-glass{width:110px;height:110px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 70%,color-mix(in srgb,var(--rc,#7f8bb3) 35%,transparent),rgba(8,12,30,.5) 70%);border:2px solid rgba(255,255,255,.18);box-shadow:inset 0 -10px 20px rgba(0,0,0,.3)}
+.inc.empty .inc-glass{border-style:dashed}
+.inc .bar{width:100%}
+.inc .bar i{background:var(--rc)}
+.inc.r5 .bar i{background:var(--ur)}
+.inc.ready{border-color:var(--gold);box-shadow:0 0 18px rgba(255,211,107,.35)}
+.inc .btn.sm .cost .cic{width:15px;height:15px}
+@media (max-width:620px){.incs{grid-template-columns:minmax(0,1fr)}}
+.hatch{position:fixed;inset:0;z-index:95;overflow:hidden;cursor:pointer;color:#fff;animation:fade .3s;background:radial-gradient(circle at 50% 55%,color-mix(in srgb,var(--rc) 40%,transparent),transparent 60%),#050816}
+.hatch.r5{background:radial-gradient(circle at 50% 55%,rgba(168,85,247,.45),rgba(255,110,199,.18) 35%,transparent 62%),#050816}
+.hatch-rays{position:absolute;left:50%;top:52%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,255,255,.07) 0 5deg,transparent 5deg 15deg);animation:spin 40s linear infinite}
+.egg.big{position:absolute;left:50%;top:50%;width:150px;height:190px;margin:-95px 0 0 -75px;border-width:3px}
+.egg.crack{animation:eggShake .5s ease-in-out 2,eggPop .35s 1s ease-in forwards}
+@keyframes eggPop{to{transform:scale(1.4);opacity:0}}
+.hatch-flash{position:absolute;inset:0;opacity:0;background:radial-gradient(circle,#fff,color-mix(in srgb,var(--rc) 60%,#fff) 30%,transparent 70%);animation:flash .9s 1.1s ease-out forwards}
+.hatch.r5 .hatch-flash{background:radial-gradient(circle,#fff 0 12%,transparent 60%),conic-gradient(rgba(168,85,247,.85),rgba(255,110,199,.85),rgba(62,230,208,.85),rgba(168,85,247,.85))}
+.hatch-pet{position:absolute;left:50%;bottom:6%;height:74%;aspect-ratio:9/16;transform:translateX(-50%);opacity:0;animation:petIn .8s 1.25s cubic-bezier(.2,1.4,.4,1) forwards}
+.hatch-pet img{width:100%;height:100%;object-fit:contain;object-position:50% 100%}
+@keyframes petIn{from{opacity:0;transform:translateX(-50%) scale(.3) translateY(40px)}to{opacity:1;transform:translateX(-50%)}}
+.hatch-info{position:absolute;left:max(24px,6vw);bottom:16%;display:grid;gap:10px;justify-items:start;max-width:42%;opacity:0;animation:hatchInfo .5s 1.6s ease-out forwards}
+@keyframes hatchInfo{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+.hatch .rv-hint{opacity:0;animation:hatchInfo .4s 1.9s forwards}
+@media (max-width:820px){.hatch-info{left:16px;right:16px;max-width:none;bottom:4%}.hatch-pet{height:56%;bottom:26%}}
+.pf-namerow{display:flex;align-items:center;gap:8px}
+.pf-edit{width:34px;height:34px}
+.pf-edit .ic{width:16px;height:16px}
+.pf-name-in{height:40px;max-width:220px;font-family:var(--display);font-size:22px}
+
 </style>
 </head>
 <body>
@@ -1029,7 +1078,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   <nav class="hm hm-tabs" aria-label="Collection">
     <button class="tabb ts" data-open="characters">Characters<span class="dot-n" id="charDot" hidden></span></button>
     <button class="tabb ts" data-open="skins">Skins</button>
-    <button class="tabb ts" data-open="pets">Pets</button>
+    <button class="tabb ts" data-open="pets">Pets<span class="dot-n" id="petDot" hidden></span></button>
     <button class="tabb ts" data-open="collectibles">Collectibles</button>
     <button class="tabb ts" data-open="collection">Collection</button>
   </nav>
@@ -1174,13 +1223,15 @@ const CUR_SVG = {
   tickets:'<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z" fill="#ffa8cc" stroke="#d65f93" stroke-width="1.3"/><path d="M15 6.5v11" stroke="#d65f93" stroke-width="1.3" stroke-dasharray="2 2"/></svg>'
 };
 CUR_SVG.stamina = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#1f6b4a" stroke="#7ef3d4" stroke-width="1.3"/><path d="M13.2 4.8L7.6 13h4l-1 6.2 5.8-8.4h-4.1z" fill="#d9ff7a" stroke="#4a8a2a" stroke-width=".8" stroke-linejoin="round"/></svg>';
+CUR_SVG.fragssr = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 14c0-5.5 3.3-11 7.5-11s7.5 5.5 7.5 11l-2.6-1.8-2.4 2.6-2.5-2.8-2.5 2.8-2.4-2.6z" fill="#ffe9c8" stroke="#c97a2a" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="7" r="1.4" fill="#ff8a2a"/><circle cx="8.8" cy="10" r="1" fill="#ffb067"/><circle cx="15.3" cy="9.6" r="1" fill="#ffb067"/><path d="M6 17.5l2.4-1.6 2 1.8 1.6-1.4 1.8 1.6 2-1.8 2.2 1.4c-1 2.6-3.3 4-6 4s-5-1.4-6-4z" fill="#ffe9c8" stroke="#c97a2a" stroke-width="1.1" stroke-linejoin="round" opacity=".85"/></svg>';
+CUR_SVG.fragur = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="urFragG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c58bff"/><stop offset=".5" stop-color="#ff6ec7"/><stop offset="1" stop-color="#3ee6d0"/></linearGradient></defs><path d="M4.5 14c0-5.5 3.3-11 7.5-11s7.5 5.5 7.5 11l-2.6-1.8-2.4 2.6-2.5-2.8-2.5 2.8-2.4-2.6z" fill="url(#urFragG)" stroke="#6b3fd1" stroke-width="1.2" stroke-linejoin="round"/><path d="M9 6.5l.7 1.6 1.6.7-1.6.7L9 11.1l-.7-1.6-1.6-.7 1.6-.7z" fill="#fff"/><path d="M6 17.5l2.4-1.6 2 1.8 1.6-1.4 1.8 1.6 2-1.8 2.2 1.4c-1 2.6-3.3 4-6 4s-5-1.4-6-4z" fill="url(#urFragG)" stroke="#6b3fd1" stroke-width="1.1" stroke-linejoin="round" opacity=".85"/></svg>';
 const customIcon = k => MEDIA.get('icon:' + k);
 const icon = n => customIcon(n) ? `<img class="ic" src="${customIcon(n)}" alt="">` : `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const curIcon = k => customIcon(k) ? `<img class="cic" src="${customIcon(k)}" alt="">` : CUR_SVG[k];
 const costHTML = n => `<span class="cost">${curIcon('pearls')}${n}</span>`;
 function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); }); }
 const ICON_SLOTS = [
-  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets'], ['stamina', 'Stamina']]],
+  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Summon tickets'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment']]],
   ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
   ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['lock', 'Locked']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
@@ -1200,13 +1251,13 @@ const HARD_PITY = 50, BASE5 = 0.02, BASE4 = 0.051, COIN_DROP = 500;
 const MAX_STARS = 6, OVERFLOW_PEARLS = 15;
 const starsOf = id => Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1));
 const starRow = (n, pop = -1) => `<span class="stars6" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''}">★</span>`).join('')}</span>`;
-const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 };
+const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_UR = .08;
 
 /* ---------- data & storage ---------- */
 const KEY = 'prismplaza.v1';
 function sampleState() {
   return {
-    version: 3,
+    version: 4,
     player: { name: 'Traveler', look: { hair:'#3c4cff', style:2, skin:'#f6c9a4', shirt:'#2f3a66', pants:'#1e2440' } },
     wallet: { coins: 24580, pearls: 90, tickets: 10 },
     settings: { names: true, music: true, sfx: true, gfx: 'high', pullFit: false },
@@ -1218,6 +1269,7 @@ function sampleState() {
     mailClaimed: [],
     stamina: { v: 240, t: Date.now() },
     login: { last: null, streak: 0 },
+    pets: { frags: { ssr: 0, ur: 0 }, eggs: [], inc: [null, null, null] },
     profile: { avatar: null, frame: 'simple', title: 'newcomer', card: 'pearl', showcase: [null, null, null, null], uid: 100000 + Math.floor(Math.random() * 900000) },
     pool: [
       { id:'aria', type:'character', name:'Aria', rarity:5, element:'Light', parent:null, art:null, pullable:true, sample:true,
@@ -1233,7 +1285,19 @@ function sampleState() {
       { id:'celeste', type:'character', name:'Celeste', rarity:5, element:'Water', parent:null, art:null, pullable:true, standard:true, sample:true,
         desc:'Tide-reader who keeps the plaza fountain full of wishing pearls.', look:{ hair:'#7fd3ff', style:1, skin:'#ffe0c7', shirt:'#3a5bd9', pants:'#e8f4ff' } },
       { id:'rook', type:'character', name:'Rook', rarity:5, element:'Dark', parent:null, art:null, pullable:true, standard:true, sample:true,
-        desc:'A masked courier who only takes deliveries after midnight.', look:{ hair:'#2b2b3a', style:2, skin:'#d9a07a', shirt:'#6b3fa0', pants:'#1e1a2e' } }
+        desc:'A masked courier who only takes deliveries after midnight.', look:{ hair:'#2b2b3a', style:2, skin:'#d9a07a', shirt:'#6b3fa0', pants:'#1e1a2e' } },
+      { id:'pet-dragon', type:'pet', name:'Aurora Dragon', rarity:5, element:'Light', parent:null, art:null, pullable:false, sample:true,
+        desc:'A tiny dragon that hoards shiny pearls and naps on warm lanterns.', look:{ kind:'dragon', body:'#9b7bff', accent:'#3ee6d0', belly:'#ffe9b0' } },
+      { id:'pet-phoenix', type:'pet', name:'Ember Phoenix', rarity:5, element:'Fire', parent:null, art:null, pullable:false, sample:true,
+        desc:'Hatched from the last firework of the festival. Its tail never cools.', look:{ kind:'bird', body:'#ff7a3d', accent:'#ffd36b', belly:'#fff1c4' } },
+      { id:'pet-fox', type:'pet', name:'Maple Fox', rarity:4, element:'Fire', parent:null, art:null, pullable:false, sample:true,
+        desc:'Hides in leaf piles in the Maple Garden and pops out to say hi.', look:{ kind:'fox', body:'#ff8a3a', accent:'#c8461b', belly:'#fff4e0' } },
+      { id:'pet-cat', type:'pet', name:'Pearl Cat', rarity:4, element:'Water', parent:null, art:null, pullable:false, sample:true,
+        desc:'Sits by the pond all day, staring at the floating lanterns.', look:{ kind:'cat', body:'#c9d4f5', accent:'#7f8bb3', belly:'#ffffff' } },
+      { id:'pet-bunny', type:'pet', name:'Mochi Bunny', rarity:4, element:'Light', parent:null, art:null, pullable:false, sample:true,
+        desc:'Soft, round and always hungry for sweet rice cakes.', look:{ kind:'bunny', body:'#ffe0ea', accent:'#ff9ec4', belly:'#ffffff' } },
+      { id:'pet-owl', type:'pet', name:'Lantern Owl', rarity:4, element:'Dark', parent:null, art:null, pullable:false, sample:true,
+        desc:'Keeps watch over the Night Market until the last stall closes.', look:{ kind:'owl', body:'#8a5a3c', accent:'#ffd36b', belly:'#f3e2c4' } }
     ]
   };
 }
@@ -1257,7 +1321,10 @@ let S = (() => {
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
-        s.version = 3;
+        if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
+        s.pets = { ...fresh.pets, ...(d.pets || {}) }; s.pets.frags = { ...fresh.pets.frags, ...s.pets.frags };
+        if (!Array.isArray(s.pets.inc) || s.pets.inc.length !== 3) s.pets.inc = [null, null, null];
+        s.version = 4;
         return s;
       }
     }
@@ -1364,6 +1431,73 @@ function drawChibi(c, x, y, look, o = {}) {
   c.restore();
 }
 
+/* Pet (same outlined chibi style): feet at (x,y). look = { kind: dragon|bird|fox|cat|bunny|owl, body, accent, belly } */
+const PET_KINDS = { dragon: 'Dragon', bird: 'Phoenix', fox: 'Fox', cat: 'Cat', bunny: 'Bunny', owl: 'Owl' };
+function drawPet(c, x, y, look, o = {}) {
+  const s = o.s || 1, t = o.t || 0, k = look.kind || 'cat', B = look.body || '#c9d4f5', A = look.accent || '#7f8bb3', W = look.belly || '#fff4e0';
+  const BD = shade(B, -.18), HY = -24, HR = 13;
+  c.save(); c.translate(x, y); c.scale(s, s);
+  c.lineJoin = 'round'; c.lineCap = 'round'; c.lineWidth = 1.15; c.strokeStyle = OUTLINE;
+  const fill = col => { c.fillStyle = col; c.fill(); c.stroke(); };
+  const oval = (cx, cy, rx, ry, col, rot = 0) => { c.beginPath(); c.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2); fill(col); };
+  const shape = (pts, col) => { c.beginPath(); pts.forEach(([px, py], i) => i ? c.lineTo(px, py) : c.moveTo(px, py)); c.closePath(); fill(col); };
+  const both = f => [-1, 1].forEach(f);
+  c.fillStyle = 'rgba(20,10,20,.28)'; ell(c, 0, 0, 12, 4.4);
+  const flap = Math.sin(t * 6) * .12;
+  c.translate(0, Math.sin(t * 3) * .6);
+  // behind the body: tails and wings
+  if (k === 'dragon') {
+    c.beginPath(); c.moveTo(6, -5); c.quadraticCurveTo(20, -4, 22, -16); c.lineTo(25, -21); c.lineTo(19, -17); c.quadraticCurveTo(17, -9, 6, -11); c.closePath(); fill(B);
+    shape([[13, -6], [15, -11], [17, -6]], A); shape([[18, -9], [21, -13], [21, -8]], A);
+    both(sx => { c.save(); c.scale(sx, 1); c.rotate(-flap * sx); shape([[7, -15], [23, -28], [21, -20], [26, -17], [19, -13], [21, -9], [10, -9]], A); c.restore(); });
+  } else if (k === 'bird') {
+    [[9, -6, .7], [11, -4, 1.1], [7, -3, .35]].forEach(([tx, ty, r]) => oval(tx + 5, ty - 2, 3.4, 9, r > .9 ? look.accent : shade(A, .25), r));
+    both(sx => { c.save(); c.scale(sx, 1); c.rotate(-flap * sx); oval(13, -16, 5, 10, A, -.9); oval(16, -19, 3, 7, shade(A, .35), -.9); c.restore(); });
+  } else if (k === 'fox') {
+    oval(13, -14, 7, 12.5, B, .6); oval(17.5, -22, 4, 5, W, .6);
+  } else if (k === 'cat') {
+    c.lineWidth = 6.5; c.beginPath(); c.moveTo(8, -6); c.quadraticCurveTo(20, -8, 16, -22); c.stroke();
+    c.lineWidth = 4; c.strokeStyle = B; c.beginPath(); c.moveTo(8, -6); c.quadraticCurveTo(20, -8, 16, -22); c.stroke();
+    c.lineWidth = 1.15; c.strokeStyle = OUTLINE;
+  } else if (k === 'bunny') oval(11, -7, 4, 4, W);
+  // body, belly, feet
+  oval(0, -10, 11, 9.5, B);
+  oval(0, -8.5, 7, 6.5, W);
+  if (k === 'dragon') { c.strokeStyle = shade(W, -.25); [-10, -7].forEach(py => { c.beginPath(); c.moveTo(-5, py); c.quadraticCurveTo(0, py + 1.5, 5, py); c.stroke(); }); c.strokeStyle = OUTLINE; }
+  if (k === 'owl') both(sx => oval(sx * 9.5, -11, 4, 7, A, sx * .25));
+  oval(-5, -1.6, 3.6, 2.4, BD); oval(5, -1.6, 3.6, 2.4, BD);
+  // ears, horns and crests sit behind the head
+  if (k === 'cat') both(sx => { shape([[sx * 11, HY - 6], [sx * 9.5, HY - 18], [sx * 3, HY - 11]], B); shape([[sx * 9.3, HY - 8], [sx * 8.7, HY - 14.5], [sx * 5, HY - 10.5]], '#ff9ec4'); });
+  if (k === 'fox') both(sx => { shape([[sx * 12, HY - 5], [sx * 11, HY - 20], [sx * 3, HY - 11]], B); shape([[sx * 11.2, HY - 15], [sx * 11, HY - 20], [sx * 8, HY - 16]], A); });
+  if (k === 'bunny') both(sx => { oval(sx * 5.5, HY - 17, 3.8, 10.5, B, sx * .18); oval(sx * 5.5, HY - 16, 1.9, 7.5, '#ffb3cf', sx * .18); });
+  if (k === 'dragon') both(sx => { c.beginPath(); c.moveTo(sx * 4, HY - 11); c.quadraticCurveTo(sx * 9, HY - 19, sx * 13, HY - 22); c.quadraticCurveTo(sx * 10, HY - 15, sx * 9, HY - 9); c.closePath(); fill('#ffe08a'); shape([[sx * 12, HY - 3], [sx * 19, HY - 6], [sx * 13, HY + 2]], A); });
+  if (k === 'owl') both(sx => shape([[sx * 10, HY - 7], [sx * 12, HY - 17], [sx * 4, HY - 11]], BD));
+  if (k === 'bird') [[-4, -.5], [0, 0], [4, .5]].forEach(([dx, r]) => oval(dx, HY - 14, 2.4, 6.5, dx ? A : '#ffd36b', r));
+  // head and face
+  oval(0, HY, HR, HR * .92, B);
+  if (k === 'owl') both(sx => oval(sx * 5, HY + .5, 5.4, 5.6, W));
+  if (k === 'fox' || k === 'cat' || k === 'dragon' || k === 'bunny') oval(0, HY + 6.5, 6, 3.8, W);
+  const iris = shade(A, -.25);
+  both(sx => {
+    const cx = sx * 5.2, cy = HY + 1;
+    const g = c.createLinearGradient(0, cy - 3.6, 0, cy + 3.6);
+    g.addColorStop(0, shade(iris, -.6)); g.addColorStop(1, shade(iris, .35));
+    c.fillStyle = g; c.beginPath(); c.ellipse(cx, cy, 2.8, 3.6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; ell(c, cx - 1, cy - 1.4, 1.1, 1.3); ell(c, cx + 1, cy + 1.5, .5, .5);
+    c.strokeStyle = '#2a1626'; c.lineWidth = 1.3; c.beginPath(); c.ellipse(cx, cy + .3, 3.1, 3.9, 0, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
+  });
+  c.strokeStyle = OUTLINE; c.lineWidth = 1.15;
+  c.fillStyle = 'rgba(255,120,150,.45)'; ell(c, -8.6, HY + 5.5, 2.3, 1.2); ell(c, 8.6, HY + 5.5, 2.3, 1.2);
+  if (k === 'bird' || k === 'owl') shape([[-2.2, HY + 4.5], [2.2, HY + 4.5], [0, HY + 8]], '#ffb347');
+  else {
+    c.fillStyle = '#3a2630'; ell(c, 0, HY + 5, 1.3, .9);
+    c.strokeStyle = '#7a2f3e'; c.lineWidth = .9; c.beginPath(); c.moveTo(-2.2, HY + 6.8); c.quadraticCurveTo(-1.1, HY + 8, 0, HY + 6.6); c.quadraticCurveTo(1.1, HY + 8, 2.2, HY + 6.8); c.stroke();
+    if (k === 'cat' || k === 'fox') { c.strokeStyle = 'rgba(48,26,40,.55)'; c.beginPath(); both(sx => { c.moveTo(sx * 6, HY + 6); c.lineTo(sx * 11, HY + 5); c.moveTo(sx * 6, HY + 7.3); c.lineTo(sx * 11, HY + 8); }); c.stroke(); }
+  }
+  c.strokeStyle = shade(B, .45); c.lineWidth = 2; c.beginPath(); c.arc(-2, HY - 2, 9, Math.PI * 1.15, Math.PI * 1.5); c.stroke();
+  c.restore();
+}
+
 /* portraits (with background, for cards) and splashes (transparent, for wallpaper + pulls) */
 const portraitCache = new Map(), splashCache = new Map();
 function portrait(look, rarity) {
@@ -1380,7 +1514,7 @@ function portrait(look, rarity) {
   g.fillStyle = glow; g.fillRect(0, 0, 270, 480);
   g.fillStyle = 'rgba(255,255,255,.7)';
   [[38, 70, 2.2], [226, 56, 1.6], [236, 170, 2.4], [30, 230, 1.4], [206, 300, 1.8], [52, 360, 1.2], [140, 110, 1.5]].forEach(([x, y, r]) => ell(g, x, y, r, r));
-  drawChibi(g, 135, 452, look, { s: 5.6, dir: 'down', t: 0 });
+  if (look.kind) drawPet(g, 135, 430, look, { s: 5 }); else drawChibi(g, 135, 452, look, { s: 5.6, dir: 'down', t: 0 });
   const url = c.toDataURL('image/png');
   portraitCache.set(key, url);
   return url;
@@ -1389,7 +1523,7 @@ function chibiSplash(look) {
   const key = JSON.stringify(look);
   if (splashCache.has(key)) return splashCache.get(key);
   const c = document.createElement('canvas'); c.width = 450; c.height = 800;
-  drawChibi(c.getContext('2d'), 225, 760, look, { s: 10.5, dir: 'down', t: 0 });
+  if (look.kind) drawPet(c.getContext('2d'), 225, 720, look, { s: 8.5 }); else drawChibi(c.getContext('2d'), 225, 760, look, { s: 10.5, dir: 'down', t: 0 });
   const url = c.toDataURL('image/png');
   splashCache.set(key, url);
   return url;
@@ -1434,6 +1568,8 @@ function renderMenu() {
   $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} pull${S.wallet.tickets === 1 ? '' : 's'} · ${curIcon('pearls')}${COST[1]} each`;
   $('#sumDot').hidden = !canPull(10);
   $('#loginDot').hidden = !loginReady();
+  const PS = S.pets;
+  $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = () => toast(`Stamina refills 1 every 6 minutes, up to ${STAMINA_MAX}.`);
   renderStamina();
   const f = limitedUR(), std = standardURs(), sf = std.length ? std[stdRotate % std.length] : null, gl = S.gacha.limited;
@@ -1639,7 +1775,7 @@ const cardHTML = e => {
   const n = S.owned[e.id] || 0;
   return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starRow(starsOf(e.id)) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]} · ${esc(e.element)}</div></div></button>`;
 };
-const FUTURE = { pet: 'Pets', collectible: 'Collectibles' };
+const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
   const root = $('#colRoot'); if (!root) return;
   const tabs = [['all', 'All'], ['character', 'Characters'], ['skin', 'Skins'], ['pet', 'Pets'], ['collectible', 'Collectibles'], ['item', 'Items']];
@@ -1676,6 +1812,112 @@ function renderDetail(id, backTo) {
   if (w) w.onclick = () => { S.player.look = { ...e.look }; player.look = S.player.look; persist(); renderMenu(); toast(`Your plaza avatar now looks like ${e.name}.`); };
   const wl = $('#dWall');
   if (wl) wl.onclick = () => { S.wallpaper = e.id; persist(); applyWallpaper(); toast(`${e.name} is now your wallpaper.`); };
+}
+
+/* ---------- pets: egg fragments → eggs → incubators → hatch ---------- */
+const EGG = {
+  ssr: { name: 'SSR egg', r: 4, mins: 30, frag: 10 },
+  ur: { name: 'UR egg', r: 5, mins: 120, frag: 10 }
+};
+const EGG_STAMINA = 20, INCUBATORS = 3;
+const eggHTML = (r, cls = '') => `<span class="egg ${r} ${cls}"><i></i></span>`;
+const petsOf = r => S.pool.filter(e => e.type === 'pet' && e.rarity === EGG[r].r);
+/* instant hatch: 1 pearl per 2 minutes left, at least 2 */
+const hatchCost = inc => Math.max(2, Math.ceil((inc.ends - Date.now()) / 12e4));
+const fmtLeft = ms => { const m = Math.ceil(ms / 6e4); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
+/* duplicate rules shared by summons and hatching: first copy 0 stars, +1 star per copy up to 6, then pearls */
+function grantEntry(item) {
+  const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
+  const starUp = prev && prev - 1 < MAX_STARS ? prev : 0;
+  const pearls = prev && !starUp ? OVERFLOW_PEARLS : 0; S.wallet.pearls += pearls;
+  return { isNew: !prev, starUp, pearls };
+}
+
+let petTab = 'hatch', petTimer = null;
+function openPets(tab) {
+  petTab = tab || 'hatch';
+  openModal({ title: 'Pets', ic: 'heart', wide: true, kind: 'pets', body: '<div id="petRoot"></div>', onMount: () => {
+    renderPets();
+    clearInterval(petTimer);
+    petTimer = setInterval(() => { if (!modalEl || modalEl.dataset.kind !== 'pets') return clearInterval(petTimer); tickPets(); }, 1000);
+  } });
+}
+function tickPets() {
+  S.pets.inc.forEach((inc, i) => {
+    if (!inc) return;
+    const left = inc.ends - Date.now(), t = $('#incT' + i), b = $('#incB' + i), c = $('#incC' + i);
+    if (left <= 0 && !inc.shown) { inc.shown = true; renderPets(); return; }
+    if (t) t.textContent = fmtLeft(left);
+    if (b) b.style.width = `${100 - left / (inc.ends - inc.start) * 100}%`;
+    if (c) c.textContent = hatchCost(inc);
+  });
+}
+function renderPets() {
+  const root = $('#petRoot'); if (!root) return;
+  const P = S.pets, pets = S.pool.filter(e => e.type === 'pet').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${pets.filter(e => owns(e.id)).length}/${pets.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  if (petTab === 'mine') {
+    root.innerHTML = `<div class="stack">${tabs}${pets.length ? `<div class="cards">${pets.map(cardHTML).join('')}</div>` : '<div class="empty">No pets yet. Add some in the admin panel.</div>'}</div>`;
+  } else {
+    const free = P.inc.indexOf(null);
+    root.innerHTML = `<div class="stack">${tabs}
+      <div class="pet-inv">
+        ${['ssr', 'ur'].map(r => `<div class="frag-row r${EGG[r].r}">${curIcon('frag' + r)}
+          <div style="display:grid;gap:4px;flex:1;min-width:0"><b>${EGG[r].name} fragments</b><span class="bar"><i style="width:${Math.min(100, P.frags[r] / EGG[r].frag * 100)}%"></i></span><span class="tiny">${P.frags[r]} / ${EGG[r].frag} · combine into an egg</span></div>
+          <button class="btn sm ${P.frags[r] >= EGG[r].frag ? 'gold' : 'ghost'}" data-craft="${r}" ${P.frags[r] >= EGG[r].frag ? '' : 'disabled'}>Combine</button></div>`).join('')}
+        <div class="egg-bag"><span class="lbl-sm">Your eggs</span><div class="row">${['ssr', 'ur'].map(r => { const n = P.eggs.filter(x => x === r).length;
+          return `<div class="egg-count r${EGG[r].r}">${eggHTML(r, 'sm')}<span><b>${EGG[r].name}</b><span class="tiny">×${n} · hatches in ${fmtLeft(EGG[r].mins * 6e4)}</span></span>
+            <button class="btn sm mint" data-place="${r}" ${n && free >= 0 ? '' : 'disabled'}>Incubate</button></div>`; }).join('')}</div></div>
+      </div>
+      <div><div class="ad-head" style="margin:0 0 8px"><h3>Incubators</h3><span class="tiny">Eggs hatch over time, or right away with pearls</span></div>
+      <div class="incs">${P.inc.map((inc, i) => {
+        if (!inc) return `<div class="inc empty"><span class="inc-glass"></span><span class="tiny">Empty incubator</span></div>`;
+        const left = inc.ends - Date.now(), ready = left <= 0;
+        return `<div class="inc r${EGG[inc.r].r} ${ready ? 'ready' : ''}"><span class="inc-glass">${eggHTML(inc.r, ready ? 'shake' : 'idle')}</span>
+          <b>${EGG[inc.r].name}</b>
+          ${ready ? `<button class="btn gold" data-hatch="${i}">${icon('sparkle')}Hatch!</button>`
+            : `<span class="bar"><i id="incB${i}" style="width:${100 - left / (inc.ends - inc.start) * 100}%"></i></span><span class="tiny">${icon('clock').replace('class="ic"', 'class="ic" style="width:12px;height:12px;vertical-align:-2px"')} <span id="incT${i}">${fmtLeft(left)}</span> left</span>
+              <button class="btn sm ghost" data-now="${i}">Hatch now · <span class="cost">${curIcon('pearls')}<span id="incC${i}">${hatchCost(inc)}</span></span></button>`}</div>`;
+      }).join('')}</div></div>
+      <p class="tiny">Fragments drop from summons in place of some gold coins. Eggs also appear around the plaza: walk into one to catch it for ${EGG_STAMINA} stamina.</p>
+    </div>`;
+  }
+  root.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => { petTab = b.dataset.ptab; renderPets(); });
+  root.querySelectorAll('[data-card]').forEach(b => b.onclick = () => { openCollection('pet'); renderDetail(b.dataset.card, 'pet'); });
+  root.querySelectorAll('[data-craft]').forEach(b => b.onclick = () => {
+    const r = b.dataset.craft; P.frags[r] -= EGG[r].frag; P.eggs.push(r); persist(); renderPets(); renderMenu(); toast(`Combined ${EGG[r].frag} fragments into a ${EGG[r].name}.`);
+  });
+  root.querySelectorAll('[data-place]').forEach(b => b.onclick = () => {
+    const r = b.dataset.place, slot = P.inc.indexOf(null);
+    if (!petsOf(r).length) { toast(`There are no ${RNAME[EGG[r].r]} pets yet. Add one in the admin panel first.`); return; }
+    if (slot < 0) return;
+    P.eggs.splice(P.eggs.indexOf(r), 1);
+    const now = Date.now(); P.inc[slot] = { r, start: now, ends: now + EGG[r].mins * 6e4 };
+    persist(); renderPets(); renderMenu();
+  });
+  root.querySelectorAll('[data-now]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.now, inc = P.inc[i], cost = hatchCost(inc);
+    if (S.wallet.pearls < cost) { toast(`You need ${cost} pearls to hatch this now and have ${fmt(S.wallet.pearls)}.`); return; }
+    S.wallet.pearls -= cost; hatch(i);
+  });
+  root.querySelectorAll('[data-hatch]').forEach(b => b.onclick = () => hatch(+b.dataset.hatch));
+}
+function hatch(i) {
+  const inc = S.pets.inc[i], list = petsOf(inc.r); if (!list.length) return;
+  const item = rpick(list), res = grantEntry(item);
+  S.pets.inc[i] = null; persist(); renderMenu(); renderPets(); refreshCharacters();
+  showHatch(inc.r, item, res);
+}
+/* hatch reveal: the egg wobbles, cracks in a flash, and the pet pops out */
+function showHatch(r, item, res) {
+  const el = document.createElement('div'); el.className = `hatch r${item.rarity}`;
+  el.innerHTML = `<div class="hatch-rays"></div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
+    <div class="hatch-pet"><img src="${getSplash(item)}" alt="${esc(item.name)}"></div>
+    <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')} · ${esc(item.element)}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
+      ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · +${res.pearls} ${curIcon('pearls')}</span></div>`}</div>
+    <div class="rv-hint">Tap to continue</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.onclick = () => el.remove(), 1600);
 }
 
 /* ---------- profile: avatar, frame, title, namecard, showcase of up to 4 characters ---------- */
@@ -1725,9 +1967,9 @@ function cardBG(id) {
 }
 const cardLayer = bg => `<span class="nc ${bg.cls}">${bg.img ? `<img src="${bg.img}" alt="" class="${bg.art ? '' : 'chibi'}">` : ''}</span>`;
 
-let pfTab = 'avatar', pfSlot = -1;
+let pfTab = 'avatar', pfSlot = -1, pfEditName = false;
 function openProfile() {
-  pfTab = 'avatar'; pfSlot = -1;
+  pfTab = 'avatar'; pfSlot = -1; pfEditName = false;
   openModal({ title: 'Profile', ic: 'chars', wide: true, kind: 'profile', body: '<div id="pfRoot"></div>', onMount: renderProfile });
 }
 function renderProfile() {
@@ -1761,7 +2003,7 @@ function renderProfile() {
   root.innerHTML = `<div class="stack">
     <div class="pf-card">${cardLayer(cardBG(P.card))}
       <div class="pf-me">${avatarHTML(108)}
-        <div class="pf-who"><span class="lbl-sm ts" style="color:#fff">Lv 12 · UID ${P.uid}</span><b class="ts">${esc(S.player.name)}</b>${titleHTML()}</div>
+        <div class="pf-who"><span class="lbl-sm ts" style="color:#fff">Lv 12 · UID ${P.uid}</span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="${pfEditName ? 'Save name' : 'Change name'}">${icon(pfEditName ? 'check' : 'edit')}</button></span>${titleHTML()}</div>
       </div>
       <div class="pf-stats">
         <div><b>${chars.length}/${allChars.length}</b><span>Characters</span></div>
@@ -1777,6 +2019,13 @@ function renderProfile() {
     ${opts}
   </div>`;
   const save = () => { persist(); renderMenu(); renderProfile(); };
+  const saveName = () => {
+    const v = $('#pfNameIn').value.trim().slice(0, 16);
+    if (v && v !== S.player.name) { S.player.name = v; player.name = v; toast(`You're now called ${v}.`); }
+    pfEditName = false; save();
+  };
+  $('#pfEdit').onclick = () => { if (pfEditName) saveName(); else { pfEditName = true; renderProfile(); const i = $('#pfNameIn'); i.focus(); i.select(); } };
+  const ni = $('#pfNameIn'); if (ni) ni.onkeydown = e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { e.stopPropagation(); pfEditName = false; renderProfile(); } };
   root.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; pfSlot = -1; renderProfile(); });
   root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { pfSlot = pfSlot === +b.dataset.slot ? -1 : +b.dataset.slot; renderProfile(); });
   root.querySelectorAll('[data-show]').forEach(b => b.onclick = () => {
@@ -1896,8 +2145,8 @@ function rate5(pity) { return pity >= HARD_PITY ? 1 : BASE5; }
 const BANNER_KEYS = ['limited', 'standard'];
 let curBanner = 'limited';
 const limitedUR = () => { const f = findEntry(S.featuredId); return f && f.rarity === 5 && f.pullable !== false ? f : null; };
-const standardURs = () => S.pool.filter(e => e.rarity === 5 && e.pullable !== false && e.standard);
-const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== false);
+const standardURs = () => S.pool.filter(e => e.rarity === 5 && e.pullable !== false && e.standard && e.type !== 'pet');
+const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== false && e.type !== 'pet');
 const bannerName = bk => bk === 'limited' ? (S.banners.limited.name || 'Limited Banner') : (S.banners.standard.name || 'Pearl Wish');
 /* a summon is paid with summon tickets (1 ticket = 1 pull) when you have enough, otherwise with pearls */
 const payFor = n => S.wallet.tickets >= n ? { k: 'tickets', amt: n } : { k: 'pearls', amt: COST[n] };
@@ -1923,18 +2172,15 @@ function rollOne(bk) {
   } else if (rarity === 4) {
     const ssr = pullableSSRs(); if (ssr.length) item = rpick(ssr);
   }
+  // the lowest tier is 500 gold coins, or sometimes an egg fragment
+  const frag = rarity === 3 ? (() => { const x = Math.random(); return x < FRAG_SSR ? 'ssr' : x < FRAG_SSR + FRAG_UR ? 'ur' : null; })() : null;
   let res;
-  if (!item) {
+  if (frag) { S.pets.frags[frag]++; res = { kind: 'frag', rarity, frag }; }
+  else if (!item) {
     const amount = FILLER_COINS[rarity]; S.wallet.coins += amount;
     res = { kind: 'coins', rarity, amount };
-  } else {
-    const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
-    // first copy: 0 stars; each duplicate adds a star up to 6; after that duplicates become pearls
-    const starUp = prev && prev - 1 < MAX_STARS ? prev : 0;
-    const pearls = prev && !starUp ? OVERFLOW_PEARLS : 0; S.wallet.pearls += pearls;
-    res = { kind: 'entry', id: item.id, rarity, isNew: !prev, starUp, pearls, lost };
-  }
-  S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : item.name, rarity, banner: bk, t: Date.now() });
+  } else res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
+  S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
   return res;
 }
@@ -2027,7 +2273,7 @@ function openRates(bk, histOpen) {
     <table class="rates">
       <tr><td>${rtag(5)}</td><td>${BASE5 * 100}% · guaranteed by pull ${HARD_PITY} · ${lim ? `50% ${f ? esc(f.name) : 'featured'}, otherwise a permanent UR and the next UR is guaranteed featured` : `each of the ${std.length} URs is equally likely`}</td></tr>
       <tr><td>${rtag(4)}</td><td>5.1% · at least one every 10 pulls</td></tr>
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>${fmt(COIN_DROP)} coins · everything else</td></tr>
+      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
     <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS} pearls. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
     <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
@@ -2043,6 +2289,7 @@ const TIER_BURST = { 3: 1, 4: 1.55, 5: 2.1 }, TIER_REVEAL = { 3: 1.6, 4: 2.6, 5:
 const rpick = a => a[Math.floor(Math.random() * a.length)];
 function resultView(r) {
   if (r.kind === 'coins') return { name: `${fmt(r.amount)} gold coins`, type: 'Gold coins', element: null, img: null };
+  if (r.kind === 'frag') return { name: `${EGG[r.frag].name} fragment`, type: 'Egg fragment', element: null, img: null };
   const e = findEntry(r.id) || { name: '?', type: 'item', element: '' };
   return { name: e.name, type: TYPES[e.type], element: e.element, img: getSplash(e), card: getArt(e) };
 }
@@ -2203,7 +2450,7 @@ function showPull(results, n, bk) {
   pullEl.innerHTML = `<div class="meteor-wrap"><div class="meteor"></div></div><div class="orb"></div><div class="rings"><i></i><i></i><i></i></div><div class="flash"></div>
     ${best >= 4 ? `<div class="stamp">${RNAME[best]}</div>` : ''}<div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
-  const order = results.map((r, i) => i).filter(i => results[i].kind !== 'coins');
+  const order = results.map((r, i) => i).filter(i => results[i].kind === 'entry');
   pullState = { results, n, bk, i: -1, phase: 'intro', readyAt: 0, order: order.length ? order : [0], fx: startPfx(pullEl.querySelector('.pfx'), best) };
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
@@ -2225,7 +2472,7 @@ function advancePull() {
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ${S.settings.pullFit ? 'fit' : ''}">
     <div class="rv-rays"></div><div class="rv-glow"></div>
-    ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon('coins')}</div>`}
+    ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
     <div class="rv-flash"></div><div class="rv-sweep"></div>
     <div class="rv-info">
       <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}${v.element ? ' · ' + esc(v.element) : ''}</div>
@@ -2251,9 +2498,9 @@ function showSummary() {
   $('#pullStage').innerHTML = `<div class="sum">
     <h2>Summon results</h2>
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r); return `<div class="scard r${r.rarity}" style="--i:${i}">
-      ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon('coins')}</div>`}
+      ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
       ${r.isNew ? '<span class="new">NEW</span>' : ''}
-      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.pearls ? `<span class="dp">+${r.pearls} pearls</span>` : ''}</div></div>`; }).join('')}</div>
+      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.pearls ? `<span class="dp">+${r.pearls} pearls</span>` : ''}</div></div>`; }).join('')}</div>
     <div class="row" style="justify-content:center">
       <button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n)}</button>
       <button class="btn ghost" id="pullDone">Done</button>
@@ -2313,12 +2560,13 @@ function renderPoolTab() {
           <label class="field" id="adParentWrap" hidden><span>Skin for</span><select class="input" id="adParent"></select></label>
           <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
           <label class="field"><span>Description</span><textarea class="input" id="adDesc" maxlength="240" placeholder="One or two lines of lore"></textarea></label>
-          <fieldset class="looks"><legend class="lbl-sm">Plaza look</legend>
-            <label>Hair<input type="color" id="lkHair"></label>
-            <label>Style<select class="input" id="lkStyle">${HAIR_STYLES.map((s, i) => `<option value="${i}">${s}</option>`).join('')}</select></label>
-            <label>Skin<input type="color" id="lkSkin"></label>
-            <label>Top<input type="color" id="lkShirt"></label>
-            <label>Bottom<input type="color" id="lkPants"></label>
+          <fieldset class="looks"><legend class="lbl-sm" id="lkLegend">Plaza look</legend>
+            <label id="lkKindWrap" hidden>Pet<select class="input" id="lkKind">${Object.entries(PET_KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+            <label><span id="lkHairL">Hair</span><input type="color" id="lkHair"></label>
+            <label id="lkStyleWrap">Style<select class="input" id="lkStyle">${HAIR_STYLES.map((s, i) => `<option value="${i}">${s}</option>`).join('')}</select></label>
+            <label><span id="lkSkinL">Skin</span><input type="color" id="lkSkin"></label>
+            <label><span id="lkShirtL">Top</span><input type="color" id="lkShirt"></label>
+            <label id="lkPantsWrap">Bottom<input type="color" id="lkPants"></label>
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
@@ -2337,7 +2585,7 @@ function renderPoolTab() {
       </details>
     </aside>
   </div>`;
-  ['adType', 'adEl', 'adName', 'adParent', 'adDesc', 'lkHair', 'lkStyle', 'lkSkin', 'lkShirt', 'lkPants'].forEach(id => $('#' + id).addEventListener('input', adminPreview));
+  ['adType', 'adEl', 'adName', 'adParent', 'adDesc', 'lkHair', 'lkStyle', 'lkSkin', 'lkShirt', 'lkPants', 'lkKind'].forEach(id => $('#' + id).addEventListener('input', adminPreview));
   $('#adRarity').addEventListener('change', adminPreview);
   $('#adType').addEventListener('change', adminPreview);
   $('#adArt').addEventListener('change', async ev => {
@@ -2361,6 +2609,7 @@ function fillAdminForm(entry) {
   $('#adName').value = entry ? entry.name : '';
   $('#adDesc').value = entry ? entry.desc || '' : '';
   $('#lkHair').value = lk.hair; $('#lkStyle').value = lk.style; $('#lkSkin').value = lk.skin; $('#lkShirt').value = lk.shirt; $('#lkPants').value = lk.pants;
+  if (lk.kind) { $('#lkKind').value = lk.kind; $('#lkHair').value = lk.body; $('#lkSkin').value = lk.belly; $('#lkShirt').value = lk.accent; }
   const r = entry ? entry.rarity : 4;
   document.querySelectorAll('input[name=adR]').forEach(i => i.checked = +i.value === r);
   $('#adFeat').checked = entry ? S.featuredId === entry.id : false;
@@ -2379,7 +2628,9 @@ function fillParentOptions(sel) {
   const chars = S.pool.filter(e => e.type === 'character');
   $('#adParent').innerHTML = chars.length ? chars.map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('') : '<option value="">Add a character first</option>';
 }
-function readLook() { return { hair: $('#lkHair').value, style: +$('#lkStyle').value, skin: $('#lkSkin').value, shirt: $('#lkShirt').value, pants: $('#lkPants').value }; }
+function readLook() {
+  if ($('#adType').value === 'pet') return { kind: $('#lkKind').value, body: $('#lkHair').value, belly: $('#lkSkin').value, accent: $('#lkShirt').value };
+  return { hair: $('#lkHair').value, style: +$('#lkStyle').value, skin: $('#lkSkin').value, shirt: $('#lkShirt').value, pants: $('#lkPants').value }; }
 function adminRarity() { const c = document.querySelector('input[name=adR]:checked'); return c ? +c.value : 4; }
 function adminPreview() {
   const r = adminRarity();
@@ -2388,6 +2639,9 @@ function adminPreview() {
   $('#adClearArt').hidden = !adminArt;
   $('#adUpLbl').textContent = adminArt ? 'Replace splash art' : 'Upload splash art';
   $('#adParentWrap').hidden = $('#adType').value !== 'skin';
+  const pet = $('#adType').value === 'pet';
+  $('#lkLegend').textContent = pet ? 'Pet look' : 'Plaza look'; $('#lkKindWrap').hidden = !pet; $('#lkStyleWrap').hidden = $('#lkPantsWrap').hidden = pet;
+  $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5;
 }
 async function saveAdmin(ev) {
@@ -2575,7 +2829,7 @@ document.addEventListener('click', e => {
   else if (k === 'wallpaper') openWallpaper();
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('all');
-  else if (k === 'pets') openCollection('pet');
+  else if (k === 'pets') openPets();
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();
   else if (k === 'login') openLogin();
@@ -3262,6 +3516,7 @@ function drawMap(cv, cssW, cssH, opt = {}) {
     g.fillStyle = hexA(z.c, z.id === curZone.id ? .26 : .12); g.strokeStyle = hexA(z.c, .9); g.lineWidth = 1.5; g.setLineDash([5, 4]);
     g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath(); g.fill(); g.stroke(); g.setLineDash([]);
   });
+  plazaEggs.forEach(e => { const p = toPx(e.x, e.y); g.fillStyle = e.r === 'ur' ? '#ff6ec7' : '#ffd36b'; ell(g, p.x, p.y - 1, 2.6, 3.4); });
   bots.forEach(b => { const p = toPx(b.x, b.y); g.fillStyle = 'rgba(10,15,31,.55)'; ell(g, p.x, p.y, 3.6, 3.6); g.fillStyle = b.look.hair === '#2b2b3a' ? '#c9d2f5' : b.look.hair; ell(g, p.x, p.y, 2.6, 2.6); });
   const pp = toPx(player.x, player.y);
   g.strokeStyle = 'rgba(126,243,212,.55)'; g.lineWidth = 2; g.beginPath(); g.arc(pp.x, pp.y, 7 + Math.sin(now * 4) * 1.5, 0, Math.PI * 2); g.stroke();
@@ -3461,7 +3716,7 @@ function update(dt) {
     if (b.nextTalk <= 0) { b.nextTalk = 8 + Math.random() * 16; if (Math.random() < .6) say(b, pick(BOT_LINES)); else emote(b, pick(EMOTES)); }
   });
   entities.forEach(e => { e.z = heightAt(e.x, e.y) * LV; });
-  updateFireworks(dt); updateLeaves(dt);
+  updateFireworks(dt); updateLeaves(dt); updateEggs(dt);
   const p = isoZ(player.x, player.y, player.z), k = 1 - Math.pow(.002, dt);
   cam.x += (p.x - cam.x) * k; cam.y += (p.y - 20 - cam.y) * k;
 }
@@ -3539,6 +3794,40 @@ function drawLeaves(c) {
   c.globalAlpha = 1;
 }
 
+/* catchable eggs in the plaza */
+const plazaEggs = [];
+let eggTimer = 45;
+function spawnEgg() { const p = randomWalkableNear(14, 14, 12); if (p) plazaEggs.push({ x: p.x, y: p.y, r: Math.random() < .15 ? 'ur' : 'ssr', ph: Math.random() * 6 }); }
+spawnEgg(); spawnEgg();
+function updateEggs(dt) {
+  eggTimer -= dt;
+  if (eggTimer <= 0) { eggTimer = 60 + Math.random() * 90; if (plazaEggs.length < 3) spawnEgg(); }
+  if (menuOpen || tele) return;
+  for (let i = plazaEggs.length - 1; i >= 0; i--) {
+    const g = plazaEggs[i], d = Math.hypot(g.x - player.x, g.y - player.y);
+    if (d > 1.4) { g.warned = false; continue; }
+    if (d > .65 || g.warned) continue;
+    if (spendStamina(EGG_STAMINA)) {
+      plazaEggs.splice(i, 1); S.pets.eggs.push(g.r); persist(); renderMenu();
+      toast(`Caught a ${EGG[g.r].name}! −${EGG_STAMINA} stamina. Hatch it in Pets.`); logChat('', `You caught a ${EGG[g.r].name}.`, '', true);
+    } else { g.warned = true; toast(`Catching an egg costs ${EGG_STAMINA} stamina. You have ${stamina()}.`); }
+  }
+}
+function drawPlazaEgg(c, g, t) {
+  const b = Math.sin(t * 2.5 + g.ph) * 2, p = isoZ(g.x, g.y, heightAt(g.x, g.y) * LV), ur = g.r === 'ur';
+  glow(c, p.x, p.y - 12 + b, 34, .6, ur ? GLOW_P : GLOW);
+  c.fillStyle = 'rgba(20,10,20,.3)'; ell(c, p.x, p.y, 7, 2.8);
+  c.save(); c.translate(p.x, p.y - 12 + b); c.rotate(Math.sin(t * 3 + g.ph) * .12);
+  const gr = c.createLinearGradient(-7, -9, 7, 9);
+  if (ur) { gr.addColorStop(0, '#c58bff'); gr.addColorStop(.5, '#ff6ec7'); gr.addColorStop(1, '#3ee6d0'); } else { gr.addColorStop(0, '#fffaf0'); gr.addColorStop(1, '#f3c58a'); }
+  c.fillStyle = gr; c.strokeStyle = OUTLINE; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(0, -10); c.bezierCurveTo(6, -10, 8, 1, 7, 4); c.bezierCurveTo(6, 9, -6, 9, -7, 4); c.bezierCurveTo(-8, 1, -6, -10, 0, -10); c.fill(); c.stroke();
+  c.fillStyle = ur ? 'rgba(255,255,255,.9)' : '#ff8a2a';
+  if (ur) { ell(c, -2.5, -4, 1.6, 2.2); } else { ell(c, -2, -3, 1.6, 1.6); ell(c, 3, 1, 1.4, 1.4); ell(c, -1, 4, 1.1, 1.1); }
+  c.restore();
+}
+PAINT.pegg = (c, o, t) => drawPlazaEgg(c, o.g, t);
+
 /* lantern strings hang above everyone, so they draw after the sorted pass */
 function drawStrings(c) {
   strings.forEach((s, si) => {
@@ -3586,6 +3875,7 @@ function render() {
   }
   const list = objects.slice();
   entities.forEach(e => list.push({ kind: 'ent', e, depth: e.x + e.y }));
+  plazaEggs.forEach(g => list.push({ kind: 'pegg', g, depth: g.x + g.y }));
   list.sort((a, b) => a.depth - b.depth);
   list.forEach(o => {
     if (o.kind === 'ent') {
