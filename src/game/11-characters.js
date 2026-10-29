@@ -151,7 +151,7 @@ function renderCharacters() {
     body = `<div class="cs-card bond-heart"><span class="hrt">${curIcon('bondheart')}<b>${lv}</b></span>
         <div style="display:grid;gap:6px;flex:1"><b style="font-family:var(--display);font-weight:400;font-size:22px">Bond Lv. ${lv}${bd.married ? ' · Married' : ''}</b>
           <span class="bar" style="--rc:#ff6f91"><i style="width:${full ? 100 : (bd.xp - lo) / (hi - lo) * 100}%"></i></span>
-          <span class="tiny">${full ? 'Max bond reached' : `${bd.xp - lo} / ${hi - lo} bond to level ${lv + 1}`}</span></div></div>
+          <span class="tiny">${full ? 'Max bond reached' : `${fmt(bd.xp - lo)} / ${fmt(hi - lo)} bond to level ${lv + 1} · ${fmt(bd.xp)} / ${fmt(BOND_XP[BOND_MAX])} total`}</span></div></div>
       ${!n ? '<div class="cs-pill">Own this character to give gifts and raise your bond.</div>' : full ? '' : `<div class="lbl-sm">Give a gift</div><div class="gift-list">${Object.entries(GIFTS).map(([k, g]) =>
         `<button class="gift" data-gift="${k}">${curIcon('g' + k)}<span><b>${g.name}</b><span class="tiny">+${g.xp} bond · ${S.gifts[k] ? `×${S.gifts[k]} in your bag` : `buy for ${fmt(g.price)} coins`}</span></span><span class="btn sm ${S.gifts[k] ? 'mint' : 'ghost'}">${S.gifts[k] ? 'Give' : 'Buy & give'}</span></button>`).join('')}</div>`}
       <div class="cs-card vow-box ${bd.married ? 'done' : ''}">
