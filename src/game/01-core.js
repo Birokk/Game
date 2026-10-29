@@ -23,8 +23,22 @@ const DB = {
   del(k) { return this.run('readwrite', s => s.delete(k)); },
   async all() { const db = await this.open(); return new Promise((res, rej) => { const out = []; const tx = db.transaction('media', 'readonly'); const cur = tx.objectStore('media').openCursor(); cur.onsuccess = () => { const c = cur.result; if (c) { out.push([c.key, c.value]); c.continue(); } }; tx.oncomplete = () => res(out); tx.onerror = () => rej(tx.error); }); }
 };
-async function mediaSet(k, v) { MEDIA.set(k, v); try { await DB.set(k, v); return true; } catch (e) { toast('This browser would not save the image. It will be gone after a reload.'); return false; } }
-async function mediaDel(k) { MEDIA.delete(k); try { await DB.del(k); } catch (e) {} }
+/* media goes through here: the browser cache (IndexedDB) always, and the cloud (Backend) when it is connected.
+   S.media is the shared manifest { key: version } so every player can find the admin's images */
+async function mediaSet(k, v) {
+  let src = v;
+  if (Backend.canEditContent()) {
+    try { src = await Backend.upload(k, v); } catch (e) { toast(`Upload failed: ${e.message}`); return false; }
+  }
+  MEDIA.set(k, src); S.media = { ...S.media, [k]: Date.now() }; persist();
+  try { await DB.set(k, v); } catch (e) { if (!Backend.on) { toast('This browser would not save the image. It will be gone after a reload.'); return false; } }
+  return true;
+}
+async function mediaDel(k) {
+  MEDIA.delete(k); if (S.media) { const m = { ...S.media }; delete m[k]; S.media = m; persist(); }
+  if (Backend.canEditContent()) Backend.remove(k).catch(() => {});
+  try { await DB.del(k); } catch (e) {}
+}
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
 const SPLASH_MAX = 1728;
 function resizeImage(file, max, type = 'image/webp') {
@@ -144,8 +158,20 @@ const starsFor = e => hasStars(e) ? starRow(starsOf(e.id), -1, e) : '';
 const DUST_PER_PULL = 5, STARLIGHT = { 4: 5, 5: 10 }, STARLIGHT_MAX = { 4: 10, 5: 40 };
 const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_UR = .08;
 
-/* ---------- data & storage ---------- */
-const KEY = 'prismplaza.v1';
+/* ---------- data & storage ----------
+   S holds everything in memory, but it is saved in two parts:
+   - content (CONTENT_KEYS): what the admin makes, shared by every player (pool, banners, clothes, memories, notices, media manifest)
+   - the player save: everything else (wallet, owned, bond, settings, ...)
+   Locally both go to localStorage; with the cloud on, the save syncs per account and content comes from the server. */
+const KEY = 'prismplaza.v1', CONTENT_KEY = 'prismplaza.content.v1';
+const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media'];
+const splitState = st => { const save = {}, content = {}; for (const [k, v] of Object.entries(st)) (CONTENT_KEYS.includes(k) ? content : save)[k] = v; return { save, content }; };
+/* the cloud connection; 16-backend.js fills it in when Supabase is configured, otherwise everything stays local */
+const Backend = {
+  on: false, user: null, isAdmin: false,
+  canEditContent() { return this.on && this.isAdmin; },
+  saveChanged() {}, contentChanged() {}, upload: async (k, v) => v, remove: async () => {}
+};
 function sampleState() {
   return {
     version: 4,
@@ -204,9 +230,10 @@ function sampleState() {
 let S = (() => {
   const base = sampleState();
   try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
+    const raw = localStorage.getItem(KEY), rawC = localStorage.getItem(CONTENT_KEY);
+    if (raw || rawC) {
+      // older saves kept the content inside the player save; the content copy wins when both exist
+      const d = { ...(raw ? JSON.parse(raw) : {}), ...(rawC ? JSON.parse(rawC) : {}) };
       if (d && Array.isArray(d.pool)) {
         const s = Object.assign(base, d);
         s.wallet = { ...sampleState().wallet, ...(d.wallet || {}) };
@@ -232,9 +259,25 @@ let S = (() => {
   } catch (e) {}
   return base;
 })();
+if (!S.media) S.media = {};
+let lastContentJSON = JSON.stringify(splitState(S).content);
 function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
-  catch (e) { toast('Could not save progress: browser storage is full.'); return false; }
+  const { save, content } = splitState(S);
+  try {
+    const cj = JSON.stringify(content);
+    localStorage.setItem(KEY, JSON.stringify(save));
+    if (cj !== lastContentJSON) { localStorage.setItem(CONTENT_KEY, cj); lastContentJSON = cj; Backend.contentChanged(content); }
+    Backend.saveChanged(save);
+    return true;
+  } catch (e) { toast('Could not save progress: browser storage is full.'); return false; }
+}
+/* replace the shared content (from the server or an import) without touching the player save */
+function applyContent(c) {
+  for (const k of CONTENT_KEYS) if (c[k] !== undefined) S[k] = c[k];
+  if (!S.media) S.media = {};
+  ensureMC();
+  lastContentJSON = JSON.stringify(splitState(S).content);
+  localStorage.setItem(CONTENT_KEY, lastContentJSON);
 }
 const featured = () => S.pool.find(e => e.id === S.featuredId) || S.pool.find(e => e.type === 'character' && e.rarity === 5) || S.pool[0];
 /* the two main characters are pool entries mc-f / mc-m; only the chosen one (and its skins) counts as owned */
