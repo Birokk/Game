@@ -10,6 +10,7 @@ document.addEventListener('click', e => {
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('character');
   else if (k === 'pets') openPets();
+  else if (k === 'farm') openFarm();
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();
   else if (k === 'login') openLogin();

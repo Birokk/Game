@@ -48,6 +48,7 @@ function renderMenu() {
   $('#loginDot').hidden = !loginReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
+  $('#farmDot').hidden = !farmReady();
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();

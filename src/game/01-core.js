@@ -98,6 +98,8 @@ function resizeImage(file, max, type = 'image/webp') {
 
 /* ---------- icons ---------- */
 const ICONS = {
+  farm:'<path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/><path d="M9 10h6"/>',
+  up:'<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
   memory:'<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 6V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/><path d="M3 15l4-4 3 3 2-2 5 5"/>',
   wardrobe:'<path d="M8.5 4L4 6.8l1.8 4 2.2-1V20h8V9.8l2.2 1 1.8-4L15.5 4c-.6 1.5-1.9 2.4-3.5 2.4S9.1 5.5 8.5 4z"/>',
   mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7.5l8 6 8-6"/>',

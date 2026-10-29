@@ -630,7 +630,7 @@ function renderWalletTab() {
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
     <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button><button class="btn ghost sm" id="wSpin">Reset daily spin</button></div>
     <div><h3>Bond &amp; marriage</h3><p class="tiny">Test helpers. Rings are also editable in the wallet above.</p></div>
-    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
+    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -652,6 +652,9 @@ function renderWalletTab() {
   $('#wRings').onclick = () => { S.wallet.rings += 5; persist(); renderMenu(); renderWalletTab(); toast('Added 5 rings.'); };
   $('#wGifts').onclick = () => { Object.keys(GIFTS).forEach(k => S.gifts[k] += 5); persist(); toast('Added 5 of each gift.'); };
   $('#wBond').onclick = () => { S.pool.filter(e => e.type === 'character' && owns(e.id)).forEach(e => S.bond[e.id] = { ...bondOf(e.id), xp: BOND_XP[BOND_MAX] }); persist(); toast('Every owned character is at bond level 10.'); };
+  $('#wFarmDone').onclick = () => { FARM_DEFS.forEach(d => { const f = farmOf(d.id); if (f.up) f.up.ends = Date.now() - 1; }); farmTick(); persist(); renderMenu(); toast('Farm upgrades finished.'); };
+  $('#wFarmFill').onclick = () => { FARM_DEFS.forEach(d => { const f = farmOf(d.id); f.acc = farmCap(d.id); f.t = Date.now(); }); persist(); renderMenu(); toast('Farm storage filled.'); };
+  $('#wFarmReset').onclick = () => { S.farm = {}; persist(); renderMenu(); toast('Farm reset.'); };
   $('#wMCcd').onclick = () => { S.player.mcAt = null; persist(); toast('Main character switch cooldown cleared.'); };
   $('#wMC').onclick = () => { S.player.mc = null; S.player.mcAt = null; persist(); toast('Main character choice reset. You will pick again on the next start.'); };
   $('#wBondReset').onclick = () => { S.bond = {}; persist(); toast('Bonds and marriages reset.'); };
