@@ -63,7 +63,7 @@ img.ic,img.cic{object-fit:contain}
 @keyframes rise{from{transform:translate(0,0)}50%{transform:translate(18px,-60vh)}to{transform:translate(-8px,-125vh)}}
 .wp-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.6)}
 .wallpaper.chibi .wp-blur{display:none!important}
-.wp-splash{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:wpZoom 20s ease-in-out infinite alternate}
+.wp-splash{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;animation:wpZoom 20s ease-in-out infinite alternate}
 .wallpaper.chibi .wp-splash{top:auto;bottom:4%;height:78%;object-fit:contain;object-position:50% 100%;transform-origin:50% 100%}
 @keyframes wpZoom{to{transform:scale(1.05)}}
 @keyframes breathe{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-8px)}}
@@ -323,7 +323,7 @@ details summary{cursor:pointer;font-weight:900}
 .rv-rays{position:absolute;left:50%;top:55%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,255,255,.07) 0 5deg,transparent 5deg 15deg);animation:spin 40s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .rv-glow{position:absolute;inset:0;background:radial-gradient(circle at 60% 58%,color-mix(in srgb,var(--rc) 60%,transparent),transparent 55%)}
-.rv-splash{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;animation:rvZoom .9s cubic-bezier(.2,.9,.3,1) both}
+.rv-splash{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;animation:rvZoom .9s cubic-bezier(.2,.9,.3,1) both}
 .rv-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.7);display:none}
 .rv.fit .rv-blur{display:block}
 .rv.fit .rv-splash{object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 40px color-mix(in srgb,var(--rc) 50%,transparent))}
@@ -645,7 +645,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   linear-gradient(160deg,#1c1338,#0a0d22 60%,#1a0c1f)}
 .cs-rays{position:absolute;left:46%;top:52%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,255,255,.05) 0 5deg,transparent 5deg 16deg);animation:spin 60s linear infinite}
 .cs.r5 .cs-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,rgba(168,85,247,.22) 44%,rgba(255,110,199,.22) 48%,rgba(62,230,208,.2) 52%,transparent 58%)}
-.cs-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:rvZoom .6s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px color-mix(in srgb,var(--rc) 40%,transparent))}
+.cs-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;animation:rvZoom .6s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px color-mix(in srgb,var(--rc) 40%,transparent))}
 .cs-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.55)}
 .cs-art.chibi{inset:auto;left:46%;bottom:2%;width:auto;height:86%;aspect-ratio:9/16;transform:translateX(-50%)}
 .cs-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(6,8,20,.55),transparent 28%,transparent 60%,rgba(6,8,20,.7) 80%)}
@@ -866,7 +866,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .login-day .chk{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:grid;place-items:center}
 .login-day .chk .ic{width:12px;height:12px}
 @media (max-width:520px){.login-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.sx-hero{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 50%;animation:rvZoom .7s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px rgba(0,0,0,.35))}
+.sx-hero{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;animation:rvZoom .7s cubic-bezier(.2,.9,.3,1) both;filter:drop-shadow(0 0 40px rgba(0,0,0,.35))}
 .sx .cs-blur{position:absolute;inset:-60px;width:calc(100% + 120px);height:calc(100% + 120px);object-fit:cover;filter:blur(40px) saturate(130%) brightness(.55)}
 .sx-feat{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:4px}
 .sx-feat button{width:48px;height:48px;border-radius:50%;overflow:hidden;padding:2px;background:var(--ur);opacity:.7;transition:opacity .2s,transform .2s}
@@ -1164,7 +1164,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .dt-hero{position:relative;min-height:min(68vh,620px);border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;border:2px solid var(--rc);background:linear-gradient(160deg,color-mix(in srgb,var(--rc) 30%,var(--ink-2)),#070a1c)}
 .dt-hero.r5{border-color:transparent;background:linear-gradient(160deg,color-mix(in srgb,#a855f7 30%,var(--ink-2)),#070a1c) padding-box,var(--ur) border-box}
 .dt-hero .cs-blur{inset:-60px}
-.dt-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:72% 50%}
+.dt-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
 .dt-art.chibi{inset:auto;right:4%;bottom:0;width:auto;height:94%;aspect-ratio:9/16;object-position:50% 100%}
 .dt-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(5,8,20,.88),rgba(5,8,20,.55) 42%,transparent 72%),linear-gradient(transparent 60%,rgba(5,8,20,.6))}
 .dt-info{position:relative;z-index:1;display:grid;gap:10px;align-content:end;max-width:min(470px,58%);padding:26px 28px}
@@ -1524,6 +1524,8 @@ const DB = {
 };
 async function mediaSet(k, v) { MEDIA.set(k, v); try { await DB.set(k, v); return true; } catch (e) { toast('This browser would not save the image. It will be gone after a reload.'); return false; } }
 async function mediaDel(k) { MEDIA.delete(k); try { await DB.del(k); } catch (e) {} }
+/* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
+const SPLASH_MAX = 1728;
 function resizeImage(file, max, type = 'image/webp') {
   return new Promise((res, rej) => {
     if (!file || !file.type.startsWith('image/')) return rej(new Error('That file is not an image. Pick a PNG, JPG, WebP or SVG.'));
@@ -3571,7 +3573,7 @@ function renderPoolTab() {
           <div class="frame"><img id="adPrev" alt="Splash art preview"></div>
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
-          <p class="tiny">Use 9:16 art, for example 900×1600 PNG. Larger images are scaled to 1600px tall. Without art, a placeholder chibi is shown.</p>
+          <p class="tiny">Standard size: 1728×972 (16:9). It fills the whole screen; other shapes (like square art) are cropped to fill it, keeping the upper middle. Larger images are scaled down to 1728px wide. Without art, a placeholder chibi is shown.</p>
           <div class="asc-slots"><div class="lbl-sm">Icon</div><p class="tiny">Square picture used in the character menu, avatars and small portraits. Without one, it is cut from the art.</p>
             <div class="asc-slot"><span class="mini ic-mini"><img id="adP_icon" alt=""></span><div style="display:grid;gap:4px"><b>Icon</b><span class="tiny" id="adS_icon"></span>
               <div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}Upload<input type="file" accept="image/*" class="sr" id="adIconUp"></label><button type="button" class="link" id="adIconX">Remove</button></div></div></div>
@@ -3617,11 +3619,11 @@ function renderPoolTab() {
   $('#adRarity').addEventListener('change', adminPreview);
   $('#adType').addEventListener('change', adminPreview);
   $('#adArt').addEventListener('change', async ev => {
-    try { adminArt = await resizeImage(ev.target.files[0], 1600); adminPreview(); }
+    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX); adminPreview(); }
     catch (e) { toast(e.message); }
   });
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
-  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], 1600); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
   $('#adIconX').onclick = () => { adminIcon = null; adminPreview(); };
@@ -3881,7 +3883,7 @@ function renderSkinsTab() {
   </div>`;
   document.querySelectorAll('[data-skup]').forEach(inp => inp.onchange = async () => {
     const k = findEntry(inp.dataset.skup), key = inp.dataset.skkey, mk = `${key === 'art' ? 'art' : 'get'}:${k.id}`;
-    try { await mediaSet(mk, await resizeImage(inp.files[0], key === 'art' ? 1600 : 1920)); k[key] = 'idb:' + mk; persist(); renderSkinsTab(); renderMenu(); toast('Art saved.'); }
+    try { await mediaSet(mk, await resizeImage(inp.files[0], key === 'art' ? SPLASH_MAX : 1920)); k[key] = 'idb:' + mk; persist(); renderSkinsTab(); renderMenu(); toast('Art saved.'); }
     catch (e) { toast(e.message); }
   });
   document.querySelectorAll('[data-skx]').forEach(b => b.onclick = async () => {
@@ -3918,7 +3920,7 @@ function mrSkinOf(c) { const e = c.weddingSkin && findEntry(c.weddingSkin); retu
 function renderMRTab() {
   const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   $('#adPanel').innerHTML = `<div class="stack">
-    <div><h3>Marriage skins <span class="rtag r6">MR</span></h3><p class="tiny">Upload the MR splash art for each character's wedding outfit. Marrying the character (bond level ${BOND_MAX} + 1 ring) unlocks it and plays the pink-red new outfit animation. Use 9:16 art; it is shown big in the middle of the screen.</p></div>
+    <div><h3>Marriage skins <span class="rtag r6">MR</span></h3><p class="tiny">Upload the MR splash art for each character's wedding outfit. Marrying the character (bond level ${BOND_MAX} + 1 ring) unlocks it and plays the pink-red new outfit animation. Use the standard 1728×972 size; it is shown big in the middle of the screen.</p></div>
     <div class="mr-grid">${chars.map(c => { const k = mrSkinOf(c), art = k && artFrom(k.art);
       return `<div class="mr-card"><div class="mr-art">${art ? `<img src="${art}" alt="">` : `<span class="tiny">No MR art yet</span>`}</div>
         <div style="display:grid;gap:6px;min-width:0"><b>${esc(c.name)}</b>${k ? `<span class="tiny">${esc(k.name)}</span>` : '<span class="tiny">No marriage skin</span>'}
@@ -3932,7 +3934,7 @@ function renderMRTab() {
     return k;
   };
   document.querySelectorAll('[data-mrup]').forEach(inp => inp.onchange = async () => {
-    try { const k = ensure(inp.dataset.mrup); await mediaSet('art:' + k.id, await resizeImage(inp.files[0], 1600)); k.art = 'idb:art:' + k.id; persist(); renderMRTab(); renderMenu(); toast(`MR art saved for ${findEntry(inp.dataset.mrup).name}.`); }
+    try { const k = ensure(inp.dataset.mrup); await mediaSet('art:' + k.id, await resizeImage(inp.files[0], SPLASH_MAX)); k.art = 'idb:art:' + k.id; persist(); renderMRTab(); renderMenu(); toast(`MR art saved for ${findEntry(inp.dataset.mrup).name}.`); }
     catch (e) { toast(e.message); }
   });
   document.querySelectorAll('[data-mrsave]').forEach(b => b.onclick = () => { ensure(b.dataset.mrsave); persist(); renderMRTab(); toast('Saved.'); });
