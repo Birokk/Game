@@ -166,6 +166,7 @@ const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_U
 const KEY = 'prismplaza.v1', CONTENT_KEY = 'prismplaza.content.v1';
 const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media'];
 const splitState = st => { const save = {}, content = {}; for (const [k, v] of Object.entries(st)) (CONTENT_KEYS.includes(k) ? content : save)[k] = v; return { save, content }; };
+const CLOUD_CONFIGURED = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 /* the cloud connection; 16-backend.js fills it in when Supabase is configured, otherwise everything stays local */
 const Backend = {
   on: false, user: null, isAdmin: false,

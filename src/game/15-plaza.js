@@ -576,7 +576,9 @@ const bots = BOT_NAMES.map(n => {
   return makeEntity(n, p.x, p.y, { ...MC_LOOK[Math.random() < .5 ? 'f' : 'm'] }, true);
 });
 const entities = [player, ...bots];
-$('#onlineCount').textContent = `${entities.length} here`;
+const others = () => entities.filter(e => e !== player);
+const updateOnline = () => { $('#onlineCount').textContent = `${entities.length} here`; };
+updateOnline();
 
 /* chat */
 const chatLog = [];
@@ -589,13 +591,13 @@ function say(e, text) {
   logChat(e.name, text, e === player ? 'var(--mint)' : e.look.hair === '#2b2b3a' ? '#c9d2f5' : e.look.hair, false);
 }
 function emote(e, em) { e.emote = { e: em, until: now + 3 }; }
-logChat('', 'Welcome to Blank: Project. The other players here are demo bots until multiplayer is connected.', '', true);
+logChat('', 'Welcome to Blank: Project.', '', true);
 
 $('#chatForm').addEventListener('submit', ev => {
   ev.preventDefault();
   const inp = $('#chatInput'), text = inp.value.trim(); if (!text) return;
-  say(player, text); inp.value = ''; inp.blur();
-  if (Math.random() < .45) {
+  say(player, text.slice(0, 120)); netChat(text.slice(0, 120)); inp.value = ''; inp.blur();
+  if (bots.length && Math.random() < .45) {
     const near = bots.filter(b => Math.hypot(b.x - player.x, b.y - player.y) < 8);
     const b = near.length ? pick(near) : pick(bots);
     setTimeout(() => say(b, pick(BOT_REPLIES)), 1200 + Math.random() * 1500);
@@ -603,7 +605,7 @@ $('#chatForm').addEventListener('submit', ev => {
 });
 const emotesEl = $('#emotes');
 emotesEl.innerHTML = EMOTES.map(e => `<button type="button" aria-label="Emote ${e}">${e}</button>`).join('');
-emotesEl.querySelectorAll('button').forEach((b, i) => b.onclick = () => { emote(player, EMOTES[i]); emotesEl.hidden = true; });
+emotesEl.querySelectorAll('button').forEach((b, i) => b.onclick = () => { emote(player, EMOTES[i]); netEmote(EMOTES[i]); emotesEl.hidden = true; });
 $('#emoteToggle').onclick = () => { emotesEl.hidden = !emotesEl.hidden; };
 
 let hintTimer;
@@ -679,7 +681,7 @@ function drawMap(cv, cssW, cssH, opt = {}) {
     g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath(); g.fill(); g.stroke(); g.setLineDash([]);
   });
   plazaEggs.forEach(e => { const p = toPx(e.x, e.y); g.fillStyle = e.r === 'ur' ? '#ff6ec7' : '#ffd36b'; ell(g, p.x, p.y - 1, 2.6, 3.4); });
-  bots.forEach(b => { const p = toPx(b.x, b.y); g.fillStyle = 'rgba(10,15,31,.55)'; ell(g, p.x, p.y, 3.6, 3.6); g.fillStyle = b.look.hair === '#2b2b3a' ? '#c9d2f5' : b.look.hair; ell(g, p.x, p.y, 2.6, 2.6); });
+  others().forEach(b => { const p = toPx(b.x, b.y); g.fillStyle = 'rgba(10,15,31,.55)'; ell(g, p.x, p.y, 3.6, 3.6); g.fillStyle = b.look.hair === '#2b2b3a' ? '#c9d2f5' : b.look.hair; ell(g, p.x, p.y, 2.6, 2.6); });
   const pp = toPx(player.x, player.y);
   g.strokeStyle = 'rgba(126,243,212,.55)'; g.lineWidth = 2; g.beginPath(); g.arc(pp.x, pp.y, 7 + Math.sin(now * 4) * 1.5, 0, Math.PI * 2); g.stroke();
   g.fillStyle = '#0a0f1f'; ell(g, pp.x, pp.y, 4.6, 4.6); g.fillStyle = '#7ef3d4'; ell(g, pp.x, pp.y, 3.4, 3.4);
@@ -764,12 +766,12 @@ function renderMapWindow(dotsOnly) {
 /* people panel */
 function renderPeople() {
   const el = $('#people'); if (!el) return;
-  const list = [player, ...bots.slice().sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y))];
+  const list = [player, ...others().sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y))];
   el.innerHTML = `<div class="lbl-sm" style="padding:4px 8px">In the plaza · ${entities.length}</div>` + list.map(e => {
     const z = zoneAt(e.x, e.y), you = e === player, dist = Math.round(Math.hypot(e.x - player.x, e.y - player.y));
     return `<div class="prow"><i style="background:${you ? 'var(--mint)' : e.look.hair}"></i><span style="min-width:0"><b>${esc(e.name)}${you ? ' (you)' : ''}</b><small>${esc(z.name)}${you ? '' : ` · ${dist} m`}</small></span>${you ? '' : `<button class="btn ghost sm" data-goto="${esc(e.name)}">Go</button>`}</div>`;
-  }).join('') + `<p class="tiny" style="padding:4px 8px">Other players are demo bots for now.</p>`;
-  el.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { const t = bots.find(x => x.name === b.dataset.goto); if (t) teleport(t.x, t.y + 1); });
+  }).join('') + (bots.length ? `<p class="tiny" style="padding:4px 8px">Other players are demo bots for now.</p>` : '');
+  el.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { const t = others().find(x => x.name === b.dataset.goto); if (t) teleport(t.x, t.y + 1); });
 }
 setInterval(() => { const el = $('#people'); if (el && !el.hidden) renderPeople(); }, 1500);
 $('#peopleBtn').onclick = () => { const el = $('#people'); el.hidden = !el.hidden; if (!el.hidden) renderPeople(); };
@@ -882,6 +884,7 @@ function update(dt) {
     b.nextTalk -= dt;
     if (b.nextTalk <= 0) { b.nextTalk = 8 + Math.random() * 16; if (Math.random() < .6) say(b, pick(BOT_LINES)); else emote(b, pick(EMOTES)); }
   });
+  netUpdate(dt);
   entities.forEach(e => { e.z = heightAt(e.x, e.y) * LV; });
   updateFireworks(dt); updateLeaves(dt); updateEggs(dt);
   const p = isoZ(player.x, player.y, player.z), k = 1 - Math.pow(.002, dt);

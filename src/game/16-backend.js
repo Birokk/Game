@@ -4,7 +4,6 @@
    Without them, or when the server can't be reached, everything stays in this browser like before.
    ========================================================= */
 const SB_URL = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, ''), SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const CLOUD_CONFIGURED = !!(SB_URL && SB_KEY);
 // offline, the admin panel is open to whoever runs the game (set VITE_LOCAL_ADMIN=false to hide it); online, only admins see it
 const LOCAL_ADMIN = import.meta.env.DEV || import.meta.env.VITE_LOCAL_ADMIN !== 'false';
 let sb = null, saveTimer = null, contentTimer = null, cloudStatus = CLOUD_CONFIGURED ? 'connecting' : 'off';

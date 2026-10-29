@@ -14,6 +14,7 @@
   menuEl.inert = false;
   tickWorld(); setInterval(() => { if (menuOpen) tickWorld(); }, 6000);
   updateAdminAccess();
+  startNet();
   renderTitle();
   booted = true;
   requestAnimationFrame(loop);
