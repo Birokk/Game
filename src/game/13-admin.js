@@ -245,7 +245,7 @@ async function exportData(progress) {
     const v = MEDIA.get(k); progress && progress(`Packing images ${++i}/${keys.length}…`);
     if (typeof v !== 'string') continue;
     if (v.startsWith('data:')) media[k] = v;
-    else { try { media[k] = await blobToDataUrl(await (await fetch(v)).blob()); } catch (e) { console.warn('Could not pack', k, e); } }   // cloud or preview storage URL
+    else { try { media[k] = await imageToDataUrl(v); } catch (e) { console.warn('Could not pack', k, e); } }   // cloud or preview storage URL
   }
   return JSON.stringify({ format: 'blank-full-1', savedAt: new Date().toISOString(), content: splitState(S).content, media });
 }

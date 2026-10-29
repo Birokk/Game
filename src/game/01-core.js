@@ -27,6 +27,23 @@ const DB = {
    S.media is the shared manifest { key: version } so every player can find the admin's images */
 /* in the claude.ai preview, images go to the preview's own file storage ("assets" capability): browser storage there can be
    blocked or wiped. The manifest then holds "a:<asset id>" and the image is served from /_blob/<id>. */
+/* data: URL → Blob without fetch() (the claude.ai preview's security rules block fetching data: URLs) */
+function dataUrlToBlob(u) {
+  const i = u.indexOf(','), head = u.slice(5, i), b64 = head.endsWith(';base64'), type = head.split(';')[0] || 'application/octet-stream';
+  const body = u.slice(i + 1), bin = b64 ? atob(body) : decodeURIComponent(body), bytes = new Uint8Array(bin.length);
+  for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+  return new Blob([bytes], { type });
+}
+/* any image URL → data URL: fetch when allowed, otherwise draw it on a canvas */
+async function imageToDataUrl(src) {
+  if (src.startsWith('data:')) return src;
+  try { const b = await (await fetch(src)).blob(); return await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); }
+  catch (e) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => rej(new Error('image did not load')); i.src = src; });
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0);
+    return c.toDataURL('image/webp', .92);
+  }
+}
 let previewAssetsP = null;
 const previewAssets = () => previewAssetsP || (previewAssetsP = (!CLOUD_CONFIGURED && window.claude && window.claude.use)
   ? Promise.race([window.claude.use('assets'), new Promise(r => setTimeout(() => r(null), 4000))]).catch(() => null) : Promise.resolve(null));
@@ -38,7 +55,7 @@ async function mediaSet(k, v) {
   } else {
     const pa = await previewAssets();
     if (pa) {
-      try { const r = await pa.upload(await (await fetch(v)).blob()); src = r.url; ver = 'a:' + r.id; }
+      try { const r = await pa.upload(dataUrlToBlob(v)); src = r.url; ver = 'a:' + r.id; }
       catch (e) { toast(`Could not save the image in the preview: ${(e && (e.message || e.code)) || e}`, true); return false; }
     }
   }

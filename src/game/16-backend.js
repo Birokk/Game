@@ -19,7 +19,7 @@ function applyMediaManifest() { for (const [k, v] of Object.entries(S.media || {
 
 Object.assign(Backend, {
   async upload(k, dataUrl) {
-    const blob = await (await fetch(dataUrl)).blob();
+    const blob = dataUrlToBlob(dataUrl);
     const { error } = await sb.storage.from('media').upload(mediaPath(k), blob, { upsert: true, contentType: blob.type, cacheControl: '31536000' });
     if (error) throw error;
     return mediaUrl(k, Date.now());
