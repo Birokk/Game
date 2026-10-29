@@ -1470,3 +1470,13 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .pool-edit .ad-preview .frame img[src^="data:image/png"]{object-fit:contain}
 .pool-edit .asc-slot .mini:not(.ic-mini){width:86px;aspect-ratio:16/9}
 .pool-edit .asc-slot .mini img{width:100%;height:100%;object-fit:cover}
+
+/* profile: the card view has a small settings button; settings mode shows the pickers */
+.pf-set{position:absolute;top:12px;right:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:rgba(5,8,20,.55);border:1px solid rgba(255,255,255,.25);color:#fff;font-family:var(--display);font-size:12.5px;backdrop-filter:blur(6px);transition:background .2s}
+.pf-set:hover{background:rgba(5,8,20,.8)}
+.pf-set .ic{width:16px;height:16px}
+.pf-back{justify-content:space-between;flex-wrap:wrap}
+.pf-mode-view .pf-slot{cursor:pointer}
+.modal-back[data-kind=spin] .modal{width:min(600px,100%)}
+.modal-back[data-kind=login] .modal{width:min(700px,100%)}
+.modal-back[data-kind=profile] .modal{width:min(860px,100%)}

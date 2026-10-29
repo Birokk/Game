@@ -45,10 +45,11 @@ function cardBG(id) {
 }
 const cardLayer = bg => `<span class="nc ${bg.cls}">${bg.img ? `<img src="${bg.img}" alt="" class="${bg.art ? '' : 'chibi'}">` : ''}</span>`;
 
-let pfTab = 'avatar', pfSlot = -1, pfEditName = false;
+/* the profile opens as a card (avatar, name, title, stats, showcase); "Profile settings" switches to customising it */
+let pfTab = 'avatar', pfSlot = -1, pfEditName = false, pfMode = 'view';
 function openProfile() {
-  pfTab = 'avatar'; pfSlot = -1; pfEditName = false;
-  openModal({ title: 'Profile', ic: 'chars', wide: true, kind: 'profile', body: '<div id="pfRoot"></div>', onMount: renderProfile });
+  pfTab = 'avatar'; pfSlot = -1; pfEditName = false; pfMode = 'view';
+  openModal({ title: 'Profile', ic: 'chars', kind: 'profile', body: '<div id="pfRoot"></div>', onMount: renderProfile });
 }
 function renderProfile() {
   const root = $('#pfRoot'); if (!root) return;
@@ -78,8 +79,11 @@ function renderProfile() {
       ${CARDS.map(k => opt(cur.cls === 'nc-' + k.id, !unlocked(k), `<span class="pf-nc">${cardLayer({ cls: 'nc-' + k.id })}</span>${lockTag(k)}`, `data-nc="${k.id}"`, `${esc(k.name)}${k.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}
       ${chars.map(e => opt(P.card === 'char:' + e.id && cur.cls === 'nc-char', false, `<span class="pf-nc">${cardLayer(cardBG('char:' + e.id))}</span>`, `data-nc="char:${esc(e.id)}"`, esc(e.name))).join('')}</div>`;
   }
-  root.innerHTML = `<div class="stack">
-    <div class="pf-card">${cardLayer(cardBG(P.card))}
+  const view = pfMode === 'view';
+  const mt = modalEl && modalEl.querySelector('#mTitle'); if (mt) mt.textContent = view ? 'Profile' : 'Profile settings';
+  root.innerHTML = `<div class="stack pf-mode-${pfMode}">
+    ${view ? '' : `<div class="row pf-back"><button class="btn ghost sm" id="pfBack">${icon('back')}Back to profile</button><span class="tiny">Tap a showcase slot, or pick an avatar, frame, title or namecard below.</span></div>`}
+    <div class="pf-card">${cardLayer(cardBG(P.card))}${view ? `<button class="pf-set" id="pfSet" aria-label="Profile settings" data-tip="${esc('<b>Profile settings</b><span>Avatar, frame, title, namecard, showcase and name</span>')}">${icon('gear')}<span>Profile settings</span></button>` : ''}
       <div class="pf-me">${avatarHTML(108)}
         <div class="pf-who"><span class="lbl-sm ts" style="color:#fff">Lv 12 · UID ${P.uid}</span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="${pfEditName ? 'Save name' : 'Change name'}">${icon(pfEditName ? 'check' : 'edit')}</button></span>${titleHTML()}</div>
       </div>
@@ -94,8 +98,8 @@ function renderProfile() {
     <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="tiny">Show off up to 4 characters you own</span></div>
       <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id);
         return `<button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt=""><span class="pf-bdg">${badgeRow(e, 22, true)}</span><span class="pf-sl">${rtag(e.rarity)}<b>${esc(e.name)}</b>${starsFor(e)}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>`; }).join('')}</div></div>
-    <div class="tabs" style="margin:0">${[['avatar', 'Avatar'], ['frame', 'Avatar frame'], ['title', 'Title'], ['card', 'Namecard']].map(([k, l]) => `<button class="tab ${pfSlot < 0 && pfTab === k ? 'on' : ''}" data-pft="${k}">${l}</button>`).join('')}</div>
-    ${opts}
+    ${view ? '' : `<div class="tabs" style="margin:0">${[['avatar', 'Avatar'], ['frame', 'Avatar frame'], ['title', 'Title'], ['card', 'Namecard']].map(([k, l]) => `<button class="tab ${pfSlot < 0 && pfTab === k ? 'on' : ''}" data-pft="${k}">${l}</button>`).join('')}</div>
+    ${opts}`}
   </div>`;
   const save = () => { persist(); renderMenu(); renderProfile(); };
   const saveName = () => {
@@ -103,10 +107,13 @@ function renderProfile() {
     if (v && v !== S.player.name) { S.player.name = v; player.name = v; toast(`You're now called ${v}.`); }
     pfEditName = false; save();
   };
-  $('#pfEdit').onclick = () => { if (pfEditName) saveName(); else { pfEditName = true; renderProfile(); const i = $('#pfNameIn'); i.focus(); i.select(); } };
+  const sb = $('#pfSet'); if (sb) sb.onclick = () => { pfMode = 'edit'; renderProfile(); };
+  const bb = $('#pfBack'); if (bb) bb.onclick = () => { pfMode = 'view'; pfSlot = -1; pfEditName = false; renderProfile(); };
+  const pe = $('#pfEdit'); if (pe && view) pe.remove();
+  if (pe && !view) pe.onclick = () => { if (pfEditName) saveName(); else { pfEditName = true; renderProfile(); const i = $('#pfNameIn'); i.focus(); i.select(); } };
   const ni = $('#pfNameIn'); if (ni) ni.onkeydown = e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { e.stopPropagation(); pfEditName = false; renderProfile(); } };
   root.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; pfSlot = -1; renderProfile(); });
-  root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { pfSlot = pfSlot === +b.dataset.slot ? -1 : +b.dataset.slot; renderProfile(); });
+  root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { if (view) { pfMode = 'edit'; } pfSlot = pfSlot === +b.dataset.slot ? -1 : +b.dataset.slot; renderProfile(); });
   root.querySelectorAll('[data-show]').forEach(b => b.onclick = () => {
     const id = b.dataset.show || null;
     if (id) P.showcase = P.showcase.map(x => x === id ? null : x);   // a character can only sit in one slot

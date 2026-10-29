@@ -87,7 +87,7 @@ function openLogin() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const ready = loginReady(), next = ready ? (S.login.last === dayKey(y) ? S.login.streak + 1 : 1) : S.login.streak;
   const today = (next - 1) % 7 + 1;
-  openModal({ title: 'Daily login', ic: 'gift', wide: true, kind: 'login', body: `<div class="stack">
+  openModal({ title: 'Daily login', ic: 'gift', kind: 'login', body: `<div class="stack">
     <p class="desc">Log in every day for a free summon ticket. One ticket is one pull on any banner.</p>
     <div class="login-grid">${Array.from({ length: 7 }, (_, i) => { const d = i + 1, done = d < today || (d === today && !ready);
       return `<div class="login-day ${done ? 'done' : ''} ${d === today && ready ? 'now' : ''}"><span class="lbl-sm">Day ${d}</span>${curIcon('tickets')}<b>×1</b>${done ? `<span class="chk">${icon('check')}</span>` : ''}</div>`; }).join('')}</div>
