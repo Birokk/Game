@@ -138,7 +138,7 @@ function renderSummon() {
       ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
       <p>Guaranteed <span class="u">UR</span> ${f && g.guarantee ? `<span class="g">${esc(f.name)}</span>` : what}</p>
       ${f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span>${B.ends ? `<span class="lim-time">${icon('clock')}${B.bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : ''}${B.note ? `<span class="chip">${B.note}</span>` : ''}`
-        : `<span class="chip">${B.ur.length} UR ${what}s · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${thumbImg(u)}</button>`).join('')}</div>`}`
+        : `<span class="chip">${B.ur.length} UR ${what}s · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div>`}`
       : `<p>${B.skins ? 'No UR outfits on this banner yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : 'banners'}">${icon('wrench')}Set it up in admin</button>`}
     </div>
     <div class="sx-rule"></div>

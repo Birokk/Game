@@ -33,6 +33,8 @@ const thumbImg = (e, cls = '') => {
   const t = (e && e.type === 'character' && equippedOf(e)) || e, ic = artFrom(t.icon);
   return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${getArt(t)}" alt="" class="${mediaArt(t) ? 'art' : 'chibi'} ${cls}">`;
 };
+/* banner portraits: the entry's own icon or base art, never the player's equipped outfit or star art */
+const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${baseCard(e)}" alt="" class="${baseArt(e) ? 'art' : 'chibi'} ${cls}">`; };
 function renderMenu() {
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
@@ -52,7 +54,7 @@ function renderMenu() {
   renderStamina();
   const f = limitedUR(), std = standardURs(), sf = std.length ? std[stdRotate % std.length] : null, gl = S.gacha.limited;
   $('#promo').innerHTML = `<button class="promo" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
-      ${f ? `<img src="${getSplash(f)}" alt="" class="${mediaArt(f) ? '' : 'chibi'}">` : ''}
+      ${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}
       <span class="pt ts"><span class="eyebrow">Limited summon</span><b>${f ? esc(f.name) : esc(bannerName('limited'))}</b><time>${icon('clock').replace('class="ic"', 'class="ic" style="width:11px;height:11px;vertical-align:-1px"')} ${shortLeft()}</time></span>
     </button>`;
   $('#pityCard').innerHTML = `<span class="row"><span>${f ? esc(f.name) : 'Limited'} · UR pity</span><span style="color:var(--gold)">${gl.pity5} / ${HARD_PITY}</span></span>
@@ -170,7 +172,7 @@ function openMCPick(switching) {
   let pick = null;
   openModal({ title: switching ? 'Switch main character' : 'Choose your character', ic: 'chars', wide: true, kind: 'mc', body: `<div class="stack">
     <p class="desc">${switching ? 'Your main character is who you are in the plaza and in your character list. After switching you have to wait 72 hours to switch again.' : "This is who you'll be in the plaza. You can switch later in Settings, once every 72 hours."}</p>
-    <div class="mc-pick">${['f', 'm'].map(k => { const e = mcEntry(k); return `<button class="mc-card" data-mc="${k}"><img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? 'art' : ''}"><b>${MC_NAME[k]}</b>${e.name !== MC_NAME[k] + ' MC' ? `<span class="tiny">${esc(e.name)}</span>` : ''}</button>`; }).join('')}</div>
+    <div class="mc-pick">${['f', 'm'].map(k => { const e = mcEntry(k); return `<button class="mc-card" data-mc="${k}"><img src="${baseSplash(e)}" alt="" class="${baseArt(e) ? 'art' : ''}"><b>${MC_NAME[k]}</b>${e.name !== MC_NAME[k] + ' MC' ? `<span class="tiny">${esc(e.name)}</span>` : ''}</button>`; }).join('')}</div>
     <div class="row" style="justify-content:flex-end"><button class="btn gold" id="mcGo" disabled>Confirm</button></div></div>`, onMount: () => {
     modalEl.querySelectorAll('[data-mc]').forEach(b => b.onclick = () => { pick = b.dataset.mc; modalEl.querySelectorAll('[data-mc]').forEach(x => x.classList.toggle('on', x === b)); $('#mcGo').disabled = false; $('#mcGo').textContent = `Play as ${MC_NAME[pick]}`; });
     if (switching) { const cur = modalEl.querySelector(`[data-mc="${S.player.mc}"]`); if (cur) cur.click(); }
