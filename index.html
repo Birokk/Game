@@ -857,6 +857,10 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .ev .el{margin-top:5px}
 #stamPill{cursor:pointer;min-width:126px}
 #stamPill .cic{width:22px;height:22px}
+.refills{display:flex;gap:4px;margin-top:4px}
+.refills i{font-style:normal;font-family:var(--display);font-size:11px;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid var(--edge-soft)}
+.refills i.used{opacity:.35;text-decoration:line-through}
+.refills i.next{border-color:var(--gold);color:var(--gold)}
 .login-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
 .login-day{position:relative;display:grid;justify-items:center;gap:4px;padding:12px 4px 10px;border-radius:14px;background:var(--glass);border:1px solid var(--edge-soft)}
 .login-day .cic{width:30px;height:30px}
@@ -1359,6 +1363,12 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .skc.sel{opacity:1;transform:scale(1);border-color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .skc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%}
 .skc img.chibi{object-fit:contain;object-position:50% 100%;transform:scale(1.5);transform-origin:50% 75%}
+.skc.col{width:auto;opacity:1;transform:none;cursor:pointer}
+.skc.col:hover{border-color:#fff;transform:translateY(-3px)}
+.cards.col-chars{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.skc.col img:not(.chibi){object-position:50% 30%}
+.skc-st{display:flex;justify-content:center;margin-top:4px;font-family:var(--read);font-size:11px;color:rgba(255,255,255,.7)}
+.skc-st .ic,.skc-st svg{width:13px;height:13px}
 .skc.bw img{filter:grayscale(1) brightness(.75)}
 .skc-nm{position:absolute;left:0;right:0;bottom:0;padding:26px 6px 10px;background:linear-gradient(transparent,rgba(5,8,20,.92));font-family:var(--display);font-size:15px;color:#fff}
 .skc-on{position:absolute;left:8px;bottom:38px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#5aa9ff;color:#fff;box-shadow:0 0 0 2px #fff}
@@ -2387,6 +2397,11 @@ const cardHTML = e => {
   const n = S.owned[e.id] || 0;
   return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starsFor(e) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]}</div></div></button>`;
 };
+/* character cards in the collection: same look as the skin cards (rarity top left, name and stars at the bottom) */
+const charCardHTML = e => {
+  const own = owns(e.id);
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">${rtag(e.rarity)}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
+};
 const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
   const root = $('#colRoot'); if (!root) return;
@@ -2395,7 +2410,7 @@ function renderCollection(filter) {
   const list = inTab(filter).filter(e => !colOwnedOnly || owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   root.innerHTML = `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === filter ? 'on' : ''}" data-tab="${k}">${l}<span>${inTab(k).filter(e => owns(e.id)).length}/${inTab(k).length}</span></button>`).join('')}
       <label class="switch">Owned only<input type="checkbox" id="colOwned" ${colOwnedOnly ? 'checked' : ''}><i></i></label></div>
-    ${list.length ? `<div class="cards">${list.map(cardHTML).join('')}</div>` : `<div class="empty">${colOwnedOnly ? 'You don\'t own anything here yet. <button class="link" data-open="summon">Try the banner</button>.' : FUTURE[filter] ? `${FUTURE[filter]} arrive in a future update.` : 'Nothing here yet. Add some in the <button class="link" data-open="admin">admin panel</button>.'}</div>`}`;
+    ${list.length ? `<div class="cards ${filter === 'character' ? 'col-chars' : ''}">${list.map(filter === 'character' ? charCardHTML : cardHTML).join('')}</div>` : `<div class="empty">${colOwnedOnly ? 'You don\'t own anything here yet. <button class="link" data-open="summon">Try the banner</button>.' : FUTURE[filter] ? `${FUTURE[filter]} arrive in a future update.` : 'Nothing here yet. Add some in the <button class="link" data-open="admin">admin panel</button>.'}</div>`}`;
   root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => renderCollection(b.dataset.tab));
   root.querySelectorAll('[data-card]').forEach(b => b.onclick = () => renderDetail(b.dataset.card, filter));
   $('#colOwned').onchange = e => { colOwnedOnly = e.target.checked; renderCollection(filter); };
@@ -2911,7 +2926,8 @@ function openBuyTickets(bk = 'limited') {
 }
 
 /* stamina: details; +60 from a recovery bottle or for 1 pearl */
-const STAMINA_PEARLS = 1;
+const STAMINA_REFILLS = [1, 1, 2, 2, 3, 3];   // pearl cost of each daily refill
+const refillsUsed = () => S.stamRefill && S.stamRefill.day === dayKey() ? S.stamRefill.n : 0;
 function addStamina() { stamina(); S.stamina.v += BOTTLE_STAMINA; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); persist(); renderMenu(); openStamina(); toast(`+${BOTTLE_STAMINA} stamina.`); }
 const BOTTLE_STAMINA = 60;
 function openStamina() {
@@ -2921,11 +2937,17 @@ function openStamina() {
     <p class="tiny">${v >= STAMINA_MAX ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every 6 minutes. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
     <div class="frag-row">${curIcon('bottles')}<div style="display:grid;flex:1"><b>Stamina recovery bottle</b><span class="tiny">Restores ${BOTTLE_STAMINA} stamina · you have ${S.wallet.bottles}</span></div>
       <button class="btn mint sm" id="useBottle" ${S.wallet.bottles ? '' : 'disabled'}>Use</button></div>
-    <div class="frag-row">${curIcon('pearls')}<div style="display:grid;flex:1"><b>Buy with pearls</b><span class="tiny">${BOTTLE_STAMINA} stamina for ${STAMINA_PEARLS} pearl · you have ${fmt(S.wallet.pearls)}</span></div>
-      <button class="btn gold sm" id="buyStam" ${S.wallet.pearls >= STAMINA_PEARLS ? '' : 'disabled'}>${costHTML(STAMINA_PEARLS)}</button></div>
+    ${(() => { const used = refillsUsed(), cost = STAMINA_REFILLS[used];
+      return `<div class="frag-row">${curIcon('pearls')}<div style="display:grid;flex:1"><b>Refill with pearls</b><span class="tiny">${BOTTLE_STAMINA} stamina · ${STAMINA_REFILLS.length - used} of ${STAMINA_REFILLS.length} refills left today · you have ${fmt(S.wallet.pearls)} pearls</span>
+        <span class="refills">${STAMINA_REFILLS.map((c, i) => `<i class="${i < used ? 'used' : i === used ? 'next' : ''}">${c}</i>`).join('')}</span></div>
+      ${cost ? `<button class="btn gold sm" id="buyStam" ${S.wallet.pearls >= cost ? '' : 'disabled'}>${costHTML(cost)}</button>` : '<button class="btn ghost sm" disabled>Resets tomorrow</button>'}</div>`; })()}
     <p class="tiny">Bottles come from the daily spin.</p></div>`, onMount: () => {
     $('#useBottle').onclick = () => { if (!S.wallet.bottles) return; S.wallet.bottles--; addStamina(); };
-    $('#buyStam').onclick = () => { if (S.wallet.pearls < STAMINA_PEARLS) return; S.wallet.pearls -= STAMINA_PEARLS; addStamina(); };
+    const bs = $('#buyStam'); if (bs) bs.onclick = () => {
+      const used = refillsUsed(), cost = STAMINA_REFILLS[used];
+      if (!cost || S.wallet.pearls < cost) return;
+      S.wallet.pearls -= cost; S.stamRefill = { day: dayKey(), n: used + 1 }; addStamina();
+    };
   } });
 }
 
