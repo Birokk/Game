@@ -27,10 +27,33 @@ function renderAdminTab() {
 }
 
 /* pool tab */
+/* the pool tab has two views: a collection-style grid of everything, and the editor (opened by tapping a card or "Add new") */
+let adView = 'browse', adFilter = 'character', adQuery = '', adDelArm = false;
+function showPoolView(v) {
+  adView = v; const b = $('#adBrowse'), e = $('#adEditView'); if (!b || !e) return;
+  b.hidden = v !== 'browse'; e.hidden = v !== 'edit';
+  const body = modalEl && modalEl.querySelector('.m-body'); if (body) body.scrollTop = 0;
+}
+function openEditor(entry, type) {
+  fillAdminForm(entry || null);
+  if (!entry && type) { $('#adType').value = type; if (type === 'skin') fillParentOptions(null); adminPreview(); $('#adTitle').textContent = `New ${TYPES[type].toLowerCase()}`; }
+  showPoolView('edit');
+  if (!entry) $('#adName').focus();
+}
 function renderPoolTab() {
-  $('#adPanel').innerHTML = `<div class="admin">
+  $('#adPanel').innerHTML = `<div class="pool-browse" id="adBrowse">
+    <div class="ad-head" style="margin:0"><h3>Game pool <span class="muted" id="adCount" style="font-family:var(--body);font-size:14px"></span></h3><input class="input pool-search" id="adSearch" type="search" placeholder="Search by name" value="${esc(adQuery)}"></div>
+    <div class="tabs" id="adTypeTabs"></div>
+    <div class="pool-grid" id="adList"></div>
+    <details class="ad-data"><summary>Backup and import</summary>
+      <p class="tiny" style="margin-top:8px">A full backup holds every character, banner, skin, clothing item, memory, notice and image (wallpapers and icons too). Download it here, then Import it on another page or browser; signed in as admin on the website, the import goes straight to the cloud.</p>
+      <div class="row"><button type="button" class="btn mint sm" id="adDownload">${icon('upload')}Download full backup</button><button type="button" class="btn ghost sm" id="adCopy">${icon('copy')}Copy data</button><button type="button" class="btn ghost sm" id="adImportBtn">Import</button><button type="button" class="btn danger sm" id="adReset">Reset to samples</button></div>
+      <div id="adDataArea"></div>
+    </details>
+  </div>
+  <div class="admin pool-edit" id="adEditView" hidden>
     <form class="admin-form" id="adForm" novalidate>
-      <div class="ad-head"><h3 id="adTitle">Add to the game pool</h3><button type="button" class="btn ghost sm" id="adCancel" hidden>Cancel edit</button></div>
+      <div class="ad-head pool-edit-head"><button type="button" class="btn ghost sm" id="adCancel">${icon('back')}Back to the pool</button><h3 id="adTitle">Add to the game pool</h3><button type="button" class="btn danger sm" id="adDel" hidden>Delete</button></div>
       <div class="ad-grid">
         <div class="ad-preview" id="adPrevWrap">
           <div class="frame"><img id="adPrev" alt="Splash art preview"></div>
@@ -68,15 +91,6 @@ function renderPoolTab() {
         </div>
       </div>
     </form>
-    <aside>
-      <div class="ad-head"><h3>Game pool <span class="muted" id="adCount" style="font-family:var(--body);font-size:14px"></span></h3></div>
-      <div class="ad-list" id="adList"></div>
-      <details class="ad-data"><summary>Backup and import</summary>
-        <p class="tiny" style="margin-top:8px">A full backup holds every character, banner, skin, clothing item, memory, notice and image (wallpapers and icons too). Download it here, then Import it on another page or browser; signed in as admin on the website, the import goes straight to the cloud.</p>
-        <div class="row"><button type="button" class="btn mint sm" id="adDownload">${icon('upload')}Download full backup</button><button type="button" class="btn ghost sm" id="adCopy">${icon('copy')}Copy data</button><button type="button" class="btn ghost sm" id="adImportBtn">Import</button><button type="button" class="btn danger sm" id="adReset">Reset to samples</button></div>
-        <div id="adDataArea"></div>
-      </details>
-    </aside>
   </div>`;
   ['adType', 'adName', 'adParent', 'adDesc', 'lkHair', 'lkStyle', 'lkSkin', 'lkShirt', 'lkPants', 'lkKind'].forEach(id => $('#' + id).addEventListener('input', adminPreview));
   $('#adRarity').addEventListener('change', adminPreview);
@@ -90,13 +104,20 @@ function renderPoolTab() {
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
   $('#adIconX').onclick = () => { adminIcon = null; adminPreview(); };
-  $('#adCancel').onclick = () => fillAdminForm(null);
+  $('#adCancel').onclick = () => { fillAdminForm(null); showPoolView('browse'); };
+  $('#adDel').onclick = async () => {
+    const id = adminEditId; if (!id || MC_IDS[id]) return;
+    if (!adDelArm) { adDelArm = true; $('#adDel').textContent = 'Tap again to delete'; return; }
+    await deleteEntry(id); fillAdminForm(null); showPoolView('browse');
+  };
+  $('#adSearch').oninput = e => { adQuery = e.target.value.trim().toLowerCase(); renderAdminList(); };
   $('#adForm').addEventListener('submit', saveAdmin);
   $('#adCopy').onclick = copyData;
   $('#adDownload').onclick = downloadData;
   $('#adImportBtn').onclick = showImport;
   $('#adReset').onclick = showReset;
   fillAdminForm(adminEditId ? findEntry(adminEditId) : null);
+  showPoolView(adminEditId && adView === 'edit' ? 'edit' : 'browse');
 }
 function fillAdminForm(entry) {
   adminEditId = entry ? entry.id : null;
@@ -116,7 +137,7 @@ function fillAdminForm(entry) {
   $('#adStd').checked = entry ? !!entry.standard : false;
   $('#adTitle').textContent = entry ? `Editing ${entry.name}` : 'Add to the game pool';
   $('#adSave').innerHTML = entry ? `${icon('edit')}Save changes` : `${icon('plus')}Add to pool`;
-  $('#adCancel').hidden = !entry;
+  adDelArm = false; const del = $('#adDel'); if (del) { del.hidden = !entry || !!entry.mc; del.textContent = 'Delete'; }
   $('#adNameErr').hidden = true;
   $('#adArt').value = '';
   fillParentOptions(entry ? entry.parent : null);
@@ -134,6 +155,7 @@ function newSkinFor(cid) {
   $('#lkHair').value = lk.hair; $('#lkStyle').value = lk.style; $('#lkSkin').value = lk.skin; $('#lkShirt').value = lk.shirt; $('#lkPants').value = lk.pants;
   $('#adTitle').textContent = `New skin for ${c.name}`; $('#adCancel').hidden = false;
   adminPreview();
+  showPoolView('edit');
   const n = $('#adName'); n.focus(); n.setSelectionRange(n.value.length, n.value.length);
 }
 function fillParentOptions(sel) {
@@ -204,36 +226,39 @@ async function saveAdmin(ev) {
   else if (S.featuredId === entry.id) S.featuredId = null;
   persist(); renderMenu();
   toast(wasEdit ? `Saved ${name}.` : `Added ${name} to the pool.`);
-  fillAdminForm(null);
+  adFilter = entry.type; fillAdminForm(null); showPoolView('browse');
 }
 function renderAdminList() {
   const el = $('#adList'); if (!el) return;
   $('#adCount').textContent = `· ${S.pool.length}`;
-  const list = [...S.pool].sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
-  el.innerHTML = list.length ? list.map(e => `<div class="ad-row r${e.rarity} ${e.id === adminEditId ? 'editing' : ''}">
-      <img src="${getArt(e)}" alt="">
-      <div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="mt">${RNAME[e.rarity] || ''} ${TYPES[e.type]}${e.pullable === false ? ' · not pullable' : ''}${e.id === S.featuredId ? ' · <span class="feat">Limited</span>' : ''}${e.standard && e.rarity === 5 ? ' · <span class="feat">Permanent</span>' : ''}${e.mc ? ' · <span class="feat">Main character</span>' : ''}</div></div>
-      <div class="acts">${e.type === 'character' ? `<button class="iconbtn" data-newskin="${esc(e.id)}" aria-label="Add a skin for ${esc(e.name)}" data-tip="${esc(`<b>Add a skin</b><span>New skin for ${esc(e.name)}</span>`)}">${icon('skins')}</button>` : ''}<button class="iconbtn" data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.name)}">${icon('edit')}</button><button class="iconbtn" data-del="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">${icon('trash')}</button></div>
-      ${adminConfirm === e.id ? `<div class="confirm">Delete ${esc(e.name)}? This can't be undone. <button class="btn danger sm" data-yes="${esc(e.id)}">Delete</button><button class="btn ghost sm" data-no>Keep</button></div>` : ''}
-    </div>`).join('') : '<div class="empty">The pool is empty. Add your first character on the left.</div>';
-  el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { adminConfirm = null; fillAdminForm(findEntry(b.dataset.edit)); });
-  el.querySelectorAll('[data-newskin]').forEach(b => b.onclick = () => { adminConfirm = null; newSkinFor(b.dataset.newskin); });
-  el.querySelectorAll('[data-del]').forEach(b => { if (MC_IDS[b.dataset.del]) b.remove(); });
-  el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { adminConfirm = b.dataset.del; renderAdminList(); });
-  el.querySelectorAll('[data-no]').forEach(b => b.onclick = () => { adminConfirm = null; renderAdminList(); });
-  el.querySelectorAll('[data-yes]').forEach(b => b.onclick = async () => {
-    const id = b.dataset.yes, e = findEntry(id);
-    S.pool = S.pool.filter(x => x.id !== id);
-    S.pool.forEach(x => { if (x.parent === id) x.parent = null; if (x.weddingSkin === id) x.weddingSkin = null; });
-    delete S.bond[id];
-    delete S.owned[id];
-    if (S.featuredId === id) S.featuredId = null;
-    if (S.wallpaper === id) S.wallpaper = null;
-    await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); await mediaDel('get:' + id); await mediaDel('face:' + id); delete S.artPick[id]; delete S.equip[id]; for (const c in S.equip) if (S.equip[c] === id) delete S.equip[c];
-    adminConfirm = null; persist(); renderMenu();
-    if (adminEditId === id) fillAdminForm(null); else { fillParentOptions($('#adParent').value); renderAdminList(); }
-    toast(`Deleted ${e ? e.name : 'entry'}.`);
-  });
+  const tabs = $('#adTypeTabs');
+  if (tabs) {
+    tabs.innerHTML = Object.entries(TYPES).map(([k, v]) => `<button type="button" class="tab ${k === adFilter ? 'on' : ''}" data-ptype="${k}">${v}s<span>${S.pool.filter(e => e.type === k).length}</span></button>`).join('');
+    tabs.querySelectorAll('[data-ptype]').forEach(b => b.onclick = () => { adFilter = b.dataset.ptype; renderAdminList(); });
+  }
+  const list = S.pool.filter(e => e.type === adFilter && (!adQuery || e.name.toLowerCase().includes(adQuery)))
+    .sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
+  const meta = e => [RNAME[e.rarity] || '', e.mc ? 'Main character' : '', e.id === S.featuredId ? 'Limited' : '', e.standard && e.rarity === 5 ? 'Permanent' : '',
+    e.type === 'skin' && e.parent ? (findEntry(e.parent) || {}).name : '', e.type === 'character' && skinsOf(e.id).length ? `${skinsOf(e.id).length} skin${skinsOf(e.id).length === 1 ? '' : 's'}` : '',
+    e.pullable === false && !e.mc && e.type !== 'pet' ? 'Not pullable' : ''].filter(Boolean).join(' · ');
+  el.innerHTML = `<button type="button" class="pool-add" id="adAddNew">${icon('plus')}<b>Add new ${TYPES[adFilter].toLowerCase()}</b></button>` +
+    list.map(e => `<div class="pool-cell"><button type="button" class="skc col pool-card r${e.rarity}" data-edit="${esc(e.id)}"><img src="${baseCard(e)}" alt="" class="${baseArt(e) ? '' : 'chibi'}">${rtag(e.rarity)}<span class="skc-nm">${esc(e.type === 'skin' && e.parent ? e.name.replace(((findEntry(e.parent) || {}).name || '') + ' · ', '') : e.name)}<span class="skc-st">${esc(meta(e))}</span></span></button>
+      ${e.type === 'character' ? `<button type="button" class="pool-skin" data-newskin="${esc(e.id)}" aria-label="Add a skin for ${esc(e.name)}" data-tip="${esc(`<b>Add a skin</b><span>New skin for ${esc(e.name)}</span>`)}">${icon('skins')}</button>` : ''}</div>`).join('') +
+    (list.length ? '' : `<p class="tiny pool-empty">${adQuery ? 'Nothing matches that name.' : `No ${TYPES[adFilter].toLowerCase()}s yet.`}</p>`);
+  $('#adAddNew').onclick = () => openEditor(null, adFilter);
+  el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openEditor(findEntry(b.dataset.edit)));
+  el.querySelectorAll('[data-newskin]').forEach(b => b.onclick = () => newSkinFor(b.dataset.newskin));
+}
+async function deleteEntry(id) {
+  const e = findEntry(id); if (!e || MC_IDS[id]) return;
+  S.pool = S.pool.filter(x => x.id !== id);
+  S.pool.forEach(x => { if (x.parent === id) x.parent = null; if (x.weddingSkin === id) x.weddingSkin = null; });
+  delete S.bond[id]; delete S.owned[id];
+  if (S.featuredId === id) S.featuredId = null;
+  if (S.wallpaper === id) S.wallpaper = null;
+  await mediaDel('art:' + id); await mediaDel('art3:' + id); await mediaDel('art6:' + id); await mediaDel('get:' + id); await mediaDel('face:' + id); delete S.artPick[id]; delete S.equip[id]; for (const c in S.equip) if (S.equip[c] === id) delete S.equip[c];
+  persist(); renderMenu(); renderAdminList();
+  toast(`Deleted ${e.name}.`);
 }
 /* full backup: all shared content plus every image (title and loading wallpapers, clothes, memories, icons...).
    Images saved in the cloud are downloaded into the file too, so it works as a real backup anywhere. */

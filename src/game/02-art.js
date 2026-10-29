@@ -237,3 +237,7 @@ const memOf = id => S.memories.find(x => x.id === id);
 const memEqOf = cid => { const a = (S.memEq[cid] || []).slice(0, MEM_SLOTS); while (a.length < MEM_SLOTS) a.push(null); return a.map(id => id && memOf(id) ? id : null); };
 const getArt = e => mediaArt(e) || portrait(e.look || S.player.look, e.rarity);
 const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
+/* banners and pulls always show the base splash art, never the player's chosen 3★ / 6★ art */
+const baseArt = e => e ? artFrom(e.art) : null;
+const baseSplash = e => baseArt(e) || chibiSplash(e.look || S.player.look);
+const baseCard = e => baseArt(e) || portrait(e.look || S.player.look, e.rarity);

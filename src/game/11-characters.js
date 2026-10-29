@@ -14,33 +14,50 @@ function openCharacters(id) {
   csEl.addEventListener('click', e => { if (csView) { e.stopPropagation(); csView = false; csEl.classList.remove('viewing'); } }, true);
   renderCharacters();
 }
-/* skins carousel: cards scroll sideways; the one in the middle is shown full screen behind the menu */
-function skinCard(c, k, eq) {
-  const own = owns(k.id), on = k === (eq || c);
-  return `<button class="skc r${k.rarity} ${own ? '' : 'bw'}" data-skc="${esc(k.id)}"><img src="${getArt(k)}" alt="" class="${mediaArt(k) ? '' : 'chibi'}"><span class="skc-nm">${k === c ? 'Default' : esc(k.name.replace(c.name + ' · ', ''))}</span>${on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${rtag(k.rarity)}</button>`;
+/* skins carousel: cards scroll sideways; the one in the middle is shown full screen behind the menu.
+   Cards: the default (base art), the 3★ / 6★ splash arts if uploaded, then every skin. Card ids: entry id, or "<charId>@art3". */
+function outfitCards(c) {
+  const eq = equippedOf(c), pick = artKey(c), base = artFrom(c.art);
+  const cards = [{ id: c.id, kind: 'base', name: 'Default', rarity: c.rarity, art: base, card: base || portrait(c.look || S.player.look, c.rarity), own: owns(c.id), on: !eq && pick === 'base' }];
+  for (const a of ASC.slice(1)) {
+    const art = artFrom(c[a.k]); if (!art) continue;
+    cards.push({ id: `${c.id}@${a.k}`, kind: a.k, stars: a.stars, name: `${a.label} art`, rarity: c.rarity, art, card: art, own: ascOpen(c, a), on: !eq && pick === a.k });
+  }
+  for (const k of skinsOf(c.id)) cards.push({ id: k.id, kind: 'skin', entry: k, name: k.name.replace(c.name + ' · ', ''), rarity: k.rarity, art: mediaArt(k), card: getArt(k), own: owns(k.id), on: eq === k });
+  return cards;
+}
+const startCardId = c => { const eq = equippedOf(c), k = artKey(c); return eq ? eq.id : k === 'base' ? c.id : `${c.id}@${k}`; };
+function skinCard(o) {
+  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}"><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">${'★'.repeat(o.stars === 6 ? 2 : 1)}${o.stars}</span>` : rtag(o.rarity)}</button>`;
 }
 function selectSkin(c, id) {
-  const k = findEntry(id); if (!k || !csEl) return;
+  const o = outfitCards(c).find(x => x.id === id); if (!o || !csEl) return;
   csSkin = id;
-  const art = mediaArt(k), img = csEl.querySelector('.cs-art'), blur = csEl.querySelector('.cs-blur');
-  img.src = getSplash(k); img.classList.toggle('chibi', !art);
-  if (art) { if (blur) blur.src = art; else img.insertAdjacentHTML('beforebegin', `<img class="cs-blur" src="${art}" alt="">`); } else if (blur) blur.remove();
-  csEl.classList.toggle('bw', !owns(k.id));
-  csEl.querySelector('.cs-name').textContent = k.name;
+  const img = csEl.querySelector('.cs-art'), blur = csEl.querySelector('.cs-blur');
+  img.src = o.art || (o.entry ? getSplash(o.entry) : chibiSplash(c.look || S.player.look)); img.classList.toggle('chibi', !o.art);
+  if (o.art) { if (blur) blur.src = o.art; else img.insertAdjacentHTML('beforebegin', `<img class="cs-blur" src="${o.art}" alt="">`); } else if (blur) blur.remove();
+  csEl.classList.toggle('bw', !o.own);
+  csEl.querySelector('.cs-name').textContent = o.kind === 'skin' ? o.entry.name : o.kind === 'base' ? c.name : `${c.name} · ${o.name}`;
   csEl.querySelectorAll('.skc').forEach(x => x.classList.toggle('sel', x.dataset.skc === id));
-  const eq = equippedOf(c), cur = eq || c, own = owns(k.id), nm = k === c ? 'default outfit' : k.name.replace(c.name + ' · ', '');
-  $('#skAct').innerHTML = `<div class="sk-title"><b>${k === c ? 'Default outfit' : esc(nm)}</b>${rtag(k.rarity)}</div>
-    ${own ? (k === cur ? `<button class="btn ghost" disabled>${icon('check')}Equipped</button>` : `<button class="btn gold" id="skEquip">${icon('hanger')}Equip ${esc(nm)}</button>`)
-      : !buyable(k) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
+  const label = o.kind === 'base' ? 'Default outfit' : o.name, wallId = o.kind === 'skin' ? o.entry.id : c.id;
+  $('#skAct').innerHTML = `<div class="sk-title"><b>${esc(label)}</b>${o.stars ? `<span class="chip">${o.stars}★ splash art</span>` : rtag(o.rarity)}</div>
+    ${o.own ? (o.on ? `<button class="btn ghost" disabled>${icon('check')}Equipped</button>` : `<button class="btn gold" id="skEquip">${icon('hanger')}Equip ${esc(label.toLowerCase() === 'default outfit' ? 'default outfit' : label)}</button>`)
+      : o.stars ? `<div class="cs-pill">${icon('lock')} Unlocks at ${o.stars} stars · ${esc(c.name)} has ${starsOf(c.id)}</div>`
+      : !buyable(o.entry) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
       : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>`}
-    ${own ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === k.id ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
-  const eb = $('#skEquip'); if (eb) eb.onclick = () => { if (k === c) delete S.equip[c.id]; else S.equip[c.id] = k.id; persist(); renderMenu(); renderCharacters(); toast(k === c ? `${c.name} is wearing the default outfit.` : `${c.name} is now wearing ${nm}.`); };
-  const bb = $('#skBuy'); if (bb) bb.onclick = () => buySkin(k.id);
-  const wb = $('#skWall'); if (wb) wb.onclick = () => { S.wallpaper = k.id; persist(); applyWallpaper(); selectSkin(c, id); toast(`${k.name} is now your wallpaper.`); };
+    ${o.own && (o.kind === 'skin' || o.on) ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === wallId ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
+  const eb = $('#skEquip'); if (eb) eb.onclick = () => {
+    if (o.kind === 'skin') S.equip[c.id] = o.entry.id;
+    else { delete S.equip[c.id]; S.artPick[c.id] = o.kind; }
+    persist(); applyWallpaper(); renderMenu(); renderCharacters();
+    toast(o.kind === 'skin' ? `${c.name} is now wearing ${o.name}.` : o.kind === 'base' ? `${c.name} is back in the default outfit.` : `${c.name} now shows the ${o.name}.`);
+  };
+  const bb = $('#skBuy'); if (bb) bb.onclick = () => buySkin(o.entry.id);
+  const wb = $('#skWall'); if (wb) wb.onclick = () => { S.wallpaper = wallId; persist(); applyWallpaper(); selectSkin(c, id); toast('Wallpaper set.'); };
 }
 function initSkinCar(c) {
   const car = $('#skCar'); if (!car) return;
-  const start = csSkin || (equippedOf(c) || c).id;
+  const start = csSkin || startCardId(c);
   const center = el => { car.scrollLeft = el.offsetLeft - (car.clientWidth - el.offsetWidth) / 2; };
   const first = car.querySelector(`[data-skc="${start}"]`) || car.firstElementChild;
   center(first); selectSkin(c, first.dataset.skc);
@@ -86,9 +103,7 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
       <div class="cs-pill">${next}</div>
-      ${!csSkin && ASC.some(a => a.k !== 'base' && artFrom(c[a.k])) ? `<div class="cs-arts"><span class="lbl-sm">Splash art</span><div class="row">${ASC.filter(a => a.k === 'base' || artFrom(c[a.k])).map(a => {
-        const open = ascOpen(c, a), on = artKey(c) === a.k, src = a.k === 'base' ? (artFrom(c.art) || getArt({ ...c, art: null, art3: null, art6: null, type: 'x' })) : artFrom(c[a.k]);
-        return `<button class="art-chip ${on ? 'on' : ''} ${open ? '' : 'locked'}" data-art="${a.k}" ${open ? '' : 'disabled'} data-tip="${esc(`<b>${a.label} splash art</b><span>${open ? 'Tap to use this art everywhere.' : `Requirement: raise ${esc(c.name)} to ${a.stars} stars`}</span>`)}"><img src="${src}" alt=""><span>${a.label}${open ? '' : ` ${icon('lock')}`}</span></button>`; }).join('')}</div></div>` : ''}
+      ${artKey(c) !== 'base' && !eq ? `<div class="cs-pill" style="color:#e8ff7a">Showing the ${ASC.find(x => x.k === artKey(c)).label} splash art</div>` : ''}
       ${eq ? `<div class="cs-pill" style="color:#e8ff7a">Wearing ${esc(eq.name)}</div>` : ''}
       <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shown.id ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
@@ -96,8 +111,9 @@ function renderCharacters() {
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
   } else if (csTab === 'skins') {
-    body = `<div class="lbl-sm">Outfits · ${skins.filter(k => owns(k.id)).length + 1}/${skins.length + 1} owned</div>
-      <div class="sk-car" id="skCar">${[c, ...skins].map(k => skinCard(c, k, eq)).join('')}</div>
+    const cards = outfitCards(c);
+    body = `<div class="lbl-sm">Outfits & splash arts · ${cards.filter(o => o.own).length}/${cards.length} unlocked</div>
+      <div class="sk-car" id="skCar">${cards.map(skinCard).join('')}</div>
       <div class="sk-act" id="skAct"></div>`;
   } else if (csTab === 'wardrobe') {
     const W = wearOf(c.id), on = WARD_SLOTS.filter(([k]) => W[k] && clothOf(W[k])).length;

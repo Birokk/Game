@@ -118,17 +118,17 @@ function renderSummon() {
   if (f) { const side = B.ssr.filter(e => B.skins || e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
   const mid = f ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
   const left = HARD_PITY - g.pity5;
-  const tabArt = e => e ? `<img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">` : '';
+  const tabArt = e => e ? `<img src="${baseSplash(e)}" alt="" class="${baseArt(e) ? '' : 'chibi'}">` : '';
   const dotFor = k => canPull(10, k) || freeReady(k) ? '<span class="dot-n"></span>' : '', dot = dotFor(bk);
   // a hero with uploaded art fills the screen; chibis stand in a lineup
-  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && mediaArt(hero);
+  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
     return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.kind === 'feat' && !I.skins ? '<br>Summon' : ''}</b>${dotFor(k)}</button>`; };
   const what = B.skins ? 'outfit' : 'character';
   smEl.className = 'sx r5';
   smEl.innerHTML = `<div class="sx-word">${B.word}</div>
     ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
-    <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
+    <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${baseArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${baseSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
     <div class="sx-fade"></div><div class="sx-vig"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
     <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
@@ -195,7 +195,7 @@ function resultView(r) {
   if (r.kind === 'coins') return { name: `${fmt(r.amount)} gold coins`, type: 'Gold coins', img: null };
   if (r.kind === 'frag') return { name: `${EGG[r.frag].name} fragment`, type: 'Egg fragment', img: null };
   const e = findEntry(r.id) || { name: '?', type: 'item' };
-  return { name: e.name, type: TYPES[e.type], img: getSplash(e), card: getArt(e) };
+  return { name: e.name, type: TYPES[e.type], img: baseSplash(e), card: baseCard(e) };
 }
 /* sparkle sprites: pre-rendered once per color so the reveal can draw hundreds cheaply */
 const SPR = new Map();
