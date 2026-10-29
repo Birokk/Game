@@ -102,7 +102,7 @@ function signedOut() {
   location.reload();
 }
 function confirmSignOut() {
-  openModal({ title: 'Sign out', ic: 'door', body: `<div class="stack"><p class="desc">Your progress is saved to your account. Signing out starts this browser fresh; sign in again any time to continue.</p>
+  openModal({ title: 'Sign out', ic: 'door', small: true, body: `<div class="stack"><p class="desc">Your progress is saved to your account. Signing out starts this browser fresh; sign in again any time to continue.</p>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancel</button><button class="btn mint" id="soGo">Sign out</button></div></div>`,
     onMount: () => { $('#soGo').onclick = signOut; modalEl.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal); } });
 }

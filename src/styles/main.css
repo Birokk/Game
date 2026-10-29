@@ -200,7 +200,12 @@ label.btn:focus-within{outline:2px solid var(--mint);outline-offset:2px}
   padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));animation:fade .2s ease}
 .modal{width:min(580px,100%);max-height:calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;border-radius:28px;overflow:hidden;overflow:clip;animation:pop .25s cubic-bezier(.2,.9,.3,1.2)}
-.modal.wide{width:min(1020px,100%)}
+.modal{width:min(820px,100%)}
+.modal.small{width:min(560px,100%)}
+/* big menus (shop, mail, settings, collection...) fill most of the screen */
+.modal.wide{width:min(1480px,100%);height:calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+.modal.wide .m-body{flex:1;padding:22px 28px 28px}
+.modal.wide .m-head h2{font-size:26px}
 @keyframes fade{from{opacity:0}}
 @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}}
 .m-head{display:flex;align-items:center;gap:12px;padding:16px 16px 12px 20px;border-bottom:1px solid var(--edge-soft)}
@@ -1421,3 +1426,16 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .srv-steps{padding-left:20px;display:grid;gap:6px}
 .srv-steps code,.desc code{font-size:12px;padding:1px 5px;border-radius:5px;background:rgba(255,255,255,.08)}
 .si-email{gap:10px}
+
+/* content scaled up inside the big windows */
+.modal.wide .wheel-wrap{width:min(58vh,560px,80vw)}
+.modal.wide .login-grid{gap:14px}
+.modal.wide .login-grid>*{padding:26px 10px;font-size:16px}
+.modal.wide .login-grid .cic{width:46px;height:46px}
+.modal.wide .shop-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.modal.wide .shop-grid>*{padding:30px 18px;gap:10px}
+.modal.wide .shop-ic{width:110px;height:110px}
+.modal.wide .shop-ic .cic{width:76px;height:76px}
+.modal.wide .ach-list{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}
+.modal.wide .rates td:first-child{width:120px}
+.modal.wide .rates td:last-child{text-align:left}

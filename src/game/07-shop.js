@@ -13,7 +13,7 @@ function renderShop() {
     <button class="btn sm ${W[cur] >= price && !extra.includes('soldout') ? 'gold' : 'ghost'}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   let body;
   if (shopTab === 'starlight') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
-    <div class="shop-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the limited banner', SHOP_TICKET, 'starlight')}${item('st-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
+    <div class="shop-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight')}${item('st-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
   else if (shopTab === 'dust') body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Seaweeds, whatever you get.</p>
     <div class="shop-grid">${Object.entries(DUST_GIFTS).map(([k, p]) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust')).join('')}</div>`;
   else body = `<p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
@@ -52,7 +52,7 @@ const ACH = [
   { id: 'spin', name: 'Wheel of Fortune', desc: 'Spin the daily wheel', n: () => S.spin.last ? 1 : 0, goal: 1 }
 ].map(a => ({ ...a, ok: () => a.n() >= a.goal }));
 function openAch() {
-  openModal({ title: 'Achievements', ic: 'trophy', kind: 'ach', body: '<div id="achRoot"></div>', onMount: renderAch });
+  openModal({ title: 'Achievements', ic: 'trophy', wide: true, kind: 'ach', body: '<div id="achRoot"></div>', onMount: renderAch });
 }
 function renderAch() {
   const root = $('#achRoot'); if (!root) return;

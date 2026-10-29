@@ -1,10 +1,11 @@
 /* buy summon tickets (pulls) with pearls */
 const TICKET_PEARLS = 3;
 function openBuyTickets(bk = 'limited') {
+  if (bk !== 'standard') bk = 'limited';   // Limited tickets also pay for the Weekly and Outfit banners
   let n = 1; const k = TK(bk);
   openModal({ title: 'Buy pulls', ic: 'sparkle', body: `<div class="stack">
     <div class="tabs" style="margin:0">${['limited', 'standard'].map(b => `<button class="tab ${b === bk ? 'on' : ''}" data-btk="${b}">${curIcon(TK(b))}${TK_NAME[TK(b)]}s</button>`).join('')}</div>
-    <p class="desc">${TK_NAME[k]}s are one pull each on the ${bk === 'standard' ? 'permanent' : 'limited'} banner and cost ${TICKET_PEARLS} pearls.</p>
+    <p class="desc">${TK_NAME[k]}s are one pull each on the ${bk === 'standard' ? 'permanent banner' : 'Limited, Weekly and Outfit banners'} and cost ${TICKET_PEARLS} pearls.</p>
     <div class="buy-row">${curIcon(k)}<button class="rbtn glass" id="btMinus" aria-label="One less">−</button><input class="input" id="btN" type="number" min="1" max="999" value="1" aria-label="How many pulls"><button class="rbtn glass" id="btPlus" aria-label="One more">${icon('plus')}</button></div>
     <div class="row" style="justify-content:center">${[1, 10, 50].map(k => `<button class="btn ghost sm" data-bt="${k}">×${k}</button>`).join('')}</div>
     <div class="balance"><span>Total</span><b id="btCost"></b></div>
@@ -68,7 +69,7 @@ function spinSlices() {
 function openSpin() {
   const SL = spinSlices();
   const conic = SPIN.map((s, i) => `${s.jackpot ? '#e8b04a' : i % 2 ? '#2a2f6a' : '#3d2a6e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
-  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="stack" style="justify-items:center">
+  openModal({ title: 'Daily spin', ic: 'wheel', wide: true, kind: 'spin', body: `<div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
       <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">
         ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}

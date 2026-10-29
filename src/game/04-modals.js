@@ -1,9 +1,10 @@
 /* ---------- modals ---------- */
 let modalEl = null;
-function openModal({ title, ic, body, wide, kind, onMount }) {
+/* window sizes: wide = big screen-filling window (menus like shop, mail, settings), default = medium, small = quick confirmations */
+function openModal({ title, ic, body, wide, small, kind, onMount }) {
   closeModal();
   const back = document.createElement('div'); back.className = 'modal-back'; back.dataset.kind = kind || '';
-  back.innerHTML = `<div class="modal glass-deep ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  back.innerHTML = `<div class="modal glass-deep ${wide ? 'wide' : small ? 'small' : ''}" role="dialog" aria-modal="true" aria-labelledby="mTitle">
     <header class="m-head"><span class="m-ic">${icon(ic)}</span><h2 id="mTitle">${esc(title)}</h2><button class="iconbtn" data-close aria-label="Close">${icon('close')}</button></header>
     <div class="m-body">${body}</div></div>`;
   back.addEventListener('pointerdown', e => { if (e.target === back) closeModal(); });
@@ -25,7 +26,7 @@ const PLACEHOLDERS = {
 };
 function openPlaceholder(key) {
   const [title, ic, desc] = PLACEHOLDERS[key];
-  openModal({ title, ic, body: `<div class="ph">
+  openModal({ title, ic, wide: true, body: `<div class="ph">
     <div class="ph-hero"><span class="m-ic">${icon(ic)}</span><div><span class="tag">Template</span><p>${esc(desc)} This screen gets built in a later update.</p></div></div>
     <div class="skel">${'<div></div>'.repeat(6)}</div></div>` });
 }
@@ -37,7 +38,7 @@ const MAILS = [
   { id:'event', from:'Events', title:'Halloween banner opens Oct 31', body:'A spooky limited banner with two new skins.', reward:null, date:'Oct 25' }
 ];
 const rewardHTML = r => Object.entries(r).map(([k, v]) => `<span class="cost">${curIcon(k)}${fmt(v)}</span>`).join('');
-function openMail() { openModal({ title: 'Mail', ic: 'mail', body: '<div class="mail" id="mailList"></div>', onMount: renderMail }); }
+function openMail() { openModal({ title: 'Mail', ic: 'mail', wide: true, body: '<div class="mail" id="mailList"></div>', onMount: renderMail }); }
 function renderMail() {
   const el = $('#mailList'); if (!el) return;
   el.innerHTML = MAILS.map(m => {
@@ -57,7 +58,7 @@ function renderMail() {
 /* settings */
 function openSettings() {
   const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
-  openModal({ title: 'Settings', ic: 'gear', body: `<form class="form" id="setForm">
+  openModal({ title: 'Settings', ic: 'gear', wide: true, body: `<form class="form" id="setForm">
     <div class="switch" style="cursor:default">Account<span class="row" style="gap:10px"><b style="color:var(--mint)">${acct}</b>${Backend.on ? `<button type="button" class="btn ghost sm" id="setAcct">${Backend.user ? 'Sign out' : 'Sign in'}</button>` : ''}</span></div>
     <div class="switch" style="cursor:default">Main character<span class="row" style="gap:10px"><b style="color:var(--mint)">${S.player.mc ? esc(mcEntry(S.player.mc).name) : 'Not chosen yet'}</b>${S.player.mc ? `<button type="button" class="btn ghost sm" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : ''}</span></div>
     <label class="field"><span>Player name</span><input class="input" id="setName" maxlength="16" value="${esc(S.player.name)}"></label>

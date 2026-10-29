@@ -182,8 +182,8 @@ function sampleState() {
     featuredId: 'aria',
     wallpaper: null,
     owned: {},
-    banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, standard: { name: 'Pearl Wish' } },
-    gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
+    banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, standard: { name: 'Pearl Wish' } },
+    gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
     monthly: { key: null, limited: 0, standard: 0 },
@@ -243,7 +243,8 @@ let S = (() => {
         const og = d.gacha || {};
         if (og.limited) s.gacha = { ...fresh.gacha, ...og, limited: { ...fresh.gacha.limited, ...og.limited }, standard: { ...fresh.gacha.standard, ...og.standard } };
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
-        s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
+        s.banners = Object.fromEntries(Object.keys(fresh.banners).map(k => [k, { ...fresh.banners[k], ...((d.banners || {})[k] || {}) }]));
+        for (const k of Object.keys(fresh.gacha)) if (k !== 'history' && !s.gacha[k]) s.gacha[k] = { ...fresh.gacha[k] };
         s.owned = d.owned || {};
         s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.clothes = d.clothes || []; s.wear = d.wear || {}; s.memories = d.memories || []; s.memEq = d.memEq || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };

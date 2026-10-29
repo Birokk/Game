@@ -39,7 +39,7 @@ function buyRing() {
 }
 function askMarry(id) {
   const e = findEntry(id);
-  openModal({ title: 'Propose', ic: 'ring', body: `<div class="stack" style="justify-items:center;text-align:center">
+  openModal({ title: 'Propose', ic: 'ring', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
     <span class="vow-ring">${curIcon('rings')}</span>
     <p class="desc">Give a ring to <b>${esc(e.name)}</b>? This uses 1 ring and can't be undone.</p>
     <div class="row"><button class="btn ghost" data-close>Not yet</button><button class="btn gold" id="marryGo">${curIcon('rings')}Propose</button></div></div>`,

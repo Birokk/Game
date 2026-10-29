@@ -2,12 +2,45 @@
    GACHA
    ========================================================= */
 function rate5(pity) { return pity >= HARD_PITY ? 1 : BASE5; }
-const BANNER_KEYS = ['limited', 'standard'];
+const BANNER_KEYS = ['limited', 'weekly', 'skins', 'standard'];   // order of the tabs on the summon screen
 let curBanner = 'limited';
 const limitedUR = () => { const f = findEntry(S.featuredId); return f && f.rarity === 5 && f.pullable !== false ? f : null; };
 const standardURs = () => S.pool.filter(e => e.rarity === 5 && e.pullable !== false && e.standard && e.type !== 'pet');
 const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== false && e.type !== 'pet');
-const bannerName = bk => bk === 'limited' ? (S.banners.limited.name || 'Limited Banner') : (S.banners.standard.name || 'Pearl Wish');
+const BANNER_DEFAULT_NAME = { limited: 'Limited Banner', weekly: 'Weekly Spotlight', skins: 'Outfit Wish', standard: 'Pearl Wish' };
+const bannerName = bk => (S.banners[bk] && S.banners[bk].name) || BANNER_DEFAULT_NAME[bk];
+/* weekly banner: a random pullable UR character, the same for every player, changes every Monday 00:00 UTC */
+const WEEK_MS = 7 * 864e5, WEEK_EPOCH = Date.UTC(2024, 0, 1);   // 1 Jan 2024 was a Monday
+const weekIndex = (t = Date.now()) => Math.floor((t - WEEK_EPOCH) / WEEK_MS);
+const weekEnds = () => WEEK_EPOCH + (weekIndex() + 1) * WEEK_MS;
+const weekHash = n => { let x = Math.imul(n ^ 0x9e3779b9, 2654435761) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; return (x ^ x >>> 13) >>> 0; };
+/* each cycle of N weeks shows all N URs once, in a shuffled order; the first of a cycle is never the last of the previous one */
+function weekPerm(c, len) {
+  const a = [...Array(len).keys()]; let x = weekHash(c + 7919);
+  for (let i = len - 1; i > 0; i--) { x = weekHash(x + i); const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function weeklyUR(w = weekIndex()) {
+  let list = S.pool.filter(e => e.type === 'character' && e.rarity === 5 && e.pullable !== false && !e.mc).sort((a, b) => a.id.localeCompare(b.id));
+  if (list.length > 1) list = list.filter(e => e.id !== S.featuredId);   // never the limited banner's character
+  const len = list.length;
+  if (len < 3) return len ? list[w % len] : null;
+  const c = Math.floor(w / len), perm = weekPerm(c, len);
+  if (perm[0] === weekPerm(c - 1, len)[len - 1]) [perm[0], perm[1]] = [perm[1], perm[0]];
+  return list[perm[w % len]];
+}
+/* outfit banner: pulls give skins (MR wedding skins never); the admin can feature one UR skin */
+const pullableSkins = r => S.pool.filter(e => e.type === 'skin' && e.rarity === r && e.pullable !== false);
+const skinFeatured = () => { const k = findEntry(S.banners.skins && S.banners.skins.featured); return k && k.type === 'skin' && k.rarity === 5 && k.pullable !== false ? k : null; };
+const skinsEnd = () => S.banners.skins && S.banners.skins.end ? +new Date(S.banners.skins.end + 'T23:59:00') : null;
+/* everything a banner needs: featured UR (50/50 with a guarantee), the UR pool otherwise, the SSR pool, look and timer */
+function bannerInfo(bk) {
+  const std = standardURs(), ssr = pullableSSRs();
+  if (bk === 'limited') { const f = limitedUR(); return { bk, kind: 'feat', word: 'LIMITED', tab: 'Limited', feat: f, lose: std, ur: std, ssr, ends: +new Date((S.banners.limited.end || '2026-11-11') + 'T23:59:00'), title: `${f ? f.name : 'Limited'} Summon` }; }
+  if (bk === 'weekly') { const f = weeklyUR(); return { bk, kind: 'feat', word: 'WEEKLY', tab: 'Weekly', feat: f, lose: std, ur: std, ssr, ends: weekEnds(), title: f ? `${f.name} Spotlight` : bannerName('weekly'), note: 'A new random UR every Monday' }; }
+  if (bk === 'skins') { const urs = pullableSkins(5), f = skinFeatured(); return { bk, kind: f ? 'feat' : 'pool', word: 'OUTFITS', tab: 'Outfits', feat: f, lose: urs, ur: urs, ssr: pullableSkins(4), ends: skinsEnd(), title: bannerName('skins'), skins: true }; }
+  return { bk, kind: 'pool', word: 'PEARL WISH', tab: 'Permanent', feat: null, lose: std, ur: std, ssr, ends: null, title: bannerName('standard') };
+}
 /* a summon is paid with summon tickets (1 ticket = 1 pull) when you have enough, otherwise with pearls */
 /* each banner has its own ticket: Limited tickets for the limited banner, Wish tickets for the permanent one */
 const TK = bk => bk === 'standard' ? 'wishes' : 'tickets';
@@ -23,18 +56,15 @@ function rollOne(bk) {
   if (r < p5) rarity = 5; else if (g.pity4 >= 10 || r < p5 + BASE4) rarity = 4;
   if (rarity === 5) { g.pity5 = 0; g.pity4 = 0; } else if (rarity === 4) g.pity4 = 0;
   let item = null, lost = false;
+  const B = bannerInfo(bk);
   if (rarity === 5) {
-    const std = standardURs();
-    if (bk === 'limited') {
-      const f = limitedUR();
-      if (f) {
-        const others = std.filter(e => e.id !== f.id);
-        if (g.guarantee || !others.length || Math.random() < .5) { item = f; g.guarantee = false; }
-        else { item = rpick(others); g.guarantee = true; lost = true; }
-      } else if (std.length) item = rpick(std);
-    } else if (std.length) item = rpick(std);   // permanent: every UR on the banner has an equal chance
+    if (B.feat) {
+      const others = B.lose.filter(e => e.id !== B.feat.id);
+      if (g.guarantee || !others.length || Math.random() < .5) { item = B.feat; g.guarantee = false; }
+      else { item = rpick(others); g.guarantee = true; lost = true; }
+    } else if (B.ur.length) item = rpick(B.ur);   // no featured UR: every UR in the pool has an equal chance
   } else if (rarity === 4) {
-    const ssr = pullableSSRs(); if (ssr.length) item = rpick(ssr);
+    if (B.ssr.length) item = rpick(B.ssr);
   }
   // the lowest tier is 500 gold coins, or sometimes an egg fragment
   const frag = rarity === 3 ? (() => { const x = Math.random(); return x < FRAG_SSR ? 'ssr' : x < FRAG_SSR + FRAG_UR ? 'ur' : null; })() : null;
@@ -82,35 +112,34 @@ function closeSummon() { if (smEl) { smEl.remove(); smEl = null; } }
 function refreshSummon() { if (smEl) renderSummon(); }
 function renderSummon() {
   if (!smEl) return;
-  const bk = curBanner, g = S.gacha[bk], lim = bk === 'limited';
-  const f = limitedUR(), std = standardURs(), ssr = pullableSSRs();
-  // lineup: the featured UR in the middle with SSRs beside it, or every UR on the permanent banner
-  let line = lim ? (f ? [f] : std.slice(0, 1)) : std.slice(0, 5);
-  if (lim) { const side = ssr.filter(e => e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
-  const mid = lim ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
+  const bk = curBanner, g = S.gacha[bk], B = bannerInfo(bk), f = B.feat;
+  // lineup: the featured UR in the middle with SSRs beside it, or the banner's URs
+  let line = f ? [f] : B.ur.slice(0, 5);
+  if (f) { const side = B.ssr.filter(e => B.skins || e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
+  const mid = f ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
   const left = HARD_PITY - g.pity5;
   const tabArt = e => e ? `<img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">` : '';
   const dotFor = k => canPull(10, k) || freeReady(k) ? '<span class="dot-n"></span>' : '', dot = dotFor(bk);
-  // a hero with uploaded art fills the screen (whole, never cropped); chibis stand in a lineup
-  const hero = lim ? f : std[smFocus % Math.max(1, std.length)], heroArt = hero && mediaArt(hero);
+  // a hero with uploaded art fills the screen; chibis stand in a lineup
+  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && mediaArt(hero);
+  const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
+    return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.kind === 'feat' && !I.skins ? '<br>Summon' : ''}</b>${dotFor(k)}</button>`; };
+  const what = B.skins ? 'outfit' : 'character';
   smEl.className = 'sx r5';
-  smEl.innerHTML = `<div class="sx-word">${lim ? 'LIMITED' : 'PEARL WISH'}</div>
+  smEl.innerHTML = `<div class="sx-word">${B.word}</div>
     ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
     <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
     <div class="sx-fade"></div><div class="sx-vig"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
     <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
-    <nav class="sx-tabs" aria-label="Banners">
-      <button class="sx-tab ${lim ? '' : 'on'}" data-bk="standard"><small>Permanent</small>${tabArt(std[0])}<b>${esc(bannerName('standard'))}</b>${dotFor('standard')}</button>
-      <button class="sx-tab lim ${lim ? 'on' : ''}" data-bk="limited"><small>Limited · ${shortLeft()}</small>${tabArt(f)}<b>${f ? esc(f.name) : 'Limited'}<br>Summon</b>${dotFor('limited')}</button>
-    </nav>
+    <nav class="sx-tabs" aria-label="Banners">${BANNER_KEYS.map(tab).join('')}</nav>
     <div class="sx-title">
-      <h2>${lim ? `${f ? esc(f.name) : 'Limited'} Summon` : esc(bannerName('standard'))}</h2>
+      <h2>${esc(B.title)}</h2>
       ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
-      <p>Guaranteed <span class="u">UR</span> ${lim && f ? (g.guarantee ? `<span class="g">${esc(f.name)}</span>` : 'character') : 'character'}</p>
-      ${lim && f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span><span class="lim-time">${icon('clock')}Ends in ${shortLeft()}</span>`
-        : `<span class="chip">${std.length} URs · equal chance each · always open</span><div class="sx-feat">${std.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${thumbImg(u)}</button>`).join('')}</div>`}`
-      : `<p>No UR on this banner yet.</p><button class="btn ghost sm" data-open="admin" data-adtab="banners">${icon('wrench')}Set it up in admin</button>`}
+      <p>Guaranteed <span class="u">UR</span> ${f && g.guarantee ? `<span class="g">${esc(f.name)}</span>` : what}</p>
+      ${f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span>${B.ends ? `<span class="lim-time">${icon('clock')}${B.bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : ''}${B.note ? `<span class="chip">${B.note}</span>` : ''}`
+        : `<span class="chip">${B.ur.length} UR ${what}s · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${thumbImg(u)}</button>`).join('')}</div>`}`
+      : `<p>${B.skins ? 'No UR outfits on this banner yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : 'banners'}">${icon('wrench')}Set it up in admin</button>`}
     </div>
     <div class="sx-rule"></div>
     <div class="sx-bl">
@@ -127,7 +156,7 @@ function renderSummon() {
     <div class="sx-note">UR pity ${g.pity5}/${HARD_PITY} · SSR pity ${g.pity4}/10 · ${fmt(g.total)} pulls on this banner</div>`;
   $('#sxBack').onclick = closeSummon;
   smEl.querySelectorAll('[data-focus]').forEach(b => b.onclick = () => { smFocus = +b.dataset.focus; renderSummon(); });
-  smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; renderSummon(); });
+  smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; smFocus = 0; renderSummon(); });
   smEl.querySelectorAll('[data-pull]').forEach(b => b.onclick = () => doPull(+b.dataset.pull, bk));
   const fr = $('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
   $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
@@ -136,17 +165,18 @@ function renderSummon() {
 }
 /* rates, pity and history for one banner */
 function openRates(bk, histOpen) {
-  const g = S.gacha[bk], lim = bk === 'limited', f = limitedUR(), std = standardURs();
+  const g = S.gacha[bk], B = bannerInfo(bk), f = B.feat, what = B.skins ? 'outfit' : 'UR';
   const t = e => new Date(e.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const hist = S.gacha.history.filter(h => (h.banner || 'limited') === bk);
-  openModal({ title: lim ? 'Limited summon' : bannerName('standard'), ic: 'sparkle', body: `<div class="stack">
+  openModal({ title: B.title, ic: 'sparkle', wide: true, body: `<div class="stack">
     <div class="pity">
       <div class="r5"><div class="row" style="justify-content:space-between"><span>UR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity5} / ${HARD_PITY}</span></div><div class="bar"><i style="width:${g.pity5 / HARD_PITY * 100}%"></i></div></div>
       <div class="r4"><div class="row" style="justify-content:space-between"><span>SSR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity4} / 10</span></div><div class="bar"><i style="width:${g.pity4 * 10}%"></i></div></div>
     </div>
     <table class="rates">
-      <tr><td>${rtag(5)}</td><td>${BASE5 * 100}% · guaranteed by pull ${HARD_PITY} · ${lim ? `50% ${f ? esc(f.name) : 'featured'}, otherwise a permanent UR and the next UR is guaranteed featured` : `each of the ${std.length} URs is equally likely`}</td></tr>
-      <tr><td>${rtag(4)}</td><td>5.1% · at least one every 10 pulls</td></tr>
+      <tr><td>${rtag(5)}</td><td>${BASE5 * 100}% · guaranteed by pull ${HARD_PITY} · ${f ? `50% ${esc(f.name)}, otherwise ${B.skins ? 'another UR outfit' : 'a permanent UR'} and the next UR is guaranteed featured` : `each of the ${B.ur.length} UR ${B.skins ? 'outfits' : 'characters'} is equally likely`}</td></tr>
+      <tr><td>${rtag(4)}</td><td>5.1% · at least one every 10 pulls · ${B.skins ? `one of ${B.ssr.length} SSR outfits` : 'a random SSR'}</td></tr>
+      ${B.bk === 'weekly' ? `<tr><td>${icon('clock')}</td><td>The featured UR is picked at random every Monday (00:00 UTC). Next change in ${shortLeft(B.ends)}.</td></tr>` : ''}
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
     <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS[5]} pearls (UR) or ${OVERFLOW_PEARLS[4]} (SSR). If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>

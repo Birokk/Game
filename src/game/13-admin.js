@@ -275,7 +275,7 @@ function showImport() {
       S.memories = d.memories.filter(x => x && x.id && x.name).map(x => ({ ...x, rarity: [4, 5].includes(+x.rarity) ? +x.rarity : 4 }));
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
-    S.pool = pool; S.featuredId = d.featuredId || null; ensureMC(); if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
+    S.pool = pool; S.featuredId = d.featuredId || null; ensureMC(); if (d.banners) for (const k of Object.keys(S.banners)) S.banners[k] = { ...S.banners[k], ...(d.banners[k] || {}) };
     persist(); hydrateIcons(); renderMenu(); fillAdminForm(null); area.innerHTML = ''; toast(`Imported ${pool.length} entries.`);
   };
 }
@@ -308,9 +308,28 @@ function renderBannersTab() {
       <div class="ad-list">${urs.length ? urs.map(u => `<label class="ban-row"><img src="${getArt(u)}" alt="">
           <span style="min-width:0"><span class="nm" style="display:block">${esc(u.name)}</span><span class="mt">${u.id === S.featuredId ? 'Featured on limited · ' : ''}${u.pullable === false ? 'Not pullable' : 'UR character'}</span></span>
           <input type="checkbox" data-std="${esc(u.id)}" ${u.standard ? 'checked' : ''} aria-label="${esc(u.name)} on the permanent banner"><i></i></label>`).join('') : '<div class="empty">No URs yet. Add some in the Game pool tab.</div>'}</div>
-      <p class="tiny">All ${pullableSSRs().length} pullable SSRs appear on both banners.</p>
+      <p class="tiny">All ${pullableSSRs().length} pullable SSRs appear on the Limited, Weekly and Permanent banners.</p>
+    </section>
+    <section class="stack" style="align-content:start">
+      <div><h3>Weekly banner</h3><p class="tiny">Every Monday (00:00 UTC) it features a random pullable UR character, the same for every player, never the limited banner's UR and never the same two weeks in a row. Same 50/50 rules as the limited banner, with its own pity.</p></div>
+      <label class="field"><span>Banner name</span><input class="input" id="bnWkName" maxlength="30" value="${esc(bannerName('weekly'))}"></label>
+      <div class="hist">${[0, 1, 2, 3].map(i => { const u = weeklyUR(weekIndex() + i), d = new Date(WEEK_EPOCH + (weekIndex() + i) * WEEK_MS);
+        return `<div><span>${i ? `From ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : '<b>This week</b>'}</span><span>${u ? esc(u.name) : 'No UR characters yet'}</span></div>`; }).join('')}</div>
+    </section>
+    <section class="stack" style="align-content:start">
+      <div><h3>Outfit banner</h3><p class="tiny">Pulls give skins instead of characters: UR outfits at the UR rate, SSR outfits at the SSR rate (MR wedding skins never). Feature one UR outfit for a 50/50, or leave it empty for an equal chance. Rarity and art are set in the Skins tab.</p></div>
+      <div class="two">
+        <label class="field"><span>Banner name</span><input class="input" id="bnSkName" maxlength="30" value="${esc(bannerName('skins'))}"></label>
+        <label class="field"><span>Ends on (optional)</span><input class="input" type="date" id="bnSkEnd" value="${esc(S.banners.skins.end || '')}"></label>
+      </div>
+      <label class="field"><span>Featured UR outfit</span><select class="input" id="bnSkFeat"><option value="">None (equal chance)</option>${pullableSkins(5).map(k => `<option value="${esc(k.id)}" ${k.id === S.banners.skins.featured ? 'selected' : ''}>${esc(k.name)}</option>`).join('')}</select></label>
+      <p class="tiny">${pullableSkins(5).length} UR and ${pullableSkins(4).length} SSR outfits are on this banner.</p>
     </section>
   </div>`;
+  $('#bnWkName').oninput = e => { S.banners.weekly.name = e.target.value.trim() || BANNER_DEFAULT_NAME.weekly; persist(); };
+  $('#bnSkName').oninput = e => { S.banners.skins.name = e.target.value.trim() || BANNER_DEFAULT_NAME.skins; persist(); };
+  $('#bnSkEnd').onchange = e => { S.banners.skins.end = e.target.value || null; persist(); };
+  $('#bnSkFeat').onchange = e => { S.banners.skins.featured = e.target.value || null; persist(); toast(e.target.value ? `${findEntry(e.target.value).name} is featured on the outfit banner.` : 'The outfit banner has no featured outfit.'); };
   $('#bnLimName').oninput = e => { S.banners.limited.name = e.target.value.trim() || 'Limited Banner'; persist(); renderMenu(); };
   $('#bnStdName').oninput = e => { S.banners.standard.name = e.target.value.trim() || 'Pearl Wish'; persist(); renderMenu(); };
   $('#bnLimEnd').onchange = e => { if (e.target.value) { S.banners.limited.end = e.target.value; persist(); renderMenu(); } };

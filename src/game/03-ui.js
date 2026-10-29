@@ -16,8 +16,8 @@ function timeLeft() {
   const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5);
   return `Ends in <b>${d}d ${h}h</b>`;
 }
-function shortLeft() {
-  const ms = new Date((S.banners.limited.end || '2026-11-11') + 'T23:59:00') - Date.now();
+function shortLeft(endMs) {
+  const ms = (endMs || new Date((S.banners.limited.end || '2026-11-11') + 'T23:59:00')) - Date.now();
   if (ms <= 0) return 'Ended';
   const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), p = n => String(n).padStart(2, '0');
   return d ? `${d}d ${p(h)}h` : `${p(h)}h ${p(m)}m`;
@@ -33,12 +33,12 @@ function renderMenu() {
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
   $('#hmTitle').innerHTML = titleHTML();
-  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the limited banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
+  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = MAILS.filter(m => !S.mailClaimed.includes(m.id)).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} · ${curIcon('wishes')}${fmt(S.wallet.wishes)} · ${curIcon('pearls')}${COST[1]} each`;
-  $('#sumDot').hidden = !(canPull(10, 'limited') || canPull(10, 'standard') || freeReady('limited') || freeReady('standard'));
+  $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
   $('#loginDot').hidden = !loginReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
@@ -83,7 +83,7 @@ function openLogin() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const ready = loginReady(), next = ready ? (S.login.last === dayKey(y) ? S.login.streak + 1 : 1) : S.login.streak;
   const today = (next - 1) % 7 + 1;
-  openModal({ title: 'Daily login', ic: 'gift', kind: 'login', body: `<div class="stack">
+  openModal({ title: 'Daily login', ic: 'gift', wide: true, kind: 'login', body: `<div class="stack">
     <p class="desc">Log in every day for a free summon ticket. One ticket is one pull on any banner.</p>
     <div class="login-grid">${Array.from({ length: 7 }, (_, i) => { const d = i + 1, done = d < today || (d === today && !ready);
       return `<div class="login-day ${done ? 'done' : ''} ${d === today && ready ? 'now' : ''}"><span class="lbl-sm">Day ${d}</span>${curIcon('tickets')}<b>×1</b>${done ? `<span class="chk">${icon('check')}</span>` : ''}</div>`; }).join('')}</div>
@@ -300,12 +300,12 @@ $('#ttNews').onclick = openNews;
 $('#ttSupport').onclick = openSupport;
 $('#ttTerms').onclick = () => openModal({ title: 'Terms & privacy', ic: 'info', body: `<div class="stack"><p class="desc">Blank: Project is in development. ${Backend.on ? 'Signed-in progress is saved on our server; guest progress stays in this browser.' : 'Your progress, art and settings are stored only in this browser. Nothing is sent to a server.'}</p>
   <p class="desc">Summon rates are listed on every banner's Rates page. Paid currency isn't sold yet.</p><p class="tiny">Full terms of service and a privacy policy will be published before launch.</p></div>` });
-$('#ttRepair').onclick = () => openModal({ title: 'Repair', ic: 'wrench', body: `<div class="stack"><p class="desc">Something looks wrong? Repair reloads the game and its images. Your progress is kept.</p>
+$('#ttRepair').onclick = () => openModal({ title: 'Repair', ic: 'wrench', small: true, body: `<div class="stack"><p class="desc">Something looks wrong? Repair reloads the game and its images. Your progress is kept.</p>
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancel</button><button class="btn mint" id="rpGo">Repair and reload</button></div></div>`,
   onMount: () => { $('#rpGo').onclick = () => { persist(); location.reload(); }; modalEl.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal); } });
 function openNews() {
   const items = (S.titleNews || DEFAULT_NEWS).split('\n').map(l => l.split('|').map(x => x.trim())).filter(x => x[0]);
-  openModal({ title: 'Notice', ic: 'mail', body: `<div class="mail">${items.map(([t, b]) => `<div class="mail-row"><div style="min-width:0"><div class="meta">Plaza Team</div><h4>${esc(t)}</h4>${b ? `<p>${esc(b)}</p>` : ''}</div></div>`).join('')}</div>` });
+  openModal({ title: 'Notice', ic: 'mail', wide: true, body: `<div class="mail">${items.map(([t, b]) => `<div class="mail-row"><div style="min-width:0"><div class="meta">Plaza Team</div><h4>${esc(t)}</h4>${b ? `<p>${esc(b)}</p>` : ''}</div></div>`).join('')}</div>` });
 }
 /* customer service: FAQ and a contact form; messages are kept locally until a support server exists */
 function openSupport() {
@@ -315,7 +315,7 @@ function openSupport() {
     ['How do I get pets?', 'Catch eggs in the plaza or combine 10 egg fragments from summons, then hatch them in the Pets screen.'],
     ['A purchase or reward is missing', 'Check your Mail first. If it is still missing, send us a message below with your UID.']
   ];
-  openModal({ title: 'Customer service', ic: 'chat', body: `<div class="stack">
+  openModal({ title: 'Customer service', ic: 'chat', wide: true, body: `<div class="stack">
     <div><h3 style="margin-bottom:8px">Frequently asked</h3>${faq.map(([q, a]) => `<details class="faq"><summary>${esc(q)}</summary><p class="desc">${esc(a)}</p></details>`).join('')}</div>
     <form class="form" id="csForm"><h3>Contact us</h3>
       <label class="field"><span>Topic</span><select class="input" id="csTopic"><option>Account and login</option><option>Summons and rewards</option><option>Bug report</option><option>Suggestion</option><option>Other</option></select></label>
