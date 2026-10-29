@@ -1358,6 +1358,26 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .mc-card img.art{max-width:none;aspect-ratio:auto;max-height:46vh;border-radius:12px}
 .mc-card b{font-family:var(--display);font-weight:400;font-size:22px}
 /* skins carousel */
+.mem-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mem-slot,.mem-card{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:var(--glass);border:2px solid var(--edge-soft);color:inherit;padding:0}
+.mem-slot.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+.mem-slot.full{border-color:var(--rc);background:var(--ink-2)}
+.mem-slot.full.on{border-color:#fff}
+.mem-slot img,.mem-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mem-empty{display:grid;justify-items:center;gap:2px;opacity:.6}
+.mem-empty .ic{width:20px;height:20px}
+.mem-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:34vh;overflow-y:auto;padding-right:4px}
+.mem-card{background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--rc) 30%,transparent),var(--ink-2) 75%)}
+.mem-card.on{border-color:#fff}
+.mem-card.bw img{filter:grayscale(1) brightness(.7)}
+.mem-slot .rtag,.mem-card .rtag{position:absolute;top:5px;left:5px;font-size:9px;padding:1px 5px}
+.mem-card .skc-on{bottom:auto;top:5px;left:auto;right:5px}
+.mem-card .skc-lock{top:5px;right:5px}
+.mem-nm{position:absolute;left:0;right:0;bottom:0;padding:12px 6px 4px;background:linear-gradient(transparent,rgba(5,8,20,.9));font-family:var(--display);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.mem-prev{width:128px;aspect-ratio:16/9;border-radius:10px;display:grid;place-items:center;background:var(--ink-2);border:1px solid var(--edge-soft);overflow:hidden;text-align:center}
+.mem-prev.sm{width:110px}
+.mem-prev img{width:100%;height:100%;object-fit:cover}
+.mem-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;align-items:start;padding:8px;border-radius:12px;background:rgba(255,255,255,.04);border-left:3px solid var(--rc)}
 .wd-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .wd-slot{display:grid;justify-items:center;gap:2px;padding:10px 6px;border-radius:14px;background:var(--glass);border:2px solid var(--edge-soft);color:inherit;text-align:center;min-width:0}
 .wd-slot.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
@@ -1583,6 +1603,7 @@ function resizeImage(file, max, type = 'image/webp') {
 
 /* ---------- icons ---------- */
 const ICONS = {
+  memory:'<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 6V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/><path d="M3 15l4-4 3 3 2-2 5 5"/>',
   wardrobe:'<path d="M8.5 4L4 6.8l1.8 4 2.2-1V20h8V9.8l2.2 1 1.8-4L15.5 4c-.6 1.5-1.9 2.4-3.5 2.4S9.1 5.5 8.5 4z"/>',
   mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7.5l8 6 8-6"/>',
   gear:'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -1650,7 +1671,7 @@ function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forE
 const ICON_SLOTS = [
   ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Wish tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie']]],
   ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
-  ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['wardrobe', 'Wardrobe'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
+  ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['wardrobe', 'Wardrobe'], ['memory', 'Memory'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
   ['Small UI', [['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected']]]
 ];
@@ -1748,7 +1769,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.clothes = d.clothes || []; s.wear = d.wear || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.clothes = d.clothes || []; s.wear = d.wear || {}; s.memories = d.memories || []; s.memEq = d.memEq || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
@@ -2005,6 +2026,12 @@ const clothOf = id => S.clothes.find(x => x.id === id);
 const clothImg = x => artFrom(x.img);
 const clothFits = (x, c) => !x.char || x.char === c.id;
 const wearOf = cid => S.wear[cid] || {};
+/* memories: art cards the admin adds (S.memories); each character equips up to MEM_SLOTS of them (S.memEq[charId]); no effect yet */
+if (!Array.isArray(S.memories)) S.memories = [];
+if (!S.memEq) S.memEq = {};
+const MEM_SLOTS = 3;
+const memOf = id => S.memories.find(x => x.id === id);
+const memEqOf = cid => { const a = (S.memEq[cid] || []).slice(0, MEM_SLOTS); while (a.length < MEM_SLOTS) a.push(null); return a.map(id => id && memOf(id) ? id : null); };
 const getArt = e => mediaArt(e) || portrait(e.look || S.player.look, e.rarity);
 const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
 
@@ -3031,7 +3058,7 @@ function openSpin() {
 }
 
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
-let wdSlot = 'hat';
+let wdSlot = 'hat', memSlot = 0;
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
 const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
@@ -3096,7 +3123,7 @@ function renderCharacters() {
   const eq = equippedOf(c), shown = (csTab === 'skins' && csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
   const art = mediaArt(shown), shownOwned = owns(shown.id);
   csEl.className = `cs r${c.rarity}`;
-  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
+  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
@@ -3142,6 +3169,18 @@ function renderCharacters() {
         return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'}>${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
       ${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}`;
+  } else if (csTab === 'memory') {
+    const E = memEqOf(c.id), list = S.memories.filter(x => !x.char || x.char === c.id).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+    const memArt = x => artFrom(x.img);
+    body = `<div class="lbl-sm">Memories · ${E.filter(Boolean).length}/${MEM_SLOTS} equipped</div>
+      <div class="mem-slots">${E.map((id, i) => { const x = id && memOf(id);
+        return `<button class="mem-slot ${memSlot === i ? 'on' : ''} ${x ? 'full r' + x.rarity : ''}" data-memslot="${i}">${x ? `${memArt(x) ? `<img src="${memArt(x)}" alt="">` : ''}${rtag(x.rarity)}<span class="mem-nm">${esc(x.name)}</span>` : `<span class="mem-empty">${icon('plus')}<span class="tiny">Slot ${i + 1}</span></span>`}</button>`; }).join('')}</div>
+      <div class="lbl-sm">All memories · ${list.filter(x => owns(x.id)).length}/${list.length} owned</div>
+      ${list.length ? `<div class="mem-list">${list.map(x => { const own = owns(x.id), at = E.indexOf(x.id);
+        return `<button class="mem-card r${x.rarity} ${own ? '' : 'bw'} ${at >= 0 ? 'on' : ''}" data-memi="${esc(x.id)}" ${own ? '' : 'disabled'} ${x.desc ? `data-tip="${esc(`<b>${esc(x.name)}</b><span>${esc(x.desc)}</span>`)}"` : ''}>${memArt(x) ? `<img src="${memArt(x)}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(x.rarity)}${at >= 0 ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="mem-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
+        : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
+      ${E[memSlot] ? `<button class="btn ghost sm" id="memOff">Remove from slot ${memSlot + 1}</button>` : ''}
+      <p class="tiny">Pick a slot, then a memory to put in it. Memories have no effect yet.</p>`;
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
@@ -3204,6 +3243,15 @@ function renderCharacters() {
     if (W[x.slot] === x.id) delete W[x.slot]; else W[x.slot] = x.id;
     S.wear[c.id] = W; persist(); renderCharacters(); toast(W[x.slot] ? `${c.name} put on ${x.name}.` : `${c.name} took off ${x.name}.`);
   });
+  csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; renderCharacters(); });
+  csEl.querySelectorAll('[data-memi]').forEach(b => b.onclick = () => {
+    const x = memOf(b.dataset.memi); if (!x || !owns(x.id)) return;
+    const E = memEqOf(c.id), at = E.indexOf(x.id);
+    if (at >= 0) { E[at] = null; toast(`Removed ${x.name}.`); }
+    else { E[memSlot] = x.id; toast(`${x.name} is in slot ${memSlot + 1}.`); const free = E.indexOf(null); if (free >= 0) memSlot = free; }
+    S.memEq[c.id] = E; persist(); renderCharacters();
+  });
+  const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
   const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; persist(); renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
@@ -3624,7 +3672,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -3639,6 +3687,7 @@ function renderAdminTab() {
   if (adminTab === 'mr') return renderMRTab();
   if (adminTab === 'skins') return renderSkinsTab();
   if (adminTab === 'wardrobe') return renderWardrobeTab();
+  if (adminTab === 'memories') return renderMemoriesTab();
   renderPoolTab();
 }
 
@@ -3857,7 +3906,8 @@ function exportData() {
     banners: S.banners,
     pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6), getArt: artFrom(e.getArt), icon: artFrom(e.icon) })),
     icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v])),
-    clothes: S.clothes.map(x => ({ ...x, img: artFrom(x.img) }))
+    clothes: S.clothes.map(x => ({ ...x, img: artFrom(x.img) })),
+    memories: S.memories.map(x => ({ ...x, img: artFrom(x.img) }))
   });
 }
 function copyData() {
@@ -3884,6 +3934,10 @@ function showImport() {
     if (Array.isArray(d.clothes)) {
       for (const x of d.clothes) { if (x.img && x.img.startsWith('data:')) { await mediaSet('cloth:' + x.id, x.img); x.img = 'idb:cloth:' + x.id; } else x.img = null; }
       S.clothes = d.clothes.filter(x => x && x.id && x.name && WARD_NAME[x.slot]);
+    }
+    if (Array.isArray(d.memories)) {
+      for (const x of d.memories) { if (x.img && x.img.startsWith('data:')) { await mediaSet('mem:' + x.id, x.img); x.img = 'idb:mem:' + x.id; } else x.img = null; }
+      S.memories = d.memories.filter(x => x && x.id && x.name).map(x => ({ ...x, rarity: [4, 5].includes(+x.rarity) ? +x.rarity : 4 }));
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
     S.pool = pool; S.featuredId = d.featuredId || null; ensureMC(); if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
@@ -4036,6 +4090,50 @@ function renderWardrobeTab() {
     S.clothes = S.clothes.filter(x => x.id !== id); delete S.owned[id];
     for (const cid in S.wear) for (const k in S.wear[cid]) if (S.wear[cid][k] === id) delete S.wear[cid][k];
     persist(); renderWardrobeTab(); toast('Clothing deleted.');
+  });
+}
+
+/* memories tab: art cards characters can equip in their Memory tab */
+let memNewImg = null, memDelArm = null;
+function renderMemoriesTab() {
+  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => !!b.mc - !!a.mc || a.name.localeCompare(b.name));
+  const list = [...S.memories].sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
+  $('#adPanel').innerHTML = `<div class="admin">
+    <section class="stack" style="align-content:start">
+      <div><h3>Add a memory</h3><p class="tiny">Memories are art cards each character can equip (${MEM_SLOTS} slots) in the Memory tab. Use the standard 1728×972 art. Players own none yet: switch on "Owned" below to test until there is a way to get them. Equipping does nothing yet.</p></div>
+      <label class="field"><span>Name</span><input class="input" id="memName" maxlength="40" placeholder="e.g. First Lantern Night"></label>
+      <div class="field"><span>Rarity</span><div class="seg" id="memRar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="memR" value="${r}" ${r === 4 ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div></div>
+      <label class="field"><span>Who can equip it</span><select class="input" id="memChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
+      <label class="field"><span>Description</span><textarea class="input" id="memDesc" maxlength="240" placeholder="One or two lines about this memory"></textarea></label>
+      <div class="row" style="align-items:center"><div class="mem-prev">${memNewImg ? `<img src="${memNewImg}" alt="">` : '<span class="tiny">No art</span>'}</div><label class="btn ghost sm">${icon('upload')}${memNewImg ? 'Replace' : 'Upload'} art<input type="file" accept="image/*" class="sr" id="memUp"></label></div>
+      <div class="row"><button class="btn mint" id="memAdd">${icon('plus')}Add memory</button><span class="err" id="memErr" hidden>Give it a name first.</span></div>
+    </section>
+    <section class="stack" style="align-content:start">
+      <div class="ad-head" style="margin:0"><h3>Memories <span class="muted" style="font-family:var(--body);font-size:14px">· ${list.length}</span></h3></div>
+      ${list.length ? list.map(x => `<div class="mem-row r${x.rarity}"><div class="mem-prev sm">${artFrom(x.img) ? `<img src="${artFrom(x.img)}" alt="">` : icon('memory')}</div>
+        <div style="min-width:0;display:grid;gap:4px"><input class="input sk-nm" data-memnm="${esc(x.id)}" maxlength="40" value="${esc(x.name)}" aria-label="Memory name">
+          <div class="seg sk-rar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="memr-${esc(x.id)}" value="${r}" data-memr="${esc(x.id)}" ${x.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div>
+          <span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}</span>
+          <div class="row" style="gap:8px"><label class="switch" style="padding:4px 8px;gap:8px;font-size:12px">Owned<input type="checkbox" data-memown="${esc(x.id)}" ${owns(x.id) ? 'checked' : ''}><i></i></label><label class="link">Art<input type="file" accept="image/*" class="sr" data-memimg="${esc(x.id)}"></label><button class="link" data-memdel="${esc(x.id)}" style="color:${memDelArm === x.id ? '#ff6b81' : ''}">${memDelArm === x.id ? 'Tap again to delete' : 'Delete'}</button></div></div></div>`).join('') : '<p class="tiny">No memories yet.</p>'}
+    </section></div>`;
+  $('#memUp').onchange = async ev => { try { memNewImg = await resizeImage(ev.target.files[0], SPLASH_MAX); renderMemoriesTab(); } catch (e) { toast(e.message); } };
+  $('#memAdd').onclick = async () => {
+    const name = $('#memName').value.trim(); if (!name) { $('#memErr').hidden = false; return; }
+    const x = { id: `mem-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, name, rarity: +document.querySelector('input[name=memR]:checked').value, char: $('#memChar').value || null, desc: $('#memDesc').value.trim(), img: null };
+    if (memNewImg) { await mediaSet('mem:' + x.id, memNewImg); x.img = 'idb:mem:' + x.id; }
+    S.memories.push(x); memNewImg = null; persist(); renderMemoriesTab(); toast(`Added ${name}.`);
+  };
+  document.querySelectorAll('[data-memnm]').forEach(i => i.onchange = () => { memOf(i.dataset.memnm).name = i.value.trim() || 'Memory'; persist(); toast('Memory renamed.'); });
+  document.querySelectorAll('[data-memr]').forEach(i => i.onchange = () => { memOf(i.dataset.memr).rarity = +i.value; persist(); renderMemoriesTab(); });
+  document.querySelectorAll('[data-memown]').forEach(i => i.onchange = () => { if (i.checked) S.owned[i.dataset.memown] = 1; else delete S.owned[i.dataset.memown]; persist(); });
+  document.querySelectorAll('[data-memimg]').forEach(i => i.onchange = async () => { try { const x = memOf(i.dataset.memimg); await mediaSet('mem:' + x.id, await resizeImage(i.files[0], SPLASH_MAX)); x.img = 'idb:mem:' + x.id; persist(); renderMemoriesTab(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-memdel]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.memdel;
+    if (memDelArm !== id) { memDelArm = id; renderMemoriesTab(); return; }
+    memDelArm = null; await mediaDel('mem:' + id);
+    S.memories = S.memories.filter(x => x.id !== id); delete S.owned[id];
+    for (const cid in S.memEq) S.memEq[cid] = (S.memEq[cid] || []).map(m => m === id ? null : m);
+    persist(); renderMemoriesTab(); toast('Memory deleted.');
   });
 }
 
