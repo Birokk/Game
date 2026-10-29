@@ -89,17 +89,22 @@ function openWallpaper() {
 function renderWallpaperPicker() {
   const root = $('#wpRoot'); if (!root) return;
   const ownedList = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
-  const cur = wallpaperEntry();
+  const list = wpList();
   const tile = (e) => {
-    const on = e ? cur && cur.id === e.id : !cur;
+    const n = e ? list.indexOf(e.id) + 1 : 0, on = e ? n > 0 : !list.length;
     return `<button class="wpt ${e ? 'r' + e.rarity : ''} ${on ? 'on' : ''}" data-wp="${e ? esc(e.id) : ''}" aria-pressed="${on}">
       <span class="mini"></span>${e ? `<img src="${getSplash(e)}" alt="">` : ''}
-      <span class="lab">${e ? esc(e.name) : 'Pearl Tide (default)'}</span>${on ? `<span class="chk">${icon('check')}</span>` : ''}</button>`;
+      <span class="lab">${e ? esc(e.name) : 'Pearl Tide (default)'}</span>${on ? `<span class="chk">${e ? n : icon('check')}</span>` : ''}</button>`;
   };
-  root.innerHTML = `<p class="tiny" style="margin-bottom:14px">Pick any character or skin you own. Pull on the banner to unlock more.</p>
+  root.innerHTML = `<p class="tiny" style="margin-bottom:14px">Pick up to ${WP_MAX} characters or skins you own (${list.length}/${WP_MAX} chosen); tap again to remove one. With two or more, tap once on an empty part of the main screen to show arrows and switch between them. Pearl Tide clears the list.</p>
     <div class="wpgrid">${tile(null)}${ownedList.map(tile).join('')}</div>
     ${ownedList.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>`}`;
   root.querySelectorAll('[data-wp]').forEach(b => b.onclick = () => {
-    S.wallpaper = b.dataset.wp || null; persist(); applyWallpaper(); renderWallpaperPicker();
+    const id = b.dataset.wp, cur = wpList();
+    if (!id) { S.wallpapers = []; S.wallpaper = null; }
+    else if (cur.includes(id)) { S.wallpapers = cur.filter(x => x !== id); if (S.wallpaper === id) S.wallpaper = S.wallpapers[0] || null; }
+    else if (cur.length >= WP_MAX) { toast(`You can pick up to ${WP_MAX} wallpapers. Remove one first.`); return; }
+    else { S.wallpapers = [...cur, id]; S.wallpaper = id; }
+    persist(); applyWallpaper(true); renderWallpaperPicker();
   });
 }

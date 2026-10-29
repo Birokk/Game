@@ -1480,3 +1480,16 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .modal-back[data-kind=spin] .modal{width:min(600px,100%)}
 .modal-back[data-kind=login] .modal{width:min(700px,100%)}
 .modal-back[data-kind=profile] .modal{width:min(860px,100%)}
+
+/* home wallpaper rotation: transparent arrows that show after one tap on the screen; crossfade between pictures */
+.wp-arrow{position:fixed;top:50%;z-index:6;width:64px;height:96px;margin-top:-48px;display:grid;place-items:center;background:none;border:0;color:#fff;opacity:0;pointer-events:none;transition:opacity .35s,transform .2s;filter:drop-shadow(0 2px 10px rgba(0,0,0,.65))}
+.wp-arrow .ic{width:46px;height:46px;stroke-width:1.6}
+.wp-arrow.prev{left:calc(50% - min(34vw, 420px))}
+.wp-arrow.next{right:calc(50% - min(34vw, 420px))}
+.wp-arrow.next .ic{transform:scaleX(-1)}
+.wp-arrow:hover{transform:scale(1.12)}
+.menu.wp-arrows .wp-arrow{opacity:.85;pointer-events:auto}
+.menu.ui-hidden .wp-arrow{display:none}
+.wp-ghost{pointer-events:none;transition:opacity .8s ease;animation:none!important}
+.wp-ghost.out{opacity:0}
+.wpt .chk{font-family:var(--display);font-size:13px}

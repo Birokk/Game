@@ -115,8 +115,37 @@ function setUiHidden(on) { uiHidden = on; menuEl.classList.toggle('ui-hidden', o
 $('#hideUi').onclick = () => setUiHidden(true);
 menuEl.addEventListener('click', e => { if (uiHidden) { e.stopPropagation(); e.preventDefault(); setUiHidden(false); } }, true);
 function wallpaperEntry() { const e = S.wallpaper && findEntry(S.wallpaper); return e && owns(e.id) ? e : null; }
-function applyWallpaper() {
+/* up to 4 home wallpapers (S.wallpapers); S.wallpaper is the one showing. Anything that sets S.wallpaper joins the list. */
+const WP_MAX = 4;
+function wpList() {
+  let list = (Array.isArray(S.wallpapers) ? S.wallpapers : []).filter(id => { const e = findEntry(id); return e && owns(id); });
+  if (S.wallpaper && owns(S.wallpaper) && findEntry(S.wallpaper) && !list.includes(S.wallpaper)) list = [S.wallpaper, ...list].slice(0, WP_MAX);
+  if (!S.wallpaper || !list.includes(S.wallpaper)) S.wallpaper = list[0] || null;
+  if (JSON.stringify(list) !== JSON.stringify(S.wallpapers)) S.wallpapers = list;
+  return list;
+}
+function stepWallpaper(dir) {
+  const list = wpList(); if (list.length < 2) return;
+  S.wallpaper = list[(list.indexOf(S.wallpaper) + dir + list.length) % list.length]; persist(); applyWallpaper(true); showWpArrows();
+}
+let wpArrowTimer = null;
+function showWpArrows() {
+  if (wpList().length < 2) return menuEl.classList.remove('wp-arrows');
+  menuEl.classList.add('wp-arrows'); clearTimeout(wpArrowTimer); wpArrowTimer = setTimeout(() => menuEl.classList.remove('wp-arrows'), 4000);
+}
+$('#wpPrev').onclick = e => { e.stopPropagation(); stepWallpaper(-1); };
+$('#wpNext').onclick = e => { e.stopPropagation(); stepWallpaper(1); };
+// one tap on an empty part of the main screen shows the arrows (only with 2+ wallpapers)
+menuEl.addEventListener('click', e => { if (uiHidden || e.target.closest('button, a, input, select, textarea, label, .cur, #promo')) return; if (menuEl.classList.contains('wp-arrows')) { menuEl.classList.remove('wp-arrows'); clearTimeout(wpArrowTimer); } else showWpArrows(); });
+function applyWallpaper(fade) {
+  wpList();
   const e = wallpaperEntry();
+  if (fade) wpEl.querySelectorAll('#wpSplash, #wpBlur').forEach(img => {   // crossfade: a copy of the old picture fades out over the new one
+    if (img.hidden || !img.getAttribute('src')) return;
+    const ghost = img.cloneNode(); ghost.removeAttribute('id'); ghost.classList.add('wp-ghost'); img.after(ghost);
+    requestAnimationFrame(() => requestAnimationFrame(() => ghost.classList.add('out')));
+    setTimeout(() => ghost.remove(), 900);
+  });
   wpEl.classList.toggle('has-char', !!e);
   wpEl.classList.toggle('chibi', !!e && !mediaArt(e));
   wpEl.classList.remove('r3', 'r4', 'r5'); if (e) wpEl.classList.add('r' + e.rarity);
