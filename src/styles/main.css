@@ -1540,3 +1540,46 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .farm-up .btn{font-size:13px;white-space:nowrap;justify-content:center}
 .farm-head{flex-wrap:wrap}
 .farm-card .farm-art{background:#1b1640}
+
+/* farm screen: its own full-screen town; the stage keeps 16:9 and covers the screen so labels stay on their buildings */
+.fm{position:fixed;inset:0;z-index:45;overflow:hidden;background:#1b1640;color:#fff;animation:fade .25s}
+.fm-stage{position:absolute;left:50%;top:50%;width:max(100vw,calc(100vh * 16 / 9));height:max(100vh,calc(100vw * 9 / 16));transform:translate(-50%,-50%)}
+.fm-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fm-bg .fm-town,.fm-adprev .fm-town{display:block;width:100%;height:100%}
+.fm-spot{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:4px;background:none;border:0;color:#fff;padding:0;cursor:pointer;z-index:2}
+.fm-label{display:grid;justify-items:center;gap:1px;padding:6px 16px;border-radius:999px;background:linear-gradient(#fffaf0,#efe2c4);color:#3a2a1a;border:2px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.35),0 0 0 3px color-mix(in srgb,var(--fc) 55%,transparent);transition:transform .18s;white-space:nowrap}
+.fm-label b{font-family:var(--display);font-weight:400;font-size:15px;line-height:1.1}
+.fm-label>span{display:flex;align-items:center;gap:4px;font-family:var(--read);font-weight:800;font-size:11.5px;color:#6a5236}
+.fm-label .cic{width:13px;height:13px}
+.fm-spot:hover .fm-label,.fm-spot.on .fm-label{transform:scale(1.07)}
+.fm-spot.on .fm-label{box-shadow:0 4px 14px rgba(0,0,0,.35),0 0 0 4px var(--fc)}
+.fm-spot.locked .fm-label{background:linear-gradient(#e9e4dc,#cfc6b8);color:#5a5048}
+.fm-spot.busy .fm-time{color:#b8422a;font-variant-numeric:tabular-nums}
+.fm-arrow{color:#5be36a;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));animation:fmBob 1.2s ease-in-out infinite}
+.fm-arrow .ic{width:34px;height:34px;stroke-width:3.2}
+.fm-bubble{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.92);box-shadow:0 3px 10px rgba(0,0,0,.35);animation:fmBob 1.4s ease-in-out infinite}
+.fm-bubble .cic{width:24px;height:24px}
+@keyframes fmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.fm-top{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:16px;display:flex;align-items:center;gap:14px;z-index:5}
+.fm-top h2{margin:0;font-family:var(--display);font-weight:400;font-size:30px}
+.fm-rate{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:999px;background:rgba(5,8,20,.5);font-family:var(--display);font-size:13px}
+.fm-rate .cic{width:16px;height:16px}
+.fm-cur{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px;display:flex;gap:8px;z-index:5}
+.fm-all{position:absolute;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:5}
+.fm-panel{position:absolute;top:76px;right:16px;bottom:84px;width:min(380px,calc(100vw - 32px));z-index:6;border-radius:22px;padding:16px;display:grid;gap:12px;align-content:start;overflow-y:auto;animation:fmIn .25s ease-out}
+@keyframes fmIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.fm-ph{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.fm-ph>div{display:grid;gap:4px}
+.fm-ph b{font-family:var(--display);font-weight:400;font-size:24px}
+.fm-ph .farm-lv{justify-items:start;color:var(--fc)}
+.fm-panel .farm-up .btn{white-space:normal}
+.fm-adprev{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;border:1px solid var(--edge-soft);background:#1b1640;touch-action:none}
+.fm-adprev>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fm-dot{position:absolute;transform:translate(-50%,-50%);padding:4px 12px;border-radius:999px;background:#fffaf0;color:#3a2a1a;font-family:var(--display);font-size:12px;border:2px solid var(--fc);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:grab;user-select:none;white-space:nowrap}
+.fm-dot:active{cursor:grabbing}
+.fm-sliders{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.fm-sl{display:grid;gap:4px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border-left:3px solid var(--fc)}
+.fm-sl label{display:flex;align-items:center;gap:8px;font-size:12px}
+.fm-sl input{flex:1}
+@media (max-width:640px){.fm-top h2{font-size:22px}.fm-rate{display:none}.fm-label b{font-size:13px}.fm-panel{top:auto;bottom:76px;max-height:60vh}}
+.fm-adprev{max-width:760px}

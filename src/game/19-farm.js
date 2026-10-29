@@ -1,18 +1,22 @@
 /* =========================================================
    Farm: buildings that produce materials over time (for now: pearls).
-   Each building goes from level 0 (empty plot) to 7. An upgrade first needs its requirement (for now: pay 5 pearls),
-   then costs gold and takes time; both grow with every level. Production keeps running and is stored up to 12 hours.
+   It is its own full-screen town screen: a wallpaper (admin → Farm, or the drawn default town) with a label on each building;
+   tapping a building opens its panel. Each building goes from level 0 (not built) to 7. An upgrade first needs its requirement
+   (for now: pay 5 pearls), then costs gold and takes time (up to 48 h for level 7), which pearls can skip.
+   Production keeps running and is stored up to 12 hours.
    State: S.farm[id] = { lv, t (last settled), acc (stored pearls), req (level whose requirement is paid), up: {to, start, ends} | null }
    ========================================================= */
 const FARM_MAX = 7, FARM_CAP_H = 12, FARM_REQ_PEARLS = 5;
 const FARM_RATE = [0, 0.25, 0.4, 0.6, 0.8, 1.05, 1.35, 1.7];            // pearls per hour at each level (× the building's multiplier)
-const FARM_GOLD = [0, 0, 3000, 8000, 18000, 35000, 60000, 100000];      // gold to reach each level (level 1 = the building's build cost)
-const FARM_TIME = [0, 60e3, 5 * 60e3, 15 * 60e3, 45 * 60e3, 2 * 36e5, 4 * 36e5, 8 * 36e5];   // time to reach each level
+const FARM_GOLD = [0, 0, 25000, 80000, 200000, 450000, 900000, 1800000];   // gold to reach each level (level 1 = the building's build cost)
+const FARM_TIME = [0, 5 * 60e3, 30 * 60e3, 2 * 36e5, 6 * 36e5, 12 * 36e5, 24 * 36e5, 48 * 36e5];   // time to reach each level: 5 min build … 48 h for level 7
+const FARM_SKIP_MIN = 10;   // finishing an upgrade right away costs 1 pearl per 10 minutes left (at least 1)
+const farmSkipCost = id => { const f = farmOf(id); return f.up ? Math.max(1, Math.ceil((f.up.ends - Date.now()) / (FARM_SKIP_MIN * 60e3))) : 0; };
 const FARM_DEFS = [
   { id: 'crops', name: 'Crops', mult: 1, build: 0, start: 1, desc: 'Fields of lantern rice and pearl melons.' },
-  { id: 'inn', name: 'Inn', mult: 1.25, build: 2000, start: 0, desc: 'Travelers rest here and pay in pearls.' },
-  { id: 'market', name: 'Market', mult: 1.5, build: 5000, start: 0, desc: 'Stalls that trade the town\'s goods.' },
-  { id: 'pub', name: "Girls' Pub", mult: 2, build: 10000, start: 0, desc: 'Music, drinks and the liveliest crowd in town.' }
+  { id: 'inn', name: 'Inn', mult: 1.25, build: 10000, start: 0, desc: 'Travelers rest here and pay in pearls.' },
+  { id: 'market', name: 'Market', mult: 1.5, build: 25000, start: 0, desc: 'Stalls that trade the town\'s goods.' },
+  { id: 'pub', name: "Girls' Pub", mult: 2, build: 50000, start: 0, desc: 'Music, drinks and the liveliest crowd in town.' }
 ];
 const farmDef = id => FARM_DEFS.find(d => d.id === id);
 function farmOf(id) {
@@ -55,66 +59,123 @@ function farmUpgrade(id) {
   const now = Date.now(); f.up = { to, start: now, ends: now + FARM_TIME[to] };
   persist(); renderMenu(); renderFarm(); toast(f.lv ? `${farmDef(id).name} is upgrading to level ${to}.` : `Building the ${farmDef(id).name}…`);
 }
+function farmSkip(id) {
+  const f = farmOf(id), cost = farmSkipCost(id); if (!f.up) return;
+  if (S.wallet.pearls < cost) { toast(`Finishing now costs ${cost} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
+  S.wallet.pearls -= cost; f.up.ends = Date.now(); farmTick(); persist(); renderMenu(); renderFarm();
+  toast(`${farmDef(id).name} is now level ${f.lv}.`);
+}
 const fmtDur2 = ms => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : m ? `${m}m ${String(x).padStart(2, '0')}s` : `${x}s`; };
 
-/* ---------- the Farm window ---------- */
-let farmTimer = null;
-function openFarm() {
-  farmTick();
-  openModal({ title: 'Farm', ic: 'farm', wide: true, kind: 'farm', body: '<div id="farmRoot"></div>', onMount: () => {
-    renderFarm();
-    clearInterval(farmTimer);
-    farmTimer = setInterval(() => { if (!modalEl || modalEl.dataset.kind !== 'farm') return clearInterval(farmTimer); if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
-  } });
+/* ---------- the Farm screen: full screen town, a label per building, a side panel for the tapped building ---------- */
+/* label positions in % of a 16:9 stage (the wallpaper covers the screen at 16:9, so labels stay on their buildings);
+   the admin can move them (admin → Farm) to match their own wallpaper: S.farmLayout[id] = {x, y} */
+const FARM_POS = { crops: { x: 25, y: 80 }, inn: { x: 52, y: 46 }, market: { x: 79, y: 74 }, pub: { x: 21, y: 47 } };
+const farmPos = id => ({ ...FARM_POS[id], ...((S.farmLayout || {})[id] || {}) });
+let fmEl = null, fmSel = null, farmTimer = null;
+function openFarm(sel) {
+  farmTick(); closeModal();
+  if (!fmEl) { fmEl = document.createElement('div'); fmEl.className = 'fm'; fmEl.setAttribute('role', 'dialog'); fmEl.setAttribute('aria-label', 'Farm'); document.body.appendChild(fmEl); }
+  fmSel = sel || null; renderFarm();
+  clearInterval(farmTimer);
+  farmTimer = setInterval(() => { if (!fmEl) return clearInterval(farmTimer); if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
 }
+function closeFarm() { if (fmEl) { fmEl.remove(); fmEl = null; } clearInterval(farmTimer); renderMenu(); }
+function farmBg() { const bg = MEDIA.get('farm:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : `<div class="fm-bg">${farmTownSVG()}</div>`; }
+/* what a building's label says under its name */
+function farmStatus(id) {
+  const f = farmOf(id), st = farmStored(id);
+  if (f.up) return { cls: 'busy', html: `<span class="fm-time" id="fmt-${id}">Time left: ${fmtClock(f.up.ends - Date.now())}</span>` };
+  if (!f.lv) return { cls: 'locked', html: '<span>Not built</span>' };
+  return { cls: '', html: `<span>Lv ${f.lv}${st >= 1 ? ` · <b id="fms-${id}">${Math.floor(st)}</b> ${curIcon('pearls')}` : ''}</span>` };
+}
+const fmtClock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, '0')).join(':'); };
+const farmCanUp = id => { const f = farmOf(id), to = f.lv + 1; return !f.up && f.lv < FARM_MAX && (f.req >= to ? S.wallet.coins >= farmCost(id, to) : S.wallet.pearls >= FARM_REQ_PEARLS && S.wallet.coins >= farmCost(id, to)); };
 function renderFarm() {
-  const root = $('#farmRoot'); if (!root) return;
-  const total = FARM_DEFS.reduce((s, d) => s + (farmOf(d.id).lv ? farmRate(d.id) : 0), 0);
-  root.innerHTML = `<div class="stack">
-    <div class="farm-top"><div><b>${total.toFixed(2)}</b> ${curIcon('pearls')} per hour</div><span class="tiny">Buildings store up to ${FARM_CAP_H} hours of production. Collect it before they fill up.</span>
-      <button class="btn gold" id="farmAll">${curIcon('pearls')}Collect all</button></div>
-    <div class="farm-grid">${FARM_DEFS.map(d => farmCard(d)).join('')}</div>
-  </div>`;
-  $('#farmAll').onclick = () => { let n = 0; FARM_DEFS.forEach(d => n += farmCollect(d.id)); if (!n) { toast('Nothing to collect yet.'); return; } persist(); renderMenu(); renderFarm(); toast(`Collected ${n} pearl${n === 1 ? '' : 's'}.`); };
-  root.querySelectorAll('[data-fcol]').forEach(b => b.onclick = () => { const n = farmCollect(b.dataset.fcol); if (!n) return; persist(); renderMenu(); renderFarm(); toast(`+${n} pearl${n === 1 ? '' : 's'} from the ${farmDef(b.dataset.fcol).name}.`); });
-  root.querySelectorAll('[data-freq]').forEach(b => b.onclick = () => farmPayReq(b.dataset.freq));
-  root.querySelectorAll('[data-fup]').forEach(b => b.onclick = () => farmUpgrade(b.dataset.fup));
+  if (!fmEl) return;
+  const total = FARM_DEFS.reduce((t, d) => t + (farmOf(d.id).lv ? farmRate(d.id) : 0), 0);
+  fmEl.innerHTML = `<div class="fm-stage">${farmBg()}
+      ${FARM_DEFS.map(d => { const p = farmPos(d.id), stt = farmStatus(d.id), f = farmOf(d.id), st = farmStored(d.id);
+        return `<button class="fm-spot ${stt.cls} ${fmSel === d.id ? 'on' : ''}" data-fm="${d.id}" style="left:${p.x}%;top:${p.y}%;--fc:${FARM_COL[d.id]}">
+          ${st >= 1 && !f.up ? `<span class="fm-bubble">${curIcon('pearls')}</span>` : farmCanUp(d.id) ? `<span class="fm-arrow">${icon('up')}</span>` : ''}
+          <span class="fm-label"><b>${esc(d.name)}</b>${stt.html}</span></button>`; }).join('')}
+    </div>
+    <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Farm</h2><span class="fm-rate ts">${total.toFixed(2)} ${curIcon('pearls')} / hour</span></div>
+    <div class="fm-cur">${['coins', 'pearls'].map(k => `<div class="cur" title="${k === 'coins' ? 'Gold coins' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
+    <button class="btn gold fm-all" id="fmAll">${curIcon('pearls')}Collect all</button>
+    ${fmSel ? `<aside class="fm-panel glass-deep" id="fmPanel">${farmPanel(farmDef(fmSel))}</aside>` : ''}`;
+  $('#fmBack').onclick = closeFarm;
+  $('#fmAll').onclick = () => { let n = 0; FARM_DEFS.forEach(d => n += farmCollect(d.id)); if (!n) { toast('Nothing to collect yet.'); return; } persist(); renderMenu(); renderFarm(); toast(`Collected ${n} pearl${n === 1 ? '' : 's'}.`); };
+  fmEl.querySelectorAll('[data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.fm ? null : b.dataset.fm; renderFarm(); });
+  fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
+  const pn = $('#fmPanel'); if (!pn) return;
+  pn.querySelector('[data-fmx]').onclick = () => { fmSel = null; renderFarm(); };
+  pn.querySelectorAll('[data-fcol]').forEach(b => b.onclick = () => { const n = farmCollect(b.dataset.fcol); if (!n) return; persist(); renderMenu(); renderFarm(); toast(`+${n} pearl${n === 1 ? '' : 's'} from the ${farmDef(b.dataset.fcol).name}.`); });
+  pn.querySelectorAll('[data-freq]').forEach(b => b.onclick = () => farmPayReq(b.dataset.freq));
+  pn.querySelectorAll('[data-fup]').forEach(b => b.onclick = () => farmUpgrade(b.dataset.fup));
+  pn.querySelectorAll('[data-fskip]').forEach(b => b.onclick = () => farmSkip(b.dataset.fskip));
 }
-function farmCard(d) {
+function farmPanel(d) {
   const f = farmOf(d.id), lv = f.lv, to = lv + 1, stored = farmStored(d.id), cap = farmCap(d.id);
   const pips = Array.from({ length: FARM_MAX }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
   let up;
-  if (f.up) up = `<div class="farm-up busy"><span class="lbl-sm">${lv ? `Upgrading to level ${f.up.to}` : 'Building'}</span><span class="bar"><i id="fupb-${d.id}" style="width:${(Date.now() - f.up.start) / (f.up.ends - f.up.start) * 100}%"></i></span><span class="tiny" id="fupt-${d.id}">${fmtDur2(f.up.ends - Date.now())} left</span></div>`;
-  else if (lv >= FARM_MAX) up = `<div class="farm-up max"><b>Max level</b><span class="tiny">This building is fully upgraded.</span></div>`;
+  if (f.up) {
+    const skip = farmSkipCost(d.id);
+    up = `<div class="farm-up busy"><span class="lbl-sm">${lv ? `Upgrading to level ${f.up.to}` : 'Building'}</span><span class="bar"><i id="fupb-${d.id}" style="width:${(Date.now() - f.up.start) / (f.up.ends - f.up.start) * 100}%"></i></span>
+      <span class="tiny" id="fupt-${d.id}">${fmtDur2(f.up.ends - Date.now())} left</span>
+      <button class="btn gold" data-fskip="${d.id}">${icon('bolt')}Finish now · <span class="cost">${curIcon('pearls')}<span id="fsk-${d.id}">${skip}</span></span></button><span class="tiny">1 pearl per ${FARM_SKIP_MIN} minutes left.</span></div>`;
+  } else if (lv >= FARM_MAX) up = `<div class="farm-up max"><b>Max level</b><span class="tiny">This building is fully upgraded.</span></div>`;
   else {
     const cost = farmCost(d.id, to), met = f.req >= to;
     up = `<div class="farm-up"><span class="lbl-sm">${lv ? `Next: level ${to}` : 'Build'} · ${(FARM_RATE[to] * d.mult).toFixed(2)} pearls/hour</span>
       <div class="farm-req ${met ? 'met' : ''}">${met ? `${icon('check')}<span>Requirement met</span>` : `<span>Requirement: ${FARM_REQ_PEARLS} ${curIcon('pearls')}</span><button class="btn ghost sm" data-freq="${d.id}">Unlock</button>`}</div>
       <button class="btn ${met ? 'mint' : 'ghost'}" data-fup="${d.id}" ${met ? '' : 'disabled'}>${icon(lv ? 'up' : 'plus')}${lv ? 'Upgrade' : 'Build'} · ${cost ? `<span class="cost">${curIcon('coins')}${fmt(cost)}</span>` : 'free'} · ${fmtDur2(FARM_TIME[to])}</button></div>`;
   }
-  return `<div class="farm-card lv${lv}" style="--fc:${FARM_COL[d.id]}">
-    <div class="farm-art">${farmSVG(d.id, lv)}${f.up ? '<span class="farm-scaffold">Under construction</span>' : ''}</div>
-    <div class="farm-info">
-      <div class="farm-head"><b>${esc(d.name)}</b><span class="farm-lv">${lv ? `Lv ${lv}` : 'Empty plot'}<span class="farm-pips">${pips}</span></span></div>
-      <p class="tiny">${esc(d.desc)}</p>
-      ${lv ? `<div class="farm-store"><div class="row" style="justify-content:space-between"><span class="tiny">${farmRate(d.id).toFixed(2)} pearls/hour</span><span class="tiny" id="fst-${d.id}">${stored.toFixed(1)} / ${cap.toFixed(1)}</span></div>
-        <span class="bar"><i id="fsb-${d.id}" style="width:${cap ? stored / cap * 100 : 0}%"></i></span>
-        <button class="btn gold sm" data-fcol="${d.id}" ${stored >= 1 ? '' : 'disabled'}>${curIcon('pearls')}Collect ${Math.floor(stored)}</button></div>` : ''}
-      ${up}
-    </div></div>`;
+  return `<div class="fm-ph" style="--fc:${FARM_COL[d.id]}"><div><b>${esc(d.name)}</b><span class="farm-lv">${lv ? `Level ${lv} / ${FARM_MAX}` : 'Not built yet'}<span class="farm-pips">${pips}</span></span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
+    <p class="tiny">${esc(d.desc)}</p>
+    ${lv ? `<div class="farm-store" style="--fc:${FARM_COL[d.id]}"><div class="row" style="justify-content:space-between"><span class="tiny">${farmRate(d.id).toFixed(2)} pearls/hour · holds ${FARM_CAP_H} h</span><span class="tiny" id="fst-${d.id}">${stored.toFixed(1)} / ${cap.toFixed(1)}</span></div>
+      <span class="bar"><i id="fsb-${d.id}" style="width:${cap ? stored / cap * 100 : 0}%"></i></span>
+      <button class="btn gold sm" data-fcol="${d.id}" ${stored >= 1 ? '' : 'disabled'}>${curIcon('pearls')}Collect ${Math.floor(stored)}</button></div>` : ''}
+    <div style="--fc:${FARM_COL[d.id]}">${up}</div>`;
 }
-/* once a second: move bars and timers without rebuilding the window */
+/* once a second: timers, storage and skip prices, without rebuilding the screen */
 function updateFarmLive() {
   for (const d of FARM_DEFS) {
-    const f = farmOf(d.id), st = $('#fst-' + d.id), sb = $('#fsb-' + d.id), c = document.querySelector(`[data-fcol="${d.id}"]`);
-    if (st) { const s = farmStored(d.id), cap = farmCap(d.id); st.textContent = `${s.toFixed(1)} / ${cap.toFixed(1)}`; sb.style.width = `${s / cap * 100}%`; if (c) { c.disabled = s < 1; c.lastChild.textContent = `Collect ${Math.floor(s)}`; } }
-    if (f.up) { const t = $('#fupt-' + d.id), b = $('#fupb-' + d.id); if (t) t.textContent = `${fmtDur2(f.up.ends - Date.now())} left`; if (b) b.style.width = `${(Date.now() - f.up.start) / (f.up.ends - f.up.start) * 100}%`; }
+    const f = farmOf(d.id), st = $('#fst-' + d.id), sb = $('#fsb-' + d.id), c = document.querySelector(`[data-fcol="${d.id}"]`), s = farmStored(d.id);
+    if (st) { const cap = farmCap(d.id); st.textContent = `${s.toFixed(1)} / ${cap.toFixed(1)}`; sb.style.width = `${s / cap * 100}%`; if (c) { c.disabled = s < 1; c.lastChild.textContent = `Collect ${Math.floor(s)}`; } }
+    const ms = $('#fms-' + d.id); if (ms) ms.textContent = Math.floor(s);
+    if (f.up) {
+      const t = $('#fupt-' + d.id), b = $('#fupb-' + d.id), lt = $('#fmt-' + d.id), sk = $('#fsk-' + d.id);
+      if (t) t.textContent = `${fmtDur2(f.up.ends - Date.now())} left`; if (b) b.style.width = `${(Date.now() - f.up.start) / (f.up.ends - f.up.start) * 100}%`;
+      if (lt) lt.textContent = `Time left: ${fmtClock(f.up.ends - Date.now())}`; if (sk) sk.textContent = farmSkipCost(d.id);
+    }
   }
 }
 
-/* ---------- building art: drawn as SVG, more is added at every level ---------- */
+/* ---------- default town wallpaper (until the admin uploads one): the four buildings drawn where their labels are ---------- */
+function farmTownSVG() {
+  const W = 1600, H = 900, s = 1.5;
+  const trees = [[90, 560], [1520, 470], [700, 780], [1210, 840], [430, 420], [1380, 300], [180, 260], [980, 300], [620, 250], [1500, 700]];
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" class="fm-town">
+    <defs><linearGradient id="ftsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a8fd8"/><stop offset=".6" stop-color="#f3b9a0"/><stop offset="1" stop-color="#ffd9a8"/></linearGradient>
+      <radialGradient id="ftsun"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#fff6d8" stop-opacity="0"/></radialGradient>
+      <radialGradient id="ftplaza"><stop offset="0" stop-color="#e8d6b0"/><stop offset="1" stop-color="#cdb48a"/></radialGradient></defs>
+    <rect width="${W}" height="${H}" fill="url(#ftsky)"/><circle cx="1240" cy="150" r="160" fill="url(#ftsun)"/>
+    <path d="M0 300Q200 210 420 270T860 250T1300 230T1600 260V420H0Z" fill="#8fa7c9" opacity=".7"/>
+    <path d="M0 360Q260 290 520 340T1040 320T1600 330V900H0Z" fill="#7cb46a"/>
+    <path d="M0 470Q400 420 800 460T1600 440V900H0Z" fill="#6aa25a"/>
+    <path d="M1100 900C1150 760 1300 690 1600 650V900Z" fill="#5a9ad8" opacity=".85"/><path d="M1150 900C1200 780 1330 720 1600 690" stroke="#bfe3ff" stroke-width="4" fill="none" opacity=".6"/>
+    <ellipse cx="800" cy="610" rx="380" ry="140" fill="url(#ftplaza)" stroke="#a8906a" stroke-width="4"/>
+    ${Object.keys(FARM_POS).map(id => { const p = farmPos(id); return `<path d="M800 610L${p.x * 16} ${p.y * 9}" stroke="#d8c49c" stroke-width="46" stroke-linecap="round"/>`; }).join('')}
+    <ellipse cx="800" cy="610" rx="70" ry="28" fill="#9fc8e8" stroke="#7a90a8" stroke-width="5"/><rect x="792" y="560" width="16" height="50" fill="#c9d4e8"/><circle cx="800" cy="556" r="12" fill="#bfe3ff"/>
+    ${trees.map(([x, y]) => `<rect x="${x - 5}" y="${y - 10}" width="10" height="26" fill="#6a4a2a"/><circle cx="${x}" cy="${y - 30}" r="30" fill="#4f8f45"/><circle cx="${x - 16}" cy="${y - 18}" r="20" fill="#5a9a50"/><circle cx="${x + 16}" cy="${y - 20}" r="22" fill="#468a3e"/>`).join('')}
+    ${FARM_DEFS.map(d => { const p = farmPos(d.id), x = p.x * 16, y = p.y * 9 - 34; return `<g transform="translate(${x - 160 * s} ${y - 150 * s}) scale(${s})">${farmSVG(d.id, 6, true)}</g>`; }).join('')}
+  </svg>`;
+}
+
+/* ---------- building art (SVG); the town draws each building once with farmSVG(id, 6, true) ---------- */
 const FARM_COL = { crops: '#7fd36b', inn: '#ffb067', market: '#5ab8ff', pub: '#ff6ec7' };
-function farmSVG(id, lv) {
+function farmSVG(id, lv, bare) {
   const W = 320, H = 190, gy = 150;
   const sky = `<defs><linearGradient id="fsky-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1640"/><stop offset="1" stop-color="#3a2a66"/></linearGradient>
     <radialGradient id="fglow-${id}"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient></defs>
@@ -176,5 +237,37 @@ function farmSVG(id, lv) {
     if (lv >= 5) g += `<rect x="${x + 14}" y="${top + 30}" width="${w - 28}" height="4" fill="#2a1a2a"/>${Array.from({ length: Math.floor((w - 28) / 8) }, (_, i) => `<rect x="${x + 16 + i * 8}" y="${top + 22}" width="2" height="8" fill="#2a1a2a"/>`).join('')}`;
     if (lv >= 6) g += [[x - 14, top + 10], [x + w + 14, top + 16], [160, top - 46]].map(([hx, hy], i) => `<path d="M${hx} ${hy + 6}c-8-6-10-11-6-14c3-2 6-1 6 2c0-3 3-4 6-2c4 3 2 8-6 14z" fill="${pink}" class="fsp" style="animation-delay:${i * .5}s"/>`).join('');
   }
+  if (bare) return `<defs><radialGradient id="fglow-${id}"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient></defs>${g}`;
   return `<svg viewBox="0 0 ${W} ${H}" class="farm-svg">${sky}${gold ? `<ellipse cx="160" cy="${gy - 30}" rx="150" ry="70" fill="url(#fglow-${id})" opacity=".35"/>` : ''}${g}${sparkles}</svg>`;
+}
+
+/* ---------- admin → Farm: the town wallpaper and where each building's label sits on it ---------- */
+function renderFarmTab() {
+  const p = $('#adPanel'); if (!p) return;
+  const bg = MEDIA.get('farm:bg');
+  p.innerHTML = `<div class="stack">
+    <div><h3>Farm town</h3><p class="tiny">The wallpaper fills the Farm screen at 16:9 (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the drawn default town is used. Drag each label in the preview (or use the sliders) so it sits on its building in your picture.</p></div>
+    <div class="fm-adprev" id="fmPrev">${bg ? `<img src="${bg}" alt="">` : `<div class="fm-bg">${farmTownSVG()}</div>`}
+      ${FARM_DEFS.map(d => { const q = farmPos(d.id); return `<span class="fm-dot" data-fmdrag="${d.id}" style="left:${q.x}%;top:${q.y}%;--fc:${FARM_COL[d.id]}">${esc(d.name)}</span>`; }).join('')}</div>
+    <div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" id="fmUp"></label>${bg ? '<button class="btn ghost sm" id="fmDel">Use the default town</button>' : ''}<button class="btn ghost sm" id="fmResetPos">Reset label positions</button><button class="btn ghost sm" id="fmOpen">Open the farm</button></div>
+    <div class="fm-sliders">${FARM_DEFS.map(d => { const q = farmPos(d.id); return `<div class="fm-sl" style="--fc:${FARM_COL[d.id]}"><b>${esc(d.name)}</b>
+      <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${d.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${d.id}"></label></div>`; }).join('')}</div>
+  </div>`;
+  const setPos = (id, x, y, rerender) => {
+    S.farmLayout = { ...(S.farmLayout || {}), [id]: { x: Math.round(clamp(x, 2, 98) * 2) / 2, y: Math.round(clamp(y, 4, 96) * 2) / 2 } };
+    const q = farmPos(id), dot = p.querySelector(`[data-fmdrag="${id}"]`); dot.style.left = q.x + '%'; dot.style.top = q.y + '%';
+    p.querySelector(`[data-fmx2="${id}"]`).value = q.x; p.querySelector(`[data-fmy2="${id}"]`).value = q.y;
+    if (rerender) { persist(); if (!MEDIA.get('farm:bg')) { const b = p.querySelector('#fmPrev .fm-bg'); if (b) b.innerHTML = farmTownSVG(); } }
+  };
+  p.querySelectorAll('[data-fmx2],[data-fmy2]').forEach(i => i.oninput = () => { const id = i.dataset.fmx2 || i.dataset.fmy2, q = farmPos(id); setPos(id, i.dataset.fmx2 ? +i.value : q.x, i.dataset.fmy2 ? +i.value : q.y, true); });
+  const box = $('#fmPrev');
+  p.querySelectorAll('[data-fmdrag]').forEach(dot => dot.onpointerdown = e => {
+    e.preventDefault(); dot.setPointerCapture(e.pointerId);
+    const move = ev => { const r = box.getBoundingClientRect(); setPos(dot.dataset.fmdrag, (ev.clientX - r.left) / r.width * 100, (ev.clientY - r.top) / r.height * 100, false); };
+    dot.onpointermove = move; dot.onpointerup = ev => { move(ev); dot.onpointermove = dot.onpointerup = null; setPos(dot.dataset.fmdrag, farmPos(dot.dataset.fmdrag).x, farmPos(dot.dataset.fmdrag).y, true); };
+  });
+  $('#fmUp').onchange = async ev => { try { if (await mediaSet('farm:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Farm wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const del = $('#fmDel'); if (del) del.onclick = async () => { await mediaDel('farm:bg'); renderFarmTab(); toast('Back to the default town.'); };
+  $('#fmResetPos').onclick = () => { S.farmLayout = {}; persist(); renderFarmTab(); };
+  $('#fmOpen').onclick = () => { closeModal(); openFarm(); };
 }
