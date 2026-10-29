@@ -2000,7 +2000,7 @@ function renderMenu() {
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
   $('#hmTitle').innerHTML = titleHTML();
-  $('#wallet').innerHTML = `<button class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b></button>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the limited banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
+  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the limited banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = MAILS.filter(m => !S.mailClaimed.includes(m.id)).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
@@ -2338,7 +2338,6 @@ function openSettings() {
     <div class="switch" style="cursor:default">Main character<span class="row" style="gap:10px"><b style="color:var(--mint)">${S.player.mc ? esc(mcEntry(S.player.mc).name) : 'Not chosen yet'}</b>${S.player.mc ? `<button type="button" class="btn ghost sm" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : ''}</span></div>
     <label class="field"><span>Player name</span><input class="input" id="setName" maxlength="16" value="${esc(S.player.name)}"></label>
     <button type="button" class="switch" data-open="wallpaper" style="text-align:left">Main screen wallpaper<b style="color:var(--mint)">${esc(wallpaperEntry() ? wallpaperEntry().name : 'Pearl Tide')}</b></button>
-    <label class="field"><span>Character art when pulling</span><select class="input" id="setPullFit"><option value="fill" ${S.settings.pullFit ? '' : 'selected'}>Fill the whole screen</option><option value="fit" ${S.settings.pullFit ? 'selected' : ''}>Show the whole art, uncropped</option></select></label>
     <label class="switch">Show name tags in the plaza<input type="checkbox" id="setNames" ${S.settings.names ? 'checked' : ''}><i></i></label>
     <label class="switch">Music<input type="checkbox" id="setMusic" ${S.settings.music ? 'checked' : ''}><i></i></label>
     <label class="switch">Sound effects<input type="checkbox" id="setSfx" ${S.settings.sfx ? 'checked' : ''}><i></i></label>
@@ -2350,7 +2349,6 @@ function openSettings() {
     $('#setMusic').onchange = e => { S.settings.music = e.target.checked; persist(); };
     $('#setSfx').onchange = e => { S.settings.sfx = e.target.checked; persist(); };
     $('#setGfx').onchange = e => { S.settings.gfx = e.target.value; persist(); };
-    $('#setPullFit').onchange = e => { S.settings.pullFit = e.target.value === 'fit'; persist(); };
     $('#setForm').onsubmit = e => e.preventDefault();
     $('#setTitle').onclick = showTitle;
     $('#setRedeem').onclick = openRedeem;
@@ -2912,7 +2910,9 @@ function openBuyTickets(bk = 'limited') {
   } });
 }
 
-/* stamina: details and stamina recovery bottles (+60 each) */
+/* stamina: details; +60 from a recovery bottle or for 1 pearl */
+const STAMINA_PEARLS = 1;
+function addStamina() { stamina(); S.stamina.v += BOTTLE_STAMINA; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); persist(); renderMenu(); openStamina(); toast(`+${BOTTLE_STAMINA} stamina.`); }
 const BOTTLE_STAMINA = 60;
 function openStamina() {
   const v = stamina(), left = STAMINA_MS - (Date.now() - S.stamina.t);
@@ -2921,8 +2921,11 @@ function openStamina() {
     <p class="tiny">${v >= STAMINA_MAX ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every 6 minutes. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
     <div class="frag-row">${curIcon('bottles')}<div style="display:grid;flex:1"><b>Stamina recovery bottle</b><span class="tiny">Restores ${BOTTLE_STAMINA} stamina · you have ${S.wallet.bottles}</span></div>
       <button class="btn mint sm" id="useBottle" ${S.wallet.bottles ? '' : 'disabled'}>Use</button></div>
+    <div class="frag-row">${curIcon('pearls')}<div style="display:grid;flex:1"><b>Buy with pearls</b><span class="tiny">${BOTTLE_STAMINA} stamina for ${STAMINA_PEARLS} pearl · you have ${fmt(S.wallet.pearls)}</span></div>
+      <button class="btn gold sm" id="buyStam" ${S.wallet.pearls >= STAMINA_PEARLS ? '' : 'disabled'}>${costHTML(STAMINA_PEARLS)}</button></div>
     <p class="tiny">Bottles come from the daily spin.</p></div>`, onMount: () => {
-    $('#useBottle').onclick = () => { stamina(); S.wallet.bottles--; S.stamina.v += BOTTLE_STAMINA; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); persist(); renderMenu(); openStamina(); toast(`+${BOTTLE_STAMINA} stamina.`); };
+    $('#useBottle').onclick = () => { if (!S.wallet.bottles) return; S.wallet.bottles--; addStamina(); };
+    $('#buyStam').onclick = () => { if (S.wallet.pearls < STAMINA_PEARLS) return; S.wallet.pearls -= STAMINA_PEARLS; addStamina(); };
   } });
 }
 
@@ -3490,7 +3493,7 @@ function advancePull() {
   const r = st.results[st.order[st.i]], v = resultView(r);
   pullEl.classList.add('revealing');
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
-  $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ${S.settings.pullFit ? 'fit' : ''}">
+  $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
     <div class="rv-rays"></div><div class="rv-glow"></div>
     ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
     <div class="rv-flash"></div><div class="rv-sweep"></div>
