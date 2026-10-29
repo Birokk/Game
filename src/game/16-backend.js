@@ -3,7 +3,11 @@
    Turned on by VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (see .env.example and README).
    Without them, or when the server can't be reached, everything stays in this browser like before.
    ========================================================= */
-const SB_URL = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, ''), SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// only the project address counts (https://xxxx.supabase.co): anything pasted after it, like /rest/v1/, is dropped
+const SB_URL = (() => { const u = (import.meta.env.VITE_SUPABASE_URL || '').trim(); try { return new URL(u).origin; } catch (e) { return u.replace(/\/$/, ''); } })();
+const SB_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+// where confirmation emails and Google sign-in send the player back: this page, without its query or #hash
+const BACK_URL = location.origin + location.pathname;
 // offline, the admin panel is open to whoever runs the game (set VITE_LOCAL_ADMIN=false to hide it); online, only admins see it
 const LOCAL_ADMIN = import.meta.env.DEV || import.meta.env.VITE_LOCAL_ADMIN !== 'false';
 let sb = null, saveTimer = null, contentTimer = null, cloudStatus = CLOUD_CONFIGURED ? 'connecting' : 'off';
@@ -111,14 +115,14 @@ function updateAdminAccess() { document.querySelectorAll('.rbtn[data-open=admin]
 /* sign-in forms (title screen and Settings) */
 async function cloudEmail(mode, email, password) {
   if (!sb) return 'The server is not connected.';
-  const r = mode === 'up' ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
+  const r = mode === 'up' ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: BACK_URL } }) : await sb.auth.signInWithPassword({ email, password });
   if (r.error) return r.error.message;
   if (mode === 'up' && !r.data.session) return 'confirm';
   return null;   // onAuthStateChange takes it from here
 }
 async function cloudGoogle() {
   if (!sb) return;
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: BACK_URL } });
   if (error) toast(error.message);
 }
 async function sendSupport(topic, message) {
