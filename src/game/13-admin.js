@@ -72,8 +72,8 @@ function renderPoolTab() {
       <div class="ad-head"><h3>Game pool <span class="muted" id="adCount" style="font-family:var(--body);font-size:14px"></span></h3></div>
       <div class="ad-list" id="adList"></div>
       <details class="ad-data"><summary>Backup and import</summary>
-        <p class="tiny" style="margin-top:8px">Your pool, art and icons are saved in this browser only. Copy the data to back it up or move it to another browser.</p>
-        <div class="row"><button type="button" class="btn ghost sm" id="adCopy">${icon('copy')}Copy data</button><button type="button" class="btn ghost sm" id="adImportBtn">Import</button><button type="button" class="btn danger sm" id="adReset">Reset to samples</button></div>
+        <p class="tiny" style="margin-top:8px">A full backup holds every character, banner, skin, clothing item, memory, notice and image (wallpapers and icons too). Download it here, then Import it on another page or browser; signed in as admin on the website, the import goes straight to the cloud.</p>
+        <div class="row"><button type="button" class="btn mint sm" id="adDownload">${icon('upload')}Download full backup</button><button type="button" class="btn ghost sm" id="adCopy">${icon('copy')}Copy data</button><button type="button" class="btn ghost sm" id="adImportBtn">Import</button><button type="button" class="btn danger sm" id="adReset">Reset to samples</button></div>
         <div id="adDataArea"></div>
       </details>
     </aside>
@@ -93,6 +93,7 @@ function renderPoolTab() {
   $('#adCancel').onclick = () => fillAdminForm(null);
   $('#adForm').addEventListener('submit', saveAdmin);
   $('#adCopy').onclick = copyData;
+  $('#adDownload').onclick = downloadData;
   $('#adImportBtn').onclick = showImport;
   $('#adReset').onclick = showReset;
   fillAdminForm(adminEditId ? findEntry(adminEditId) : null);
@@ -234,31 +235,71 @@ function renderAdminList() {
     toast(`Deleted ${e ? e.name : 'entry'}.`);
   });
 }
-function exportData() {
-  return JSON.stringify({
-    format: 'prismplaza-2',
-    featuredId: S.featuredId,
-    banners: S.banners,
-    pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6), getArt: artFrom(e.getArt), icon: artFrom(e.icon) })),
-    icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v])),
-    clothes: S.clothes.map(x => ({ ...x, img: artFrom(x.img) })),
-    memories: S.memories.map(x => ({ ...x, img: artFrom(x.img) }))
-  });
+/* full backup: all shared content plus every image (title and loading wallpapers, clothes, memories, icons...).
+   Images saved in the cloud are downloaded into the file too, so it works as a real backup anywhere. */
+const blobToDataUrl = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+async function exportData(progress) {
+  const media = {}, keys = [...MEDIA.keys()];
+  let i = 0;
+  for (const k of keys) {
+    const v = MEDIA.get(k); progress && progress(`Packing images ${++i}/${keys.length}…`);
+    if (typeof v !== 'string') continue;
+    if (v.startsWith('data:')) media[k] = v;
+    else if (/^https?:/.test(v)) { try { media[k] = await blobToDataUrl(await (await fetch(v)).blob()); } catch (e) { console.warn('Could not pack', k, e); } }
+  }
+  return JSON.stringify({ format: 'blank-full-1', savedAt: new Date().toISOString(), content: splitState(S).content, media });
 }
-function copyData() {
-  const json = exportData(), area = $('#adDataArea');
+function backupName() { return `blank-project-backup-${new Date().toISOString().slice(0, 10)}.json`; }
+async function downloadData() {
+  const area = $('#adDataArea'), say = t => { area.innerHTML = `<p class="tiny" style="margin-top:8px">${t}</p>`; };
+  const json = await exportData(say);
+  // inside the claude.ai preview, files are saved through its downloads capability (the viewer confirms)
+  const dl = window.claude && window.claude.use ? await Promise.race([window.claude.use('downloads'), new Promise(r => setTimeout(() => r(null), 3000))]).catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename: backupName(), data: new Blob([json], { type: 'application/json' }) }); say(`Backup saved (${(json.length / 1048576).toFixed(1)} MB): ${backupName()}.`); }
+    catch (e) { say(e && e.code === 'declined' ? 'Download cancelled.' : 'This page could not save a file. Use Copy data instead.'); }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' })), a = document.createElement('a');
+    a.href = url; a.download = backupName(); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    say(`Backup downloaded (${(json.length / 1048576).toFixed(1)} MB): ${backupName()}. If nothing was saved, use Copy data instead.`);
+  } catch (e) { say('This page could not save a file. Use Copy data instead.'); }
+}
+async function copyData() {
+  const area = $('#adDataArea');
+  const json = await exportData(t => { area.innerHTML = `<p class="tiny" style="margin-top:8px">${t}</p>`; });
   const showText = () => { area.innerHTML = `<textarea class="input" id="adJson" style="margin-top:10px;min-height:120px" readonly></textarea><p class="tiny">Copy this text and keep it somewhere safe.</p>`; $('#adJson').value = json; $('#adJson').select(); };
-  try { navigator.clipboard.writeText(json).then(() => { toast(`Game data copied (${(json.length / 1048576).toFixed(1)} MB).`); area.innerHTML = ''; }, showText); }
+  try { navigator.clipboard.writeText(json).then(() => { toast(`Game data copied (${(json.length / 1048576).toFixed(1)} MB).`); area.innerHTML = '<p class="tiny" style="margin-top:8px">Copied. Paste it with Import on the other page.</p>'; }, showText); }
   catch (e) { showText(); }
+}
+/* restore a full backup: every image goes through mediaSet (so an admin online uploads it to the cloud), then the content */
+async function importFull(d, say) {
+  const entries = Object.entries(d.media || {}).filter(([k, v]) => typeof v === 'string' && v.startsWith('data:'));
+  let i = 0;
+  for (const [k, v] of entries) { say(`Restoring images ${++i}/${entries.length}${Backend.canEditContent() ? ' (uploading to the cloud)' : ''}…`); await mediaSet(k, v); }
+  applyContent({ ...d.content, media: S.media });
+  for (const e of S.pool) for (const k of ['art', 'art3', 'art6', 'getArt', 'icon']) if (e[k] && e[k].startsWith('idb:') && !MEDIA.has(e[k].slice(4))) e[k] = null;
+  persist();
+  if (Backend.canEditContent()) { say('Publishing the content…'); await pushContent(); }
+  hydrateIcons(); applyWallpaper(); renderMenu(); renderTitle(); if ($('#adForm')) fillAdminForm(null);
+  return `Restored ${S.pool.length} entries and ${entries.length} images${Backend.canEditContent() ? ', saved to the cloud' : ''}.`;
 }
 function showImport() {
   const area = $('#adDataArea');
-  area.innerHTML = `<textarea class="input" id="adImp" style="margin-top:10px;min-height:110px" placeholder="Paste copied game data here"></textarea>
-    <div class="row" style="margin-top:8px"><button type="button" class="btn mint sm" id="adImpGo">Replace pool with this data</button><span class="err" id="adImpErr" hidden></span></div>`;
+  area.innerHTML = `<div class="row" style="margin-top:10px"><label class="btn ghost sm">${icon('upload')}Choose backup file<input type="file" accept=".json,application/json" class="sr" id="adImpFile"></label><span class="tiny">or paste below</span></div>
+    <textarea class="input" id="adImp" style="margin-top:8px;min-height:110px" placeholder="Paste copied game data here"></textarea>
+    <div class="row" style="margin-top:8px"><button type="button" class="btn mint sm" id="adImpGo">Replace content with this backup</button><span class="err" id="adImpErr" hidden></span></div>`;
+  $('#adImpFile').onchange = async ev => { const f = ev.target.files[0]; if (!f) return; $('#adImp').value = await f.text(); $('#adImpGo').click(); };
   $('#adImpGo').onclick = async () => {
     const err = $('#adImpErr');
     let d;
     try { d = JSON.parse($('#adImp').value); } catch (e) { d = null; }
+    if (d && d.format === 'blank-full-1' && d.content && Array.isArray(d.content.pool)) {
+      $('#adImpGo').disabled = true;
+      const msg = await importFull(d, t => { err.hidden = false; err.style.color = 'var(--mint)'; err.textContent = t; });
+      area.innerHTML = `<p class="tiny" style="margin-top:8px">${esc(msg)}</p>`; toast(msg); return;
+    }
     const pool = d && (Array.isArray(d) ? d : d.pool);
     if (!Array.isArray(pool) || !pool.every(e => e && e.name && e.id)) { err.hidden = false; err.textContent = 'That text is not valid game data. Paste the full text from Copy data.'; return; }
     for (const e of pool) {

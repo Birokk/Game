@@ -166,6 +166,7 @@ async function renderServerTab() {
       <li>Copy the project URL and anon key (Project Settings → API) into <code>.env.local</code> (see <code>.env.example</code>), or into the GitHub repository secrets for the website.</li>
       <li>Start the game, create an account, then make it admin with the line at the bottom of the SQL file.</li>
       <li>Come back here and press <b>Publish to the server</b> so every player gets your characters and art.</li></ol>
+      <p class="desc">Made content on this page and want it on your website? Use <b>Game pool → Backup and import → Download full backup</b> here, then import that file on the website while signed in as admin.</p>
       <p class="tiny">The full guide is in README.md.</p></div>`;
     return;
   }
@@ -175,11 +176,19 @@ async function renderServerTab() {
     <p class="desc">${u ? `Signed in as <b>${esc(u.email || u.id)}</b>${Backend.isAdmin ? ' · <span class="feat">Admin</span>' : ' · not an admin: changes stay in this browser'}` : 'Not signed in. Sign in with your admin account to publish.'}</p>
     <div><h3>Publish</h3><p class="tiny">While you are signed in as an admin, every change you make in this panel (pool, banners, skins, clothes, memories, notices, images) goes to the server automatically and every player gets it on their next start. Use this button once to upload what you made in this browser before the server was connected.</p>
       <div class="row"><button class="btn mint" id="srvPub" ${Backend.canEditContent() ? '' : 'disabled'}>${icon('upload')}Publish to the server</button><button class="btn ghost" id="srvPull" ${Backend.on ? '' : 'disabled'}>Reload content from the server</button><span class="tiny" id="srvMsg"></span></div></div>
+    <div><h3>Bring content from another page</h3><p class="tiny">Made characters or uploaded images somewhere else (for example the claude.ai preview)? There: Admin → Game pool → Backup and import → <b>Download full backup</b>. Here: choose that file. Every image is uploaded to the cloud and the content replaces what is on the server.</p>
+      <div class="row"><label class="btn mint ${Backend.canEditContent() ? '' : 'disabled'}">${icon('upload')}Import a backup file<input type="file" accept=".json,application/json" class="sr" id="srvImp" ${Backend.canEditContent() ? '' : 'disabled'}></label><span class="tiny" id="srvImpMsg"></span></div></div>
     <div><h3>Support messages</h3><div id="srvInbox" class="tiny">${Backend.canEditContent() ? 'Loading…' : 'Only admins can read them.'}</div></div>
   </div>`;
   const msg = t => { const m = $('#srvMsg'); if (m) m.textContent = t; };
   $('#srvPub').onclick = async () => { msg('Publishing…'); const err = await publishLocalToCloud(msg); msg(err || 'Published. Players get it on their next start.'); };
   $('#srvPull').onclick = async () => { const err = await reloadCloudContent(); msg(err || 'Content reloaded from the server.'); };
+  $('#srvImp').onchange = async ev => {
+    const f = ev.target.files[0], m = t => { const e = $('#srvImpMsg'); if (e) e.textContent = t; }; if (!f) return;
+    let d; try { d = JSON.parse(await f.text()); } catch (e) { d = null; }
+    if (!d || d.format !== 'blank-full-1') { m('That is not a full backup file. Make one with Download full backup.'); return; }
+    m(await importFull(d, m));
+  };
   const list = await loadSupportMessages(), box = $('#srvInbox');
   if (box && list) box.innerHTML = list.length ? `<div class="hist">${list.map(m => `<div><span><b>${esc(m.topic)}</b>: ${esc(m.message.slice(0, 140))}${m.contact ? ` · ${esc(m.contact)}` : ''}</span><time>${new Date(m.created_at).toLocaleDateString('en-GB')}</time></div>`).join('')}</div>` : 'No messages yet.';
 }
