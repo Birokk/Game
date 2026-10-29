@@ -1321,6 +1321,18 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .ach .bar i{background:var(--gold)}
 .ach .btn .cost .cic{width:15px;height:15px}
 @media (max-width:820px){.pf-stats{grid-template-columns:repeat(3,auto)}}
+
+/* shop */
+.shop-bal{display:flex;gap:8px;flex-wrap:wrap}
+.shop-bal .cur{min-width:0}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.shop-item{display:grid;justify-items:center;gap:6px;padding:16px 12px;border-radius:16px;background:var(--glass);border:1px solid var(--edge-soft);text-align:center}
+.shop-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%)}
+.shop-ic .cic{width:44px;height:44px}
+.shop-item .btn .cic{width:16px;height:16px}
+.shop-item.soldout{opacity:.55}
+.sum-earn{margin:0;display:flex;gap:14px;justify-content:center;font-weight:900}
+.sum-earn .cic{width:20px;height:20px}
 </style>
 </head>
 <body>
@@ -1556,19 +1568,21 @@ CUR_SVG.gplush = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path 
 CUR_SVG.bottles = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9.5" y="2.5" width="5" height="3" rx="1" fill="#a8714a" stroke="#5a3424" stroke-width=".9"/><path d="M10 5.5h4v3.2c3 1.2 4.5 3.6 4.5 6.3a6.5 6.5 0 0 1-13 0c0-2.7 1.5-5.1 4.5-6.3z" fill="#e6fff7" stroke="#2f8a6a" stroke-width="1.1"/><path d="M6.6 14.5h10.8a5.4 5.4 0 0 1-10.8 0z" fill="#7ef3d4"/><path d="M12.6 11.2l-2.2 3.4h1.8l-.8 3.2 2.6-3.9h-1.8z" fill="#d9ff7a" stroke="#2f6a2a" stroke-width=".5"/></svg>';
 CUR_SVG.bondheart = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="bondHG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffd6e6"/><stop offset=".5" stop-color="#ff6f91"/><stop offset="1" stop-color="#b8325a"/></radialGradient></defs><path d="M12 21C5 16.3 2.5 12.6 2.5 9A4.7 4.7 0 0 1 12 6.4 4.7 4.7 0 0 1 21.5 9c0 3.6-2.5 7.3-9.5 12z" fill="url(#bondHG)" stroke="#7a1f3e" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.5 8.2a2.4 2.4 0 0 1 2.6-1.6" stroke="#fff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".85"/></svg>';
 CUR_SVG.wishes = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z" fill="#8ff0dc" stroke="#2a9a86" stroke-width="1.3"/><path d="M15 6.5v11" stroke="#2a9a86" stroke-width="1.3" stroke-dasharray="2 2"/><circle cx="9.5" cy="12" r="2.6" fill="#f6eeff" stroke="#8f7fc9" stroke-width=".9"/></svg>';
+CUR_SVG.dust = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="5" fill="#9fd3ff" opacity=".35"/><path d="M9 7l1.2 3.3L13.5 11.5 10.2 12.7 9 16l-1.2-3.3L4.5 11.5 7.8 10.3z" fill="#e6f4ff" stroke="#5a8cff" stroke-width=".9" stroke-linejoin="round"/><path d="M17 4l.8 2.1 2.2.9-2.2.8L17 10l-.8-2.2-2.2-.8 2.2-.9z" fill="#c9e6ff" stroke="#5a8cff" stroke-width=".7"/><circle cx="17.5" cy="16.5" r="1.6" fill="#c9e6ff"/><circle cx="14" cy="20" r="1" fill="#e6f4ff"/></svg>';
+CUR_SVG.starlight = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="slG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff6cc"/><stop offset=".5" stop-color="#ffb3e6"/><stop offset="1" stop-color="#a77bff"/></linearGradient></defs><path d="M12 2l2.6 6.6L21.5 9l-5.3 4.4 1.8 6.9L12 16.5 6 20.3l1.8-6.9L2.5 9l6.9-.4z" fill="url(#slG)" stroke="#7a3fd1" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 6.5l1.2 3 3.2.3-2.4 2" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".8"/></svg>';
 const customIcon = k => MEDIA.get('icon:' + k);
 const icon = n => customIcon(n) ? `<img class="ic" src="${customIcon(n)}" alt="">` : `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const curIcon = k => customIcon(k) ? `<img class="cic" src="${customIcon(k)}" alt="">` : CUR_SVG[k];
 const costHTML = n => `<span class="cost">${curIcon('pearls')}${n}</span>`;
 function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); }); }
 const ICON_SLOTS = [
-  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Wish tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie']]],
+  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Wish tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Stardust'], ['starlight', 'Starlight'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie']]],
   ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
   ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
   ['Small UI', [['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected']]]
 ];
-const CUR_KEYS = ['coins', 'pearls', 'tickets', 'wishes', 'rings', 'bottles'];
+const CUR_KEYS = ['coins', 'pearls', 'tickets', 'wishes', 'rings', 'bottles', 'dust', 'starlight'];
 
 const RARITY = { 3:{ color:'#74c7ff' }, 4:{ color:'#ffaa5c' }, 5:{ color:'#c77dff' }, 6:{ color:'#ff4f7b' } };
 const RNAME = { 4: 'SSR', 5: 'UR', 6: 'MR' };
@@ -1586,6 +1600,7 @@ const hasStars = e => !!e && e.type !== 'skin';
 const btOf = id => (S.bt[id] || []).filter(i => i < starsOf(id));
 const starRow = (n, pop = -1, e = null) => { const bt = e ? btOf(e.id) : []; return `<span class="stars6 ${e ? 'r' + e.rarity : ''}" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''} ${bt.includes(i) ? 'bt' : ''}">★</span>`).join('')}</span>`; };
 const starsFor = e => hasStars(e) ? starRow(starsOf(e.id), -1, e) : '';
+const DUST_PER_PULL = 5, STARLIGHT = { 4: 5, 5: 10 }, STARLIGHT_MAX = { 4: 10, 5: 40 };
 const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_UR = .08;
 
 /* ---------- data & storage ---------- */
@@ -1594,7 +1609,7 @@ function sampleState() {
   return {
     version: 4,
     player: { name: 'Traveler', look: { hair:'#3c4cff', style:2, skin:'#f6c9a4', shirt:'#2f3a66', pants:'#1e2440' } },
-    wallet: { coins: 24580, pearls: 90, tickets: 10, wishes: 10, rings: 0, bottles: 0 },
+    wallet: { coins: 24580, pearls: 90, tickets: 10, wishes: 10, rings: 0, bottles: 0, dust: 0, starlight: 0 },
     settings: { names: true, music: true, sfx: true, gfx: 'high', pullFit: false },
     featuredId: 'aria',
     wallpaper: null,
@@ -1603,6 +1618,7 @@ function sampleState() {
     gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
+    monthly: { key: null, limited: 0, standard: 0 },
     ach: [], redeemed: [],
     equip: {},
     bt: {}, btPaid: {}, freePull: {},
@@ -1660,7 +1676,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
@@ -2447,6 +2463,43 @@ function showHatch(r, item, res) {
   setTimeout(() => el.onclick = () => el.remove(), 1600);
 }
 
+/* ---------- shop: Starlight exchange, Stardust shop, monthly pulls ---------- */
+const SHOP_TICKET = 10, MONTHLY_LIMIT = 5, MONTHLY_PRICE = 75;
+const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthKey(), limited: 0, standard: 0 }; return S.monthly; }
+const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
+const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
+let shopTab = 'starlight';
+function openShop(tab) { shopTab = tab || shopTab; openModal({ title: 'Shop', ic: 'shop', wide: true, kind: 'shop', body: '<div id="shopRoot"></div>', onMount: renderShop }); }
+function renderShop() {
+  const root = $('#shopRoot'); if (!root) return;
+  const m = monthly(), W = S.wallet;
+  const item = (id, ic, name, sub, price, cur, extra = '') => `<div class="shop-item ${extra}"><span class="shop-ic">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
+    <button class="btn sm ${W[cur] >= price && !extra.includes('soldout') ? 'gold' : 'ghost'}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
+  let body;
+  if (shopTab === 'starlight') body = `<p class="tiny">Earn Starlight from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
+    <div class="shop-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the limited banner', SHOP_TICKET, 'starlight')}${item('st-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
+  else if (shopTab === 'dust') body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Stardust, whatever you get.</p>
+    <div class="shop-grid">${Object.entries(DUST_GIFTS).map(([k, p]) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust')).join('')}</div>`;
+  else body = `<p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Stardust each. Stock resets on the 1st (${nextMonthIn()}).</p>
+    <div class="shop-grid">${['limited', 'standard'].map(bk => { const left = MONTHLY_LIMIT - m[bk];
+      return item('mo-' + bk, TK(bk), `Monthly ${TK_NAME[TK(bk)]}`, `${left} / ${MONTHLY_LIMIT} left this month`, MONTHLY_PRICE, 'dust', left <= 0 ? 'soldout' : ''); }).join('')}</div>`;
+  root.innerHTML = `<div class="stack">
+    <div class="shop-bal">${['starlight', 'dust', 'tickets', 'wishes'].map(k => `<span class="cur">${curIcon(k)}<b>${fmt(W[k])}</b></span>`).join('')}</div>
+    <div class="tabs" style="margin:0">${[['starlight', 'Starlight exchange'], ['dust', 'Stardust shop'], ['monthly', 'Monthly pulls']].map(([k, l]) => `<button class="tab ${shopTab === k ? 'on' : ''}" data-stab="${k}">${l}</button>`).join('')}</div>
+    ${body}</div>`;
+  root.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { shopTab = b.dataset.stab; renderShop(); });
+  root.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
+}
+function buyShop(id) {
+  const W = S.wallet, pay = (cur, n) => { if (W[cur] < n) { toast(`Not enough ${cur === 'dust' ? 'Stardust' : 'Starlight'}. You need ${fmt(n)}.`); return false; } W[cur] -= n; return true; };
+  let msg;
+  if (id.startsWith('st-')) { const k = id.slice(3); if (!pay('starlight', SHOP_TICKET)) return; W[k]++; msg = `Bought 1 ${TK_NAME[k].toLowerCase()}.`; }
+  else if (id.startsWith('dg-')) { const k = id.slice(3); if (!pay('dust', DUST_GIFTS[k])) return; S.gifts[k]++; msg = `Bought ${GIFTS[k].name}. Give it from a character's Bond tab.`; }
+  else if (id.startsWith('mo-')) { const bk = id.slice(3), m = monthly(); if (m[bk] >= MONTHLY_LIMIT) return; if (!pay('dust', MONTHLY_PRICE)) return; m[bk]++; W[TK(bk)]++; msg = `Bought 1 monthly ${TK_NAME[TK(bk)].toLowerCase()}.`; }
+  persist(); renderMenu(); refreshSummon(); renderShop(); toast(msg);
+}
+
 /* ---------- achievements: each pays 1 pearl once ---------- */
 const ACH_PEARLS = 1;
 const ownedOf = t => S.pool.filter(e => e.type === t && owns(e.id));
@@ -3001,7 +3054,12 @@ function rollOne(bk) {
   else if (!item) {
     const amount = FILLER_COINS[rarity]; S.wallet.coins += amount;
     res = { kind: 'coins', rarity, amount };
-  } else res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
+  } else {
+    res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
+    // Starlight for every character pulled; more for copies past max stars
+    if (item.type === 'character') { res.starlight = (res.pearls ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
+  }
+  S.wallet.dust += DUST_PER_PULL;
   S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
   return res;
@@ -3332,6 +3390,7 @@ function showSummary() {
       <button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>
       <button class="btn ghost" id="pullDone">Done</button>
     </div>
+    <p class="sum-earn"><span class="cost">${curIcon('dust')}+${st.results.length * DUST_PER_PULL} Stardust</span>${st.results.reduce((a, r) => a + (r.starlight || 0), 0) ? `<span class="cost">${curIcon('starlight')}+${st.results.reduce((a, r) => a + (r.starlight || 0), 0)} Starlight</span>` : ''}</p>
     <p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>
   </div>`;
   $('#pullAgain').onclick = () => doPull(st.n, st.bk);
@@ -3816,6 +3875,7 @@ document.addEventListener('click', e => {
   else if (k === 'redeem') openRedeem();
   else if (k === 'buytickets') openBuyTickets(t.dataset.tkbk);
   else if (k === 'skins') openCollection('skin');
+  else if (k === 'shop') openShop(t.dataset.shoptab);
   else if (PLACEHOLDERS[k]) openPlaceholder(k);
 });
 
