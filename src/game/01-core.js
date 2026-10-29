@@ -261,7 +261,9 @@ let S = (() => {
 })();
 if (!S.media) S.media = {};
 let lastContentJSON = JSON.stringify(splitState(S).content);
+let booted = false;   // set by boot; changes made while loading don't count as new progress
 function persist() {
+  if (booted) S.savedAt = Date.now();
   const { save, content } = splitState(S);
   try {
     const cj = JSON.stringify(content);

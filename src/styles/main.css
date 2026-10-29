@@ -1413,3 +1413,11 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .sk-title b{font-family:var(--display);font-weight:400;font-size:22px}
 .cs.bw .cs-art{filter:grayscale(1) brightness(.85)}
 .cs.bw .cs-blur{filter:grayscale(1) blur(40px) brightness(.45)}
+
+/* admin → Server tab */
+.srv-status{display:flex;align-items:center;gap:10px}
+.srv-status .dot{width:10px;height:10px;border-radius:50%;background:#ff6b81;box-shadow:0 0 8px #ff6b81}
+.srv-status .dot.on{background:var(--mint);box-shadow:0 0 8px var(--mint)}
+.srv-steps{padding-left:20px;display:grid;gap:6px}
+.srv-steps code,.desc code{font-size:12px;padding:1px 5px;border-radius:5px;background:rgba(255,255,255,.08)}
+.si-email{gap:10px}

@@ -5,7 +5,7 @@ document.addEventListener('click', e => {
   if (k === 'summon') openSummon(t.dataset.banner);
   else if (k === 'mail') openMail();
   else if (k === 'settings') openSettings();
-  else if (k === 'admin') openAdmin(t.dataset.adtab);
+  else if (k === 'admin') { if (canAdmin()) openAdmin(t.dataset.adtab); }
   else if (k === 'wallpaper') openWallpaper();
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('character');

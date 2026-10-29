@@ -56,7 +56,9 @@ function renderMail() {
 
 /* settings */
 function openSettings() {
+  const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
   openModal({ title: 'Settings', ic: 'gear', body: `<form class="form" id="setForm">
+    <div class="switch" style="cursor:default">Account<span class="row" style="gap:10px"><b style="color:var(--mint)">${acct}</b>${Backend.on ? `<button type="button" class="btn ghost sm" id="setAcct">${Backend.user ? 'Sign out' : 'Sign in'}</button>` : ''}</span></div>
     <div class="switch" style="cursor:default">Main character<span class="row" style="gap:10px"><b style="color:var(--mint)">${S.player.mc ? esc(mcEntry(S.player.mc).name) : 'Not chosen yet'}</b>${S.player.mc ? `<button type="button" class="btn ghost sm" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : ''}</span></div>
     <label class="field"><span>Player name</span><input class="input" id="setName" maxlength="16" value="${esc(S.player.name)}"></label>
     <button type="button" class="switch" data-open="wallpaper" style="text-align:left">Main screen wallpaper<b style="color:var(--mint)">${esc(wallpaperEntry() ? wallpaperEntry().name : 'Pearl Tide')}</b></button>
@@ -74,6 +76,7 @@ function openSettings() {
     $('#setForm').onsubmit = e => e.preventDefault();
     $('#setTitle').onclick = showTitle;
     $('#setRedeem').onclick = openRedeem;
+    const ab = $('#setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
     const mb = $('#setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
   } });
 }

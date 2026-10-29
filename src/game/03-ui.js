@@ -149,9 +149,10 @@ function renderTitle() {
   const bg = MEDIA.get('title:bg'), img = $('#ttImg');
   img.hidden = !bg; if (bg) img.src = bg; else img.removeAttribute('src');
   titleEl.classList.toggle('has-img', !!bg);
-  $('#ttWho').innerHTML = S.account ? `Signed in as <b>${esc(S.player.name)}</b> · Guest · <button class="link" id="ttSwitch">Switch account</button>` : 'Not signed in';
+  const acct = S.account ? (S.account.email ? esc(S.account.email) : 'Guest') : '';
+  $('#ttWho').innerHTML = S.account ? `Signed in as <b>${esc(S.player.name)}</b> · ${acct} · <button class="link" id="ttSwitch">Switch account</button>` : 'Not signed in';
   $('#ttUid').textContent = S.account ? `UID ${S.profile.uid}` : '';
-  const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); openSignIn(); };
+  const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); if (Backend.user) confirmSignOut(); else openSignIn(); };
 }
 function showTitle() { titleOn = true; closeModal(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
 function enterGame() {
@@ -258,15 +259,37 @@ function showSkinGet(e, o = {}) {
   };
 }
 /* login: only guest for now; email and store sign-in come with the server */
-function openSignIn() {
+function openSignIn(fromSettings) {
+  const on = Backend.on;
   openModal({ title: 'Sign in', ic: 'chars', body: `<div class="stack">
-    <p class="desc">Choose how to play. Your progress is saved in this browser for now.</p>
-    <button class="btn gold signin" id="siGuest">${icon('chars')}Play as guest</button>
-    <button class="btn ghost signin" disabled>${icon('mail')}Sign in with email<span class="soon">Soon</span></button>
-    <button class="btn ghost signin" disabled>${icon('sparkle')}Sign in with Google<span class="soon">Soon</span></button>
+    <p class="desc">${on ? 'Sign in to keep your progress safe and play on any device.' : 'Choose how to play. Your progress is saved in this browser.'}</p>
+    ${fromSettings ? '' : `<button class="btn ${on ? 'ghost' : 'gold'} signin" id="siGuest">${icon('chars')}Play as guest</button>`}
+    ${on ? `<form class="form si-email" id="siForm">
+        <label class="field"><span>Email</span><input class="input" id="siMail" type="email" autocomplete="email" required></label>
+        <label class="field"><span>Password</span><input class="input" id="siPass" type="password" autocomplete="current-password" minlength="6" required></label>
+        <div class="row"><button class="btn gold" type="submit" data-mode="in">${icon('mail')}Sign in</button><button class="btn ghost" type="submit" data-mode="up">Create account</button></div>
+        <span class="err" id="siErr" hidden></span></form>
+      <button class="btn ghost signin" id="siGoogle">${icon('sparkle')}Sign in with Google</button>`
+      : `<button class="btn ghost signin" disabled>${icon('mail')}Sign in with email<span class="soon">Soon</span></button>
+      <button class="btn ghost signin" disabled>${icon('sparkle')}Sign in with Google<span class="soon">Soon</span></button>`}
     <button class="btn ghost signin" disabled>${icon('sparkle')}Sign in with Apple<span class="soon">Soon</span></button>
-    <p class="tiny">Guest progress can't move between devices yet. Linking an account will be possible once accounts launch.</p></div>`,
-    onMount: () => { $('#siGuest').onclick = () => { S.account = { type: 'guest', since: S.account?.since || Date.now() }; persist(); renderTitle(); enterGame(); toast(`Welcome, ${S.player.name}!`); }; } });
+    <p class="tiny">${on ? 'Guest progress stays in this browser. Signing in to a new account later keeps it; signing in to an existing account loads that account instead.' : "Guest progress can't move between devices yet. Accounts arrive when the server is connected."}</p></div>`,
+    onMount: () => {
+      const g = $('#siGuest'); if (g) g.onclick = () => { S.account = { type: 'guest', since: S.account?.since || Date.now() }; persist(); renderTitle(); enterGame(); toast(`Welcome, ${S.player.name}!`); };
+      const f = $('#siForm'); if (!f) return;
+      let mode = 'in';
+      f.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { mode = b.dataset.mode; });
+      f.onsubmit = async e => {
+        e.preventDefault();
+        const err = $('#siErr'); err.hidden = true;
+        f.querySelectorAll('button').forEach(b => b.disabled = true);
+        const r = await cloudEmail(mode, $('#siMail').value.trim(), $('#siPass').value);
+        f.querySelectorAll('button').forEach(b => b.disabled = false);
+        if (r === 'confirm') { err.hidden = false; err.textContent = 'Account created. Check your email to confirm it, then sign in.'; }
+        else if (r) { err.hidden = false; err.textContent = r; }
+      };
+      $('#siGoogle').onclick = cloudGoogle;
+    } });
 }
 titleEl.addEventListener('click', e => {
   if (e.target.closest('button, a, .tt-side')) return;
@@ -275,7 +298,7 @@ titleEl.addEventListener('click', e => {
 $('#ttStart').onclick = () => { if (S.account) enterGame(); else openSignIn(); };
 $('#ttNews').onclick = openNews;
 $('#ttSupport').onclick = openSupport;
-$('#ttTerms').onclick = () => openModal({ title: 'Terms & privacy', ic: 'info', body: `<div class="stack"><p class="desc">Blank: Project is in development. Your progress, art and settings are stored only in this browser. Nothing is sent to a server yet.</p>
+$('#ttTerms').onclick = () => openModal({ title: 'Terms & privacy', ic: 'info', body: `<div class="stack"><p class="desc">Blank: Project is in development. ${Backend.on ? 'Signed-in progress is saved on our server; guest progress stays in this browser.' : 'Your progress, art and settings are stored only in this browser. Nothing is sent to a server.'}</p>
   <p class="desc">Summon rates are listed on every banner's Rates page. Paid currency isn't sold yet.</p><p class="tiny">Full terms of service and a privacy policy will be published before launch.</p></div>` });
 $('#ttRepair').onclick = () => openModal({ title: 'Repair', ic: 'wrench', body: `<div class="stack"><p class="desc">Something looks wrong? Repair reloads the game and its images. Your progress is kept.</p>
   <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancel</button><button class="btn mint" id="rpGo">Repair and reload</button></div></div>`,
@@ -300,9 +323,10 @@ function openSupport() {
       <div class="row" style="justify-content:space-between"><span class="tiny">UID ${S.profile.uid} is attached to your message.</span><button class="btn mint" type="submit">Send</button></div>
       ${S.support.length ? `<p class="tiny">${S.support.length} message${S.support.length === 1 ? '' : 's'} waiting to be delivered.</p>` : ''}
     </form></div>`, onMount: () => {
-    $('#csForm').onsubmit = e => {
+    $('#csForm').onsubmit = async e => {
       e.preventDefault();
       const msg = $('#csMsg').value.trim(); if (!msg) { $('#csMsg').focus(); return; }
+      if (await sendSupport($('#csTopic').value, msg)) { closeModal(); toast('Message sent. Thank you!'); return; }
       S.support.push({ topic: $('#csTopic').value, msg, t: Date.now() }); persist(); closeModal();
       toast('Message saved. It will be delivered when customer service goes online.');
     };
