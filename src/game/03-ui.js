@@ -1,9 +1,13 @@
 /* ---------- toast ---------- */
 let toastTimer;
-function toast(msg) {
+/* error toasts stay up for 6 s and ordinary toasts don't cover them, so a failure is never hidden by a "Saved" right after */
+let toastErrUntil = 0;
+function toast(msg, error) {
+  if (!error && Date.now() < toastErrUntil) return;
   document.querySelectorAll('.toast').forEach(t => t.remove());
-  const t = document.createElement('div'); t.className = 'toast glass-deep'; t.textContent = msg; t.setAttribute('role', 'status');
-  document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 3000);
+  const t = document.createElement('div'); t.className = `toast glass-deep ${error ? 'err' : ''}`; t.textContent = msg; t.setAttribute('role', error ? 'alert' : 'status');
+  if (error) toastErrUntil = Date.now() + 6000;
+  document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), error ? 6000 : 3000);
 }
 
 /* ---------- main menu & wallpaper ---------- */

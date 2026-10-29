@@ -1439,3 +1439,5 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .modal.wide .ach-list{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}
 .modal.wide .rates td:first-child{width:120px}
 .modal.wide .rates td:last-child{text-align:left}
+
+.toast.err{border-color:#ff6b81;box-shadow:0 0 0 1px #ff6b81,0 10px 30px rgba(0,0,0,.4)}

@@ -15,7 +15,7 @@ const canAdmin = () => Backend.on ? Backend.isAdmin : LOCAL_ADMIN;
 /* media keys like "art:aria" are stored in the public "media" bucket as art/aria */
 const mediaPath = k => k.split(':').map(encodeURIComponent).join('/');
 const mediaUrl = (k, v) => `${SB_URL}/storage/v1/object/public/media/${mediaPath(k)}${v ? `?v=${v}` : ''}`;
-function applyMediaManifest() { for (const [k, v] of Object.entries(S.media || {})) MEDIA.set(k, mediaUrl(k, v)); }
+function applyMediaManifest() { for (const [k, v] of Object.entries(S.media || {})) if (!assetSrc(v)) MEDIA.set(k, mediaUrl(k, v)); }
 
 Object.assign(Backend, {
   async upload(k, dataUrl) {

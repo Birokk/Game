@@ -25,18 +25,34 @@ const DB = {
 };
 /* media goes through here: the browser cache (IndexedDB) always, and the cloud (Backend) when it is connected.
    S.media is the shared manifest { key: version } so every player can find the admin's images */
+/* in the claude.ai preview, images go to the preview's own file storage ("assets" capability): browser storage there can be
+   blocked or wiped. The manifest then holds "a:<asset id>" and the image is served from /_blob/<id>. */
+let previewAssetsP = null;
+const previewAssets = () => previewAssetsP || (previewAssetsP = (!CLOUD_CONFIGURED && window.claude && window.claude.use)
+  ? Promise.race([window.claude.use('assets'), new Promise(r => setTimeout(() => r(null), 4000))]).catch(() => null) : Promise.resolve(null));
+const assetSrc = v => typeof v === 'string' && v.startsWith('a:') ? '/_blob/' + v.slice(2) : null;
 async function mediaSet(k, v) {
-  let src = v;
+  let src = v, ver = Date.now();
   if (Backend.canEditContent()) {
-    try { src = await Backend.upload(k, v); } catch (e) { toast(`Upload failed: ${e.message}`); return false; }
+    try { src = await Backend.upload(k, v); } catch (e) { toast(`Upload failed: ${e.message}`, true); return false; }
+  } else {
+    const pa = await previewAssets();
+    if (pa) {
+      try { const r = await pa.upload(await (await fetch(v)).blob()); src = r.url; ver = 'a:' + r.id; }
+      catch (e) { toast(`Could not save the image in the preview: ${(e && (e.message || e.code)) || e}`, true); return false; }
+    }
   }
-  MEDIA.set(k, src); S.media = { ...S.media, [k]: Date.now() }; persist();
-  try { await DB.set(k, v); } catch (e) { if (!Backend.on) { toast('This browser would not save the image. It will be gone after a reload.'); return false; } }
+  const old = S.media && S.media[k];
+  MEDIA.set(k, src); S.media = { ...S.media, [k]: ver }; persist();
+  if (assetSrc(old)) previewAssets().then(pa => pa && pa.delete(old.slice(2))).catch(() => {});
+  try { await DB.set(k, v); } catch (e) { if (!Backend.on && !assetSrc(ver)) { toast('This browser blocked saving the image, so it will be gone after a reload. Try another browser, or connect the server.', true); return false; } }
   return true;
 }
 async function mediaDel(k) {
+  const old = S.media && S.media[k];
   MEDIA.delete(k); if (S.media) { const m = { ...S.media }; delete m[k]; S.media = m; persist(); }
   if (Backend.canEditContent()) Backend.remove(k).catch(() => {});
+  if (assetSrc(old)) previewAssets().then(pa => pa && pa.delete(old.slice(2))).catch(() => {});
   try { await DB.del(k); } catch (e) {}
 }
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
