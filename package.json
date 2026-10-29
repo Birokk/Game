@@ -1,0 +1,16 @@
+{
+  "name": "blank-project",
+  "private": true,
+  "version": "0.10.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "node scripts/check.js"
+  },
+  "devDependencies": {
+    "magic-string": "^0.30.17",
+    "vite": "^6.4.5"
+  }
+}

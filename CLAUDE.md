@@ -2,10 +2,15 @@
 
 (Formerly "Prism Plaza". The localStorage key `prismplaza.v1` and IndexedDB name `prismplaza` keep the old name on purpose so existing saves still load.)
 
-Browser gacha game, built step by step. Everything lives in one self-contained file: `index.html` (HTML + CSS + JS, no build step, no libraries). Open it in a browser to play.
+Browser gacha game, built step by step. A **Vite** project in plain JavaScript (no framework):
+- `index.html`: the page markup (title screen, menu, HUD, plaza canvas).
+- `src/styles/main.css`: all styles. `src/assets/fonts/Cinzel-Bold.otf`: the owner's font.
+- `src/game/NN-name.js`: the game code, split by feature (`01-core` media/icons/state, `02-art` chibis, `03-ui` menu/title/loading, `04-modals`, `05-collection`, `06-pets`, `07-shop`, `08-profile`, `09-bond`, `10-economy` tickets/stamina/spin, `11-characters`, `12-gacha`, `13-admin`, `14-routing`, `15-plaza`, `16-boot`). `vite.config.js` joins them **in name order into one module** (`virtual:game`), so they share one scope like the old single script: any file can use any top-level name, and order only matters for code that runs at load time. New files need an `NN-` prefix.
+- In dev (`npm run dev`) every top-level name is also on `window` (for the console and Playwright tests); production builds don't expose them unless built with `VITE_DEBUG_GLOBALS=true`.
+- `npm run build` → `dist/` (relative paths, works on any static host).
 
 ## How we work
-- The owner adds features in small batches. Keep it a single file unless asked to split it.
+- The owner adds features in small batches. Put code in the matching `src/game` file (or a new numbered one).
 - Keep the visual style: dark frosted-glass UI (tokens in `:root`). Font: **Cinzel Bold** (the owner's file, embedded as base64 in `@font-face`) for all UI text via `--display`/`--body`; Nunito (`--read`) only for longer readable text (descriptions, `.tiny`, paragraphs, inputs, chat).
 
 ## What exists
