@@ -1358,6 +1358,29 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .mc-card img.art{max-width:none;aspect-ratio:auto;max-height:46vh;border-radius:12px}
 .mc-card b{font-family:var(--display);font-weight:400;font-size:22px}
 /* skins carousel */
+.wd-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wd-slot{display:grid;justify-items:center;gap:2px;padding:10px 6px;border-radius:14px;background:var(--glass);border:2px solid var(--edge-soft);color:inherit;text-align:center;min-width:0}
+.wd-slot.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+.wd-slot.full{border-color:var(--rc)}
+.wd-slot.full.on{border-color:#fff}
+.wd-slot img{width:46px;height:46px;object-fit:contain}
+.wd-slot b{font-family:var(--display);font-weight:400;font-size:14px}
+.wd-slot .tiny{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wd-ph{width:46px;height:46px;display:grid;place-items:center;opacity:.45}
+.wd-ph .ic{width:28px;height:28px}
+.wd-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.wd-item{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--rc) 30%,transparent),var(--ink-2) 75%);border:2px solid var(--edge-soft);color:inherit}
+.wd-item.on{border-color:#fff}
+.wd-item img{width:74%;height:74%;object-fit:contain;margin-bottom:14px}
+.wd-item.bw img{filter:grayscale(1) brightness(.7)}
+.wd-item .rtag{position:absolute;top:6px;left:6px;font-size:10px;padding:1px 6px}
+.wd-item .skc-on{bottom:auto;top:6px;left:auto;right:6px}
+.wd-nm{position:absolute;left:0;right:0;bottom:0;padding:12px 4px 5px;background:linear-gradient(transparent,rgba(5,8,20,.9));font-family:var(--display);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wd-prev{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;background:var(--ink-2);border:1px solid var(--edge-soft);overflow:hidden;text-align:center}
+.wd-prev.sm{width:44px;height:44px}
+.wd-prev img{width:90%;height:90%;object-fit:contain}
+.wd-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:12px;background:rgba(255,255,255,.04);border-left:3px solid var(--rc);margin-top:6px}
+.wd-row .rtag{font-size:9px;padding:1px 5px;vertical-align:1px}
 .sk-car{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px calc(50% - 78px) 14px;scrollbar-width:thin;-webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
 .skc{position:relative;flex:none;width:156px;aspect-ratio:2/3;border-radius:14px;overflow:hidden;scroll-snap-align:center;border:2px solid rgba(255,255,255,.18);background:var(--ink-2);text-align:center;transition:transform .25s,border-color .25s,opacity .25s;opacity:.65;transform:scale(.9)}
 .skc.sel{opacity:1;transform:scale(1);border-color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.45)}
@@ -1560,6 +1583,7 @@ function resizeImage(file, max, type = 'image/webp') {
 
 /* ---------- icons ---------- */
 const ICONS = {
+  wardrobe:'<path d="M8.5 4L4 6.8l1.8 4 2.2-1V20h8V9.8l2.2 1 1.8-4L15.5 4c-.6 1.5-1.9 2.4-3.5 2.4S9.1 5.5 8.5 4z"/>',
   mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7.5l8 6 8-6"/>',
   gear:'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   wrench:'<path d="M14.7 6.3a4 4 0 0 0 5 5l-8.4 8.4a2.1 2.1 0 0 1-3-3z"/><path d="M14.7 6.3L17 4l3 3-2.3 2.3"/>',
@@ -1626,7 +1650,7 @@ function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forE
 const ICON_SLOTS = [
   ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Wish tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie']]],
   ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
-  ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
+  ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['wardrobe', 'Wardrobe'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
   ['Small UI', [['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected']]]
 ];
@@ -1724,7 +1748,7 @@ let S = (() => {
         else s.gacha = { ...fresh.gacha, limited: { pity5: Math.min(og.pity5 || 0, HARD_PITY - 1), pity4: og.pity4 || 0, guarantee: !!og.guarantee, total: og.total || 0 }, history: og.history || [] };
         s.banners = { limited: { ...fresh.banners.limited, ...((d.banners || {}).limited || {}) }, standard: { ...fresh.banners.standard, ...((d.banners || {}).standard || {}) } };
         s.owned = d.owned || {};
-        s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
+        s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.clothes = d.clothes || []; s.wear = d.wear || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
@@ -1972,6 +1996,15 @@ function ensureMC() {
   if (S.player.mc && !S.owned['mc-' + S.player.mc]) S.owned['mc-' + S.player.mc] = 1;
 }
 ensureMC();
+if (!Array.isArray(S.clothes)) S.clothes = [];
+if (!S.wear) S.wear = {};
+/* wardrobe: clothes the admin adds (S.clothes) and what each character wears (S.wear[charId][slot] = clothId) */
+const WARD_SLOTS = [['hat', 'Hat'], ['top', 'Top'], ['pants', 'Pants'], ['shoes', 'Shoes'], ['acc', 'Accessory'], ['hand', 'Hand']];
+const WARD_NAME = Object.fromEntries(WARD_SLOTS);
+const clothOf = id => S.clothes.find(x => x.id === id);
+const clothImg = x => artFrom(x.img);
+const clothFits = (x, c) => !x.char || x.char === c.id;
+const wearOf = cid => S.wear[cid] || {};
 const getArt = e => mediaArt(e) || portrait(e.look || S.player.look, e.rarity);
 const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
 
@@ -2998,6 +3031,7 @@ function openSpin() {
 }
 
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
+let wdSlot = 'hat';
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
 const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
@@ -3062,7 +3096,7 @@ function renderCharacters() {
   const eq = equippedOf(c), shown = (csTab === 'skins' && csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
   const art = mediaArt(shown), shownOwned = owns(shown.id);
   csEl.className = `cs r${c.rarity}`;
-  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
+  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
@@ -3097,6 +3131,17 @@ function renderCharacters() {
     body = `<div class="lbl-sm">Outfits · ${skins.filter(k => owns(k.id)).length + 1}/${skins.length + 1} owned</div>
       <div class="sk-car" id="skCar">${[c, ...skins].map(k => skinCard(c, k, eq)).join('')}</div>
       <div class="sk-act" id="skAct"></div>`;
+  } else if (csTab === 'wardrobe') {
+    const W = wearOf(c.id), on = WARD_SLOTS.filter(([k]) => W[k] && clothOf(W[k])).length;
+    const items = S.clothes.filter(x => x.slot === wdSlot && clothFits(x, c)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+    body = `<div class="lbl-sm">Wardrobe · ${on}/${WARD_SLOTS.length} equipped</div>
+      <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
+        return `<button class="wd-slot ${wdSlot === k ? 'on' : ''} ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span></button>`; }).join('')}</div>
+      <div class="lbl-sm">${WARD_NAME[wdSlot]} · ${items.filter(x => owns(x.id)).length}/${items.length} owned</div>
+      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id;
+        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'}>${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
+        : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
+      ${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}`;
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
@@ -3152,6 +3197,14 @@ function renderCharacters() {
   csEl.classList.toggle('bw', !owns(shown.id));
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; csSkin = null; renderCharacters(); });
   if (csTab === 'skins') initSkinCar(c);
+  csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; renderCharacters(); });
+  csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
+    const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
+    const W = { ...wearOf(c.id) };
+    if (W[x.slot] === x.id) delete W[x.slot]; else W[x.slot] = x.id;
+    S.wear[c.id] = W; persist(); renderCharacters(); toast(W[x.slot] ? `${c.name} put on ${x.name}.` : `${c.name} took off ${x.name}.`);
+  });
+  const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; persist(); renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
   csEl.querySelectorAll('[data-bt-star]').forEach(b => b.onclick = () => toggleStar(c.id, +b.dataset.btStar));
@@ -3571,7 +3624,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -3585,6 +3638,7 @@ function renderAdminTab() {
   if (adminTab === 'title') return renderTitleTab();
   if (adminTab === 'mr') return renderMRTab();
   if (adminTab === 'skins') return renderSkinsTab();
+  if (adminTab === 'wardrobe') return renderWardrobeTab();
   renderPoolTab();
 }
 
@@ -3802,7 +3856,8 @@ function exportData() {
     featuredId: S.featuredId,
     banners: S.banners,
     pool: S.pool.map(e => ({ ...e, art: artFrom(e.art), art3: artFrom(e.art3), art6: artFrom(e.art6), getArt: artFrom(e.getArt), icon: artFrom(e.icon) })),
-    icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v]))
+    icons: Object.fromEntries([...MEDIA].filter(([k]) => k.startsWith('icon:')).map(([k, v]) => [k.slice(5), v])),
+    clothes: S.clothes.map(x => ({ ...x, img: artFrom(x.img) }))
   });
 }
 function copyData() {
@@ -3825,6 +3880,10 @@ function showImport() {
       e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) || (+e.rarity === 6 && e.type === 'skin') ? +e.rarity : 4;
       delete e.element; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
       for (const k of ['art', 'art3', 'art6', 'getArt', 'icon']) { const mk = `${k === 'getArt' ? 'get' : k === 'icon' ? 'face' : k}:${e.id}`; if (e[k] && e[k].startsWith('data:')) { await mediaSet(mk, e[k]); e[k] = `idb:${mk}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
+    }
+    if (Array.isArray(d.clothes)) {
+      for (const x of d.clothes) { if (x.img && x.img.startsWith('data:')) { await mediaSet('cloth:' + x.id, x.img); x.img = 'idb:cloth:' + x.id; } else x.img = null; }
+      S.clothes = d.clothes.filter(x => x && x.id && x.name && WARD_NAME[x.slot]);
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
     S.pool = pool; S.featuredId = d.featuredId || null; ensureMC(); if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
@@ -3937,6 +3996,46 @@ function renderSkinsTab() {
     S.pool.push(k); persist(); renderSkinsTab(); renderMenu();
     const inp = document.querySelector(`[data-sknm="${k.id}"]`); if (inp) { inp.scrollIntoView({ block: 'center' }); inp.focus(); inp.select(); }
     toast(`New skin added for ${c.name}. Give it a name and upload its art.`);
+  });
+}
+
+/* wardrobe tab: clothes for the character screen's Wardrobe (hat, top, pants, shoes, accessory, hand) */
+let wdNewImg = null, wdDelArm = null;
+function renderWardrobeTab() {
+  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => !!b.mc - !!a.mc || a.name.localeCompare(b.name));
+  $('#adPanel').innerHTML = `<div class="admin">
+    <section class="stack" style="align-content:start">
+      <div><h3>Add clothing</h3><p class="tiny">Clothes appear in each character's Wardrobe tab, in their slot. Use a square PNG with a transparent background (scaled to 512px). Players own nothing yet: switch on "Owned" below to test it until there is a way to get clothes.</p></div>
+      <label class="field"><span>Name</span><input class="input" id="wdName" maxlength="30" placeholder="e.g. Lantern Hat"></label>
+      <label class="field"><span>Slot</span><select class="input" id="wdSlotSel">${WARD_SLOTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+      <div class="field"><span>Rarity</span><div class="seg" id="wdRar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="wdR" value="${r}" ${r === 4 ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div></div>
+      <label class="field"><span>Who can wear it</span><select class="input" id="wdChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
+      <div class="row" style="align-items:center"><div class="wd-prev">${wdNewImg ? `<img src="${wdNewImg}" alt="">` : '<span class="tiny">No image</span>'}</div><label class="btn ghost sm">${icon('upload')}${wdNewImg ? 'Replace' : 'Upload'} image<input type="file" accept="image/*" class="sr" id="wdUp"></label></div>
+      <div class="row"><button class="btn mint" id="wdAdd">${icon('plus')}Add clothing</button><span class="err" id="wdErr" hidden>Give it a name first.</span></div>
+    </section>
+    <section class="stack" style="align-content:start">
+      <div class="ad-head" style="margin:0"><h3>Clothes <span class="muted" style="font-family:var(--body);font-size:14px">· ${S.clothes.length}</span></h3></div>
+      ${WARD_SLOTS.map(([k, l]) => { const list = S.clothes.filter(x => x.slot === k);
+        return `<div class="sk-group"><b>${l} · ${list.length}</b>${list.length ? list.map(x => `<div class="wd-row r${x.rarity}"><div class="wd-prev sm">${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : icon('wardrobe')}</div>
+          <div style="min-width:0;display:grid;gap:2px"><span class="nm">${esc(x.name)} ${rtag(x.rarity)}</span><span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}</span></div>
+          <div class="row" style="gap:8px;justify-content:flex-end"><label class="switch" style="padding:4px 8px;gap:8px;font-size:12px">Owned<input type="checkbox" data-wdown="${esc(x.id)}" ${owns(x.id) ? 'checked' : ''}><i></i></label><label class="link">Image<input type="file" accept="image/*" class="sr" data-wdimg="${esc(x.id)}"></label><button class="link" data-wddel="${esc(x.id)}" style="color:${wdDelArm === x.id ? '#ff6b81' : ''}">${wdDelArm === x.id ? 'Tap again to delete' : 'Delete'}</button></div></div>`).join('') : '<p class="tiny">None yet.</p>'}</div>`; }).join('')}
+    </section></div>`;
+  $('#wdUp').onchange = async ev => { try { wdNewImg = await resizeImage(ev.target.files[0], 512); renderWardrobeTab(); } catch (e) { toast(e.message); } };
+  $('#wdAdd').onclick = async () => {
+    const name = $('#wdName').value.trim(); if (!name) { $('#wdErr').hidden = false; return; }
+    const x = { id: `cloth-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, name, slot: $('#wdSlotSel').value, rarity: +document.querySelector('input[name=wdR]:checked').value, char: $('#wdChar').value || null, img: null };
+    if (wdNewImg) { await mediaSet('cloth:' + x.id, wdNewImg); x.img = 'idb:cloth:' + x.id; }
+    S.clothes.push(x); wdNewImg = null; persist(); renderWardrobeTab(); toast(`Added ${name}.`);
+  };
+  document.querySelectorAll('[data-wdown]').forEach(i => i.onchange = () => { if (i.checked) S.owned[i.dataset.wdown] = 1; else delete S.owned[i.dataset.wdown]; persist(); });
+  document.querySelectorAll('[data-wdimg]').forEach(i => i.onchange = async () => { try { const x = clothOf(i.dataset.wdimg); await mediaSet('cloth:' + x.id, await resizeImage(i.files[0], 512)); x.img = 'idb:cloth:' + x.id; persist(); renderWardrobeTab(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-wddel]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.wddel;
+    if (wdDelArm !== id) { wdDelArm = id; renderWardrobeTab(); return; }
+    wdDelArm = null; await mediaDel('cloth:' + id);
+    S.clothes = S.clothes.filter(x => x.id !== id); delete S.owned[id];
+    for (const cid in S.wear) for (const k in S.wear[cid]) if (S.wear[cid][k] === id) delete S.wear[cid][k];
+    persist(); renderWardrobeTab(); toast('Clothing deleted.');
   });
 }
 
