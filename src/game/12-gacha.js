@@ -78,6 +78,7 @@ function rollOne(bk) {
     // Corals for every character pulled; more for copies past max stars
     if (item.type === 'character') { res.starlight = (res.pearls ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
   }
+  res.hard = rarity === 5 && p5 >= 1;   // guaranteed by hard pity: never faked out
   S.wallet.dust += DUST_PER_PULL;
   S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
@@ -345,20 +346,34 @@ function startPfx(canvas, tier) {
   raf = requestAnimationFrame(frame);
   return api;
 }
+/* fakeout: now and then a UR pull starts out looking like an SSR and transforms mid-intro (never when hard pity guaranteed the UR) */
+const FAKEOUT_CHANCE = .3;
 function showPull(results, n, bk) {
   closePull(true);
   const best = Math.max(...results.map(r => r.rarity));
+  const fake = best === 5 && !results.some(r => r.rarity === 5 && r.hard) && Math.random() < FAKEOUT_CHANCE;
+  const shown = fake ? 4 : best;
   pullEl = document.createElement('div');
-  pullEl.className = `pull t${best} r${best}`;
+  pullEl.className = `pull t${shown} r${shown}`;
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
   pullEl.innerHTML = `<div class="meteor-wrap"><div class="meteor"></div></div><div class="orb"></div><div class="rings"><i></i><i></i><i></i></div><div class="flash"></div>
-    ${best >= 4 ? `<div class="stamp">${RNAME[best]}</div>` : ''}<div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
+    ${shown >= 4 ? `<div class="stamp">${RNAME[shown]}</div>` : ''}<div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const order = results.map((r, i) => i).filter(i => results[i].kind === 'entry');
-  pullState = { results, n, bk, i: -1, phase: 'intro', readyAt: 0, order: order.length ? order : [0], fx: startPfx(pullEl.querySelector('.pfx'), best) };
+  pullState = { results, n, bk, i: -1, phase: 'intro', readyAt: 0, order: order.length ? order : [0], fx: startPfx(pullEl.querySelector('.pfx'), shown) };
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
-  pullState.timer = setTimeout(advancePull, TIER_REVEAL[best] * 1000);
+  if (fake) pullState.timer = setTimeout(fakeoutUpgrade, (TIER_BURST[4] + .8) * 1000);   // while the SSR stamp is showing
+  else pullState.timer = setTimeout(advancePull, TIER_REVEAL[best] * 1000);
+}
+function fakeoutUpgrade() {
+  const st = pullState; if (!st || st.phase !== 'intro' || !pullEl) return;
+  pullEl.classList.remove('t4', 'r4'); pullEl.classList.add('t5', 'r5', 'fakeout');
+  const old = pullEl.querySelector('.stamp'); if (old) old.remove();
+  pullEl.insertAdjacentHTML('beforeend', `<div class="fake-orb"></div><div class="fake-rings"><i></i><i></i><i></i></div><div class="fake-crack"></div><div class="fake-flash"></div><div class="stamp up">${RNAME[5]}</div>`);
+  if (st.fx) st.fx.stop();
+  st.fx = startPfx(pullEl.querySelector('.pfx'), 5);
+  st.timer = setTimeout(advancePull, 2300);
 }
 /* taps only move between reveals: the intro always plays (use Skip to jump), and each reveal holds briefly so a double tap can't skip it */
 function tapPull() {
