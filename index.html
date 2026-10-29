@@ -1300,7 +1300,18 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .sk-slot{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
 .sk-prev{width:46px;aspect-ratio:9/16;border-radius:8px;overflow:hidden;display:grid;place-items:center;text-align:center;background:var(--ink-2);border:1px solid var(--edge-soft);font-size:9px}
 .sk-prev.wide{width:96px;aspect-ratio:16/9}
+.sk-prev{position:relative}
 .sk-prev img{width:100%;height:100%;object-fit:cover}
+.sk-prev .rtag{position:absolute;top:3px;left:3px;font-size:9px;padding:1px 5px}
+.sk-head .sk-nm{padding:6px 10px;font-size:14px}
+.sk-rar{width:100%}
+.sk-rar label{padding:5px 8px;font-size:12px}
+.skin-list{display:grid;gap:6px}
+.skin-li{display:grid;grid-template-columns:34px minmax(0,1fr) auto 18px;gap:8px;align-items:center;padding:5px 8px 5px 5px;border-radius:10px;background:var(--glass);border:1px solid var(--edge-soft);text-align:left;color:inherit}
+.skin-li:hover{border-color:var(--mint)}
+.skin-li img{width:34px;height:34px;border-radius:8px;object-fit:cover;object-position:50% 12%;border:2px solid var(--rc);background:var(--ink-2)}
+.skin-li b{font-family:var(--display);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skin-li .ic{width:15px;height:15px;opacity:.7}
 @media (max-width:820px){.sk-row{grid-template-columns:minmax(0,1fr)}}
 
 /* custom icons and equipped outfit marker */
@@ -1336,10 +1347,11 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 
 /* main character pick */
 .mc-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.mc-card{display:grid;justify-items:center;gap:6px;padding:14px;border-radius:20px;background:var(--glass);border:2px solid var(--edge-soft);transition:transform .2s,border-color .2s}
+.mc-card{display:grid;justify-items:center;align-content:center;gap:6px;padding:14px;border-radius:20px;background:var(--glass);border:2px solid var(--edge-soft);transition:transform .2s,border-color .2s}
 .mc-card:hover{transform:translateY(-3px)}
 .mc-card.on{border-color:var(--mint);box-shadow:0 0 0 3px color-mix(in srgb,var(--mint) 35%,transparent)}
 .mc-card img{width:100%;max-width:220px;aspect-ratio:9/16;object-fit:contain}
+.mc-card img.art{max-width:none;aspect-ratio:auto;max-height:46vh;border-radius:12px}
 .mc-card b{font-family:var(--display);font-weight:400;font-size:22px}
 /* skins carousel */
 .sk-car{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px calc(50% - 78px) 14px;scrollbar-width:thin;-webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
@@ -1437,9 +1449,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 
   <nav class="hm hm-tabs" aria-label="Collection">
     <button class="tabb ts" data-open="characters">Characters<span class="dot-n" id="charDot" hidden></span></button>
-    <button class="tabb ts" data-open="skins">Skins</button>
     <button class="tabb ts" data-open="pets">Pets<span class="dot-n" id="petDot" hidden></span></button>
-    <button class="tabb ts" data-open="collectibles">Collectibles</button>
     <button class="tabb ts" data-open="collection">Collection</button>
   </nav>
 
@@ -1722,7 +1732,10 @@ function persist() {
   catch (e) { toast('Could not save progress: browser storage is full.'); return false; }
 }
 const featured = () => S.pool.find(e => e.id === S.featuredId) || S.pool.find(e => e.type === 'character' && e.rarity === 5) || S.pool[0];
-const owns = id => (S.owned[id] || 0) > 0;
+/* the two main characters are pool entries mc-f / mc-m; only the chosen one (and its skins) counts as owned */
+const MC_IDS = { 'mc-f': 'f', 'mc-m': 'm' };
+const mcOff = id => { const m = MC_IDS[id] || MC_IDS[(findEntry(id) || {}).parent]; return !!m && m !== S.player.mc; };
+const owns = id => (S.owned[id] || 0) > 0 && !mcOff(id);
 const findEntry = id => S.pool.find(e => e.id === id);
 
 /* ---------- drawing helpers ---------- */
@@ -1932,6 +1945,21 @@ const MC_LOOK = {
 };
 const MC_NAME = { f: 'Female', m: 'Male' };
 const mcLook = () => MC_LOOK[S.player.mc] || MC_LOOK.m;
+const MC_SWITCH_MS = 72 * 36e5;
+const mcEntry = k => findEntry('mc-' + k);
+const mcSwitchLeft = () => S.player.mcAt ? Math.max(0, S.player.mcAt + MC_SWITCH_MS - Date.now()) : 0;
+const fmtDur = ms => { const h = Math.ceil(ms / 36e5); return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h`; };
+/* make sure both MC entries exist in the pool (they behave like any character but are never pullable) */
+function ensureMC() {
+  ['f', 'm'].forEach(k => {
+    let e = mcEntry(k);
+    if (!e) S.pool.unshift(e = { id: 'mc-' + k, name: `${MC_NAME[k]} MC`, rarity: 5, art: null, desc: 'Your main character. This is who you are in the plaza.', look: { ...MC_LOOK[k] } });
+    Object.assign(e, { type: 'character', mc: k, pullable: false, standard: false });
+    if (S.featuredId === e.id) S.featuredId = null;
+  });
+  if (S.player.mc && !S.owned['mc-' + S.player.mc]) S.owned['mc-' + S.player.mc] = 1;
+}
+ensureMC();
 const getArt = e => mediaArt(e) || portrait(e.look || S.player.look, e.rarity);
 const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
 
@@ -2098,17 +2126,33 @@ function enterGame() {
   setTimeout(() => { titleEl.hidden = true; }, 400);
 }
 /* first sign-in: pick the main character */
-function openMCPick() {
+function openMCPick(switching) {
   let pick = null;
-  openModal({ title: 'Choose your character', ic: 'chars', wide: true, kind: 'mc', body: `<div class="stack">
-    <p class="desc">This is who you'll be in the plaza. You can't change it later.</p>
-    <div class="mc-pick">${['f', 'm'].map(k => `<button class="mc-card" data-mc="${k}"><img src="${chibiSplash(MC_LOOK[k])}" alt=""><b>${MC_NAME[k]}</b></button>`).join('')}</div>
+  openModal({ title: switching ? 'Switch main character' : 'Choose your character', ic: 'chars', wide: true, kind: 'mc', body: `<div class="stack">
+    <p class="desc">${switching ? 'Your main character is who you are in the plaza and in your character list. After switching you have to wait 72 hours to switch again.' : "This is who you'll be in the plaza. You can switch later in Settings, once every 72 hours."}</p>
+    <div class="mc-pick">${['f', 'm'].map(k => { const e = mcEntry(k); return `<button class="mc-card" data-mc="${k}"><img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? 'art' : ''}"><b>${MC_NAME[k]}</b>${e.name !== MC_NAME[k] + ' MC' ? `<span class="tiny">${esc(e.name)}</span>` : ''}</button>`; }).join('')}</div>
     <div class="row" style="justify-content:flex-end"><button class="btn gold" id="mcGo" disabled>Confirm</button></div></div>`, onMount: () => {
     modalEl.querySelectorAll('[data-mc]').forEach(b => b.onclick = () => { pick = b.dataset.mc; modalEl.querySelectorAll('[data-mc]').forEach(x => x.classList.toggle('on', x === b)); $('#mcGo').disabled = false; $('#mcGo').textContent = `Play as ${MC_NAME[pick]}`; });
-    $('#mcGo').onclick = () => { if (!pick) return; setMC(pick); closeModal(); enterGame(); };
+    if (switching) { const cur = modalEl.querySelector(`[data-mc="${S.player.mc}"]`); if (cur) cur.click(); }
+    $('#mcGo').onclick = () => {
+      if (!pick) return;
+      if (!switching) { setMC(pick); closeModal(); enterGame(); return; }
+      if (pick === S.player.mc) { closeModal(); return; }
+      setMC(pick, true); closeModal(); closeCharacters(); toast(`You are now playing as ${mcEntry(pick).name}. You can switch again in 72 hours.`);
+    };
   } });
 }
-function setMC(k) { S.player.mc = k; S.player.look = { ...MC_LOOK[k] }; player.look = S.player.look; persist(); renderMenu(); }
+function setMC(k, switching) {
+  const old = S.player.mc && 'mc-' + S.player.mc;
+  S.player.mc = k; if (switching) S.player.mcAt = Date.now();
+  if (!S.owned['mc-' + k]) S.owned['mc-' + k] = 1;
+  S.player.look = { ...MC_LOOK[k] }; player.look = S.player.look;
+  if (old && old !== 'mc-' + k) {
+    S.profile.showcase = S.profile.showcase.map(id => id && owns(id) ? id : null);
+    if (S.wallpaper && !owns(S.wallpaper)) { S.wallpaper = null; applyWallpaper(); }
+  }
+  persist(); renderMenu();
+}
 
 /* loading screen after sign-in: a random wallpaper from the admin list, a progress bar and a tip */
 const LOAD_TIPS = [
@@ -2289,7 +2333,7 @@ function renderMail() {
 /* settings */
 function openSettings() {
   openModal({ title: 'Settings', ic: 'gear', body: `<form class="form" id="setForm">
-    <div class="switch" style="cursor:default">Main character<b style="color:var(--mint)">${S.player.mc ? MC_NAME[S.player.mc] : 'Not chosen yet'}</b></div>
+    <div class="switch" style="cursor:default">Main character<span class="row" style="gap:10px"><b style="color:var(--mint)">${S.player.mc ? esc(mcEntry(S.player.mc).name) : 'Not chosen yet'}</b>${S.player.mc ? `<button type="button" class="btn ghost sm" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : ''}</span></div>
     <label class="field"><span>Player name</span><input class="input" id="setName" maxlength="16" value="${esc(S.player.name)}"></label>
     <button type="button" class="switch" data-open="wallpaper" style="text-align:left">Main screen wallpaper<b style="color:var(--mint)">${esc(wallpaperEntry() ? wallpaperEntry().name : 'Pearl Tide')}</b></button>
     <label class="field"><span>Character art when pulling</span><select class="input" id="setPullFit"><option value="fill" ${S.settings.pullFit ? '' : 'selected'}>Fill the whole screen</option><option value="fit" ${S.settings.pullFit ? 'selected' : ''}>Show the whole art, uncropped</option></select></label>
@@ -2308,6 +2352,7 @@ function openSettings() {
     $('#setForm').onsubmit = e => e.preventDefault();
     $('#setTitle').onclick = showTitle;
     $('#setRedeem').onclick = openRedeem;
+    const mb = $('#setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
   } });
 }
 
@@ -2346,7 +2391,7 @@ const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
   const root = $('#colRoot'); if (!root) return;
   const tabs = [['character', 'Characters'], ['skin', 'Skins'], ['pet', 'Pets'], ['collectible', 'Collectibles'], ['item', 'Items']];
-  const inTab = k => S.pool.filter(e => e.type === k);
+  const inTab = k => S.pool.filter(e => e.type === k && !mcOff(e.id));
   const list = inTab(filter).filter(e => !colOwnedOnly || owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   root.innerHTML = `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === filter ? 'on' : ''}" data-tab="${k}">${l}<span>${inTab(k).filter(e => owns(e.id)).length}/${inTab(k).length}</span></button>`).join('')}
       <label class="switch">Owned only<input type="checkbox" id="colOwned" ${colOwnedOnly ? 'checked' : ''}><i></i></label></div>
@@ -2656,7 +2701,7 @@ function openProfile() {
 }
 function renderProfile() {
   const root = $('#pfRoot'); if (!root) return;
-  const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character');
+  const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character' && !mcOff(e.id));
   P.showcase = P.showcase.map(id => id && findEntry(id) && owns(id) ? id : null);
   const urs = chars.filter(e => e.rarity === 5).length, best = Math.max(0, ...chars.map(e => starsOf(e.id)));
   const lockTag = o => unlocked(o) ? '' : `<span class="pf-lock">${icon('lock')}${esc(UNLOCK[o.need][1])}</span>`;
@@ -2927,7 +2972,7 @@ function openSpin() {
 
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
-const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
 function openCharacters(id) {
   const list = charList();
@@ -2943,7 +2988,7 @@ function openCharacters(id) {
 /* skins carousel: cards scroll sideways; the one in the middle is shown full screen behind the menu */
 function skinCard(c, k, eq) {
   const own = owns(k.id), on = k === (eq || c);
-  return `<button class="skc r${k.rarity} ${own ? '' : 'bw'}" data-skc="${esc(k.id)}"><img src="${getArt(k)}" alt="" class="${mediaArt(k) ? '' : 'chibi'}"><span class="skc-nm">${k === c ? 'Default' : esc(k.name.replace(c.name + ' · ', ''))}</span>${on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${k.rarity === 6 ? rtag(6) : ''}</button>`;
+  return `<button class="skc r${k.rarity} ${own ? '' : 'bw'}" data-skc="${esc(k.id)}"><img src="${getArt(k)}" alt="" class="${mediaArt(k) ? '' : 'chibi'}"><span class="skc-nm">${k === c ? 'Default' : esc(k.name.replace(c.name + ' · ', ''))}</span>${on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${rtag(k.rarity)}</button>`;
 }
 function selectSkin(c, id) {
   const k = findEntry(id); if (!k || !csEl) return;
@@ -2992,7 +3037,7 @@ function renderCharacters() {
   csEl.className = `cs r${c.rarity}`;
   const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
-      <div class="cs-elem ts">${TYPES[c.type]}</div>
+      <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
       ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity}">${RNAME[c.rarity]}</span>` : ''}
     </div>
@@ -3005,7 +3050,7 @@ function renderCharacters() {
     <div class="cs-sep"></div>`;
   let body;
   if (csTab === 'home') {
-    const next = !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies give ${overflowOf(c)} pearls each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
+    const next = c.mc ? 'Your main character. Switch between female and male in Settings, once every 72 hours.' : !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies give ${overflowOf(c)} pearls each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
     body = `<div class="cs-boxes">
         <div class="cs-box"><span class="lbl-sm">Stars</span><b><em>${st}</em>/${MAX_STARS}</b></div>
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
@@ -3541,7 +3586,6 @@ function renderPoolTab() {
           <label class="field"><span>Name</span><input class="input" id="adName" maxlength="40" placeholder="e.g. Sora"><span class="err" id="adNameErr" hidden>Give it a name first.</span></label>
           <label class="field" id="adParentWrap" hidden><span>Skin for</span><select class="input" id="adParent"></select></label>
           <div id="adSkins" hidden></div>
-          <label class="field" id="adWedWrap" hidden><span>Wedding skin (unlocks when married)</span><select class="input" id="adWed"></select></label>
           <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5, 6].map(r => `<label class="r${r}" ${r === 6 ? 'id="adMR"' : ''}><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
           <label class="field"><span>Description</span><textarea class="input" id="adDesc" maxlength="240" placeholder="One or two lines of lore"></textarea></label>
           <fieldset class="looks"><legend class="lbl-sm" id="lkLegend">Plaza look</legend>
@@ -3610,8 +3654,7 @@ function fillAdminForm(entry) {
   $('#adNameErr').hidden = true;
   $('#adArt').value = '';
   fillParentOptions(entry ? entry.parent : null);
-  const wedOpts = entry ? S.pool.filter(x => x.type === 'skin' && x.parent === entry.id) : [];
-  $('#adWed').innerHTML = `<option value="">${wedOpts.length ? 'None yet' : 'None yet (add a skin for this character first)'}</option>` + wedOpts.map(x => `<option value="${esc(x.id)}" ${entry.weddingSkin === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+  $('#adType').disabled = !!(entry && entry.mc);
   adminPreview();
   renderAdminList();
 }
@@ -3642,7 +3685,6 @@ function adminPreview() {
   $('#adClearArt').hidden = !adminArt;
   $('#adUpLbl').textContent = adminArt ? 'Replace splash art' : 'Upload splash art';
   $('#adParentWrap').hidden = $('#adType').value !== 'skin';
-  $('#adWedWrap').hidden = $('#adType').value !== 'character';
   const isChar = $('#adType').value === 'character';
   $('#adAscWrap').hidden = !isChar;
   $('#adP_icon').src = adminIcon || adminArt || chibiSplash(readLook()); $('#adP_icon').classList.toggle('cut', !adminIcon); $('#adS_icon').textContent = adminIcon ? 'Uploaded' : 'Cut from the art'; $('#adIconX').hidden = !adminIcon;
@@ -3651,7 +3693,7 @@ function adminPreview() {
   sk.hidden = !(ed && isChar && ed.type === 'character');
   if (!sk.hidden) {
     const list = S.pool.filter(x => x.type === 'skin' && x.parent === ed.id);
-    sk.innerHTML = `<div class="field"><span>Skins of ${esc(ed.name)}</span><div class="skin-chips">${list.map(x => `<button type="button" class="chip" data-editskin="${esc(x.id)}">${esc(x.name.replace(ed.name + ' · ', ''))}</button>`).join('')}<button type="button" class="btn mint sm" data-newskin="${esc(ed.id)}">${icon('plus')}Add a skin</button></div></div>`;
+    sk.innerHTML = `<div class="field"><span>Skins of ${esc(ed.name)} · ${list.length}</span><div class="skin-list">${list.map(x => `<button type="button" class="skin-li r${x.rarity}" data-editskin="${esc(x.id)}"><img src="${getArt(x)}" alt=""><b>${esc(x.name.replace(ed.name + ' · ', ''))}</b>${rtag(x.rarity)}${icon('edit')}</button>`).join('') || '<span class="tiny">No skins yet.</span>'}</div><div class="row" style="gap:6px"><button type="button" class="btn mint sm" data-newskin="${esc(ed.id)}">${icon('plus')}Add a skin</button><span class="tiny">A character can have any number of skins. Wedding (MR) skins are set in the Marriage skins tab.</span></div></div>`;
     sk.querySelectorAll('[data-editskin]').forEach(b => b.onclick = () => fillAdminForm(findEntry(b.dataset.editskin)));
     sk.querySelector('[data-newskin]').onclick = () => newSkinFor(ed.id);
   }
@@ -3659,7 +3701,9 @@ function adminPreview() {
   document.querySelector('fieldset.looks').hidden = !pet;
   $('#lkLegend').textContent = pet ? 'Pet look' : 'Plaza look'; $('#lkKindWrap').hidden = !pet; $('#lkStyleWrap').hidden = $('#lkPantsWrap').hidden = pet;
   $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
-  $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5;
+  const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
+  $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
+  $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
 }
@@ -3669,8 +3713,8 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked,
-    weddingSkin: type === 'character' ? ($('#adWed').value || null) : null };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked };
+  if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;
   if (adminEditId) { entry = findEntry(adminEditId); Object.assign(entry, data); delete entry.sample; }
@@ -3690,7 +3734,7 @@ async function saveAdmin(ev) {
     if (entry.type === 'character' && adminAsc[k]) { if (adminAsc[k] !== MEDIA.get(kk)) await mediaSet(kk, adminAsc[k]); entry[k] = 'idb:' + kk; }
     else if (entry[k]) { await mediaDel(kk); entry[k] = null; }
   }
-  if (entry.rarity === 5 && $('#adFeat').checked) S.featuredId = entry.id;
+  if (entry.rarity === 5 && $('#adFeat').checked && !entry.mc) S.featuredId = entry.id;
   else if (S.featuredId === entry.id) S.featuredId = null;
   persist(); renderMenu();
   toast(wasEdit ? `Saved ${name}.` : `Added ${name} to the pool.`);
@@ -3702,12 +3746,13 @@ function renderAdminList() {
   const list = [...S.pool].sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   el.innerHTML = list.length ? list.map(e => `<div class="ad-row r${e.rarity} ${e.id === adminEditId ? 'editing' : ''}">
       <img src="${getArt(e)}" alt="">
-      <div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="mt">${RNAME[e.rarity] || ''} ${TYPES[e.type]}${e.pullable === false ? ' · not pullable' : ''}${e.id === S.featuredId ? ' · <span class="feat">Limited</span>' : ''}${e.standard && e.rarity === 5 ? ' · <span class="feat">Permanent</span>' : ''}</div></div>
+      <div style="min-width:0"><div class="nm">${esc(e.name)}</div><div class="mt">${RNAME[e.rarity] || ''} ${TYPES[e.type]}${e.pullable === false ? ' · not pullable' : ''}${e.id === S.featuredId ? ' · <span class="feat">Limited</span>' : ''}${e.standard && e.rarity === 5 ? ' · <span class="feat">Permanent</span>' : ''}${e.mc ? ' · <span class="feat">Main character</span>' : ''}</div></div>
       <div class="acts">${e.type === 'character' ? `<button class="iconbtn" data-newskin="${esc(e.id)}" aria-label="Add a skin for ${esc(e.name)}" data-tip="${esc(`<b>Add a skin</b><span>New skin for ${esc(e.name)}</span>`)}">${icon('skins')}</button>` : ''}<button class="iconbtn" data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.name)}">${icon('edit')}</button><button class="iconbtn" data-del="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">${icon('trash')}</button></div>
       ${adminConfirm === e.id ? `<div class="confirm">Delete ${esc(e.name)}? This can't be undone. <button class="btn danger sm" data-yes="${esc(e.id)}">Delete</button><button class="btn ghost sm" data-no>Keep</button></div>` : ''}
     </div>`).join('') : '<div class="empty">The pool is empty. Add your first character on the left.</div>';
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { adminConfirm = null; fillAdminForm(findEntry(b.dataset.edit)); });
   el.querySelectorAll('[data-newskin]').forEach(b => b.onclick = () => { adminConfirm = null; newSkinFor(b.dataset.newskin); });
+  el.querySelectorAll('[data-del]').forEach(b => { if (MC_IDS[b.dataset.del]) b.remove(); });
   el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { adminConfirm = b.dataset.del; renderAdminList(); });
   el.querySelectorAll('[data-no]').forEach(b => b.onclick = () => { adminConfirm = null; renderAdminList(); });
   el.querySelectorAll('[data-yes]').forEach(b => b.onclick = async () => {
@@ -3755,7 +3800,7 @@ function showImport() {
       for (const k of ['art', 'art3', 'art6', 'getArt', 'icon']) { const mk = `${k === 'getArt' ? 'get' : k === 'icon' ? 'face' : k}:${e.id}`; if (e[k] && e[k].startsWith('data:')) { await mediaSet(mk, e[k]); e[k] = `idb:${mk}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
     if (d.icons) for (const [k, v] of Object.entries(d.icons)) if (typeof v === 'string' && v.startsWith('data:')) await mediaSet('icon:' + k, v);
-    S.pool = pool; S.featuredId = d.featuredId || null; if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
+    S.pool = pool; S.featuredId = d.featuredId || null; ensureMC(); if (d.banners) S.banners = { limited: { ...S.banners.limited, ...d.banners.limited }, standard: { ...S.banners.standard, ...d.banners.standard } };
     persist(); hydrateIcons(); renderMenu(); fillAdminForm(null); area.innerHTML = ''; toast(`Imported ${pool.length} entries.`);
   };
 }
@@ -3763,12 +3808,12 @@ function showReset() {
   const area = $('#adDataArea');
   area.innerHTML = `<div class="confirm" style="margin-top:10px">Replace the whole pool with the five sample entries? <button type="button" class="btn danger sm" id="adResetGo">Reset</button><button type="button" class="btn ghost sm" id="adResetNo">Cancel</button></div>`;
   $('#adResetNo').onclick = () => area.innerHTML = '';
-  $('#adResetGo').onclick = () => { const s = sampleState(); S.pool = s.pool; S.featuredId = s.featuredId; if (S.wallpaper && !findEntry(S.wallpaper)) S.wallpaper = null; persist(); renderMenu(); fillAdminForm(null); area.innerHTML = ''; toast('Pool reset to samples.'); };
+  $('#adResetGo').onclick = () => { const s = sampleState(); S.pool = s.pool; S.featuredId = s.featuredId; ensureMC(); if (S.wallpaper && !findEntry(S.wallpaper)) S.wallpaper = null; persist(); renderMenu(); fillAdminForm(null); area.innerHTML = ''; toast('Pool reset to samples.'); };
 }
 
 /* banners tab */
 function renderBannersTab() {
-  const urs = S.pool.filter(e => e.rarity === 5).sort((a, b) => a.name.localeCompare(b.name));
+  const urs = S.pool.filter(e => e.rarity === 5 && !e.mc && e.type !== 'skin' && e.type !== 'pet').sort((a, b) => a.name.localeCompare(b.name));
   const std = standardURs(), f = limitedUR(), gl = S.gacha.limited;
   $('#adPanel').innerHTML = `<div class="admin">
     <section class="stack" style="align-content:start">
@@ -3815,17 +3860,23 @@ function renderIconsTab() {
 }
 function iconsChanged() { hydrateIcons(); renderMenu(); renderIconsTab(); const mi = modalEl && modalEl.querySelector('.m-ic'); if (mi) mi.innerHTML = icon('wrench'); }
 
-/* skins tab: per skin a full art (used everywhere) and an unlock art (only on the new outfit popup) */
+/* skins tab: every skin of every character, editable in place: name, rarity, full art (everywhere) and unlock art (new outfit popup only) */
+let skDelArm = null;
 function renderSkinsTab() {
-  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => a.name.localeCompare(b.name));
+  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => !!b.mc - !!a.mc || a.name.localeCompare(b.name));
   const slot = (k, key, label, hint) => { const a = artFrom(k[key]);
-    return `<div class="sk-slot"><div class="sk-prev ${key === 'getArt' ? 'wide' : ''}">${a ? `<img src="${a}" alt="">` : `<span class="tiny">${key === 'getArt' ? 'Uses the full art' : 'Chibi'}</span>`}</div>
+    return `<div class="sk-slot"><div class="sk-prev ${key === 'getArt' ? 'wide' : ''}">${a ? `<img src="${a}" alt="">` : key === 'art' ? `<img src="${getArt(k)}" alt="" style="object-fit:contain;object-position:50% 100%">` : '<span class="tiny">Uses the full art</span>'}${key === 'art' ? rtag(k.rarity) : ''}</div>
       <div style="display:grid;gap:4px"><b>${label}</b><span class="tiny">${hint}</span><div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}${a ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-skup="${esc(k.id)}" data-skkey="${key}"></label>${a ? `<button class="link" data-skx="${esc(k.id)}" data-skkey="${key}">Remove</button>` : ''}</div></div></div>`; };
+  const short = (k, c) => k.name.replace(c.name + ' · ', '');
   $('#adPanel').innerHTML = `<div class="stack">
-    <div><h3>Skins</h3><p class="tiny"><b>Full art</b> is the skin's splash art everywhere (character screen, wallpaper, collection, pulls). <b>Unlock art</b> only appears in the "new outfit" animation when the skin is bought or received; without it the full art is used. MR wedding skins are listed here too.</p></div>
-    ${chars.map(c => { const list = S.pool.filter(x => x.type === 'skin' && x.parent === c.id);
-      return `<div class="sk-group"><div class="ad-head" style="margin:0"><h3 style="font-size:16px">${esc(c.name)}</h3><button class="btn mint sm" data-newsk="${esc(c.id)}">${icon('plus')}New skin</button></div>
-        ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head"><b>${esc(k.name.replace(c.name + ' · ', ''))}</b>${rtag(k.rarity)}<span class="tiny">${k.rarity === 6 ? 'Unlocked by marriage' : `Buyable for ${SKIN_PRICE} pearls`}</span><button class="link" data-skpv="${esc(k.id)}">Preview animation</button></div>
+    <div><h3>Skins</h3><p class="tiny">Every character can have as many skins as you like: press <b>New skin</b> under a character for each one. Pick each skin's rarity (the tag shows on its card). <b>Full art</b> is the skin's splash art everywhere (character screen, wallpaper, collection, pulls). <b>Unlock art</b> only appears in the "new outfit" animation when the skin is bought or received; without it the full art is used. MR wedding skins come from the Marriage skins tab.</p></div>
+    ${chars.map(c => { const list = skinsOf(c.id).sort((a, b) => a.rarity - b.rarity || a.name.localeCompare(b.name));
+      return `<div class="sk-group"><div class="ad-head" style="margin:0"><h3 style="font-size:16px">${esc(c.name)} <span class="muted" style="font-family:var(--body);font-size:13px">· ${list.length} skin${list.length === 1 ? '' : 's'}</span></h3><button class="btn mint sm" data-newsk="${esc(c.id)}">${icon('plus')}New skin</button></div>
+        ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head">
+            <input class="input sk-nm" data-sknm="${esc(k.id)}" maxlength="30" value="${esc(short(k, c))}" aria-label="Skin name">
+            ${k.rarity === 6 ? `<span class="row" style="gap:6px">${rtag(6)}<span class="tiny">Unlocked by marriage</span></span>`
+              : `<div class="seg sk-rar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div><span class="tiny">Buyable for ${SKIN_PRICE} pearls</span>`}
+            <span class="row" style="gap:10px"><button class="link" data-skpv="${esc(k.id)}">Preview</button>${k.rarity === 6 ? '' : `<button class="link" data-skdel="${esc(k.id)}" style="color:${skDelArm === k.id ? '#ff6b81' : ''}">${skDelArm === k.id ? 'Tap again to delete' : 'Delete'}</button>`}</span></div>
           ${slot(k, 'art', 'Full art', 'Shown everywhere')}${slot(k, 'getArt', 'Unlock art', 'Only when bought or received')}</div>`).join('') : '<p class="tiny">No skins yet.</p>'}</div>`; }).join('')}
   </div>`;
   document.querySelectorAll('[data-skup]').forEach(inp => inp.onchange = async () => {
@@ -3836,8 +3887,30 @@ function renderSkinsTab() {
   document.querySelectorAll('[data-skx]').forEach(b => b.onclick = async () => {
     const k = findEntry(b.dataset.skx), key = b.dataset.skkey; await mediaDel(`${key === 'art' ? 'art' : 'get'}:${k.id}`); k[key] = null; persist(); renderSkinsTab(); renderMenu();
   });
+  document.querySelectorAll('[data-sknm]').forEach(inp => inp.onchange = () => {
+    const k = findEntry(inp.dataset.sknm), c = findEntry(k.parent), v = inp.value.trim() || 'Outfit';
+    k.name = c ? `${c.name} · ${v}` : v; persist(); renderMenu(); toast('Skin renamed.');
+  });
+  document.querySelectorAll('[data-skr]').forEach(inp => inp.onchange = () => { findEntry(inp.dataset.skr).rarity = +inp.value; persist(); renderSkinsTab(); renderMenu(); });
   document.querySelectorAll('[data-skpv]').forEach(b => b.onclick = () => { const k = findEntry(b.dataset.skpv); closeModal(); showSkinGet(k, k.rarity === 6 ? { vow: true } : {}); });
-  document.querySelectorAll('[data-newsk]').forEach(b => b.onclick = () => { adminTab = 'pool'; renderAdminTab(); newSkinFor(b.dataset.newsk); });
+  document.querySelectorAll('[data-skdel]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.skdel;
+    if (skDelArm !== id) { skDelArm = id; renderSkinsTab(); return; }
+    skDelArm = null;
+    await mediaDel('art:' + id); await mediaDel('get:' + id);
+    S.pool = S.pool.filter(x => x.id !== id); delete S.owned[id];
+    for (const cid in S.equip) if (S.equip[cid] === id) delete S.equip[cid];
+    S.pool.forEach(x => { if (x.weddingSkin === id) x.weddingSkin = null; });
+    if (S.wallpaper === id) S.wallpaper = null;
+    persist(); renderSkinsTab(); renderMenu(); toast('Skin deleted.');
+  });
+  document.querySelectorAll('[data-newsk]').forEach(b => b.onclick = () => {
+    const c = findEntry(b.dataset.newsk), n = skinsOf(c.id).filter(x => x.rarity !== 6).length + 1;
+    const k = { id: `${c.id}-skin-${Math.random().toString(36).slice(2, 6)}`, type: 'skin', name: `${c.name} · Outfit ${n}`, rarity: c.rarity, parent: c.id, art: null, pullable: true, desc: '', look: { ...c.look } };
+    S.pool.push(k); persist(); renderSkinsTab(); renderMenu();
+    const inp = document.querySelector(`[data-sknm="${k.id}"]`); if (inp) { inp.scrollIntoView({ block: 'center' }); inp.focus(); inp.select(); }
+    toast(`New skin added for ${c.name}. Give it a name and upload its art.`);
+  });
 }
 
 /* marriage skins tab: one MR skin per character, unlocked by marrying them */
@@ -3913,7 +3986,7 @@ function renderWalletTab() {
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
     <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button><button class="btn ghost sm" id="wSpin">Reset daily spin</button></div>
     <div><h3>Bond &amp; marriage</h3><p class="tiny">Test helpers. Rings are also editable in the wallet above.</p></div>
-    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
+    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -3935,7 +4008,8 @@ function renderWalletTab() {
   $('#wRings').onclick = () => { S.wallet.rings += 5; persist(); renderMenu(); renderWalletTab(); toast('Added 5 rings.'); };
   $('#wGifts').onclick = () => { Object.keys(GIFTS).forEach(k => S.gifts[k] += 5); persist(); toast('Added 5 of each gift.'); };
   $('#wBond').onclick = () => { S.pool.filter(e => e.type === 'character' && owns(e.id)).forEach(e => S.bond[e.id] = { ...bondOf(e.id), xp: BOND_XP[BOND_MAX] }); persist(); toast('Every owned character is at bond level 10.'); };
-  $('#wMC').onclick = () => { S.player.mc = null; persist(); toast('Main character choice reset. You will pick again on the next start.'); };
+  $('#wMCcd').onclick = () => { S.player.mcAt = null; persist(); toast('Main character switch cooldown cleared.'); };
+  $('#wMC').onclick = () => { S.player.mc = null; S.player.mcAt = null; persist(); toast('Main character choice reset. You will pick again on the next start.'); };
   $('#wBondReset').onclick = () => { S.bond = {}; persist(); toast('Bonds and marriages reset.'); };
   $('#wPity').onclick = () => { Object.assign(S.gacha.limited, { pity5: 0, pity4: 0, guarantee: false }); Object.assign(S.gacha.standard, { pity5: 0, pity4: 0 }); persist(); renderWalletTab(); toast('Pity reset.'); };
   $('#wClear').onclick = () => {
