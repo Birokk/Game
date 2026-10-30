@@ -1800,7 +1800,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .pull.charging{cursor:grab;touch-action:none}
 .pull.dragging{cursor:grabbing}
 .sph-stage{position:absolute;inset:0;z-index:2;pointer-events:none}
-.sph{--drag:0px;--sz:min(30vmin,250px);position:absolute;left:50%;top:76%;width:var(--sz);height:var(--sz);margin:calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2);border-radius:50%;
+.sph{--drag:0px;--sz:min(28vmin,240px);position:absolute;left:50%;top:66%;width:var(--sz);height:var(--sz);margin:calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2);border-radius:50%;
   background:radial-gradient(circle at 36% 30%,#fff 0 7%,var(--c3) 17%,var(--c2) 44%,var(--c1) 70%,color-mix(in srgb,var(--c1) 55%,#000) 100%);
   box-shadow:0 0 40px 8px var(--c2),0 0 130px 40px color-mix(in srgb,var(--c1) 50%,transparent),inset 0 0 34px rgba(255,255,255,.45);
   transform:translateY(var(--drag)) scale(calc(1 + var(--pp,0) * .14));
@@ -1818,7 +1818,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .sph.pulse{animation:sphPulse .8s ease-out}
 .sph.crack{animation:sphCrack 1s ease-out}
 .pull.burst .sph{transition:transform .45s ease-in,opacity .45s ease-in;transform:scale(2.8);opacity:0}
-.sph-beam{position:absolute;left:50%;top:0;width:4px;height:76%;margin-left:-2px;background:linear-gradient(transparent,var(--p2));opacity:calc(.2 + var(--pp,0) * .7);filter:blur(1px);transition:opacity .4s}
+.sph-beam{position:absolute;left:50%;top:0;width:4px;height:66%;margin-left:-2px;background:linear-gradient(transparent,var(--p2));opacity:calc(.2 + var(--pp,0) * .7);filter:blur(1px);transition:opacity .4s}
 .pull:not(.charging) .sph-beam{opacity:0}
 .sph-hint{position:absolute;left:50%;top:30%;transform:translateX(-50%);z-index:3;display:grid;justify-items:center;gap:4px;pointer-events:none;text-align:center;opacity:calc(1 - var(--pp,0) * .7);transition:opacity .4s}
 .sph-hint b{font-family:var(--display);font-weight:400;font-size:clamp(22px,3.2vw,34px);text-shadow:0 0 18px var(--p2),0 2px 8px rgba(0,0,0,.6);animation:shimmer 2.4s linear infinite}
@@ -2002,3 +2002,18 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
   .ml-row{padding:8px 12px 8px 8px}.ml-env{width:40px;height:40px}.ml-qty{padding-left:8px}
   .ml-item .inv-pic{width:70px;height:70px}.ml-actions .sx-btn.big{min-width:0;flex:1}
 }
+
+/* sphere surroundings: water, reflection, orbit sparks and lightning live on two canvases around the sphere */
+.sph-back,.sph-front{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sph{z-index:1}.sph-front{z-index:2}
+/* 3D shading: a soft shadow side and a bright specular glint, plus two tilted energy bands circling the sphere */
+.sph::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 72% 80%,transparent 38%,rgba(0,0,0,.38) 78%),radial-gradient(ellipse 26% 15% at 33% 22%,rgba(255,255,255,.95),transparent 72%),radial-gradient(circle at 50% 50%,transparent 62%,rgba(255,255,255,.28) 70%,transparent 74%)}
+.sph-band{inset:-6%;border:2px solid color-mix(in srgb,var(--c3) 80%,transparent);border-radius:50%;transform:rotateX(74deg) rotateZ(0deg);box-shadow:0 0 14px var(--c2);opacity:.75;animation:sphBand 3.2s linear infinite}
+.sph-band.b2{inset:-14%;opacity:.5;animation-duration:4.6s;animation-direction:reverse;border-style:dashed}
+.sph.c5 .sph-band{border-color:#fff;box-shadow:0 0 18px #ff6ec7,0 0 30px #8ff7ea;opacity:.95}
+@keyframes sphBand{from{transform:rotateX(74deg) rotateY(-12deg) rotateZ(0)}to{transform:rotateX(74deg) rotateY(-12deg) rotateZ(360deg)}}
+.sph.c5{box-shadow:0 0 50px 14px var(--c2),0 0 130px 46px color-mix(in srgb,var(--c1) 55%,transparent),inset 0 0 34px rgba(255,255,255,.5)}
+/* UR arrival: the screen shakes */
+.pull.quake .sph-stage{animation:quake .7s cubic-bezier(.36,.07,.19,.97)}
+@keyframes quake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}

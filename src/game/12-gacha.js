@@ -363,12 +363,13 @@ function showPull(results, n, bk, opts = {}) {
   pullEl = document.createElement('div');
   pullEl.className = 'pull t3 r3 charging';
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
-  pullEl.innerHTML = `<div class="sph-stage"><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i></div></div>
+  pullEl.innerHTML = `<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i><i class="sph-band"></i><i class="sph-band b2"></i></div><canvas class="sph-front"></canvas></div>
     <div class="sph-hint" id="sphHint"><b>Pull down to release</b><span>${icon('up')}${icon('up')}</span></div>
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
   pullState = { results, n, bk, best, fake, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
   // drag down anywhere; let go past the line to release (Enter / Space / ↓ also work)
@@ -388,6 +389,8 @@ function sphereTier(t) {
   if (!pullEl) return;
   pullEl.classList.remove('t3', 't4', 't5'); pullEl.classList.add('t' + t);
   const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
+  const sf = pullState && pullState.sfx; if (sf) { sf.tier = t; sf.surge(t); }
+  if (t === 5) { pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake'); }
 }
 function releaseSphere() {
   const st = pullState; if (!st || st.phase !== 'charge') return;
@@ -406,7 +409,7 @@ function fakeTransform() {
   const st = pullState; if (!st || !pullEl) return;
   const a = pullEl.querySelector('.fk-art'); if (a) a.classList.add('out');
   pullEl.classList.add('fakeout');
-  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-crack"></div><div class="fake-flash"></div>');
+  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');   // no ray burst: lightning, flash and the quake carry it
   $('#sph').classList.add('crack');
   sphereTier(5);
   st.fx.burst(120, 640, 5);
@@ -417,7 +420,123 @@ function burstSphere() {
   pullEl.classList.add('burst');
   pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''}">${RNAME[st.best]}</div>` : ''}`);
   st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
+  if (st.sfx) st.sfx.shock();
   pullLater(st.best >= 4 ? 1500 : 700, advancePull);
+}
+/* the sphere's surroundings, drawn on two canvases (behind and in front of the sphere): a dark water surface with
+   perspective waves, the sphere's shimmering reflection and ripples; orbiting sparks on tilted rings (the far half behind
+   the sphere, the near half in front, so it reads as 3D); lightning that crawls over the sphere at SSR and lashes out
+   into the water at UR; sparks pulled in while charging; a shockwave across the water when it bursts */
+const SPH_COL = { 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
+function startSphereFx(root) {
+  const back = root.querySelector('.sph-back'), front = root.querySelector('.sph-front'), sphEl = root.querySelector('#sph');
+  const bg = back.getContext('2d'), fg = front.getContext('2d');
+  let W = 0, H = 0, dpr = 1, raf = 0, last = performance.now(), nextRipple = 0, nextBolt = 0, flash = 0, shockT = -1;
+  const ripples = [], bolts = [], motes = [], t0 = performance.now();
+  const fit = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; [back, front].forEach(c => { c.width = W * dpr; c.height = H * dpr; }); };
+  fit(); addEventListener('resize', fit);
+  const api = { tier: 3,
+    surge(t) { const big = t === 5; for (let i = 0; i < (big ? 4 : 2); i++) ripples.push({ age: -i * .18, k: big ? 1.8 : 1.2 }); flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
+    shock() { shockT = 0; for (let i = 0; i < 3; i++) ripples.push({ age: -i * .1, k: 2.6 }); flash = .4; },
+    stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); } };
+  const col = (i, ph = 0) => { const c = SPH_COL[api.tier]; return api.tier === 5 ? c[Math.floor(i + ph) % c.length] : c[i % c.length]; };
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
+  // jagged lightning path by midpoint displacement, with a few side branches
+  function zig(x1, y1, x2, y2, rough, depth, out) {
+    if (depth <= 0) { out.push([x2, y2]); return; }
+    const mx = (x1 + x2) / 2 + (Math.random() - .5) * rough, my = (y1 + y2) / 2 + (Math.random() - .5) * rough;
+    zig(x1, y1, mx, my, rough / 2, depth - 1, out); zig(mx, my, x2, y2, rough / 2, depth - 1, out);
+  }
+  function bolt(big) {
+    const b = sph(); if (!b) return;
+    const a = Math.random() * Math.PI * 2, sx = b.x + Math.cos(a) * b.r * .92, sy = b.y + Math.sin(a) * b.r * .92;
+    let ex, ey;
+    if (big && Math.random() < .5) { ex = b.x + (Math.random() - .5) * W * .5; ey = horizon() + Math.random() * (H - horizon()) * .4; }   // strike the water
+    else if (big) { const d = b.r * (1.8 + Math.random() * 1.8); ex = b.x + Math.cos(a) * d; ey = b.y + Math.sin(a) * d; }
+    else { const a2 = a + (Math.random() - .5) * 1.4; ex = b.x + Math.cos(a2) * b.r * .95; ey = b.y + Math.sin(a2) * b.r * .95; }   // crawls over the surface
+    const pts = [[sx, sy]], len = Math.hypot(ex - sx, ey - sy); zig(sx, sy, ex, ey, len * .45, big ? 6 : 4, pts);
+    const branches = big ? Array.from({ length: 2 }, () => { const p = pts[Math.floor(pts.length * (.3 + Math.random() * .4))], br = [[p[0], p[1]]]; zig(p[0], p[1], p[0] + (Math.random() - .5) * len * .6, p[1] + (Math.random() - .3) * len * .5, len * .25, 4, br); return br; }) : [];
+    bolts.push({ pts, branches, life: big ? .32 : .2, max: big ? .32 : .2, w: big ? 3.2 : 1.8, c: col(Math.floor(Math.random() * 4)) });
+    if (big) { flash = Math.max(flash, .22); ripples.push({ age: 0, k: .9, x: ex }); }
+  }
+  const horizon = () => H * .86;
+  function sph() { if (!sphEl.isConnected) return null; const r = sphEl.getBoundingClientRect(); if (!r.width) return null; return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2, o: +getComputedStyle(sphEl).opacity }; }
+  function stroke(g, pts, w, c, glow) { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.lineWidth = w; g.strokeStyle = c; g.shadowColor = glow; g.shadowBlur = 18; g.stroke(); }
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
+    const b = sph(), hz = horizon(), pp = +(getComputedStyle(root).getPropertyValue('--pp') || 0), tier = api.tier;
+    bg.setTransform(dpr, 0, 0, dpr, 0, 0); fg.setTransform(dpr, 0, 0, dpr, 0, 0); bg.clearRect(0, 0, W, H); fg.clearRect(0, 0, W, H);
+    // water
+    const wg = bg.createLinearGradient(0, hz, 0, H); wg.addColorStop(0, rgba(col(0), .22)); wg.addColorStop(.25, 'rgba(6,8,18,.85)'); wg.addColorStop(1, 'rgba(2,3,8,.95)');
+    bg.fillStyle = wg; bg.fillRect(0, hz, W, H - hz);
+    const hl = bg.createLinearGradient(0, 0, W, 0); hl.addColorStop(0, 'transparent'); hl.addColorStop(.5, rgba(col(2), .55)); hl.addColorStop(1, 'transparent');
+    bg.fillStyle = hl; bg.fillRect(0, hz - 1, W, 2);
+    bg.lineWidth = 1;
+    for (let i = 1; i < 16; i++) {   // perspective wave lines, closer = wider apart and brighter
+      const q = i / 16, y = hz + (H - hz) * Math.pow(q, 1.7), amp = 1 + q * 4;
+      bg.beginPath(); for (let x = 0; x <= W; x += 24) { const yy = y + Math.sin(x * .012 / (q + .2) + t * (1.2 + q) + i) * amp; x ? bg.lineTo(x, yy) : bg.moveTo(x, yy); }
+      bg.strokeStyle = rgba(col(1), .05 + q * .1); bg.stroke();
+    }
+    if (b && b.o > .05) {
+      const near = clamp(1 - (hz - b.y) / (H * .55), .15, 1), alpha = near * b.o;
+      // reflection: soft glow on the water plus a shimmering column of light streaks
+      const ry = hz + (hz - b.y) * .12 + 6, rg = bg.createRadialGradient(b.x, ry, 0, b.x, ry, b.r * 2.2);
+      rg.addColorStop(0, rgba(col(1, t), .55 * alpha)); rg.addColorStop(1, 'transparent');
+      bg.save(); bg.translate(b.x, ry); bg.scale(1, .28); bg.translate(-b.x, -ry); bg.fillStyle = rg; bg.beginPath(); bg.arc(b.x, ry, b.r * 2.2, 0, 7); bg.fill(); bg.restore();
+      for (let i = 0; i < 22; i++) {
+        const q = i / 22, y = hz + 4 + (H - hz) * q * .9, w = b.r * (1.3 - q * .6) * (.5 + .5 * Math.abs(Math.sin(t * 3 + i * 1.7)));
+        bg.fillStyle = rgba(i % 3 ? col(2) : col(1, t), (.5 - q * .4) * alpha); bg.fillRect(b.x - w / 2 + Math.sin(t * 2 + i) * 6, y, w, 1.6 + q * 2);
+      }
+      // ripples under the sphere
+      if (now > nextRipple) { ripples.push({ age: 0, k: .7 + near * .5 }); nextRipple = now + 900 - tier * 120; }
+    }
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const rp = ripples[i]; rp.age += dt; if (rp.age < 0) continue;
+      const life = 1.8 * rp.k, q = rp.age / life; if (q >= 1) { ripples.splice(i, 1); continue; }
+      const rx = (40 + q * 420) * rp.k, x = rp.x ?? (b ? b.x : W / 2);
+      bg.beginPath(); bg.ellipse(x, hz + 10 + q * 26, rx, rx * .12, 0, 0, Math.PI * 2);
+      bg.strokeStyle = rgba(col(2), (1 - q) * .6); bg.lineWidth = 2 * (1 - q) + .5; bg.stroke();
+    }
+    if (shockT >= 0) {   // burst shockwave across the water and the air
+      shockT += dt; const q = shockT / .9;
+      if (q < 1 && b) { fg.beginPath(); fg.arc(b.x, b.y, 40 + q * Math.max(W, H) * .8, 0, 7); fg.strokeStyle = rgba(col(2), (1 - q) * .8); fg.lineWidth = 10 * (1 - q) + 1; fg.shadowColor = col(1); fg.shadowBlur = 30; fg.stroke(); fg.shadowBlur = 0; }
+    }
+    if (b && b.o > .05) {
+      // orbiting sparks on tilted rings: far side drawn behind the sphere, near side in front
+      const rings = tier === 5 ? 3 : tier === 4 ? 2 : 1;
+      for (let k = 0; k < rings; k++) {
+        const tilt = [-.35, .5, -1.1][k], rx = b.r * (1.45 + k * .25), ry = rx * .3, sp = [1, -1.3, .8][k] * (1 + pp * 2), n = 14 + tier * 4;
+        for (let j = 0; j < n; j++) {
+          const a = j / n * Math.PI * 2 + t * sp, cx = Math.cos(a) * rx, cy = Math.sin(a) * ry, depth = Math.sin(a);
+          const x = b.x + cx * Math.cos(tilt) - cy * Math.sin(tilt), y = b.y + cx * Math.sin(tilt) + cy * Math.cos(tilt);
+          const g = depth < 0 ? bg : fg, size = (1.4 + (depth + 1) * 1.3) * (tier === 5 ? 1.3 : 1);
+          g.fillStyle = rgba(col(j % 3, t * 2), (depth < 0 ? .35 : .9) * b.o); g.beginPath(); g.arc(x, y, size, 0, 7); g.fill();
+        }
+      }
+      // charging: sparks pulled into the sphere
+      if (root.classList.contains('charging') && Math.random() < .3 + pp) { const a = Math.random() * 7, d = b.r * (3 + Math.random() * 2); motes.push({ x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d, life: .7, max: .7 }); }
+      // lightning: crawling arcs from SSR, big strikes at UR
+      if (tier >= 4 && now > nextBolt) { bolt(tier === 5 && Math.random() < .55); nextBolt = now + (tier === 5 ? 90 + Math.random() * 220 : 260 + Math.random() * 420); }
+    }
+    for (let i = motes.length - 1; i >= 0; i--) {
+      const m = motes[i]; m.life -= dt; if (m.life <= 0 || !b) { motes.splice(i, 1); continue; }
+      m.x += (b.x - m.x) * dt * 4; m.y += (b.y - m.y) * dt * 4;
+      fg.fillStyle = rgba(col(2), m.life / m.max); fg.beginPath(); fg.arc(m.x, m.y, 2, 0, 7); fg.fill();
+    }
+    fg.lineCap = 'round'; fg.lineJoin = 'round';
+    for (let i = bolts.length - 1; i >= 0; i--) {
+      const bo = bolts[i]; bo.life -= dt; if (bo.life <= 0) { bolts.splice(i, 1); continue; }
+      const a = bo.life / bo.max, flick = Math.random() < .25 ? .4 : 1;
+      fg.globalAlpha = a * flick;
+      [bo.pts, ...bo.branches].forEach((pts, j) => { stroke(fg, pts, bo.w * (j ? .55 : 1) * 2.4, rgba(bo.c, .55), bo.c); stroke(fg, pts, bo.w * (j ? .5 : 1) * .8, '#fff', bo.c); });
+      fg.globalAlpha = 1;
+    }
+    fg.shadowBlur = 0;
+    if (flash > 0) { fg.fillStyle = rgba(col(2), flash * .35); fg.fillRect(0, 0, W, H); flash = Math.max(0, flash - dt * 1.6); }
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+  return api;
 }
 /* taps only move between reveals: the intro always plays (use Skip to jump), and each reveal holds briefly so a double tap can't skip it */
 function tapPull() {
@@ -429,6 +548,7 @@ function advancePull() {
   pullClear(st);
   st.i++; st.phase = 'reveal';
   if (st.fx) st.fx.intro = false;
+  if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return showSummary();
   const r = st.results[st.order[st.i]], v = resultView(r);
   st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
@@ -489,7 +609,7 @@ function sumItems(st) {
   return out;
 }
 function closePull(silent) {
-  if (pullState) { pullClear(pullState); if (pullState.fx) pullState.fx.stop(); }
+  if (pullState) { pullClear(pullState); if (pullState.fx) pullState.fx.stop(); if (pullState.sfx) pullState.sfx.stop(); }
   if (pullEl) pullEl.remove(); pullEl = null; pullState = null;
   if (!silent) { refreshSummon(); refreshCharacters(); }
 }
