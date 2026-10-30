@@ -347,34 +347,78 @@ function startPfx(canvas, tier) {
   raf = requestAnimationFrame(frame);
   return api;
 }
-/* fakeout: now and then a UR pull starts out looking like an SSR and transforms mid-intro (never when hard pity guaranteed the UR) */
+/* pull intro: pull the screen down to release a magic sphere; it rises slowly and changes colour from blue (lowest)
+   through orange (SSR) to prism (UR), stopping at the best rarity in the pull, then bursts into the reveals.
+   Fakeout: now and then a UR pull stops at orange, a character wallpaper (admin → Summon animation, S.fakeArts) slides in,
+   and the sphere transforms into UR. Never when hard pity guaranteed the UR. */
 const FAKEOUT_CHANCE = .3;
-function showPull(results, n, bk) {
+function fakeArt() {
+  const own = (S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean);
+  if (own.length) return rpick(own);
+  const f = findEntry(S.featuredId); return f ? baseSplash(f) : null;
+}
+function showPull(results, n, bk, opts = {}) {
   closePull(true);
   const best = Math.max(...results.map(r => r.rarity));
-  const fake = best === 5 && !results.some(r => r.rarity === 5 && r.hard) && Math.random() < FAKEOUT_CHANCE;
-  const shown = fake ? 4 : best;
+  const fake = best === 5 && !results.some(r => r.rarity === 5 && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
   pullEl = document.createElement('div');
-  pullEl.className = `pull t${shown} r${shown}`;
+  pullEl.className = 'pull t3 r3 charging';
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
-  pullEl.innerHTML = `<div class="meteor-wrap"><div class="meteor"></div></div><div class="orb"></div><div class="rings"><i></i><i></i><i></i></div><div class="flash"></div>
-    ${shown >= 4 ? `<div class="stamp">${RNAME[shown]}</div>` : ''}<div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
+  pullEl.innerHTML = `<div class="sph-stage"><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i></div></div>
+    <div class="sph-hint" id="sphHint"><b>Pull down to release</b><span>${icon('up')}${icon('up')}</span></div>
+    <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
-  const order = results.map((r, i) => i).filter(i => results[i].kind === 'entry');
-  pullState = { results, n, bk, i: -1, phase: 'intro', readyAt: 0, order: order.length ? order : [0], fx: startPfx(pullEl.querySelector('.pfx'), shown) };
+  const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
+  pullState = { results, n, bk, best, fake, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
-  if (fake) pullState.timer = setTimeout(fakeoutUpgrade, (TIER_BURST[4] + .8) * 1000);   // while the SSR stamp is showing
-  else pullState.timer = setTimeout(advancePull, TIER_REVEAL[best] * 1000);
+  // drag down anywhere; let go past the line to release (Enter / Space / ↓ also work)
+  const need = () => Math.max(90, innerHeight * .14), sph = $('#sph');
+  let y0 = null;
+  const drag = d => { sph.style.setProperty('--drag', d + 'px'); pullEl.style.setProperty('--pp', Math.min(1, d / need())); };
+  pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; y0 = e.clientY; pullEl.setPointerCapture(e.pointerId); pullEl.classList.add('dragging'); });
+  pullEl.addEventListener('pointermove', e => { if (y0 !== null) drag(clamp(e.clientY - y0, 0, innerHeight * .35)); });
+  const up = e => { if (y0 === null) return; const d = e.clientY - y0; y0 = null; pullEl.classList.remove('dragging'); if (d >= need()) releaseSphere(); else drag(0); };
+  pullEl.addEventListener('pointerup', up); pullEl.addEventListener('pointercancel', up);
+  pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
+  document.addEventListener('keydown', pullState.onKey);
 }
-function fakeoutUpgrade() {
-  const st = pullState; if (!st || st.phase !== 'intro' || !pullEl) return;
-  pullEl.classList.remove('t4', 'r4'); pullEl.classList.add('t5', 'r5', 'fakeout');
-  const old = pullEl.querySelector('.stamp'); if (old) old.remove();
-  pullEl.insertAdjacentHTML('beforeend', `<div class="fake-orb"></div><div class="fake-rings"><i></i><i></i><i></i></div><div class="fake-crack"></div><div class="fake-flash"></div><div class="stamp up">${RNAME[5]}</div>`);
-  if (st.fx) st.fx.stop();
-  st.fx = startPfx(pullEl.querySelector('.pfx'), 5);
-  st.timer = setTimeout(advancePull, 2300);
+const pullLater = (ms, fn) => pullState && pullState.timers.push(setTimeout(fn, ms));
+function pullClear(st) { clearTimeout(st.timer); (st.timers || []).forEach(clearTimeout); st.timers = []; if (st.onKey) document.removeEventListener('keydown', st.onKey); st.onKey = null; }
+function sphereTier(t) {
+  if (!pullEl) return;
+  pullEl.classList.remove('t3', 't4', 't5'); pullEl.classList.add('t' + t);
+  const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
+}
+function releaseSphere() {
+  const st = pullState; if (!st || st.phase !== 'charge') return;
+  st.phase = 'rise'; pullClear(st);
+  pullEl.classList.remove('charging', 'dragging'); pullEl.classList.add('rising');
+  $('#sph').style.setProperty('--drag', '0px');
+  if (st.best >= 4) pullLater(1300, () => sphereTier(4));
+  if (st.fake) { pullLater(3400, fakeArtIn); pullLater(5400, fakeTransform); pullLater(6900, burstSphere); }
+  else { if (st.best === 5) pullLater(2500, () => sphereTier(5)); pullLater(st.best === 3 ? 3000 : 3800, burstSphere); }
+}
+function fakeArtIn() {
+  const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
+  pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`);
+}
+function fakeTransform() {
+  const st = pullState; if (!st || !pullEl) return;
+  const a = pullEl.querySelector('.fk-art'); if (a) a.classList.add('out');
+  pullEl.classList.add('fakeout');
+  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-crack"></div><div class="fake-flash"></div>');
+  $('#sph').classList.add('crack');
+  sphereTier(5);
+  st.fx.burst(120, 640, 5);
+}
+function burstSphere() {
+  const st = pullState; if (!st || !pullEl) return;
+  st.phase = 'burst';
+  pullEl.classList.add('burst');
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''}">${RNAME[st.best]}</div>` : ''}`);
+  st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
+  pullLater(st.best >= 4 ? 1500 : 700, advancePull);
 }
 /* taps only move between reveals: the intro always plays (use Skip to jump), and each reveal holds briefly so a double tap can't skip it */
 function tapPull() {
@@ -383,11 +427,12 @@ function tapPull() {
 }
 function advancePull() {
   const st = pullState; if (!st || st.phase === 'summary') return;
-  clearTimeout(st.timer);
-  st.i++; st.phase = 'reveal'; st.readyAt = performance.now() + 900;
+  pullClear(st);
+  st.i++; st.phase = 'reveal';
   if (st.fx) st.fx.intro = false;
   if (st.i >= st.order.length) return showSummary();
   const r = st.results[st.order[st.i]], v = resultView(r);
+  st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
   pullEl.classList.add('revealing');
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
@@ -410,7 +455,7 @@ function advancePull() {
 }
 function showSummary() {
   const st = pullState; if (!st) return;
-  clearTimeout(st.timer); st.phase = 'summary';
+  pullClear(st); st.phase = 'summary';
   if (st.fx) st.fx.intro = false;
   pullEl.classList.add('revealing');
   $('#pullSkip').hidden = true;
@@ -421,19 +466,31 @@ function showSummary() {
       ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
       ${r.isNew ? '<span class="new">NEW</span>' : ''}
       <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.pearls ? `<span class="dp">+${r.pearls} pearls</span>` : ''}</div></div>`; }).join('')}</div>
+    <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
-      <button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>
-      <button class="btn ghost" id="pullDone">Done</button>
+      ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
+      <button class="btn ghost" id="pullDone">${st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    <p class="sum-earn"><span class="cost">${curIcon('dust')}+${st.results.length * DUST_PER_PULL} Seaweeds</span>${st.results.reduce((a, r) => a + (r.starlight || 0), 0) ? `<span class="cost">${curIcon('starlight')}+${st.results.reduce((a, r) => a + (r.starlight || 0), 0)} Corals</span>` : ''}</p>
-    <p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>
+    ${st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
-  $('#pullAgain').onclick = () => doPull(st.n, st.bk);
+  const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();
   $('#pullDone').focus({ preventScroll: true });
 }
+/* everything a pull gave, added up: characters/skins are the cards above; this row is the rest */
+function sumItems(st) {
+  const R = st.results, add = (k, n, l, ic = curIcon(k)) => n ? out.push([ic, fmt(n), l]) : 0, out = [];
+  add('coins', R.reduce((a, r) => a + (r.kind === 'coins' ? r.amount : 0), 0), 'Gold');
+  add('fragssr', R.filter(r => r.kind === 'frag' && r.frag === 'ssr').length, 'SSR egg fragment');
+  add('fragur', R.filter(r => r.kind === 'frag' && r.frag === 'ur').length, 'UR egg fragment');
+  add('pearls', R.reduce((a, r) => a + (r.pearls || 0), 0), 'Pearls (extra copies)');
+  add('dust', st.preview ? 0 : R.length * DUST_PER_PULL, 'Seaweeds');
+  add('starlight', R.reduce((a, r) => a + (r.starlight || 0), 0), 'Corals');
+  add('exp', st.preview ? 0 : R.length * EXP.pull, 'EXP');
+  return out;
+}
 function closePull(silent) {
-  if (pullState) { clearTimeout(pullState.timer); if (pullState.fx) pullState.fx.stop(); }
+  if (pullState) { pullClear(pullState); if (pullState.fx) pullState.fx.stop(); }
   if (pullEl) pullEl.remove(); pullEl = null; pullState = null;
   if (!silent) { refreshSummon(); refreshCharacters(); }
 }

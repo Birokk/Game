@@ -6,7 +6,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Farm</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Farm</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -25,6 +25,7 @@ function renderAdminTab() {
   if (adminTab === 'server') return renderServerTab();
   if (adminTab === 'farm') return renderFarmTab();
   if (adminTab === 'events') return renderEventsTab();
+  if (adminTab === 'pullfx') return renderPullFxTab();
   renderPoolTab();
 }
 
@@ -668,4 +669,30 @@ function renderWalletTab() {
     $('#wClearNo').onclick = () => $('#wConfirm').innerHTML = '';
     $('#wClearGo').onclick = () => { S.owned = {}; S.wallpaper = null; S.gacha = sampleState().gacha; persist(); renderMenu(); renderWalletTab(); toast('Collection cleared.'); };
   };
+}
+
+/* summon animation tab: fakeout wallpapers (S.fakeArts, media keys fake:*) and previews that spend and add nothing */
+function previewPull(kind) {
+  const pick = r => rpick(S.pool.filter(e => e.type === 'character' && !e.mc && e.rarity === r)) || rpick(S.pool.filter(e => e.rarity === r && e.type !== 'skin'));
+  const ent = r => { const e = pick(r); return e ? { kind: 'entry', id: e.id, rarity: r, isNew: true, starUp: 0, pearls: 0 } : { kind: 'coins', amount: 500, rarity: 3 }; };
+  const coin = () => ({ kind: 'coins', amount: 500, rarity: 3 }), frag = () => ({ kind: 'frag', frag: 'ssr', rarity: 3 });
+  const res = kind === 'blue' ? [coin()] : kind === 'ssr' ? [ent(4)] : kind === 'ten' ? [coin(), ent(4), frag(), coin(), coin(), ent(5), coin(), frag(), coin(), ent(4)] : [ent(5)];
+  closeModal(); showPull(res, res.length, 'limited', { preview: true, fake: kind === 'fake' });
+}
+function renderPullFxTab() {
+  const p = $('#adPanel'); if (!p) return;
+  const list = (S.fakeArts || []).filter(k => MEDIA.get(k));
+  p.innerHTML = `<div class="stack">
+    <div><h3>Pull animation</h3><p class="tiny">Players pull the screen down to release a sphere. It rises and turns from blue (gold and fragments) to orange (SSR) to prism (UR), stopping at the best result of the pull. In ${Math.round(FAKEOUT_CHANCE * 100)}% of UR pulls (never on a hard-pity UR) the sphere stops at orange, one of the fakeout wallpapers below slides in, and the sphere transforms into UR.</p></div>
+    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button></div>
+    <div><h3>Fakeout wallpapers</h3><p class="tiny">One is picked at random for each fakeout. Wide character art works best (1920×1080; it covers the screen). Without any, the limited banner's featured character is used.</p></div>
+    <div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-fkdel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No fakeout wallpapers yet.</span>'}</div>
+    <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="fkUp" multiple></label></div>
+  </div>`;
+  p.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => previewPull(b.dataset.pv));
+  $('#fkUp').onchange = async ev => {
+    try { for (const f of ev.target.files) { const k = `fake:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.fakeArts = [...(S.fakeArts || []), k]; } persist(); renderPullFxTab(); toast('Fakeout wallpapers added.'); }
+    catch (e) { toast(e.message, true); }
+  };
+  p.querySelectorAll('[data-fkdel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.fkdel); S.fakeArts = (S.fakeArts || []).filter(k => k !== b.dataset.fkdel); persist(); renderPullFxTab(); });
 }
