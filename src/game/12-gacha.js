@@ -380,6 +380,9 @@ function showPull(results, n, bk, opts = {}) {
   closePull(true);
   const best = Math.max(...results.map(r => r.up ? 4 : r.rarity));
   const fake = best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
+  // rainbow: when the pull holds the limited banner's featured UR, half the time the UR sphere turns rainbow (a sure sign)
+  const featId = bk === 'limited' && bannerInfo('limited').feat ? bannerInfo('limited').feat.id : null;
+  const rainbow = best === 5 && (opts.rainbow ?? (!!featId && results.some(r => r.rarity === 5 && !r.up && r.id === featId) && Math.random() < RAINBOW_CHANCE));
   pullEl = document.createElement('div');
   pullEl.className = 'pull t3 r3 charging';
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
@@ -388,7 +391,7 @@ function showPull(results, n, bk, opts = {}) {
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
-  pullState = { results, n, bk, best, fake, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
@@ -407,19 +410,34 @@ const pullLater = (ms, fn) => pullState && pullState.timers.push(setTimeout(fn, 
 function pullClear(st) { clearTimeout(st.timer); (st.timers || []).forEach(clearTimeout); st.timers = []; if (st.onKey) document.removeEventListener('keydown', st.onKey); st.onKey = null; }
 function sphereTier(t) {
   if (!pullEl) return;
-  pullEl.classList.remove('t3', 't4', 't5'); pullEl.classList.add('t' + t);
-  const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
+  pullEl.classList.remove('t3', 't4', 't5'); pullEl.classList.add('t' + Math.min(t, 5));
+  const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'c6', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
   const sf = pullState && pullState.sfx; if (sf) { sf.tier = t; sf.surge(t); }
-  if (t === 5) { pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake'); }
+  if (t >= 5) { pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake'); }
 }
 function releaseSphere() {
   const st = pullState; if (!st || st.phase !== 'charge') return;
   st.phase = 'rise'; pullClear(st);
   pullEl.classList.remove('charging', 'dragging'); pullEl.classList.add('rising');
   $('#sph').style.setProperty('--drag', '0px');
-  if (st.best >= 4) pullLater(1300, () => sphereTier(4));
-  if (st.fake) { pullLater(3400, fakeArtIn); pullLater(5400, fakeTransform); pullLater(6900, burstSphere); }
-  else { if (st.best === 5) pullLater(2500, () => sphereTier(5)); pullLater(st.best === 3 ? 3000 : 3800, burstSphere); }
+  const rise = RISE_MS[st.best]; pullEl.style.setProperty('--rise', rise / 1000 + 's');
+  if (st.best >= 4) pullLater(rise * .3, () => sphereTier(4));
+  let urAt;
+  if (st.fake) { pullLater(rise * .62, fakeArtIn); urAt = rise * .62 + 2000; pullLater(urAt, fakeTransform); }
+  else if (st.best === 5) { urAt = rise * .62; pullLater(urAt, () => sphereTier(5)); }
+  if (st.rainbow) { const rbAt = Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + 2400, burstSphere); }
+  else pullLater(st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400), burstSphere);
+}
+/* the rarer the pull, the slower the sphere rises (blue, SSR, UR) */
+const RISE_MS = { 3: 2300, 4: 3800, 5: 5400 }, RAINBOW_CHANCE = .5;
+/* rainbow sphere: the UR sphere shatters into a shiny rainbow one and the whole screen turns rainbow */
+function rainbowSphere() {
+  const st = pullState; if (!st || !pullEl) return;
+  pullEl.classList.add('rainbow');
+  pullEl.insertAdjacentHTML('afterbegin', '<div class="rb-screen"><i></i></div>');
+  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash rb-flash"></div>');
+  sphereTier(6);
+  st.fx.burst(200, 900, 5);
 }
 function fakeArtIn() {
   const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
@@ -438,7 +456,7 @@ function burstSphere() {
   const st = pullState; if (!st || !pullEl) return;
   st.phase = 'burst';
   pullEl.classList.add('burst');
-  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''}">${RNAME[st.best]}</div>` : ''}`);
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''}">${RNAME[st.best]}</div>` : ''}`);
   st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
   if (st.sfx) st.sfx.shock();
   pullLater(st.best >= 4 ? 1500 : 700, advancePull);
@@ -447,7 +465,7 @@ function burstSphere() {
    and soft vertical light streaks in the tier's colours (like an anime power-up); orbiting sparks on tilted rings (the
    far half behind the sphere, the near half in front, so it reads as 3D); lightning that crawls over the sphere at SSR and
    lashes out into the air at UR; sparks pulled in while charging; a shockwave ring when it bursts */
-const SPH_COL = { 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
+const SPH_COL = { 6: ['#ff4d6d', '#ffa24d', '#fff04d', '#5dff8a', '#4dd2ff', '#a66bff'], 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
 function startSphereFx(root) {
   const back = root.querySelector('.sph-back'), front = root.querySelector('.sph-front'), sphEl = root.querySelector('#sph');
   const bg = back.getContext('2d'), fg = front.getContext('2d');
@@ -459,7 +477,7 @@ function startSphereFx(root) {
     surge(t) { const big = t === 5; boost = big ? 1.6 : 1; flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
     shock() { shockT = 0; flash = .4; boost = 2; },
     stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); } };
-  const col = (i, ph = 0) => { const c = SPH_COL[api.tier]; return api.tier === 5 ? c[Math.floor(i + ph) % c.length] : c[i % c.length]; };
+  const col = (i, ph = 0) => { const c = SPH_COL[api.tier]; return api.tier >= 5 ? c[Math.floor(i + ph) % c.length] : c[i % c.length]; };
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
   // jagged lightning path by midpoint displacement, with a few side branches
   function zig(x1, y1, x2, y2, rough, depth, out) {
@@ -510,20 +528,20 @@ function startSphereFx(root) {
     }
     if (b && b.o > .05) {
       // orbiting sparks on tilted rings: far side drawn behind the sphere, near side in front
-      const rings = tier === 5 ? 3 : tier === 4 ? 2 : 1;
+      const rings = tier >= 5 ? 3 : tier === 4 ? 2 : 1;
       for (let k = 0; k < rings; k++) {
         const tilt = [-.35, .5, -1.1][k], rx = b.r * (1.45 + k * .25), ry = rx * .3, sp = [1, -1.3, .8][k] * (1 + pp * 2), n = 14 + tier * 4;
         for (let j = 0; j < n; j++) {
           const a = j / n * Math.PI * 2 + t * sp, cx = Math.cos(a) * rx, cy = Math.sin(a) * ry, depth = Math.sin(a);
           const x = b.x + cx * Math.cos(tilt) - cy * Math.sin(tilt), y = b.y + cx * Math.sin(tilt) + cy * Math.cos(tilt);
-          const g = depth < 0 ? bg : fg, size = (1.4 + (depth + 1) * 1.3) * (tier === 5 ? 1.3 : 1);
+          const g = depth < 0 ? bg : fg, size = (1.4 + (depth + 1) * 1.3) * (tier >= 5 ? 1.3 : 1);
           g.fillStyle = rgba(col(j % 3, t * 2), (depth < 0 ? .35 : .9) * b.o); g.beginPath(); g.arc(x, y, size, 0, 7); g.fill();
         }
       }
       // charging: sparks pulled into the sphere
       if (root.classList.contains('charging') && Math.random() < .3 + pp) { const a = Math.random() * 7, d = b.r * (3 + Math.random() * 2); motes.push({ x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d, life: .7, max: .7 }); }
       // lightning: crawling arcs from SSR, big strikes at UR
-      if (tier >= 4 && now > nextBolt) { bolt(tier === 5 && Math.random() < .55); nextBolt = now + (tier === 5 ? 90 + Math.random() * 220 : 260 + Math.random() * 420); }
+      if (tier >= 4 && now > nextBolt) { bolt(tier >= 5 && Math.random() < .55); nextBolt = now + (tier >= 5 ? 90 + Math.random() * 220 : 260 + Math.random() * 420); }
     }
     for (let i = motes.length - 1; i >= 0; i--) {
       const m = motes[i]; m.life -= dt; if (m.life <= 0 || !b) { motes.splice(i, 1); continue; }
