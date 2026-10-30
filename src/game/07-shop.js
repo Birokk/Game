@@ -5,11 +5,12 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
-const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['starlight', 'shop', 'Corals Exchange'], ['dust', 'bag', 'Seaweeds Shop'], ['monthly', 'calendar', 'Monthly Pulls']];
+const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['starlight', 'shop', 'Corals Exchange'], ['dust', 'bag', 'Seaweeds Shop']];
 const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
 let shopTab = 'hot', shopEl = null, shopPick = null;
 function openShop(tab) {
-  closeModal(); shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
+  closeModal(); if (tab === 'monthly') tab = 'dust';   // monthly pulls live in the Seaweeds shop
+  shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
   if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
   renderShop();
 }
@@ -19,7 +20,7 @@ const hotPicks = () => { const all = shopSkins(); return [...all.filter(e => !ow
 function renderShop() {
   if (!shopEl) return;
   const m = monthly(), W = S.wallet;
-  const item = (id, ic, name, sub, price, cur, extra = '') => `<div class="mall-item ${extra}"><span class="mall-ic">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
+  const item = (id, ic, name, sub, price, cur, extra = '', r = 4) => `<div class="mall-item ${extra}"><span class="mall-ic r${r}">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
     <button class="mall-buy ${W[cur] >= price && !extra.includes('soldout') ? 'ok' : ''}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   const tab = SHOP_TABS.find(t => t[0] === shopTab);
   let strip = `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
@@ -41,17 +42,18 @@ function renderShop() {
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
     body = `<p class="tiny">Pearl packs. Real payments aren't connected yet, so these can't be bought for now.</p>
-      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big">${curIcon('pearls')}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
+      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big r${i > 2 ? 5 : 4}">${curIcon('pearls')}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets and marriage rings.</p>
-      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls')}${item('pt-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls')}</div>`;
+      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
   } else if (shopTab === 'starlight') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
-    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight')}${item('st-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
-  else if (shopTab === 'dust') body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Seaweeds, whatever you get.</p>
-    <div class="mall-grid">${Object.entries(DUST_GIFTS).map(([k, p]) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust')).join('')}</div>`;
-  else body = `<p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
+    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Wish ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
+  else body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Seaweeds, whatever you get.</p>
+    <h3 class="mall-h">Monthly pulls</h3><p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
     <div class="mall-grid">${['limited', 'standard'].map(bk => { const left = MONTHLY_LIMIT - m[bk];
-      return item('mo-' + bk, TK(bk), `Monthly ${TK_NAME[TK(bk)]}`, `${left} / ${MONTHLY_LIMIT} left this month`, MONTHLY_PRICE, 'dust', left <= 0 ? 'soldout' : ''); }).join('')}</div>`;
+      return item('mo-' + bk, TK(bk), `Monthly ${TK_NAME[TK(bk)]}`, `${left} / ${MONTHLY_LIMIT} left this month`, MONTHLY_PRICE, 'dust', left <= 0 ? 'soldout' : '', bk === 'limited' ? 5 : 4); }).join('')}</div>
+    <h3 class="mall-h">Gifts</h3>
+    <div class="mall-grid">${Object.entries(DUST_GIFTS).map(([k, p], i) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust', '', 3 + i)).join('')}</div>`;
   shopEl.innerHTML = `<div class="mall-word">SHOP</div>
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
       <div class="inv-cur">${['pearls', 'starlight', 'dust'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(W[k])}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
