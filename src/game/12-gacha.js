@@ -49,6 +49,29 @@ const payFor = (n, bk = curBanner) => S.wallet[TK(bk)] >= n ? { k: TK(bk), amt: 
 const canPull = (n, bk = curBanner) => S.wallet[TK(bk)] >= n || S.wallet.pearls >= COST[n];
 const payHTML = (n, bk = curBanner) => { const p = payFor(n, bk); return `<span class="cost">${curIcon(p.k)}${p.k === 'pearls' ? p.amt : '×' + p.amt}</span>`; };
 const freeReady = bk => S.freePull[bk] !== dayKey();
+/* a UR from a banner: featured banners use the 50/50 (a guarantee after a loss), pool banners pick evenly */
+function pickUR(B, g) {
+  if (B.feat) {
+    const others = B.lose.filter(e => e.id !== B.feat.id);
+    if (g.guarantee || !others.length || Math.random() < .5) { g.guarantee = false; return { item: B.feat, lost: false }; }
+    g.guarantee = true; return { item: rpick(others), lost: true };
+  }
+  return { item: B.ur.length ? rpick(B.ur) : null, lost: false };   // no featured UR: every UR in the pool has an equal chance
+}
+/* SSR → UR upgrade (1% of SSR pulls): the SSR is taken back and a UR is given with the banner's usual rules
+   (50/50 on featured banners, the featured UR straight away when guaranteed); counts as a UR for pity */
+const UPGRADE_CHANCE = .01;
+function upgradeSSR(B, g, res) {
+  if (!B.feat && !B.ur.length) return null;
+  const ssr = findEntry(res.id);
+  S.owned[res.id] = (S.owned[res.id] || 1) - 1; if (!S.owned[res.id]) delete S.owned[res.id];
+  S.wallet.starlight -= res.starlight || 0;
+  const { item, lost } = pickUR(B, g); if (!item) return null;
+  g.pity5 = 0; g.pity4 = 0;
+  const out = { kind: 'entry', id: item.id, rarity: 5, lost, ...grantEntry(item), up: { id: ssr.id, name: ssr.name } };
+  if (item.type === 'character') { out.starlight = (out.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += out.starlight; }
+  return { res: out, item };
+}
 function rollOne(bk) {
   const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
   const r = Math.random(), p5 = rate5(g.pity5);
@@ -57,13 +80,8 @@ function rollOne(bk) {
   if (rarity === 5) { g.pity5 = 0; g.pity4 = 0; } else if (rarity === 4) g.pity4 = 0;
   let item = null, lost = false;
   const B = bannerInfo(bk);
-  if (rarity === 5) {
-    if (B.feat) {
-      const others = B.lose.filter(e => e.id !== B.feat.id);
-      if (g.guarantee || !others.length || Math.random() < .5) { item = B.feat; g.guarantee = false; }
-      else { item = rpick(others); g.guarantee = true; lost = true; }
-    } else if (B.ur.length) item = rpick(B.ur);   // no featured UR: every UR in the pool has an equal chance
-  } else if (rarity === 4) {
+  if (rarity === 5) ({ item, lost } = pickUR(B, g));
+  else if (rarity === 4) {
     if (B.ssr.length) item = rpick(B.ssr);
   }
   // the lowest tier is 500 gold coins, or sometimes an egg fragment
@@ -76,8 +94,11 @@ function rollOne(bk) {
   } else {
     res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
     // Corals for every character pulled; more for copies past max stars
-    if (item.type === 'character') { res.starlight = (res.pearls ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
+    if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
+    // the rare upgrade: an SSR turns into a UR after it is revealed
+    if (rarity === 4 && Math.random() < UPGRADE_CHANCE) { const up = upgradeSSR(B, g, res); if (up) { res = up.res; item = up.item; rarity = 5; } }
   }
+  res.hard = rarity === 5 && p5 >= 1 && !res.up;   // guaranteed by hard pity: never faked out
   S.wallet.dust += DUST_PER_PULL;
   S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
@@ -92,6 +113,7 @@ function doPull(n, bk = curBanner, free = false) {
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
   const results = Array.from({ length: n }, () => rollOne(bk));
+  gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk);
   if (S.settings.skipPull) showSummary();
@@ -118,17 +140,17 @@ function renderSummon() {
   if (f) { const side = B.ssr.filter(e => B.skins || e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
   const mid = f ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
   const left = HARD_PITY - g.pity5;
-  const tabArt = e => e ? `<img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">` : '';
+  const tabArt = e => e ? `<img src="${baseSplash(e)}" alt="" class="${baseArt(e) ? '' : 'chibi'}">` : '';
   const dotFor = k => canPull(10, k) || freeReady(k) ? '<span class="dot-n"></span>' : '', dot = dotFor(bk);
   // a hero with uploaded art fills the screen; chibis stand in a lineup
-  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && mediaArt(hero);
+  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
     return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.kind === 'feat' && !I.skins ? '<br>Summon' : ''}</b>${dotFor(k)}</button>`; };
   const what = B.skins ? 'outfit' : 'character';
   smEl.className = 'sx r5';
   smEl.innerHTML = `<div class="sx-word">${B.word}</div>
     ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
-    <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${mediaArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${getSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
+    <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${baseArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${baseSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
     <div class="sx-fade"></div><div class="sx-vig"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
     <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
@@ -138,7 +160,7 @@ function renderSummon() {
       ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
       <p>Guaranteed <span class="u">UR</span> ${f && g.guarantee ? `<span class="g">${esc(f.name)}</span>` : what}</p>
       ${f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span>${B.ends ? `<span class="lim-time">${icon('clock')}${B.bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : ''}${B.note ? `<span class="chip">${B.note}</span>` : ''}`
-        : `<span class="chip">${B.ur.length} UR ${what}s · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${thumbImg(u)}</button>`).join('')}</div>`}`
+        : `<span class="chip">${B.ur.length} UR ${what}s · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div>`}`
       : `<p>${B.skins ? 'No UR outfits on this banner yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : 'banners'}">${icon('wrench')}Set it up in admin</button>`}
     </div>
     <div class="sx-rule"></div>
@@ -179,7 +201,7 @@ function openRates(bk, histOpen) {
       ${B.bk === 'weekly' ? `<tr><td>${icon('clock')}</td><td>The featured UR is picked at random every Monday (00:00 UTC). Next change in ${shortLeft(B.ends)}.</td></tr>` : ''}
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
-    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS[5]} pearls (UR) or ${OVERFLOW_PEARLS[4]} (SSR). If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
+    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicate characters give ${STARLIGHT_MAX[5]} Corals (UR) or ${STARLIGHT_MAX[4]} (SSR) instead of a star. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
     <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
       <div class="hist">${hist.length ? hist.map(h => `<div class="r${h.rarity}"><span>${h.rarity >= 4 ? rtag(h.rarity) : '<span class="cost">' + curIcon('coins') + '</span>'} ${esc(h.name)}</span><time>${t(h)}</time></div>`).join('') : '<p class="tiny">No pulls yet.</p>'}</div>
     </details>
@@ -195,7 +217,7 @@ function resultView(r) {
   if (r.kind === 'coins') return { name: `${fmt(r.amount)} gold coins`, type: 'Gold coins', img: null };
   if (r.kind === 'frag') return { name: `${EGG[r.frag].name} fragment`, type: 'Egg fragment', img: null };
   const e = findEntry(r.id) || { name: '?', type: 'item' };
-  return { name: e.name, type: TYPES[e.type], img: getSplash(e), card: getArt(e) };
+  return { name: e.name, type: TYPES[e.type], img: baseSplash(e), card: baseCard(e) };
 }
 /* sparkle sprites: pre-rendered once per color so the reveal can draw hundreds cheaply */
 const SPR = new Map();
@@ -263,7 +285,7 @@ function startPfx(canvas, tier) {
   const add = (x, y, vx, vy, life, size, col, streak, phys = true) => parts.push({ x, y, vx, vy, life, max: life, size, col, streak, phys });
   const api = {
     intro: true,
-    burst(n, speed, palTier = tier) { const pal = PAL[palTier]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = speed * (0.25 + Math.random()); add(W2 / 2, H2 / 2, Math.cos(a) * s, Math.sin(a) * s, 0.7 + Math.random() * 1.1, 1.4 + Math.random() * 3, rpick(pal), Math.random() < .45); } },
+    burst(n, speed, palTier = tier) { const pal = PAL[palTier]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = speed * (0.25 + Math.random()); add(W2 / 2, H2 / 2, Math.cos(a) * s, Math.sin(a) * s, 0.7 + Math.random() * 1.1, 1.4 + Math.random() * 3, rpick(pal), false); } },
     sparkle(sTier) {
       const cfg = SPARK[sTier]; sparkTier = sTier; sparkFrom = performance.now(); sparkUntil = sparkFrom + cfg.secs * 1000;
       Object.keys(acc).forEach(k => acc[k] = 0);
@@ -315,7 +337,6 @@ function startPfx(canvas, tier) {
           const pop = q < .22 ? easeBack(q / .22) : 1 - (q - .22) / .78 * .65;
           const a = Math.min(1, q / .1) * Math.pow(1 - q, .7), s = p.size * Math.max(0, pop);
           blitShift(g, 'flare', pal, p.ph, p.x, p.y, s * 2.2, s * 2.2, p.rot, a);
-          blitShift(g, 'streak', pal, p.ph + .5, p.x, p.y, s * 5.5, s * .32, 0, a * .75);
           blitShift(g, 'flare', pal, p.ph + 1, p.x, p.y, s * 1.1, s * 1.1, -p.rot * 1.6 + .785, a * .55);
           if (!p.popped && q > .28) {
             p.popped = true;
@@ -345,20 +366,184 @@ function startPfx(canvas, tier) {
   raf = requestAnimationFrame(frame);
   return api;
 }
-function showPull(results, n, bk) {
+/* pull intro: pull the screen down to release a magic sphere; it rises slowly and changes colour from blue (lowest)
+   through orange (SSR) to prism (UR), stopping at the best rarity in the pull, then bursts into the reveals.
+   Fakeout: now and then a UR pull stops at orange, a character wallpaper (admin → Summon animation, S.fakeArts) slides in,
+   and the sphere transforms into UR. Never when hard pity guaranteed the UR. */
+const FAKEOUT_CHANCE = .3;
+function fakeArt() {
+  const own = (S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean);
+  if (own.length) return rpick(own);
+  const f = findEntry(S.featuredId); return f ? baseSplash(f) : null;
+}
+function showPull(results, n, bk, opts = {}) {
   closePull(true);
-  const best = Math.max(...results.map(r => r.rarity));
+  const best = Math.max(...results.map(r => r.up ? 4 : r.rarity));
+  const fake = best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
   pullEl = document.createElement('div');
-  pullEl.className = `pull t${best} r${best}`;
+  pullEl.className = 'pull t3 r3 charging';
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
-  pullEl.innerHTML = `<div class="meteor-wrap"><div class="meteor"></div></div><div class="orb"></div><div class="rings"><i></i><i></i><i></i></div><div class="flash"></div>
-    ${best >= 4 ? `<div class="stamp">${RNAME[best]}</div>` : ''}<div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
+  pullEl.innerHTML = `<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i><i class="sph-band"></i><i class="sph-band b2"></i></div><canvas class="sph-front"></canvas></div>
+    <div class="sph-hint" id="sphHint"><b>Pull down to release</b><span>${icon('up')}${icon('up')}</span></div>
+    <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
-  const order = results.map((r, i) => i).filter(i => results[i].kind === 'entry');
-  pullState = { results, n, bk, i: -1, phase: 'intro', readyAt: 0, order: order.length ? order : [0], fx: startPfx(pullEl.querySelector('.pfx'), best) };
+  const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
+  pullState = { results, n, bk, best, fake, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
-  pullState.timer = setTimeout(advancePull, TIER_REVEAL[best] * 1000);
+  // drag down anywhere; let go past the line to release (Enter / Space / ↓ also work)
+  const need = () => Math.max(90, innerHeight * .14), sph = $('#sph');
+  let y0 = null;
+  const drag = d => { sph.style.setProperty('--drag', d + 'px'); pullEl.style.setProperty('--pp', Math.min(1, d / need())); };
+  pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; y0 = e.clientY; pullEl.setPointerCapture(e.pointerId); pullEl.classList.add('dragging'); });
+  pullEl.addEventListener('pointermove', e => { if (y0 !== null) drag(clamp(e.clientY - y0, 0, innerHeight * .35)); });
+  const up = e => { if (y0 === null) return; const d = e.clientY - y0; y0 = null; pullEl.classList.remove('dragging'); if (d >= need()) releaseSphere(); else drag(0); };
+  pullEl.addEventListener('pointerup', up); pullEl.addEventListener('pointercancel', up);
+  pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
+  document.addEventListener('keydown', pullState.onKey);
+}
+const pullLater = (ms, fn) => pullState && pullState.timers.push(setTimeout(fn, ms));
+function pullClear(st) { clearTimeout(st.timer); (st.timers || []).forEach(clearTimeout); st.timers = []; if (st.onKey) document.removeEventListener('keydown', st.onKey); st.onKey = null; }
+function sphereTier(t) {
+  if (!pullEl) return;
+  pullEl.classList.remove('t3', 't4', 't5'); pullEl.classList.add('t' + t);
+  const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
+  const sf = pullState && pullState.sfx; if (sf) { sf.tier = t; sf.surge(t); }
+  if (t === 5) { pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake'); }
+}
+function releaseSphere() {
+  const st = pullState; if (!st || st.phase !== 'charge') return;
+  st.phase = 'rise'; pullClear(st);
+  pullEl.classList.remove('charging', 'dragging'); pullEl.classList.add('rising');
+  $('#sph').style.setProperty('--drag', '0px');
+  if (st.best >= 4) pullLater(1300, () => sphereTier(4));
+  if (st.fake) { pullLater(3400, fakeArtIn); pullLater(5400, fakeTransform); pullLater(6900, burstSphere); }
+  else { if (st.best === 5) pullLater(2500, () => sphereTier(5)); pullLater(st.best === 3 ? 3000 : 3800, burstSphere); }
+}
+function fakeArtIn() {
+  const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
+  pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`);
+}
+function fakeTransform() {
+  const st = pullState; if (!st || !pullEl) return;
+  const a = pullEl.querySelector('.fk-art'); if (a) a.classList.add('out');
+  pullEl.classList.add('fakeout');
+  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');   // no ray burst: lightning, flash and the quake carry it
+  $('#sph').classList.add('crack');
+  sphereTier(5);
+  st.fx.burst(120, 640, 5);
+}
+function burstSphere() {
+  const st = pullState; if (!st || !pullEl) return;
+  st.phase = 'burst';
+  pullEl.classList.add('burst');
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''}">${RNAME[st.best]}</div>` : ''}`);
+  st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
+  if (st.sfx) st.sfx.shock();
+  pullLater(st.best >= 4 ? 1500 : 700, advancePull);
+}
+/* the sphere's surroundings, drawn on two canvases (behind and in front of the sphere): glowing sparks drifting upward
+   and soft vertical light streaks in the tier's colours (like an anime power-up); orbiting sparks on tilted rings (the
+   far half behind the sphere, the near half in front, so it reads as 3D); lightning that crawls over the sphere at SSR and
+   lashes out into the air at UR; sparks pulled in while charging; a shockwave ring when it bursts */
+const SPH_COL = { 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
+function startSphereFx(root) {
+  const back = root.querySelector('.sph-back'), front = root.querySelector('.sph-front'), sphEl = root.querySelector('#sph');
+  const bg = back.getContext('2d'), fg = front.getContext('2d');
+  let W = 0, H = 0, dpr = 1, raf = 0, last = performance.now(), nextBolt = 0, flash = 0, shockT = -1, boost = 0;
+  const bolts = [], motes = [], rise = [], streaks = [], t0 = performance.now();
+  const fit = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; [back, front].forEach(c => { c.width = W * dpr; c.height = H * dpr; }); };
+  fit(); addEventListener('resize', fit);
+  const api = { tier: 3,
+    surge(t) { const big = t === 5; boost = big ? 1.6 : 1; flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
+    shock() { shockT = 0; flash = .4; boost = 2; },
+    stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); } };
+  const col = (i, ph = 0) => { const c = SPH_COL[api.tier]; return api.tier === 5 ? c[Math.floor(i + ph) % c.length] : c[i % c.length]; };
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
+  // jagged lightning path by midpoint displacement, with a few side branches
+  function zig(x1, y1, x2, y2, rough, depth, out) {
+    if (depth <= 0) { out.push([x2, y2]); return; }
+    const mx = (x1 + x2) / 2 + (Math.random() - .5) * rough, my = (y1 + y2) / 2 + (Math.random() - .5) * rough;
+    zig(x1, y1, mx, my, rough / 2, depth - 1, out); zig(mx, my, x2, y2, rough / 2, depth - 1, out);
+  }
+  function bolt(big) {
+    const b = sph(); if (!b) return;
+    const a = Math.random() * Math.PI * 2, sx = b.x + Math.cos(a) * b.r * .92, sy = b.y + Math.sin(a) * b.r * .92;
+    let ex, ey;
+    if (big) { const d = b.r * (1.8 + Math.random() * 1.8); ex = b.x + Math.cos(a) * d; ey = b.y + Math.sin(a) * d; }
+    else { const a2 = a + (Math.random() - .5) * 1.4; ex = b.x + Math.cos(a2) * b.r * .95; ey = b.y + Math.sin(a2) * b.r * .95; }   // crawls over the surface
+    const pts = [[sx, sy]], len = Math.hypot(ex - sx, ey - sy); zig(sx, sy, ex, ey, len * .45, big ? 6 : 4, pts);
+    const branches = big ? Array.from({ length: 2 }, () => { const p = pts[Math.floor(pts.length * (.3 + Math.random() * .4))], br = [[p[0], p[1]]]; zig(p[0], p[1], p[0] + (Math.random() - .5) * len * .6, p[1] + (Math.random() - .3) * len * .5, len * .25, 4, br); return br; }) : [];
+    bolts.push({ pts, branches, life: big ? .32 : .2, max: big ? .32 : .2, w: big ? 3.2 : 1.8, c: col(Math.floor(Math.random() * 4)) });
+    if (big) flash = Math.max(flash, .22);
+  }
+  function sph() { if (!sphEl.isConnected) return null; const r = sphEl.getBoundingClientRect(); if (!r.width) return null; return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2, o: +getComputedStyle(sphEl).opacity }; }
+  function stroke(g, pts, w, c, glow) { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.lineWidth = w; g.strokeStyle = c; g.shadowColor = glow; g.shadowBlur = 18; g.stroke(); }
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
+    const b = sph(), pp = +(getComputedStyle(root).getPropertyValue('--pp') || 0), tier = api.tier;
+    bg.setTransform(dpr, 0, 0, dpr, 0, 0); fg.setTransform(dpr, 0, 0, dpr, 0, 0); bg.clearRect(0, 0, W, H); fg.clearRect(0, 0, W, H);
+    boost = Math.max(0, boost - dt * .8);
+    // soft vertical light streaks that fade in and out across the screen
+    if (streaks.length < 7 + tier * 2 && Math.random() < dt * (2.5 + tier)) streaks.push({ x: Math.random() * W, w: 6 + Math.random() * 46, life: 1.6 + Math.random() * 2, max: 0, c: Math.floor(Math.random() * 3) });
+    for (let i = streaks.length - 1; i >= 0; i--) {
+      const s2 = streaks[i]; if (!s2.max) s2.max = s2.life; s2.life -= dt; if (s2.life <= 0) { streaks.splice(i, 1); continue; }
+      const a = Math.sin(Math.PI * (1 - s2.life / s2.max)) * (.16 + boost * .08), gr = bg.createLinearGradient(s2.x - s2.w / 2, 0, s2.x + s2.w / 2, 0);
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.5, rgba(col(s2.c, t), a)); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      const vg = bg.createLinearGradient(0, 0, 0, H); bg.fillStyle = gr; bg.fillRect(s2.x - s2.w / 2, 0, s2.w, H);
+      vg.addColorStop(0, rgba('#ffffff', a * .5)); vg.addColorStop(.5, 'rgba(255,255,255,0)'); bg.fillStyle = vg; bg.fillRect(s2.x - s2.w * .12, 0, s2.w * .24, H);
+    }
+    // glowing sparks rising from the bottom of the screen
+    const want = (30 + tier * 18) * (1 + boost);
+    if (rise.length < want) for (let k = 0; k < 3; k++) rise.push({ x: Math.random() * W, y: H + 10, vy: 40 + Math.random() * 110, r: .8 + Math.random() * 2.6, ph: Math.random() * 7, c: Math.floor(Math.random() * 3) });
+    for (let i = rise.length - 1; i >= 0; i--) {
+      const m = rise[i]; m.y -= m.vy * dt * (1 + boost * .8); m.x += Math.sin(t * 1.4 + m.ph) * dt * 10; if (m.y < -10) { rise.splice(i, 1); continue; }
+      const a = (.45 + .45 * Math.sin(t * 5 + m.ph)) * Math.min(1, m.y / (H * .25));
+      const gl = bg.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r * 5); gl.addColorStop(0, rgba(col(m.c, t), a * .9)); gl.addColorStop(1, 'rgba(0,0,0,0)');
+      bg.fillStyle = gl; bg.fillRect(m.x - m.r * 5, m.y - m.r * 5, m.r * 10, m.r * 10);
+      bg.fillStyle = rgba('#ffffff', a); bg.beginPath(); bg.arc(m.x, m.y, m.r * .55, 0, 7); bg.fill();
+    }
+    if (shockT >= 0) {   // burst shockwave across the water and the air
+      shockT += dt; const q = shockT / .9;
+      if (q < 1 && b) { fg.beginPath(); fg.arc(b.x, b.y, 40 + q * Math.max(W, H) * .8, 0, 7); fg.strokeStyle = rgba(col(2), (1 - q) * .8); fg.lineWidth = 10 * (1 - q) + 1; fg.shadowColor = col(1); fg.shadowBlur = 30; fg.stroke(); fg.shadowBlur = 0; }
+    }
+    if (b && b.o > .05) {
+      // orbiting sparks on tilted rings: far side drawn behind the sphere, near side in front
+      const rings = tier === 5 ? 3 : tier === 4 ? 2 : 1;
+      for (let k = 0; k < rings; k++) {
+        const tilt = [-.35, .5, -1.1][k], rx = b.r * (1.45 + k * .25), ry = rx * .3, sp = [1, -1.3, .8][k] * (1 + pp * 2), n = 14 + tier * 4;
+        for (let j = 0; j < n; j++) {
+          const a = j / n * Math.PI * 2 + t * sp, cx = Math.cos(a) * rx, cy = Math.sin(a) * ry, depth = Math.sin(a);
+          const x = b.x + cx * Math.cos(tilt) - cy * Math.sin(tilt), y = b.y + cx * Math.sin(tilt) + cy * Math.cos(tilt);
+          const g = depth < 0 ? bg : fg, size = (1.4 + (depth + 1) * 1.3) * (tier === 5 ? 1.3 : 1);
+          g.fillStyle = rgba(col(j % 3, t * 2), (depth < 0 ? .35 : .9) * b.o); g.beginPath(); g.arc(x, y, size, 0, 7); g.fill();
+        }
+      }
+      // charging: sparks pulled into the sphere
+      if (root.classList.contains('charging') && Math.random() < .3 + pp) { const a = Math.random() * 7, d = b.r * (3 + Math.random() * 2); motes.push({ x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d, life: .7, max: .7 }); }
+      // lightning: crawling arcs from SSR, big strikes at UR
+      if (tier >= 4 && now > nextBolt) { bolt(tier === 5 && Math.random() < .55); nextBolt = now + (tier === 5 ? 90 + Math.random() * 220 : 260 + Math.random() * 420); }
+    }
+    for (let i = motes.length - 1; i >= 0; i--) {
+      const m = motes[i]; m.life -= dt; if (m.life <= 0 || !b) { motes.splice(i, 1); continue; }
+      m.x += (b.x - m.x) * dt * 4; m.y += (b.y - m.y) * dt * 4;
+      fg.fillStyle = rgba(col(2), m.life / m.max); fg.beginPath(); fg.arc(m.x, m.y, 2, 0, 7); fg.fill();
+    }
+    fg.lineCap = 'round'; fg.lineJoin = 'round';
+    for (let i = bolts.length - 1; i >= 0; i--) {
+      const bo = bolts[i]; bo.life -= dt; if (bo.life <= 0) { bolts.splice(i, 1); continue; }
+      const a = bo.life / bo.max, flick = Math.random() < .25 ? .4 : 1;
+      fg.globalAlpha = a * flick;
+      [bo.pts, ...bo.branches].forEach((pts, j) => { stroke(fg, pts, bo.w * (j ? .55 : 1) * 2.4, rgba(bo.c, .55), bo.c); stroke(fg, pts, bo.w * (j ? .5 : 1) * .8, '#fff', bo.c); });
+      fg.globalAlpha = 1;
+    }
+    fg.shadowBlur = 0;
+    if (flash > 0) { fg.fillStyle = rgba(col(2), flash * .35); fg.fillRect(0, 0, W, H); flash = Math.max(0, flash - dt * 1.6); }
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+  return api;
 }
 /* taps only move between reveals: the intro always plays (use Skip to jump), and each reveal holds briefly so a double tap can't skip it */
 function tapPull() {
@@ -367,34 +552,66 @@ function tapPull() {
 }
 function advancePull() {
   const st = pullState; if (!st || st.phase === 'summary') return;
-  clearTimeout(st.timer);
-  st.i++; st.phase = 'reveal'; st.readyAt = performance.now() + 900;
+  pullClear(st);
+  st.i++; st.phase = 'reveal';
   if (st.fx) st.fx.intro = false;
+  if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return showSummary();
   const r = st.results[st.order[st.i]], v = resultView(r);
+  st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
+  pullEl.classList.add('revealing');
+  // an upgraded pull never shows the SSR it would have been: an orange "SSR" glow transforms straight into the UR
+  if (r.up && !r.upShown) {
+    st.phase = 'upgrade'; st.readyAt = Infinity;
+    pullEl.classList.remove('r3', 'r5'); pullEl.classList.add('r4');
+    $('#pullStage').innerHTML = `<div class="rv r4"><div class="rv-glow"></div><div class="up-pre">SSR</div>${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}</div>`;
+    if (st.fx) setTimeout(() => st.fx && st.fx.sparkle(4), 80);
+    pullLater(1000, upgradeReveal);
+    return;
+  }
   pullEl.classList.add('revealing');
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
-    <div class="rv-rays"></div><div class="rv-glow"></div>
+    <div class="rv-glow"></div>
     ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
     <div class="rv-flash"></div><div class="rv-sweep"></div>
     <div class="rv-info">
       <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}</div>
       <div class="rv-name">${esc(v.name)}</div>
       ${r.kind === 'entry' ? `<div class="rv-tier">${rtag(r.rarity, 'xl')}</div>` : ''}
+      ${r.up ? '<span class="rv-badge up">Upgraded from SSR!</span>' : ''}
       ${r.lost ? `<span class="rv-badge dupe">Lost the 50/50 · next UR is guaranteed</span>` : ''}
       ${r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
         : r.starUp ? `<div class="rv-up">${starRow(r.starUp, r.starUp - 1)}<span>${r.starUp === MAX_STARS ? 'Max stars reached' : `Star ${r.starUp} of ${MAX_STARS}`}</span></div>`
-        : `<div class="rv-up">${hasStars(findEntry(r.id)) ? starRow(MAX_STARS) : ''}<span>${hasStars(findEntry(r.id)) ? 'Max stars' : 'Already owned'} · +${r.pearls} ${curIcon('pearls')}</span></div>`) : ''}
+        : `<div class="rv-up">${hasStars(findEntry(r.id)) ? starRow(MAX_STARS) : ''}<span>${hasStars(findEntry(r.id)) ? 'Max stars' : 'Already owned'}${r.starlight ? ` · +${r.starlight} ${curIcon('starlight')}` : ''}</span></div>`) : ''}
     </div>
     ${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}
     <div class="rv-hint">Tap to continue</div>
   </div>`;
   if (st.fx) setTimeout(() => st.fx && st.fx.sparkle(r.rarity), 80);
 }
+/* SSR → UR upgrade: the screen shakes and flashes, the upgrade wallpaper slides in over the SSR with an UPGRADE stamp,
+   then the UR is revealed (close to the fakeout) */
+function upArt() {
+  const own = (S.upArts || []).map(k => MEDIA.get(k)).filter(Boolean);
+  return own.length ? rpick(own) : fakeArt();
+}
+function upgradeReveal() {
+  const st = pullState; if (!st || !pullEl || st.phase !== 'upgrade') return;
+  const rv = $('#pullStage .rv'); if (!rv) return;
+  const art = upArt(), pre = rv.querySelector('.up-pre'); if (pre) pre.classList.add('out');
+  pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake', 'r5'); pullEl.classList.remove('r4');
+  rv.insertAdjacentHTML('beforeend', `<div class="fake-flash"></div>${art ? `<div class="fk-art up"><img src="${art}" alt=""><i class="fk-streak"></i></div>` : ''}<div class="up-word"><b>UPGRADE</b><span>SSR <i>→</i> UR</span></div>`);
+  if (st.fx) { st.fx.burst(140, 700, 5); st.fx.sparkle(5); }
+  pullLater(2500, () => {
+    const r = st.results[st.order[st.i]]; r.upShown = true;
+    const a = $('#pullStage .fk-art'); if (a) a.classList.add('out');
+    pullLater(600, () => { st.i--; st.phase = 'reveal'; advancePull(); });
+  });
+}
 function showSummary() {
   const st = pullState; if (!st) return;
-  clearTimeout(st.timer); st.phase = 'summary';
+  pullClear(st); st.phase = 'summary';
   if (st.fx) st.fx.intro = false;
   pullEl.classList.add('revealing');
   $('#pullSkip').hidden = true;
@@ -403,21 +620,33 @@ function showSummary() {
     <h2>Summon results</h2>
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r); return `<div class="scard r${r.rarity}" style="--i:${i}">
       ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
-      ${r.isNew ? '<span class="new">NEW</span>' : ''}
-      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.pearls ? `<span class="dp">+${r.pearls} pearls</span>` : ''}</div></div>`; }).join('')}</div>
+      ${r.isNew ? '<span class="new">NEW</span>' : ''}${r.up ? '<span class="new upg">UPGRADED</span>' : ''}
+      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
+    <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
-      <button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>
-      <button class="btn ghost" id="pullDone">Done</button>
+      ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
+      <button class="btn ghost" id="pullDone">${st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    <p class="sum-earn"><span class="cost">${curIcon('dust')}+${st.results.length * DUST_PER_PULL} Seaweeds</span>${st.results.reduce((a, r) => a + (r.starlight || 0), 0) ? `<span class="cost">${curIcon('starlight')}+${st.results.reduce((a, r) => a + (r.starlight || 0), 0)} Corals</span>` : ''}</p>
-    <p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>
+    ${st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
-  $('#pullAgain').onclick = () => doPull(st.n, st.bk);
+  const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();
   $('#pullDone').focus({ preventScroll: true });
 }
+/* everything a pull gave, added up: characters/skins are the cards above; this row is the rest */
+function sumItems(st) {
+  const R = st.results, add = (k, n, l, ic = curIcon(k)) => n ? out.push([ic, fmt(n), l]) : 0, out = [];
+  add('coins', R.reduce((a, r) => a + (r.kind === 'coins' ? r.amount : 0), 0), 'Gold');
+  add('fragssr', R.filter(r => r.kind === 'frag' && r.frag === 'ssr').length, 'SSR egg fragment');
+  add('fragur', R.filter(r => r.kind === 'frag' && r.frag === 'ur').length, 'UR egg fragment');
+  add('pearls', R.reduce((a, r) => a + (r.pearls || 0), 0), 'Pearls (extra copies)');
+  add('dust', st.preview ? 0 : R.length * DUST_PER_PULL, 'Seaweeds');
+  add('starlight', R.reduce((a, r) => a + (r.starlight || 0), 0), 'Corals');
+  add('exp', st.preview ? 0 : R.length * EXP.pull, 'EXP');
+  return out;
+}
 function closePull(silent) {
-  if (pullState) { clearTimeout(pullState.timer); if (pullState.fx) pullState.fx.stop(); }
+  if (pullState) { pullClear(pullState); if (pullState.fx) pullState.fx.stop(); if (pullState.sfx) pullState.sfx.stop(); }
   if (pullEl) pullEl.remove(); pullEl = null; pullState = null;
   if (!silent) { refreshSummon(); refreshCharacters(); }
 }

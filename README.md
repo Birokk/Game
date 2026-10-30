@@ -48,7 +48,8 @@ This turns on accounts, cloud saves, your art for every player, the support inbo
 ### Optional settings in Supabase
 - **Email confirmation**: by default new accounts must confirm their email first (Authentication → Sign In / Providers → Email). Turn "Confirm email" off while testing if you like.
 - **Google sign-in**: Authentication → Sign In / Providers → Google (needs a Google Cloud OAuth client). Add your website address under Authentication → URL Configuration → Redirect URLs.
-- **Website address**: set Authentication → URL Configuration → Site URL to your GitHub Pages address.
+- **Website address**: set Authentication → URL Configuration → **Site URL** to your full GitHub Pages address *including* `https://` (for example `https://birokk.github.io/Game/`), and add the same address followed by `**` under **Redirect URLs**. A Site URL without `https://` makes the confirmation email link fail with `{"error":"requested path is invalid"}`.
+- **`VITE_SUPABASE_URL`** must be only the project address, like `https://abcd1234.supabase.co` (nothing after `.supabase.co`).
 
 ## How the code is organised
 

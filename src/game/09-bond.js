@@ -1,5 +1,7 @@
 /* ---------- bond: gifts give bond xp, level 10 unlocks marriage (costs 1 ring) ---------- */
-const BOND_XP = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700, 3250], BOND_MAX = 10, RING_PRICE = 300;
+/* total bond needed for each level (50,000 for level 10): cheap first levels, each level costs more than the last.
+   Levels 1–7 take 25,000 together (400, 1,100, 2,200, 3,500, 4,800, 5,900, 7,100), levels 8–10 the other 25,000 (7,600, 8,300, 9,100). */
+const BOND_XP = [0, 400, 1500, 3700, 7200, 12000, 17900, 25000, 32600, 40900, 50000], BOND_MAX = 10, RING_PRICE = 300;
 const GIFTS = {
   sweets: { name: 'Lantern Sweets', xp: 40, price: 1000 },
   bracelet: { name: 'Pearl Bracelet', xp: 150, price: 4000 },

@@ -69,7 +69,7 @@ function spinSlices() {
 function openSpin() {
   const SL = spinSlices();
   const conic = SPIN.map((s, i) => `${s.jackpot ? '#e8b04a' : i % 2 ? '#2a2f6a' : '#3d2a6e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
-  openModal({ title: 'Daily spin', ic: 'wheel', wide: true, kind: 'spin', body: `<div class="stack" style="justify-items:center">
+  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
       <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">
         ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
@@ -84,7 +84,7 @@ function openSpin() {
       while (r >= SPIN[i].w) { r -= SPIN[i].w; i++; }
       const s = SPIN[i];
       // the reward is granted right away so closing the window mid-spin loses nothing
-      S.spin.last = dayKey(); S.wallet[s.give] += s.n; persist(); renderMenu();
+      S.spin.last = dayKey(); S.wallet[s.give] += s.n; gainExp(EXP.spin); persist(); renderMenu();
       $('#spinGo').disabled = true; $('#spinGo').textContent = '…';
       spinAngle = spinAngle - (spinAngle % 360) + 360 * 6 + (360 - SL[i].mid) % 360 + (Math.random() - .5) * SL[i].sz * .6;
       const wh = $('#wheel'); wh.style.transform = `rotate(${spinAngle}deg)`;

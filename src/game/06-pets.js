@@ -32,11 +32,11 @@ function buySkin(id) {
   if ($('#colRoot')) renderDetail(id, 'skin');
   showSkinGet(e);
 }
+/* duplicates never give pearls: they add stars up to 6; past that, summons give Corals for characters (maxed = the copy added nothing) */
 function grantEntry(item) {
   const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
-  const starUp = hasStars(item) && prev && prev - 1 < MAX_STARS ? prev : 0;
-  const pearls = prev && !starUp ? overflowOf(item) : 0; S.wallet.pearls += pearls;
-  return { isNew: !prev, starUp, pearls };
+  const starUp = hasStars(item) && prev && prev - 1 < MAX_STARS ? prev : 0, maxed = !!prev && !starUp;
+  return { isNew: !prev, starUp, pearls: 0, maxed };
 }
 
 let petTab = 'hatch', petTimer = null;
@@ -111,7 +111,7 @@ function renderPets() {
 function hatch(i) {
   const inc = S.pets.inc[i], list = petsOf(inc.r); if (!list.length) return;
   const item = rpick(list), res = grantEntry(item);
-  S.pets.inc[i] = null; persist(); renderMenu(); renderPets(); refreshCharacters();
+  S.pets.inc[i] = null; gainExp(EXP.hatch); persist(); renderMenu(); renderPets(); refreshCharacters();
   showHatch(inc.r, item, res);
 }
 /* hatch reveal: the egg wobbles, cracks in a flash, and the pet pops out */
@@ -120,7 +120,7 @@ function showHatch(r, item, res) {
   el.innerHTML = `<div class="hatch-rays"></div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
     <div class="hatch-pet"><img src="${getSplash(item)}" alt="${esc(item.name)}"></div>
     <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
-      ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · +${res.pearls} ${curIcon('pearls')}</span></div>`}</div>
+      ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · already owned</span></div>`}</div>
     <div class="rv-hint">Tap to continue</div>`;
   document.body.appendChild(el);
   setTimeout(() => el.onclick = () => el.remove(), 1600);

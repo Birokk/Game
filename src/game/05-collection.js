@@ -39,7 +39,7 @@ function renderDetail(id, backTo) {
         <h3>${esc(e.name)}</h3>
         <div>${rtag(e.rarity, 'lg')}</div>
         <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
-        ${n && hasStars(e) ? `<div class="stars-big">${starsFor(e)}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies give ${overflowOf(e)} pearls each.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
+        ${n && hasStars(e) ? `<div class="stars-big">${starsFor(e)}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies from summons give ${e.type === 'character' ? `${STARLIGHT_MAX[e.rarity] || STARLIGHT_MAX[4]} Corals each` : 'nothing extra'}.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>
         <div class="row">${wearable ? `<button class="btn mint" id="dWall">${icon('image')}Set as wallpaper</button>` : ''}${buyable(e) && !n ? `<button class="btn gold" id="dBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>` : ''}${e.type === 'character' && n ? `<button class="btn ghost" data-open="characters" data-char="${esc(e.id)}">${icon('chars')}Character page</button>` : ''}<button class="btn ghost" data-open="admin">${icon('edit')}Edit in admin</button></div>
         ${n ? '' : `<p class="tiny">${e.rarity === 6 ? 'Marry this character to unlock it.' : e.type === 'skin' ? 'Buy or pull this on the banner to unlock it.' : 'Pull this on the banner to unlock it.'}</p>`}

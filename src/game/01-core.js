@@ -25,18 +25,51 @@ const DB = {
 };
 /* media goes through here: the browser cache (IndexedDB) always, and the cloud (Backend) when it is connected.
    S.media is the shared manifest { key: version } so every player can find the admin's images */
-async function mediaSet(k, v) {
-  let src = v;
-  if (Backend.canEditContent()) {
-    try { src = await Backend.upload(k, v); } catch (e) { toast(`Upload failed: ${e.message}`); return false; }
+/* in the claude.ai preview, images go to the preview's own file storage ("assets" capability): browser storage there can be
+   blocked or wiped. The manifest then holds "a:<asset id>" and the image is served from /_blob/<id>. */
+/* data: URL → Blob without fetch() (the claude.ai preview's security rules block fetching data: URLs) */
+function dataUrlToBlob(u) {
+  const i = u.indexOf(','), head = u.slice(5, i), b64 = head.endsWith(';base64'), type = head.split(';')[0] || 'application/octet-stream';
+  const body = u.slice(i + 1), bin = b64 ? atob(body) : decodeURIComponent(body), bytes = new Uint8Array(bin.length);
+  for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+  return new Blob([bytes], { type });
+}
+/* any image URL → data URL: fetch when allowed, otherwise draw it on a canvas */
+async function imageToDataUrl(src) {
+  if (src.startsWith('data:')) return src;
+  try { const b = await (await fetch(src)).blob(); return await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); }
+  catch (e) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => rej(new Error('image did not load')); i.src = src; });
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0);
+    return c.toDataURL('image/webp', .92);
   }
-  MEDIA.set(k, src); S.media = { ...S.media, [k]: Date.now() }; persist();
-  try { await DB.set(k, v); } catch (e) { if (!Backend.on) { toast('This browser would not save the image. It will be gone after a reload.'); return false; } }
+}
+let previewAssetsP = null;
+const previewAssets = () => previewAssetsP || (previewAssetsP = (!CLOUD_CONFIGURED && window.claude && window.claude.use)
+  ? Promise.race([window.claude.use('assets'), new Promise(r => setTimeout(() => r(null), 4000))]).catch(() => null) : Promise.resolve(null));
+const assetSrc = v => typeof v === 'string' && v.startsWith('a:') ? '/_blob/' + v.slice(2) : null;
+async function mediaSet(k, v) {
+  let src = v, ver = Date.now();
+  if (Backend.canEditContent()) {
+    try { src = await Backend.upload(k, v); } catch (e) { toast(`Upload failed: ${e.message}`, true); return false; }
+  } else {
+    const pa = await previewAssets();
+    if (pa) {
+      try { const r = await pa.upload(dataUrlToBlob(v)); src = r.url; ver = 'a:' + r.id; }
+      catch (e) { toast(`Could not save the image in the preview: ${(e && (e.message || e.code)) || e}`, true); return false; }
+    }
+  }
+  const old = S.media && S.media[k];
+  MEDIA.set(k, src); S.media = { ...S.media, [k]: ver }; persist();
+  if (assetSrc(old)) previewAssets().then(pa => pa && pa.delete(old.slice(2))).catch(() => {});
+  try { await DB.set(k, v); } catch (e) { if (!Backend.on && !assetSrc(ver)) { toast('This browser blocked saving the image, so it will be gone after a reload. Try another browser, or connect the server.', true); return false; } }
   return true;
 }
 async function mediaDel(k) {
+  const old = S.media && S.media[k];
   MEDIA.delete(k); if (S.media) { const m = { ...S.media }; delete m[k]; S.media = m; persist(); }
   if (Backend.canEditContent()) Backend.remove(k).catch(() => {});
+  if (assetSrc(old)) previewAssets().then(pa => pa && pa.delete(old.slice(2))).catch(() => {});
   try { await DB.del(k); } catch (e) {}
 }
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
@@ -65,6 +98,8 @@ function resizeImage(file, max, type = 'image/webp') {
 
 /* ---------- icons ---------- */
 const ICONS = {
+  farm:'<path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/><path d="M9 10h6"/>',
+  up:'<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
   memory:'<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 6V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/><path d="M3 15l4-4 3 3 2-2 5 5"/>',
   wardrobe:'<path d="M8.5 4L4 6.8l1.8 4 2.2-1V20h8V9.8l2.2 1 1.8-4L15.5 4c-.6 1.5-1.9 2.4-3.5 2.4S9.1 5.5 8.5 4z"/>',
   mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7.5l8 6 8-6"/>',
@@ -131,8 +166,8 @@ const curIcon = k => customIcon(k) ? `<img class="cic" src="${customIcon(k)}" al
 const costHTML = n => `<span class="cost">${curIcon('pearls')}${n}</span>`;
 function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); }); }
 const ICON_SLOTS = [
-  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Wish tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie']]],
-  ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
+  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Wish tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie'], ['exp', 'EXP (shown on EXP rewards)']]],
+  ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat'], ['level', 'Level rewards']]],
   ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['wardrobe', 'Wardrobe'], ['memory', 'Memory'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
   ['Small UI', [['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected']]]
@@ -147,8 +182,7 @@ const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
 
 const COST = { 1: 3, 10: 30 };
 const HARD_PITY = 50, BASE5 = 0.02, BASE4 = 0.051, COIN_DROP = 500;
-const MAX_STARS = 6, OVERFLOW_PEARLS = { 4: 2, 5: 15 };
-const overflowOf = e => OVERFLOW_PEARLS[e.rarity] || OVERFLOW_PEARLS[4];
+const MAX_STARS = 6;
 const starsOf = id => { const e = findEntry(id); return e && e.type === 'skin' ? 0 : Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1)); };
 const hasStars = e => !!e && e.type !== 'skin';
 /* breakthrough: each owned star can be awakened into a glowing star in the character's rarity color */
@@ -164,7 +198,7 @@ const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_U
    - the player save: everything else (wallet, owned, bond, settings, ...)
    Locally both go to localStorage; with the cloud on, the save syncs per account and content comes from the server. */
 const KEY = 'prismplaza.v1', CONTENT_KEY = 'prismplaza.content.v1';
-const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media'];
+const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts'];
 const splitState = st => { const save = {}, content = {}; for (const [k, v] of Object.entries(st)) (CONTENT_KEYS.includes(k) ? content : save)[k] = v; return { save, content }; };
 const CLOUD_CONFIGURED = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 /* the cloud connection; 16-backend.js fills it in when Supabase is configured, otherwise everything stays local */

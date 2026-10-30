@@ -1,9 +1,13 @@
 /* ---------- toast ---------- */
 let toastTimer;
-function toast(msg) {
+/* error toasts stay up for 6 s and ordinary toasts don't cover them, so a failure is never hidden by a "Saved" right after */
+let toastErrUntil = 0;
+function toast(msg, error) {
+  if (!error && Date.now() < toastErrUntil) return;
   document.querySelectorAll('.toast').forEach(t => t.remove());
-  const t = document.createElement('div'); t.className = 'toast glass-deep'; t.textContent = msg; t.setAttribute('role', 'status');
-  document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 3000);
+  const t = document.createElement('div'); t.className = `toast glass-deep ${error ? 'err' : ''}`; t.textContent = msg; t.setAttribute('role', error ? 'alert' : 'status');
+  if (error) toastErrUntil = Date.now() + 6000;
+  document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), error ? 6000 : 3000);
 }
 
 /* ---------- main menu & wallpaper ---------- */
@@ -29,27 +33,31 @@ const thumbImg = (e, cls = '') => {
   const t = (e && e.type === 'character' && equippedOf(e)) || e, ic = artFrom(t.icon);
   return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${getArt(t)}" alt="" class="${mediaArt(t) ? 'art' : 'chibi'} ${cls}">`;
 };
+/* banner portraits: the entry's own icon or base art, never the player's equipped outfit or star art */
+const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${baseCard(e)}" alt="" class="${baseArt(e) ? 'art' : 'chibi'} ${cls}">`; };
 function renderMenu() {
   $('#pname').textContent = S.player.name;
-  $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
+  $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>`;
+  $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
-  const unread = MAILS.filter(m => !S.mailClaimed.includes(m.id)).length;
+  const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} · ${curIcon('wishes')}${fmt(S.wallet.wishes)} · ${curIcon('pearls')}${COST[1]} each`;
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
-  $('#loginDot').hidden = !loginReady();
+  $('#evDot').hidden = !loginReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
+  $('#farmDot').hidden = !farmReady();
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();
   renderStamina();
   const f = limitedUR(), std = standardURs(), sf = std.length ? std[stdRotate % std.length] : null, gl = S.gacha.limited;
-  $('#promo').innerHTML = `<button class="promo" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
-      ${f ? `<img src="${getSplash(f)}" alt="" class="${mediaArt(f) ? '' : 'chibi'}">` : ''}
-      <span class="pt ts"><span class="eyebrow">Limited summon</span><b>${f ? esc(f.name) : esc(bannerName('limited'))}</b><time>${icon('clock').replace('class="ic"', 'class="ic" style="width:11px;height:11px;vertical-align:-1px"')} ${shortLeft()}</time></span>
+  // same card as the summon screen's banner tabs
+  $('#promo').innerHTML = `<button class="sx-tab lim promo-tab" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
+      <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
   $('#pityCard').innerHTML = `<span class="row"><span>${f ? esc(f.name) : 'Limited'} · UR pity</span><span style="color:var(--gold)">${gl.pity5} / ${HARD_PITY}</span></span>
     <span class="bar r5"><i style="width:${gl.pity5 / HARD_PITY * 100}%;background:var(--ur)"></i></span>
@@ -76,25 +84,9 @@ function renderStamina() {
 }
 setInterval(() => { if (menuOpen) renderStamina(); }, 1000);
 
-/* daily login: one free summon ticket (= 1 pull) every day, on a 7-day calendar */
+/* daily login: Limited tickets every day on a 7-day calendar; it lives on the Event page (21-events.js) */
 const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const loginReady = () => S.login.last !== dayKey();
-function openLogin() {
-  const y = new Date(); y.setDate(y.getDate() - 1);
-  const ready = loginReady(), next = ready ? (S.login.last === dayKey(y) ? S.login.streak + 1 : 1) : S.login.streak;
-  const today = (next - 1) % 7 + 1;
-  openModal({ title: 'Daily login', ic: 'gift', wide: true, kind: 'login', body: `<div class="stack">
-    <p class="desc">Log in every day for a free summon ticket. One ticket is one pull on any banner.</p>
-    <div class="login-grid">${Array.from({ length: 7 }, (_, i) => { const d = i + 1, done = d < today || (d === today && !ready);
-      return `<div class="login-day ${done ? 'done' : ''} ${d === today && ready ? 'now' : ''}"><span class="lbl-sm">Day ${d}</span>${curIcon('tickets')}<b>×1</b>${done ? `<span class="chk">${icon('check')}</span>` : ''}</div>`; }).join('')}</div>
-    <div class="row" style="justify-content:space-between"><span class="tiny">${S.login.streak ? `Login streak: ${ready ? next - 1 : next} day${(ready ? next - 1 : next) === 1 ? '' : 's'}` : 'Start your streak today.'}</span>
-      ${ready ? `<button class="btn gold" id="loginClaim">${icon('gift')}Claim 1 pull</button>` : '<button class="btn ghost" disabled>Come back tomorrow</button>'}</div>
-  </div>`, onMount: () => {
-    const b = $('#loginClaim'); if (!b) return;
-    b.onclick = () => { S.wallet.tickets += 1; S.login = { last: dayKey(), streak: next }; persist(); renderMenu(); refreshSummon(); openLogin(); toast('Claimed 1 limited ticket. That is 1 free pull on the limited banner.'); };
-  } });
-}
-
 /* world chat ticker: the demo bots chat here until multiplayer exists */
 function tickWorld() {
   const el = $('#tickerText'); if (!el) return;
@@ -109,8 +101,37 @@ function setUiHidden(on) { uiHidden = on; menuEl.classList.toggle('ui-hidden', o
 $('#hideUi').onclick = () => setUiHidden(true);
 menuEl.addEventListener('click', e => { if (uiHidden) { e.stopPropagation(); e.preventDefault(); setUiHidden(false); } }, true);
 function wallpaperEntry() { const e = S.wallpaper && findEntry(S.wallpaper); return e && owns(e.id) ? e : null; }
-function applyWallpaper() {
+/* up to 4 home wallpapers (S.wallpapers); S.wallpaper is the one showing. Anything that sets S.wallpaper joins the list. */
+const WP_MAX = 4;
+function wpList() {
+  let list = (Array.isArray(S.wallpapers) ? S.wallpapers : []).filter(id => { const e = findEntry(id); return e && owns(id); });
+  if (S.wallpaper && owns(S.wallpaper) && findEntry(S.wallpaper) && !list.includes(S.wallpaper)) list = [S.wallpaper, ...list].slice(0, WP_MAX);
+  if (!S.wallpaper || !list.includes(S.wallpaper)) S.wallpaper = list[0] || null;
+  if (JSON.stringify(list) !== JSON.stringify(S.wallpapers)) S.wallpapers = list;
+  return list;
+}
+function stepWallpaper(dir) {
+  const list = wpList(); if (list.length < 2) return;
+  S.wallpaper = list[(list.indexOf(S.wallpaper) + dir + list.length) % list.length]; persist(); applyWallpaper(true); showWpArrows();
+}
+let wpArrowTimer = null;
+function showWpArrows() {
+  if (wpList().length < 2) return menuEl.classList.remove('wp-arrows');
+  menuEl.classList.add('wp-arrows'); clearTimeout(wpArrowTimer); wpArrowTimer = setTimeout(() => menuEl.classList.remove('wp-arrows'), 4000);
+}
+$('#wpPrev').onclick = e => { e.stopPropagation(); stepWallpaper(-1); };
+$('#wpNext').onclick = e => { e.stopPropagation(); stepWallpaper(1); };
+// one tap on an empty part of the main screen shows the arrows (only with 2+ wallpapers)
+menuEl.addEventListener('click', e => { if (uiHidden || e.target.closest('button, a, input, select, textarea, label, .cur, #promo')) return; if (menuEl.classList.contains('wp-arrows')) { menuEl.classList.remove('wp-arrows'); clearTimeout(wpArrowTimer); } else showWpArrows(); });
+function applyWallpaper(fade) {
+  wpList();
   const e = wallpaperEntry();
+  if (fade) wpEl.querySelectorAll('#wpSplash, #wpBlur').forEach(img => {   // crossfade: a copy of the old picture fades out over the new one
+    if (img.hidden || !img.getAttribute('src')) return;
+    const ghost = img.cloneNode(); ghost.removeAttribute('id'); ghost.classList.add('wp-ghost'); img.after(ghost);
+    requestAnimationFrame(() => requestAnimationFrame(() => ghost.classList.add('out')));
+    setTimeout(() => ghost.remove(), 900);
+  });
   wpEl.classList.toggle('has-char', !!e);
   wpEl.classList.toggle('chibi', !!e && !mediaArt(e));
   wpEl.classList.remove('r3', 'r4', 'r5'); if (e) wpEl.classList.add('r' + e.rarity);
@@ -154,7 +175,7 @@ function renderTitle() {
   $('#ttUid').textContent = S.account ? `UID ${S.profile.uid}` : '';
   const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); if (Backend.user) confirmSignOut(); else openSignIn(); };
 }
-function showTitle() { titleOn = true; closeModal(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
+function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInventory(); closeShop(); closeSettings(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
 function enterGame() {
   if (!S.player.mc) return openMCPick();
   titleOn = false; closeModal(); renderMenu();
@@ -166,7 +187,7 @@ function openMCPick(switching) {
   let pick = null;
   openModal({ title: switching ? 'Switch main character' : 'Choose your character', ic: 'chars', wide: true, kind: 'mc', body: `<div class="stack">
     <p class="desc">${switching ? 'Your main character is who you are in the plaza and in your character list. After switching you have to wait 72 hours to switch again.' : "This is who you'll be in the plaza. You can switch later in Settings, once every 72 hours."}</p>
-    <div class="mc-pick">${['f', 'm'].map(k => { const e = mcEntry(k); return `<button class="mc-card" data-mc="${k}"><img src="${getSplash(e)}" alt="" class="${mediaArt(e) ? 'art' : ''}"><b>${MC_NAME[k]}</b>${e.name !== MC_NAME[k] + ' MC' ? `<span class="tiny">${esc(e.name)}</span>` : ''}</button>`; }).join('')}</div>
+    <div class="mc-pick">${['f', 'm'].map(k => { const e = mcEntry(k); return `<button class="mc-card" data-mc="${k}"><img src="${baseSplash(e)}" alt="" class="${baseArt(e) ? 'art' : ''}"><b>${MC_NAME[k]}</b>${e.name !== MC_NAME[k] + ' MC' ? `<span class="tiny">${esc(e.name)}</span>` : ''}</button>`; }).join('')}</div>
     <div class="row" style="justify-content:flex-end"><button class="btn gold" id="mcGo" disabled>Confirm</button></div></div>`, onMount: () => {
     modalEl.querySelectorAll('[data-mc]').forEach(b => b.onclick = () => { pick = b.dataset.mc; modalEl.querySelectorAll('[data-mc]').forEach(x => x.classList.toggle('on', x === b)); $('#mcGo').disabled = false; $('#mcGo').textContent = `Play as ${MC_NAME[pick]}`; });
     if (switching) { const cur = modalEl.querySelector(`[data-mc="${S.player.mc}"]`); if (cur) cur.click(); }

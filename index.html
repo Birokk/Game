@@ -64,9 +64,8 @@
   <nav class="hm hm-left" aria-label="Banners and activities">
     <div id="promo"></div>
     <div class="ev-grid">
-      <button class="ev ts" data-open="login"><span class="evo"><span data-ic="gift"></span></span><span class="el">Daily Login</span><time>+1 pull</time><span class="dot-n" id="loginDot" hidden></span></button>
       <button class="ev ts" data-open="spin"><span class="evo"><span data-ic="wheel"></span></span><span class="el">Daily Spin</span><time>Free</time><span class="dot-n" id="spinDot" hidden></span></button>
-      <button class="ev ts" data-open="events" style="--ec:#ff6f91"><span class="evo"><span data-ic="calendar"></span></span><span class="el">Events</span><time>Oct 31</time></button>
+      <button class="ev ts" data-open="events" style="--ec:#ff6f91"><span class="evo"><span data-ic="calendar"></span></span><span class="el">Events</span><span class="dot-n" id="evDot" hidden></span></button>
       <button class="ev ts" data-open="ranking" style="--ec:#ffb84a"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Ranking</span></button>
       <button class="ev ts" data-open="friends" style="--ec:#5aa9ff"><span class="evo"><span data-ic="friends"></span></span><span class="el">Friends</span></button>
     </div>
@@ -77,15 +76,17 @@
     <button class="ev ts" data-open="quests" style="--ec:#4fd1a5"><span class="evo"><span data-ic="quests"></span></span><span class="el">Quests</span><time>Daily</time></button>
     <button class="ev ts" data-open="bag" style="--ec:#a78bfa"><span class="evo"><span data-ic="bag"></span></span><span class="el">Bag</span></button>
     <button class="ev ts" data-open="team" style="--ec:#c58bff"><span class="evo"><span data-ic="team"></span></span><span class="el">Team</span></button>
+    <button class="ev ts" data-open="level" style="--ec:#3fd47e"><span class="evo"><span data-ic="level"></span></span><span class="el">Level</span><span class="dot-n" id="lvDot" hidden></span></button>
     <button class="ev ts" data-open="ach"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Achievements</span><span class="dot-n" id="achDot" hidden></span></button>
     <button class="ev ts" data-open="redeem"><span class="evo"><span data-ic="gift"></span></span><span class="el">Redeem</span></button>
   </nav>
 
-  <button class="hm portal" id="enterPlaza" aria-label="Enter the plaza"><span class="swirl"></span><span class="rim"></span><span class="plbl ts">Enter<br>Plaza</span></button>
+  <button class="hm portal" id="enterPlaza" aria-label="Enter the plaza"><span class="g-arch"><span class="g-motes"></span><span class="g-roof"></span><span class="g-lan"></span><span class="g-lan r"></span></span><span class="plbl ts">Enter Plaza</span></button>
 
   <nav class="hm hm-tabs" aria-label="Collection">
     <button class="tabb ts" data-open="characters">Characters<span class="dot-n" id="charDot" hidden></span></button>
     <button class="tabb ts" data-open="pets">Pets<span class="dot-n" id="petDot" hidden></span></button>
+    <button class="tabb ts" data-open="farm">Farm<span class="dot-n" id="farmDot" hidden></span></button>
     <button class="tabb ts" data-open="collection">Collection</button>
   </nav>
 
@@ -96,6 +97,8 @@
   </div>
 
   <button class="unhide glass" id="unhide" aria-label="Show the menu again"><span data-ic="eye"></span></button>
+  <button class="wp-arrow prev" id="wpPrev" aria-label="Previous wallpaper" tabindex="-1"><span data-ic="back"></span></button>
+  <button class="wp-arrow next" id="wpNext" aria-label="Next wallpaper" tabindex="-1"><span data-ic="back"></span></button>
 </main>
 
 <div class="hud" id="hud" hidden>

@@ -37,7 +37,7 @@ function remoteFor(p) {
   let e = remotes.get(p.id);
   const name = String(p.name || 'Traveler').slice(0, 16), mc = p.mc === 'f' ? 'f' : 'm';
   if (!e) {
-    e = makeEntity(name, netNum(p.x, 14), netNum(p.y, 16), { ...MC_LOOK[mc] }, false);
+    e = makeEntity(name, netNum(p.x, SPAWN.x), netNum(p.y, SPAWN.y), { ...MC_LOOK[mc] }, false);
     Object.assign(e, { net: true, tx: e.x, ty: e.y, mc });
     remotes.set(p.id, e); entities.push(e); updateOnline();
   }
@@ -53,10 +53,9 @@ function netUpdate(dt) {
     if (d > 4) { e.x = e.tx; e.y = e.ty; e.moving = false; continue; }   // teleported
     if (d > .02) {
       const k = Math.min(1, dt * 9); e.x += dx * k; e.y += dy * k;
-      const sxv = dx - dy, syv = dx + dy;
-      if (Math.abs(syv) > Math.abs(sxv) * .35) e.dir = syv < 0 ? 'up' : 'down';
-      e.ex = clamp(sxv / (d || 1) * 1.6, -1.8, 1.8); e.moving = true; e.phase += dt * 11;
-    } else { e.moving = e.netMoving && d > .005; if (!e.moving) e.ex = 0; }
+      e.dir = Math.abs(dx) > Math.abs(dy) * 1.1 ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
+      e.moving = true; e.phase += dt * 9;
+    } else e.moving = e.netMoving && d > .005;
   }
   netSendT -= dt; netTrackT -= dt;
   const moved = Math.hypot(player.x - netLast.x, player.y - netLast.y) > .01;
