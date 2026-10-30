@@ -1414,7 +1414,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .skc{position:relative;flex:none;width:156px;aspect-ratio:2/3;border-radius:14px;overflow:hidden;scroll-snap-align:center;border:2px solid rgba(255,255,255,.18);background:var(--ink-2);text-align:center;transition:transform .25s,border-color .25s,opacity .25s;opacity:.65;transform:scale(.9)}
 .skc.sel{opacity:1;transform:scale(1);border-color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .skc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%}
-.skc img.chibi{object-fit:contain;object-position:50% 100%;transform:scale(1.5);transform-origin:50% 75%}
+.skc img.chibi{object-fit:cover;object-position:50% 40%}
 .skc.col{width:auto;opacity:1;transform:none;cursor:pointer}
 .skc.col:hover{border-color:#fff;transform:translateY(-3px)}
 .cards.col-chars{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
@@ -2017,3 +2017,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 /* UR arrival: the screen shakes */
 .pull.quake .sph-stage{animation:quake .7s cubic-bezier(.36,.07,.19,.97)}
 @keyframes quake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
+
+/* placeholder orbs (characters without art) gently float in menus */
+.skc img.chibi,.dt-art.chibi,.sx-fig img.chibi,.cs-av img.chibi,.pf-thumb img.chibi,.avf .avi img.chibi,.sg-item img.chibi,.inv-pic>img.chibi,.sx-tab img.chibi,.nc img.chibi,#hmAvatar img.chibi{animation:orbFloat 3.4s ease-in-out infinite}
+@keyframes orbFloat{0%,100%{translate:0 0}50%{translate:0 -4%}}
