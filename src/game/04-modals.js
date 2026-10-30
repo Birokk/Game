@@ -16,12 +16,10 @@ function openModal({ title, ic, body, wide, small, kind, onMount }) {
 function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; refreshCharacters(); } }
 
 const PLACEHOLDERS = {
-  events:  ['Events', 'calendar', 'Limited-time events, the login calendar and the banner schedule.'],
   quests:  ['Quests', 'quests', 'Daily and weekly missions that pay out pearls and coins.'],
   friends: ['Friends', 'friends', 'Friend list, invites, and meeting up with friends in the plaza.'],
   ranking: ['Ranking', 'trophy', 'Leaderboards for collection size, event points and more.'],
   shop:    ['Shop', 'shop', 'Pearl packs, skin bundles and the monthly pass.'],
-  bag:     ['Bag', 'bag', 'Items, upgrade materials and summon tickets you own.'],
   team:    ['Team', 'team', 'Pick up to four characters to bring into events.']
 };
 function openPlaceholder(key) {

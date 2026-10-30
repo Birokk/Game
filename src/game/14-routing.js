@@ -14,6 +14,8 @@ document.addEventListener('click', e => {
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();
   else if (k === 'login') openLogin();
+  else if (k === 'events') openEvents(t.dataset.ev);
+  else if (k === 'bag') openInventory();
   else if (k === 'spin') openSpin();
   else if (k === 'ach') openAch();
   else if (k === 'redeem') openRedeem();

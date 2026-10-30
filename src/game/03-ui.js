@@ -45,7 +45,7 @@ function renderMenu() {
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} · ${curIcon('wishes')}${fmt(S.wallet.wishes)} · ${curIcon('pearls')}${COST[1]} each`;
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
-  $('#loginDot').hidden = !loginReady();
+  $('#evDot').hidden = !loginReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
@@ -83,25 +83,9 @@ function renderStamina() {
 }
 setInterval(() => { if (menuOpen) renderStamina(); }, 1000);
 
-/* daily login: one free summon ticket (= 1 pull) every day, on a 7-day calendar */
+/* daily login: Limited tickets every day on a 7-day calendar; it lives on the Event page (21-events.js) */
 const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const loginReady = () => S.login.last !== dayKey();
-function openLogin() {
-  const y = new Date(); y.setDate(y.getDate() - 1);
-  const ready = loginReady(), next = ready ? (S.login.last === dayKey(y) ? S.login.streak + 1 : 1) : S.login.streak;
-  const today = (next - 1) % 7 + 1;
-  openModal({ title: 'Daily login', ic: 'gift', kind: 'login', body: `<div class="stack">
-    <p class="desc">Log in every day for a free summon ticket. One ticket is one pull on any banner.</p>
-    <div class="login-grid">${Array.from({ length: 7 }, (_, i) => { const d = i + 1, done = d < today || (d === today && !ready);
-      return `<div class="login-day ${done ? 'done' : ''} ${d === today && ready ? 'now' : ''}"><span class="lbl-sm">Day ${d}</span>${curIcon('tickets')}<b>×1</b>${done ? `<span class="chk">${icon('check')}</span>` : ''}</div>`; }).join('')}</div>
-    <div class="row" style="justify-content:space-between"><span class="tiny">${S.login.streak ? `Login streak: ${ready ? next - 1 : next} day${(ready ? next - 1 : next) === 1 ? '' : 's'}` : 'Start your streak today.'}</span>
-      ${ready ? `<button class="btn gold" id="loginClaim">${icon('gift')}Claim 1 pull</button>` : '<button class="btn ghost" disabled>Come back tomorrow</button>'}</div>
-  </div>`, onMount: () => {
-    const b = $('#loginClaim'); if (!b) return;
-    b.onclick = () => { S.wallet.tickets += 1; S.login = { last: dayKey(), streak: next }; persist(); renderMenu(); refreshSummon(); openLogin(); toast('Claimed 1 limited ticket. That is 1 free pull on the limited banner.'); };
-  } });
-}
-
 /* world chat ticker: the demo bots chat here until multiplayer exists */
 function tickWorld() {
   const el = $('#tickerText'); if (!el) return;
@@ -190,7 +174,7 @@ function renderTitle() {
   $('#ttUid').textContent = S.account ? `UID ${S.profile.uid}` : '';
   const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); if (Backend.user) confirmSignOut(); else openSignIn(); };
 }
-function showTitle() { titleOn = true; closeModal(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
+function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInventory(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
 function enterGame() {
   if (!S.player.mc) return openMCPick();
   titleOn = false; closeModal(); renderMenu();
