@@ -49,6 +49,29 @@ const payFor = (n, bk = curBanner) => S.wallet[TK(bk)] >= n ? { k: TK(bk), amt: 
 const canPull = (n, bk = curBanner) => S.wallet[TK(bk)] >= n || S.wallet.pearls >= COST[n];
 const payHTML = (n, bk = curBanner) => { const p = payFor(n, bk); return `<span class="cost">${curIcon(p.k)}${p.k === 'pearls' ? p.amt : '×' + p.amt}</span>`; };
 const freeReady = bk => S.freePull[bk] !== dayKey();
+/* a UR from a banner: featured banners use the 50/50 (a guarantee after a loss), pool banners pick evenly */
+function pickUR(B, g) {
+  if (B.feat) {
+    const others = B.lose.filter(e => e.id !== B.feat.id);
+    if (g.guarantee || !others.length || Math.random() < .5) { g.guarantee = false; return { item: B.feat, lost: false }; }
+    g.guarantee = true; return { item: rpick(others), lost: true };
+  }
+  return { item: B.ur.length ? rpick(B.ur) : null, lost: false };   // no featured UR: every UR in the pool has an equal chance
+}
+/* SSR → UR upgrade (1% of SSR pulls): the SSR is taken back and a UR is given with the banner's usual rules
+   (50/50 on featured banners, the featured UR straight away when guaranteed); counts as a UR for pity */
+const UPGRADE_CHANCE = .01;
+function upgradeSSR(B, g, res) {
+  if (!B.feat && !B.ur.length) return null;
+  const ssr = findEntry(res.id);
+  S.owned[res.id] = (S.owned[res.id] || 1) - 1; if (!S.owned[res.id]) delete S.owned[res.id];
+  S.wallet.starlight -= res.starlight || 0;
+  const { item, lost } = pickUR(B, g); if (!item) return null;
+  g.pity5 = 0; g.pity4 = 0;
+  const out = { kind: 'entry', id: item.id, rarity: 5, lost, ...grantEntry(item), up: { id: ssr.id, name: ssr.name } };
+  if (item.type === 'character') { out.starlight = (out.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += out.starlight; }
+  return { res: out, item };
+}
 function rollOne(bk) {
   const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
   const r = Math.random(), p5 = rate5(g.pity5);
@@ -57,13 +80,8 @@ function rollOne(bk) {
   if (rarity === 5) { g.pity5 = 0; g.pity4 = 0; } else if (rarity === 4) g.pity4 = 0;
   let item = null, lost = false;
   const B = bannerInfo(bk);
-  if (rarity === 5) {
-    if (B.feat) {
-      const others = B.lose.filter(e => e.id !== B.feat.id);
-      if (g.guarantee || !others.length || Math.random() < .5) { item = B.feat; g.guarantee = false; }
-      else { item = rpick(others); g.guarantee = true; lost = true; }
-    } else if (B.ur.length) item = rpick(B.ur);   // no featured UR: every UR in the pool has an equal chance
-  } else if (rarity === 4) {
+  if (rarity === 5) ({ item, lost } = pickUR(B, g));
+  else if (rarity === 4) {
     if (B.ssr.length) item = rpick(B.ssr);
   }
   // the lowest tier is 500 gold coins, or sometimes an egg fragment
@@ -77,8 +95,10 @@ function rollOne(bk) {
     res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
     // Corals for every character pulled; more for copies past max stars
     if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
+    // the rare upgrade: an SSR turns into a UR after it is revealed
+    if (rarity === 4 && Math.random() < UPGRADE_CHANCE) { const up = upgradeSSR(B, g, res); if (up) { res = up.res; item = up.item; rarity = 5; } }
   }
-  res.hard = rarity === 5 && p5 >= 1;   // guaranteed by hard pity: never faked out
+  res.hard = rarity === 5 && p5 >= 1 && !res.up;   // guaranteed by hard pity: never faked out
   S.wallet.dust += DUST_PER_PULL;
   S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
@@ -358,8 +378,8 @@ function fakeArt() {
 }
 function showPull(results, n, bk, opts = {}) {
   closePull(true);
-  const best = Math.max(...results.map(r => r.rarity));
-  const fake = best === 5 && !results.some(r => r.rarity === 5 && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
+  const best = Math.max(...results.map(r => r.up ? 4 : r.rarity));
+  const fake = best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
   pullEl = document.createElement('div');
   pullEl.className = 'pull t3 r3 charging';
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
@@ -423,21 +443,21 @@ function burstSphere() {
   if (st.sfx) st.sfx.shock();
   pullLater(st.best >= 4 ? 1500 : 700, advancePull);
 }
-/* the sphere's surroundings, drawn on two canvases (behind and in front of the sphere): a dark water surface with
-   perspective waves, the sphere's shimmering reflection and ripples; orbiting sparks on tilted rings (the far half behind
-   the sphere, the near half in front, so it reads as 3D); lightning that crawls over the sphere at SSR and lashes out
-   into the water at UR; sparks pulled in while charging; a shockwave across the water when it bursts */
+/* the sphere's surroundings, drawn on two canvases (behind and in front of the sphere): glowing sparks drifting upward
+   and soft vertical light streaks in the tier's colours (like an anime power-up); orbiting sparks on tilted rings (the
+   far half behind the sphere, the near half in front, so it reads as 3D); lightning that crawls over the sphere at SSR and
+   lashes out into the air at UR; sparks pulled in while charging; a shockwave ring when it bursts */
 const SPH_COL = { 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
 function startSphereFx(root) {
   const back = root.querySelector('.sph-back'), front = root.querySelector('.sph-front'), sphEl = root.querySelector('#sph');
   const bg = back.getContext('2d'), fg = front.getContext('2d');
-  let W = 0, H = 0, dpr = 1, raf = 0, last = performance.now(), nextRipple = 0, nextBolt = 0, flash = 0, shockT = -1;
-  const ripples = [], bolts = [], motes = [], t0 = performance.now();
+  let W = 0, H = 0, dpr = 1, raf = 0, last = performance.now(), nextBolt = 0, flash = 0, shockT = -1, boost = 0;
+  const bolts = [], motes = [], rise = [], streaks = [], t0 = performance.now();
   const fit = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; [back, front].forEach(c => { c.width = W * dpr; c.height = H * dpr; }); };
   fit(); addEventListener('resize', fit);
   const api = { tier: 3,
-    surge(t) { const big = t === 5; for (let i = 0; i < (big ? 4 : 2); i++) ripples.push({ age: -i * .18, k: big ? 1.8 : 1.2 }); flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
-    shock() { shockT = 0; for (let i = 0; i < 3; i++) ripples.push({ age: -i * .1, k: 2.6 }); flash = .4; },
+    surge(t) { const big = t === 5; boost = big ? 1.6 : 1; flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
+    shock() { shockT = 0; flash = .4; boost = 2; },
     stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); } };
   const col = (i, ph = 0) => { const c = SPH_COL[api.tier]; return api.tier === 5 ? c[Math.floor(i + ph) % c.length] : c[i % c.length]; };
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
@@ -451,51 +471,38 @@ function startSphereFx(root) {
     const b = sph(); if (!b) return;
     const a = Math.random() * Math.PI * 2, sx = b.x + Math.cos(a) * b.r * .92, sy = b.y + Math.sin(a) * b.r * .92;
     let ex, ey;
-    if (big && Math.random() < .5) { ex = b.x + (Math.random() - .5) * W * .5; ey = horizon() + Math.random() * (H - horizon()) * .4; }   // strike the water
-    else if (big) { const d = b.r * (1.8 + Math.random() * 1.8); ex = b.x + Math.cos(a) * d; ey = b.y + Math.sin(a) * d; }
+    if (big) { const d = b.r * (1.8 + Math.random() * 1.8); ex = b.x + Math.cos(a) * d; ey = b.y + Math.sin(a) * d; }
     else { const a2 = a + (Math.random() - .5) * 1.4; ex = b.x + Math.cos(a2) * b.r * .95; ey = b.y + Math.sin(a2) * b.r * .95; }   // crawls over the surface
     const pts = [[sx, sy]], len = Math.hypot(ex - sx, ey - sy); zig(sx, sy, ex, ey, len * .45, big ? 6 : 4, pts);
     const branches = big ? Array.from({ length: 2 }, () => { const p = pts[Math.floor(pts.length * (.3 + Math.random() * .4))], br = [[p[0], p[1]]]; zig(p[0], p[1], p[0] + (Math.random() - .5) * len * .6, p[1] + (Math.random() - .3) * len * .5, len * .25, 4, br); return br; }) : [];
     bolts.push({ pts, branches, life: big ? .32 : .2, max: big ? .32 : .2, w: big ? 3.2 : 1.8, c: col(Math.floor(Math.random() * 4)) });
-    if (big) { flash = Math.max(flash, .22); ripples.push({ age: 0, k: .9, x: ex }); }
+    if (big) flash = Math.max(flash, .22);
   }
-  const horizon = () => H * .86;
   function sph() { if (!sphEl.isConnected) return null; const r = sphEl.getBoundingClientRect(); if (!r.width) return null; return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2, o: +getComputedStyle(sphEl).opacity }; }
   function stroke(g, pts, w, c, glow) { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.lineWidth = w; g.strokeStyle = c; g.shadowColor = glow; g.shadowBlur = 18; g.stroke(); }
   function frame(now) {
     const dt = Math.min(.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
-    const b = sph(), hz = horizon(), pp = +(getComputedStyle(root).getPropertyValue('--pp') || 0), tier = api.tier;
+    const b = sph(), pp = +(getComputedStyle(root).getPropertyValue('--pp') || 0), tier = api.tier;
     bg.setTransform(dpr, 0, 0, dpr, 0, 0); fg.setTransform(dpr, 0, 0, dpr, 0, 0); bg.clearRect(0, 0, W, H); fg.clearRect(0, 0, W, H);
-    // water
-    const wg = bg.createLinearGradient(0, hz, 0, H); wg.addColorStop(0, rgba(col(0), .22)); wg.addColorStop(.25, 'rgba(6,8,18,.85)'); wg.addColorStop(1, 'rgba(2,3,8,.95)');
-    bg.fillStyle = wg; bg.fillRect(0, hz, W, H - hz);
-    const hl = bg.createLinearGradient(0, 0, W, 0); hl.addColorStop(0, 'transparent'); hl.addColorStop(.5, rgba(col(2), .55)); hl.addColorStop(1, 'transparent');
-    bg.fillStyle = hl; bg.fillRect(0, hz - 1, W, 2);
-    bg.lineWidth = 1;
-    for (let i = 1; i < 16; i++) {   // perspective wave lines, closer = wider apart and brighter
-      const q = i / 16, y = hz + (H - hz) * Math.pow(q, 1.7), amp = 1 + q * 4;
-      bg.beginPath(); for (let x = 0; x <= W; x += 24) { const yy = y + Math.sin(x * .012 / (q + .2) + t * (1.2 + q) + i) * amp; x ? bg.lineTo(x, yy) : bg.moveTo(x, yy); }
-      bg.strokeStyle = rgba(col(1), .05 + q * .1); bg.stroke();
+    boost = Math.max(0, boost - dt * .8);
+    // soft vertical light streaks that fade in and out across the screen
+    if (streaks.length < 7 + tier * 2 && Math.random() < dt * (2.5 + tier)) streaks.push({ x: Math.random() * W, w: 6 + Math.random() * 46, life: 1.6 + Math.random() * 2, max: 0, c: Math.floor(Math.random() * 3) });
+    for (let i = streaks.length - 1; i >= 0; i--) {
+      const s2 = streaks[i]; if (!s2.max) s2.max = s2.life; s2.life -= dt; if (s2.life <= 0) { streaks.splice(i, 1); continue; }
+      const a = Math.sin(Math.PI * (1 - s2.life / s2.max)) * (.16 + boost * .08), gr = bg.createLinearGradient(s2.x - s2.w / 2, 0, s2.x + s2.w / 2, 0);
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.5, rgba(col(s2.c, t), a)); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      const vg = bg.createLinearGradient(0, 0, 0, H); bg.fillStyle = gr; bg.fillRect(s2.x - s2.w / 2, 0, s2.w, H);
+      vg.addColorStop(0, rgba('#ffffff', a * .5)); vg.addColorStop(.5, 'rgba(255,255,255,0)'); bg.fillStyle = vg; bg.fillRect(s2.x - s2.w * .12, 0, s2.w * .24, H);
     }
-    if (b && b.o > .05) {
-      const near = clamp(1 - (hz - b.y) / (H * .55), .15, 1), alpha = near * b.o;
-      // reflection: soft glow on the water plus a shimmering column of light streaks
-      const ry = hz + (hz - b.y) * .12 + 6, rg = bg.createRadialGradient(b.x, ry, 0, b.x, ry, b.r * 2.2);
-      rg.addColorStop(0, rgba(col(1, t), .55 * alpha)); rg.addColorStop(1, 'transparent');
-      bg.save(); bg.translate(b.x, ry); bg.scale(1, .28); bg.translate(-b.x, -ry); bg.fillStyle = rg; bg.beginPath(); bg.arc(b.x, ry, b.r * 2.2, 0, 7); bg.fill(); bg.restore();
-      for (let i = 0; i < 22; i++) {
-        const q = i / 22, y = hz + 4 + (H - hz) * q * .9, w = b.r * (1.3 - q * .6) * (.5 + .5 * Math.abs(Math.sin(t * 3 + i * 1.7)));
-        bg.fillStyle = rgba(i % 3 ? col(2) : col(1, t), (.5 - q * .4) * alpha); bg.fillRect(b.x - w / 2 + Math.sin(t * 2 + i) * 6, y, w, 1.6 + q * 2);
-      }
-      // ripples under the sphere
-      if (now > nextRipple) { ripples.push({ age: 0, k: .7 + near * .5 }); nextRipple = now + 900 - tier * 120; }
-    }
-    for (let i = ripples.length - 1; i >= 0; i--) {
-      const rp = ripples[i]; rp.age += dt; if (rp.age < 0) continue;
-      const life = 1.8 * rp.k, q = rp.age / life; if (q >= 1) { ripples.splice(i, 1); continue; }
-      const rx = (40 + q * 420) * rp.k, x = rp.x ?? (b ? b.x : W / 2);
-      bg.beginPath(); bg.ellipse(x, hz + 10 + q * 26, rx, rx * .12, 0, 0, Math.PI * 2);
-      bg.strokeStyle = rgba(col(2), (1 - q) * .6); bg.lineWidth = 2 * (1 - q) + .5; bg.stroke();
+    // glowing sparks rising from the bottom of the screen
+    const want = (30 + tier * 18) * (1 + boost);
+    if (rise.length < want) for (let k = 0; k < 3; k++) rise.push({ x: Math.random() * W, y: H + 10, vy: 40 + Math.random() * 110, r: .8 + Math.random() * 2.6, ph: Math.random() * 7, c: Math.floor(Math.random() * 3) });
+    for (let i = rise.length - 1; i >= 0; i--) {
+      const m = rise[i]; m.y -= m.vy * dt * (1 + boost * .8); m.x += Math.sin(t * 1.4 + m.ph) * dt * 10; if (m.y < -10) { rise.splice(i, 1); continue; }
+      const a = (.45 + .45 * Math.sin(t * 5 + m.ph)) * Math.min(1, m.y / (H * .25));
+      const gl = bg.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r * 5); gl.addColorStop(0, rgba(col(m.c, t), a * .9)); gl.addColorStop(1, 'rgba(0,0,0,0)');
+      bg.fillStyle = gl; bg.fillRect(m.x - m.r * 5, m.y - m.r * 5, m.r * 10, m.r * 10);
+      bg.fillStyle = rgba('#ffffff', a); bg.beginPath(); bg.arc(m.x, m.y, m.r * .55, 0, 7); bg.fill();
     }
     if (shockT >= 0) {   // burst shockwave across the water and the air
       shockT += dt; const q = shockT / .9;
@@ -550,8 +557,11 @@ function advancePull() {
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return showSummary();
-  const r = st.results[st.order[st.i]], v = resultView(r);
+  const r0 = st.results[st.order[st.i]], pre = r0.up && !r0.upShown;
+  // an upgraded pull is first revealed as the SSR it was, then transforms (upgradeReveal)
+  const r = pre ? { kind: 'entry', id: r0.up.id, rarity: 4, isNew: true } : r0, v = resultView(r);
   st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
+  if (pre) { st.phase = 'upgrade'; st.readyAt = Infinity; pullLater(1500, upgradeReveal); }
   pullEl.classList.add('revealing');
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
@@ -562,15 +572,35 @@ function advancePull() {
       <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}</div>
       <div class="rv-name">${esc(v.name)}</div>
       ${r.kind === 'entry' ? `<div class="rv-tier">${rtag(r.rarity, 'xl')}</div>` : ''}
+      ${r.up ? `<span class="rv-badge up">Upgraded from ${esc(r.up.name)}!</span>` : ''}
       ${r.lost ? `<span class="rv-badge dupe">Lost the 50/50 · next UR is guaranteed</span>` : ''}
-      ${r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
+      ${pre ? '' : r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
         : r.starUp ? `<div class="rv-up">${starRow(r.starUp, r.starUp - 1)}<span>${r.starUp === MAX_STARS ? 'Max stars reached' : `Star ${r.starUp} of ${MAX_STARS}`}</span></div>`
         : `<div class="rv-up">${hasStars(findEntry(r.id)) ? starRow(MAX_STARS) : ''}<span>${hasStars(findEntry(r.id)) ? 'Max stars' : 'Already owned'}${r.starlight ? ` · +${r.starlight} ${curIcon('starlight')}` : ''}</span></div>`) : ''}
     </div>
     ${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}
-    <div class="rv-hint">Tap to continue</div>
+    <div class="rv-hint">${pre ? '' : 'Tap to continue'}</div>
   </div>`;
   if (st.fx) setTimeout(() => st.fx && st.fx.sparkle(r.rarity), 80);
+}
+/* SSR → UR upgrade: the screen shakes and flashes, the upgrade wallpaper slides in over the SSR with an UPGRADE stamp,
+   then the UR is revealed (close to the fakeout) */
+function upArt() {
+  const own = (S.upArts || []).map(k => MEDIA.get(k)).filter(Boolean);
+  return own.length ? rpick(own) : fakeArt();
+}
+function upgradeReveal() {
+  const st = pullState; if (!st || !pullEl || st.phase !== 'upgrade') return;
+  const rv = $('#pullStage .rv'); if (!rv) return;
+  const art = upArt();
+  pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake', 'r5'); pullEl.classList.remove('r4');
+  rv.insertAdjacentHTML('beforeend', `<div class="fake-flash"></div>${art ? `<div class="fk-art up"><img src="${art}" alt=""><i class="fk-streak"></i></div>` : ''}<div class="up-word"><b>UPGRADE</b><span>SSR <i>→</i> UR</span></div>`);
+  if (st.fx) { st.fx.burst(140, 700, 5); st.fx.sparkle(5); }
+  pullLater(2500, () => {
+    const r = st.results[st.order[st.i]]; r.upShown = true;
+    const a = $('#pullStage .fk-art'); if (a) a.classList.add('out');
+    pullLater(600, () => { st.i--; st.phase = 'reveal'; advancePull(); });
+  });
 }
 function showSummary() {
   const st = pullState; if (!st) return;
@@ -583,7 +613,7 @@ function showSummary() {
     <h2>Summon results</h2>
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r); return `<div class="scard r${r.rarity}" style="--i:${i}">
       ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
-      ${r.isNew ? '<span class="new">NEW</span>' : ''}
+      ${r.isNew ? '<span class="new">NEW</span>' : ''}${r.up ? '<span class="new upg">UPGRADED</span>' : ''}
       <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">

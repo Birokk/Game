@@ -676,6 +676,7 @@ function previewPull(kind) {
   const pick = r => rpick(S.pool.filter(e => e.type === 'character' && !e.mc && e.rarity === r)) || rpick(S.pool.filter(e => e.rarity === r && e.type !== 'skin'));
   const ent = r => { const e = pick(r); return e ? { kind: 'entry', id: e.id, rarity: r, isNew: true, starUp: 0, pearls: 0 } : { kind: 'coins', amount: 500, rarity: 3 }; };
   const coin = () => ({ kind: 'coins', amount: 500, rarity: 3 }), frag = () => ({ kind: 'frag', frag: 'ssr', rarity: 3 });
+  if (kind === 'upgrade') { const u = ent(5), d = ent(4); if (u.kind === 'entry' && d.kind === 'entry') u.up = { id: d.id, name: findEntry(d.id).name }; closeModal(); closeSettings(); return showPull([u], 1, 'limited', { preview: true, fake: false }); }
   const res = kind === 'blue' ? [coin()] : kind === 'ssr' ? [ent(4)] : kind === 'ten' ? [coin(), ent(4), frag(), coin(), coin(), ent(5), coin(), frag(), coin(), ent(4)] : [ent(5)];
   closeModal(); showPull(res, res.length, 'limited', { preview: true, fake: kind === 'fake' });
 }
@@ -684,15 +685,33 @@ function renderPullFxTab() {
   const list = (S.fakeArts || []).filter(k => MEDIA.get(k));
   p.innerHTML = `<div class="stack">
     <div><h3>Pull animation</h3><p class="tiny">Players pull the screen down to release a sphere. It rises and turns from blue (gold and fragments) to orange (SSR) to prism (UR), stopping at the best result of the pull. In ${Math.round(FAKEOUT_CHANCE * 100)}% of UR pulls (never on a hard-pity UR) the sphere stops at orange, one of the fakeout wallpapers below slides in, and the sphere transforms into UR.</p></div>
-    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button></div>
+    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button><button class="btn gold sm" data-pv="upgrade">Preview: SSR → UR upgrade</button></div>
     <div><h3>Fakeout wallpapers</h3><p class="tiny">One is picked at random for each fakeout. Wide character art works best (1920×1080; it covers the screen). Without any, the limited banner's featured character is used.</p></div>
     <div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-fkdel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No fakeout wallpapers yet.</span>'}</div>
     <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="fkUp" multiple></label></div>
+    <div><h3>SSR → UR upgrade wallpapers</h3><p class="tiny">${Math.round(UPGRADE_CHANCE * 100)}% of SSR pulls turn into a UR after they are revealed (50/50 on featured banners, the featured UR when guaranteed). One of these slides in during the upgrade; without any, a fakeout wallpaper is used. Also editable in Settings → Admin.</p></div>
+    ${upArtsHTML()}
   </div>`;
   p.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => previewPull(b.dataset.pv));
   $('#fkUp').onchange = async ev => {
     try { for (const f of ev.target.files) { const k = `fake:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.fakeArts = [...(S.fakeArts || []), k]; } persist(); renderPullFxTab(); toast('Fakeout wallpapers added.'); }
     catch (e) { toast(e.message, true); }
   };
+  bindUpArts(renderPullFxTab);
   p.querySelectorAll('[data-fkdel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.fkdel); S.fakeArts = (S.fakeArts || []).filter(k => k !== b.dataset.fkdel); persist(); renderPullFxTab(); });
+}
+
+/* SSR → UR upgrade wallpapers (S.upArts, media keys upg:*), shared by admin → Summon animation and Settings → Admin */
+function upArtsHTML() {
+  const list = (S.upArts || []).filter(k => MEDIA.get(k));
+  return `<div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-updel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No upgrade wallpapers yet.</span>'}</div>
+    <div class="row"><label class="btn mint sm">${icon('upload')}Add upgrade wallpapers<input type="file" accept="image/*" class="sr" data-upadd multiple></label><button type="button" class="btn ghost sm" data-pv="upgrade">Preview the upgrade</button></div>`;
+}
+function bindUpArts(rerender) {
+  document.querySelectorAll('[data-upadd]').forEach(inp => inp.onchange = async ev => {
+    try { for (const f of ev.target.files) { const k = `upg:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.upArts = [...(S.upArts || []), k]; } persist(); rerender(); toast('Upgrade wallpapers added.'); }
+    catch (e) { toast(e.message, true); }
+  });
+  document.querySelectorAll('[data-updel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.updel); S.upArts = (S.upArts || []).filter(k => k !== b.dataset.updel); persist(); rerender(); });
+  document.querySelectorAll('[data-pv="upgrade"]').forEach(b => b.onclick = () => previewPull('upgrade'));
 }

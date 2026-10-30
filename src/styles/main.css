@@ -2037,3 +2037,17 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .minimap canvas{width:150px;height:150px;border-radius:50%;background:none}
 .wpin.up{flex-direction:column-reverse}.wpin.up b{order:-1}
 @media (max-width:760px){.minimap canvas{width:96px;height:96px}}
+
+/* SSR → UR upgrade during the reveal */
+.pull.revealing .rv .fk-art.up{display:block;z-index:3}
+.pull.revealing .rv .fake-flash{display:block;z-index:6}
+.up-word{position:absolute;left:50%;top:50%;z-index:5;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:6px;pointer-events:none;animation:upWord 2.9s cubic-bezier(.2,1.3,.4,1) both}
+.up-word b{font-family:var(--display);font-weight:400;font-style:italic;font-size:clamp(56px,12vw,150px);line-height:1;letter-spacing:.06em;background:linear-gradient(100deg,#fff 10%,#ffb3e6 30%,#c58bff 50%,#8ff7ea 70%,#fff 90%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 24px rgba(255,110,199,.8));animation:shimmer 1.4s linear infinite}
+.up-word span{font-family:var(--display);font-size:clamp(20px,3vw,34px);color:#fff;text-shadow:0 0 14px #ff6ec7}
+.up-word span i{font-style:normal;color:#8ff7ea}
+@keyframes upWord{0%{opacity:0;transform:translate(-50%,-50%) scale(2.4)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}}
+.rv-badge.up{background:var(--ur);color:#fff}
+.scard .new.upg{left:auto;right:6px;background:var(--ur);color:#fff}
+.sx-row.sx-block{border-radius:26px;flex-wrap:wrap;align-items:flex-start;padding:14px 18px 14px 30px}
+.sx-row.sx-block .sx-c{flex:1 1 360px;display:grid;gap:8px;justify-items:end}
+.sx-row.sx-block .ld-thumbs{justify-content:flex-end}

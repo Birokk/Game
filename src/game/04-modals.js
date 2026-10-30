@@ -126,6 +126,7 @@ function renderSettings() {
       + setRow('Main character', S.player.mc ? `<button type="button" class="sx-btn" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : '<span class="sx-val">Not chosen yet</span>', S.player.mc ? `${esc(mcEntry(S.player.mc).name)} · once every 72 hours` : '')
       + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
   } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
+      + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
       + setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`));
   setEl.innerHTML = `<div class="setx-top"><div class="inv-title"><span class="inv-badge">${icon('gear')}</span><h2 class="ts">${cur[2]}</h2></div>
       <nav class="inv-tabs">${tabs.map(([k, ic, l]) => `<button class="${k === setTab ? 'on' : ''}" data-settab="${k}" title="${l}" aria-label="${l}">${icon(ic)}</button>`).join('')}</nav>
@@ -144,6 +145,7 @@ function renderSettings() {
   const mb = on('setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
   const ad = on('setAdmin'); if (ad) ad.onclick = () => { closeSettings(); openAdmin(); };
   const eu = on('setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { renderSettings(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
+  bindUpArts(renderSettings);
   const er = on('setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); renderSettings(); toast('EXP icon back to the default.'); };
 }
 
