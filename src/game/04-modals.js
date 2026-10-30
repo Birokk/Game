@@ -61,6 +61,7 @@ function openSettings() {
     <div class="switch" style="cursor:default">Main character<span class="row" style="gap:10px"><b style="color:var(--mint)">${S.player.mc ? esc(mcEntry(S.player.mc).name) : 'Not chosen yet'}</b>${S.player.mc ? `<button type="button" class="btn ghost sm" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : ''}</span></div>
     <label class="field"><span>Player name</span><input class="input" id="setName" maxlength="16" value="${esc(S.player.name)}"></label>
     <button type="button" class="switch" data-open="wallpaper" style="text-align:left">Main screen wallpaper<b style="color:var(--mint)">${esc(wallpaperEntry() ? wallpaperEntry().name : 'Pearl Tide')}</b></button>
+    ${canAdmin() ? `<div class="switch" style="cursor:default">EXP icon<span class="tiny" style="flex:1;margin:0 12px">Shown only where EXP is given as a reward</span><span class="row" style="gap:8px"><span class="set-exp" id="setExpPrev">${curIcon('exp')}</span><label class="btn ghost sm">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? '<button type="button" class="btn ghost sm" id="setExpReset">Default</button>' : ''}</span></div>` : ''}
     <label class="switch">Show name tags in the plaza<input type="checkbox" id="setNames" ${S.settings.names ? 'checked' : ''}><i></i></label>
     <label class="switch">Music<input type="checkbox" id="setMusic" ${S.settings.music ? 'checked' : ''}><i></i></label>
     <label class="switch">Sound effects<input type="checkbox" id="setSfx" ${S.settings.sfx ? 'checked' : ''}><i></i></label>
@@ -76,6 +77,8 @@ function openSettings() {
     $('#setTitle').onclick = showTitle;
     $('#setRedeem').onclick = openRedeem;
     const ab = $('#setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
+    const eu = $('#setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { openSettings(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
+    const er = $('#setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); openSettings(); toast('EXP icon back to the default.'); };
     const mb = $('#setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
   } });
 }

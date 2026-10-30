@@ -49,7 +49,7 @@ const farmReady = () => FARM_DEFS.some(d => farmWhole(d.id) >= 1) || FARM_DEFS.s
 function farmCollect(id) {
   farmSettle(id); const f = farmOf(id), n = Math.floor(f.acc);
   if (n < 1) return 0;
-  f.acc -= n; S.wallet.pearls += n; return n;
+  f.acc -= n; S.wallet.pearls += n; gainExp(n * EXP.farm); return n;
 }
 function farmPayReq(id) {
   const f = farmOf(id), to = f.lv + 1;

@@ -85,7 +85,7 @@ function renderProfile() {
     ${view ? '' : `<div class="row pf-back"><button class="btn ghost sm" id="pfBack">${icon('back')}Back to profile</button><span class="tiny">Tap a showcase slot, or pick an avatar, frame, title or namecard below.</span></div>`}
     <div class="pf-card">${cardLayer(cardBG(P.card))}${view ? `<button class="pf-set" id="pfSet" aria-label="Profile settings" data-tip="${esc('<b>Profile settings</b><span>Avatar, frame, title, namecard, showcase and name</span>')}">${icon('gear')}<span>Profile settings</span></button>` : ''}
       <div class="pf-me">${avatarHTML(108)}
-        <div class="pf-who"><span class="lbl-sm ts" style="color:#fff">Lv 12 · UID ${P.uid}</span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="${pfEditName ? 'Save name' : 'Change name'}">${icon(pfEditName ? 'check' : 'edit')}</button></span>${titleHTML()}</div>
+        <div class="pf-who"><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="${pfEditName ? 'Save name' : 'Change name'}">${icon(pfEditName ? 'check' : 'edit')}</button></span>${titleHTML()}</div>
       </div>
       <div class="pf-stats">
         <div><b>${chars.length}/${allChars.length}</b><span>Characters</span></div>

@@ -1728,3 +1728,52 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
   .evl-day.big .evl-band{display:none}.evl-day.big .evl-ft{grid-column:1/-1}
   .ev-ad{grid-template-columns:1fr}
 }
+
+/* ---------- player level + level rewards ---------- */
+.exp-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px 2px 3px;border-radius:999px;background:rgba(63,212,126,.16);border:1px solid rgba(63,212,126,.45);color:#9dffc4;font-family:var(--display);font-size:12px;white-space:nowrap;vertical-align:middle;justify-self:start}
+.exp-tag .cic{width:16px;height:16px}
+.set-exp{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.06)}
+.set-exp .cic{width:26px;height:26px}
+.modal-back[data-kind=level] .m-body{overflow:hidden;display:grid}
+.lv{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:18px;min-height:0;height:min(70vh,640px)}
+.lv-side{display:grid;align-content:start;gap:12px;overflow-y:auto;padding:14px;border-radius:20px;background:linear-gradient(#34343e,#22222a);border:1px solid rgba(255,255,255,.08)}
+.lv-tagline{justify-self:stretch;text-align:center;padding:10px;border-radius:999px;background:#121218;font-family:var(--display);font-size:22px}
+.lv-medal-card{display:grid;justify-items:center;gap:10px;padding:14px;border-radius:18px;background:rgba(0,0,0,.25)}
+.lv-cur{justify-self:stretch;text-align:center;padding:6px;border-radius:999px;background:#121218;font-family:var(--display);font-size:16px;color:#ddd}
+.lv-medal{position:relative;width:min(210px,60vw);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:repeating-conic-gradient(#15151b 0 4deg,#1f1f27 4deg 8deg);box-shadow:inset 0 0 0 10px #18181f,0 8px 22px rgba(0,0,0,.5)}
+.lv-core{width:54%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#ffcf5a 0 38%,#ff7a2a 62%,#ff3d7f 64% 76%,#b0247a 78%);box-shadow:0 0 0 6px #ff3d9a,0 0 24px rgba(255,61,154,.6);color:#3a1a06}
+.lv-core .ic{width:42%;height:42%;stroke-width:2.2}
+.lv-medal b{position:absolute;bottom:9%;padding:2px 26px;border-radius:999px;background:#0e0e14;border:1px solid rgba(255,255,255,.12);font-family:var(--display);font-weight:400;font-size:30px}
+.lv-bar{justify-self:stretch;height:10px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.lv-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3fd47e,#b6ff7a)}
+.lv-ways{display:grid;gap:6px;padding:12px;border-radius:16px;background:rgba(0,0,0,.25)}
+.lv-ways>div{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;font-family:var(--display);font-size:14px}
+.lv-ways small{grid-column:1/-1;font-family:var(--read);font-size:11px;color:var(--muted);margin-top:-3px}
+.lv-list{overflow-y:auto;display:grid;align-content:start;gap:14px;padding:4px 10px 4px 4px;border-radius:20px;background:#17171d;scrollbar-width:thin}
+.lv-row{position:relative;display:grid;grid-template-columns:44px 1fr;align-items:center}
+.lv-row::before{content:"";position:absolute;left:19px;width:6px;top:-14px;bottom:0;background:#3a3a46}
+.lv-row:first-child::before{top:50%}
+.lv-row.got::before,.lv-row.can::before{background:#ff4d93}
+.lv-node{position:relative;z-index:1;width:32px;height:32px;margin-left:6px;border-radius:50%;display:grid;place-items:center;background:#24242c;border:3px solid #3a3a46;color:#ff4d93}
+.lv-row.got .lv-node,.lv-row.can .lv-node{border-color:#ff4d93;background:#fff}
+.lv-node .ic{width:16px;height:16px;stroke-width:3.4}
+.lv-card{border-radius:16px;background:linear-gradient(#3a3a44,#2a2a32);border:2px solid rgba(255,255,255,.06);overflow:hidden}
+.lv-row.can .lv-card{border-color:#ff4d93;box-shadow:0 0 0 3px rgba(255,77,147,.22)}
+.lv-row.locked .lv-card{opacity:.7}
+.lv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px}
+.lv-head b{font-family:var(--display);font-weight:400;font-size:22px}
+.lv-btn{min-width:140px;padding:7px 18px;border-radius:999px;background:#15151b;border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.35);font-family:var(--display);font-size:15px;text-align:center}
+.lv-btn.go{background:linear-gradient(90deg,#ff3d7f,#ff7ab0);color:#fff;border:0;cursor:pointer;animation:evPulse 1.6s ease-in-out infinite}
+.lv-items{display:flex;flex-wrap:wrap;gap:12px;padding:10px 14px 16px;background:rgba(0,0,0,.18)}
+.lv-item{position:relative;width:72px;aspect-ratio:1;border-radius:12px;display:grid;place-items:center;background:linear-gradient(180deg,#30303c 45%,#2f7f6a 100%);border:1px solid rgba(255,255,255,.12)}
+.lv-item.k-coins{background:linear-gradient(180deg,#30303c 45%,#3b5bd9 100%)}
+.lv-item.k-tickets,.lv-item.k-wishes{background:linear-gradient(180deg,#30303c 45%,#b03ab8 100%)}
+.lv-item .cic{width:58%;height:58%}
+.lv-item em{position:absolute;left:4px;right:4px;bottom:-9px;border-radius:999px;background:#0e0e14;font-style:normal;font-family:var(--display);font-size:12px;text-align:center}
+@media (max-width:760px){
+  .lv{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:78vh}
+  .lv-side{grid-template-columns:auto 1fr;align-items:center}.lv-tagline,.lv-ways,#lvAll{grid-column:1/-1}.lv-ways{display:none}
+  .lv-medal-card{grid-column:1/-1;grid-template-columns:auto 1fr;padding:8px}.lv-cur{display:none}.lv-medal{width:110px}.lv-medal b{font-size:20px;padding:0 12px}
+  .lv-medal-card>.tiny,.lv-bar{grid-column:2}.lv-medal{grid-row:1/3}.lv-medal-card{align-items:center}
+  .lv-head b{font-size:17px}.lv-btn{min-width:0;padding:6px 12px;font-size:13px}.lv-item{width:56px}.lv-items{gap:10px}
+}

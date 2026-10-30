@@ -37,7 +37,8 @@ const thumbImg = (e, cls = '') => {
 const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${baseCard(e)}" alt="" class="${baseArt(e) ? 'art' : 'chibi'} ${cls}">`; };
 function renderMenu() {
   $('#pname').textContent = S.player.name;
-  $('#hmAvatar').innerHTML = avatarHTML(56) + '<span class="lvb">12</span>';
+  $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>`;
+  $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');

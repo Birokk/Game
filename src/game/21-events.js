@@ -20,7 +20,7 @@ function loginState() {
 function claimLogin() {
   const st = loginState(); if (!st.ready) return;
   const n = loginDays()[st.today - 1];
-  S.wallet.tickets += n; S.login = { last: dayKey(), streak: st.next }; persist(); renderMenu(); refreshSummon(); renderEvents();
+  S.wallet.tickets += n; S.login = { last: dayKey(), streak: st.next }; gainExp(EXP.login); persist(); renderMenu(); refreshSummon(); renderEvents();
   toast(`Claimed ${n} Limited ticket${n === 1 ? '' : 's'} (day ${st.today}). That is ${n} free pull${n === 1 ? '' : 's'} on the limited banner.`);
 }
 function openLogin() { openEvents('login'); }
@@ -75,7 +75,7 @@ function loginBoard() {
       <span class="evl-ft">${done ? 'Claimed' : now ? 'Claim' : `Day ${d}`}</span></button>`; };
   const streak = st.ready ? st.next - 1 : st.next;
   return `<div class="evl"><div class="evl-grid">${[1, 2, 3, 4, 5, 6].map(card).join('')}</div>${card(7)}</div>
-    <p class="evp-note">${streak ? `Login streak: ${streak} day${streak === 1 ? '' : 's'}.` : 'Start your streak today.'} Missing a day starts the calendar again from day 1.</p>`;
+    <p class="evp-note">${streak ? `Login streak: ${streak} day${streak === 1 ? '' : 's'}.` : 'Start your streak today.'} Missing a day starts the calendar again from day 1. Each day also gives ${expTag(EXP.login)}</p>`;
 }
 
 /* admin → Events: names, subtitles, end dates, text, login rewards and a wallpaper per event */

@@ -93,6 +93,7 @@ function doPull(n, bk = curBanner, free = false) {
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
   const results = Array.from({ length: n }, () => rollOne(bk));
+  gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk);
   if (S.settings.skipPull) showSummary();

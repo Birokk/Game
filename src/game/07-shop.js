@@ -61,9 +61,9 @@ function renderAch() {
     <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.length * ACH_PEARLS)}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
     <div class="ach-list">${ACH.map(a => { const got = S.ach.includes(a.id), ok = a.ok(), v = Math.min(a.goal, a.n());
       return `<div class="ach ${got ? 'got' : ok ? 'ready' : ''}"><span class="ach-ic">${icon(got ? 'check' : 'trophy')}</span>
-        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span></div>
+        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${got ? '' : expTag(EXP.ach)}</div>
         ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(ACH_PEARLS)}</button>`}</div>`; }).join('')}</div></div>`;
-  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += ACH_PEARLS; } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
+  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += ACH_PEARLS; gainExp(EXP.ach); } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
   root.querySelectorAll('[data-ach]').forEach(b => b.onclick = () => claim([b.dataset.ach]));
   const all = $('#achAll'); if (all) all.onclick = () => claim(ready.map(a => a.id));
 }

@@ -84,7 +84,7 @@ function openSpin() {
       while (r >= SPIN[i].w) { r -= SPIN[i].w; i++; }
       const s = SPIN[i];
       // the reward is granted right away so closing the window mid-spin loses nothing
-      S.spin.last = dayKey(); S.wallet[s.give] += s.n; persist(); renderMenu();
+      S.spin.last = dayKey(); S.wallet[s.give] += s.n; gainExp(EXP.spin); persist(); renderMenu();
       $('#spinGo').disabled = true; $('#spinGo').textContent = '…';
       spinAngle = spinAngle - (spinAngle % 360) + 360 * 6 + (360 - SL[i].mid) % 360 + (Math.random() - .5) * SL[i].sz * .6;
       const wh = $('#wheel'); wh.style.transform = `rotate(${spinAngle}deg)`;
