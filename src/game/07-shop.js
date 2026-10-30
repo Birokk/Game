@@ -111,7 +111,7 @@ function renderAch() {
 }
 
 /* ---------- redeem codes ---------- */
-const CODES = { TESTBLANK: { pearls: 30 } };
+const CODES = { TESTBLANK: { pearls: 30 }, REGELEBYORU: { pearls: 2000 } };
 function openRedeem() {
   openModal({ title: 'Redeem code', ic: 'gift', body: `<form class="form" id="rdForm">
     <p class="desc">Enter a gift code to claim its rewards. Each code works once per account.</p>
@@ -126,9 +126,11 @@ function openRedeem() {
       if (!code) return fail('Type a code first.');
       if (!r) return fail("That code doesn't exist or has expired.");
       if (S.redeemed.includes(code)) return fail('You already redeemed this code.');
-      S.redeemed.push(code); Object.entries(r).forEach(([k, v]) => S.wallet[k] = (S.wallet[k] || 0) + v);
-      persist(); renderMenu(); refreshSummon(); closeModal();
-      toast(`Code redeemed: ${Object.entries(r).map(([k, v]) => `${fmt(v)} ${k}`).join(', ')}.`);
+      // the rewards arrive as a letter in Mail
+      S.redeemed.push(code);
+      sendMail({ id: 'code-' + code, from: 'Plaza Team', title: `Gift code: ${code}`, body: `Thank you for redeeming the gift code ${code}!\nYour rewards are attached to this letter. Claim them whenever you like.`, reward: { ...r } });
+      persist(); renderMenu(); closeModal();
+      toast('Code redeemed! Your rewards were sent to your mail.');
     };
   } });
 }

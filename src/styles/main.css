@@ -603,14 +603,25 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .ev .dot-n{top:2px;right:8px}
 .hm-right{top:calc(112px + var(--st));right:var(--sr);display:grid;grid-template-columns:repeat(2,78px);gap:8px 6px}
 
-.portal{left:calc(var(--sl) - 4px);bottom:calc(10px + var(--sb));width:124px;height:124px;border-radius:50%;display:grid;place-items:center;transition:transform .2s}
-.portal:hover{transform:scale(1.04)}
-.portal .swirl{position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle,#ffffff 0 8%,#b7f4ff 22%,#4fb0ff 48%,#2a3fd1 70%,#151a5e);box-shadow:0 0 30px rgba(80,180,255,.65),inset 0 0 18px rgba(255,255,255,.5);overflow:hidden}
-.portal .swirl::before{content:"";position:absolute;inset:-20%;background:conic-gradient(from 0deg,transparent,rgba(255,255,255,.55),transparent 30%,rgba(126,243,212,.5),transparent 60%,rgba(255,255,255,.45),transparent 85%);animation:spin 6s linear infinite}
-.portal .rim{position:absolute;inset:0;border-radius:50%;border:4px solid var(--gold);box-shadow:0 0 0 2px rgba(0,0,0,.35),0 0 16px rgba(255,211,107,.5)}
-.portal .rim::before{content:"✦";position:absolute;top:-14px;left:50%;transform:translateX(-50%);color:var(--gold);font-size:22px;text-shadow:0 0 10px var(--gold)}
-.portal .plbl{position:relative;font-family:var(--display);font-size:22px;line-height:.95;text-align:center;color:#fff}
-
+/* Enter Plaza: a lantern gate (arched doorway glowing with the festival, two swinging lanterns, rising motes) */
+.portal{left:var(--sl);bottom:calc(12px + var(--sb));width:112px;height:132px;padding:0;border-radius:58px 58px 16px 16px;overflow:hidden;cursor:pointer;
+  border:2px solid rgba(255,206,120,.8);background:linear-gradient(#1c1530,#0b0914);box-shadow:0 10px 26px rgba(0,0,0,.5),0 0 22px rgba(255,160,80,.28);transition:transform .2s,box-shadow .2s}
+.portal:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.55),0 0 34px rgba(255,170,90,.55)}
+.g-arch{position:absolute;inset:7px 7px 32px;border-radius:50px 50px 6px 6px;overflow:hidden;
+  background:radial-gradient(ellipse 90% 70% at 50% 92%,#ffe2a0 0,#ff9a48 22%,#c2386e 48%,#3a1a66 78%,#1a1036);box-shadow:inset 0 0 14px rgba(0,0,0,.55)}
+.g-arch::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 100%,rgba(255,240,200,.55),transparent 70%);animation:gGlow 2.6s ease-in-out infinite}
+.g-motes{position:absolute;inset:0;background:radial-gradient(circle,#ffe7a8 0 1.6px,transparent 2.4px) 8px 0/26px 30px,radial-gradient(circle,#ffb867 0 1.2px,transparent 2px) 0 12px/34px 38px;opacity:.85;animation:gMotes 5s linear infinite}
+.g-roof{position:absolute;left:-4px;right:-4px;bottom:0;height:34%;background:linear-gradient(#0d0a18,#0d0a18) 50% 100%/100% 42% no-repeat,
+  radial-gradient(ellipse 55% 100% at 50% 100%,#140f24 60%,transparent 62%) 50% 100%/100% 100% no-repeat}
+.g-lan{position:absolute;top:30%;left:14%;width:13px;height:17px;border-radius:5px;background:radial-gradient(circle at 50% 40%,#ffe08a,#ff5a3a 70%);box-shadow:0 0 12px 3px rgba(255,110,60,.7);transform-origin:50% -10px;animation:gSwing 2.4s ease-in-out infinite}
+.g-lan::before{content:"";position:absolute;left:50%;top:-10px;width:1px;height:10px;background:rgba(255,220,160,.7)}
+.g-lan.r{left:auto;right:14%;animation-delay:-1.2s}
+.portal .plbl{position:absolute;left:0;right:0;bottom:0;height:32px;display:grid;place-items:center;font-family:var(--display);font-size:14px;letter-spacing:.04em;color:#ffe9b8;background:linear-gradient(#17121f,#0b0910);border-top:1px solid rgba(255,206,120,.45)}
+@keyframes gGlow{50%{opacity:.55}}
+@keyframes gMotes{to{background-position:8px -30px,0 -26px}}
+@keyframes gSwing{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+/* the home limited card uses the summon screen's banner tab look */
+.promo-tab{display:block;margin-left:var(--sl);width:270px;height:96px;cursor:pointer;padding:0}
 .hm-tabs{left:calc(var(--sl) + 128px);bottom:calc(16px + var(--sb));display:flex;align-items:center;padding:6px 18px 6px 10px;border-radius:12px;background:linear-gradient(90deg,rgba(8,12,30,.72),rgba(8,12,30,.2))}
 .tabb{position:relative;padding:4px 14px;font-family:var(--display);font-size:21px;letter-spacing:.02em;color:#fff;transition:color .2s}
 .tabb:hover{color:var(--gold)}
@@ -735,7 +746,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .hm-tr{top:calc(76px + var(--st));left:var(--sl);justify-content:flex-start}
   .cur{min-width:0}
   .ticker{display:none}
-  .hm-left{top:calc(176px + var(--st));gap:10px}
+  .hm-left{top:calc(214px + var(--st));gap:10px}
   .promo{width:210px;height:84px}
   .promo .pt b{font-size:21px;max-width:130px}
   .ev-grid,.hm-right{grid-template-columns:repeat(2,64px);gap:6px 4px}
@@ -743,8 +754,9 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .ev{width:64px;font-size:10px}
   .ev .evo{width:50px;height:50px}
   .ev .evo .ic{width:24px;height:24px}
-  .portal{width:92px;height:92px;bottom:calc(64px + var(--sb))}
-  .portal .plbl{font-size:17px}
+  .portal{width:84px;height:100px;bottom:calc(64px + var(--sb))}
+  .portal .plbl{font-size:11px;height:26px}.g-arch{inset:6px 6px 26px}
+  .sx-tab.promo-tab{width:200px;height:76px;flex:none}.sx-tab.promo-tab b{font-size:18px}
   .hm-tabs{left:var(--sl);right:var(--sr);bottom:calc(10px + var(--sb));justify-content:center;padding:4px}
   .tabb{font-size:16px;padding:4px 10px}
   .hm-br{bottom:calc(64px + var(--sb))}

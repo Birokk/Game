@@ -43,14 +43,17 @@ const MAIL_CAP = 500, MAIL_R = { pearls: 5, tickets: 5, rings: 5, starlight: 5, 
 ICONS.mailOpen = '<path d="M3 10l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10l9 6 9-6"/>';
 const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2 6.3 20.3l1.2-6.4L2.8 9.5l6.4-.8z"/></svg>';
 let mailSel = null;
-const mailList = () => MAILS.filter(m => !(S.mailDel || []).includes(m.id));
+const allMail = () => [...(S.mailbox || []).slice().reverse(), ...MAILS];
+const mailList = () => allMail().filter(m => !(S.mailDel || []).includes(m.id));
+/* add a letter to the player's mailbox (redeem codes use it); newest is shown first */
+function sendMail(m) { S.mailbox = [...(S.mailbox || []), { date: dayKey(), ...m }]; persist(); renderMenu(); }
 const mailRead = id => (S.mailRead || []).includes(id) || S.mailClaimed.includes(id);
 const mailOpen = m => !mailRead(m.id) || (m.reward && !S.mailClaimed.includes(m.id));   // still needs attention
 const mailFav = id => (S.mailFav || []).includes(id);
 function openMail() { openModal({ title: 'Mail', ic: 'mail', wide: true, kind: 'mail', body: '<div class="ml" id="mailList"></div>', onMount: renderMail }); }
 function claimMail(ids) {
   const got = {};
-  ids.forEach(id => { const m = MAILS.find(x => x.id === id); if (!m || S.mailClaimed.includes(id)) return; S.mailClaimed.push(id);
+  ids.forEach(id => { const m = allMail().find(x => x.id === id); if (!m || S.mailClaimed.includes(id)) return; S.mailClaimed.push(id);
     if (m.reward) Object.entries(m.reward).forEach(([k, v]) => { S.wallet[k] = (S.wallet[k] || 0) + v; got[k] = (got[k] || 0) + v; }); });
   persist(); renderMail(); renderMenu(); refreshSummon();
   if (Object.keys(got).length) toast(`Claimed ${Object.entries(got).map(([k, v]) => `${fmt(v)} ${k === 'coins' ? 'gold' : k}`).join(' and ')}.`);

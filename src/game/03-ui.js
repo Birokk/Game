@@ -55,9 +55,9 @@ function renderMenu() {
   $('#spinDot').hidden = !spinReady();
   renderStamina();
   const f = limitedUR(), std = standardURs(), sf = std.length ? std[stdRotate % std.length] : null, gl = S.gacha.limited;
-  $('#promo').innerHTML = `<button class="promo" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
-      ${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}
-      <span class="pt ts"><span class="eyebrow">Limited summon</span><b>${f ? esc(f.name) : esc(bannerName('limited'))}</b><time>${icon('clock').replace('class="ic"', 'class="ic" style="width:11px;height:11px;vertical-align:-1px"')} ${shortLeft()}</time></span>
+  // same card as the summon screen's banner tabs
+  $('#promo').innerHTML = `<button class="sx-tab lim promo-tab" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
+      <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
   $('#pityCard').innerHTML = `<span class="row"><span>${f ? esc(f.name) : 'Limited'} · UR pity</span><span style="color:var(--gold)">${gl.pity5} / ${HARD_PITY}</span></span>
     <span class="bar r5"><i style="width:${gl.pity5 / HARD_PITY * 100}%;background:var(--ur)"></i></span>
