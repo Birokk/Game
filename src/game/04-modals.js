@@ -54,33 +54,62 @@ function renderMail() {
 }
 
 /* settings */
-function openSettings() {
-  const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
-  openModal({ title: 'Settings', ic: 'gear', wide: true, body: `<form class="form" id="setForm">
-    <div class="switch" style="cursor:default">Account<span class="row" style="gap:10px"><b style="color:var(--mint)">${acct}</b>${Backend.on ? `<button type="button" class="btn ghost sm" id="setAcct">${Backend.user ? 'Sign out' : 'Sign in'}</button>` : ''}</span></div>
-    <div class="switch" style="cursor:default">Main character<span class="row" style="gap:10px"><b style="color:var(--mint)">${S.player.mc ? esc(mcEntry(S.player.mc).name) : 'Not chosen yet'}</b>${S.player.mc ? `<button type="button" class="btn ghost sm" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : ''}</span></div>
-    <label class="field"><span>Player name</span><input class="input" id="setName" maxlength="16" value="${esc(S.player.name)}"></label>
-    <button type="button" class="switch" data-open="wallpaper" style="text-align:left">Main screen wallpaper<b style="color:var(--mint)">${esc(wallpaperEntry() ? wallpaperEntry().name : 'Pearl Tide')}</b></button>
-    ${canAdmin() ? `<div class="switch" style="cursor:default">EXP icon<span class="tiny" style="flex:1;margin:0 12px">Shown only where EXP is given as a reward</span><span class="row" style="gap:8px"><span class="set-exp" id="setExpPrev">${curIcon('exp')}</span><label class="btn ghost sm">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? '<button type="button" class="btn ghost sm" id="setExpReset">Default</button>' : ''}</span></div>` : ''}
-    <label class="switch">Show name tags in the plaza<input type="checkbox" id="setNames" ${S.settings.names ? 'checked' : ''}><i></i></label>
-    <label class="switch">Music<input type="checkbox" id="setMusic" ${S.settings.music ? 'checked' : ''}><i></i></label>
-    <label class="switch">Sound effects<input type="checkbox" id="setSfx" ${S.settings.sfx ? 'checked' : ''}><i></i></label>
-    <label class="field"><span>Graphics</span><select class="input" id="setGfx">${['high', 'medium', 'low'].map(g => `<option value="${g}" ${S.settings.gfx === g ? 'selected' : ''}>${g[0].toUpperCase() + g.slice(1)}</option>`).join('')}</select></label>
-    <div class="row" style="justify-content:space-between"><span class="tiny">Audio and graphics settings are placeholders for now.</span><span class="row" style="gap:6px"><button type="button" class="btn ghost sm" id="setRedeem">${icon('gift')}Redeem code</button><button type="button" class="btn ghost sm" id="setTitle">${icon('back')}Title screen</button><button type="button" class="btn ghost sm" data-open="admin">${icon('wrench')}Admin panel</button></span></div>
-  </form>`, onMount: () => {
-    $('#setName').addEventListener('input', e => { S.player.name = e.target.value.trim() || 'Traveler'; player.name = S.player.name; renderMenu(); persist(); });
-    $('#setNames').onchange = e => { S.settings.names = e.target.checked; persist(); };
-    $('#setMusic').onchange = e => { S.settings.music = e.target.checked; persist(); };
-    $('#setSfx').onchange = e => { S.settings.sfx = e.target.checked; persist(); };
-    $('#setGfx').onchange = e => { S.settings.gfx = e.target.value; persist(); };
-    $('#setForm').onsubmit = e => e.preventDefault();
-    $('#setTitle').onclick = showTitle;
-    $('#setRedeem').onclick = openRedeem;
-    const ab = $('#setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
-    const eu = $('#setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { openSettings(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
-    const er = $('#setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); openSettings(); toast('EXP icon back to the default.'); };
-    const mb = $('#setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
-  } });
+/* settings: full screen over a blurred, see-through view of the game; round tabs on top, one row per setting */
+ICONS.audio = '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.5"/>';
+ICONS.user = '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>';
+const SET_TABS = [['graphics', 'image', 'Graphics'], ['audio', 'audio', 'Audio'], ['game', 'sparkle', 'Game'], ['account', 'user', 'Account'], ['admin', 'wrench', 'Admin']];
+const SET_DEFAULTS = { names: true, music: true, sfx: true, gfx: 'high', skipPull: false };
+let setEl = null, setTab = 'graphics';
+const setRow = (label, ctl, sub = '') => `<div class="sx-row"><span class="sx-l">${label}${sub ? `<small>${sub}</small>` : ''}</span><span class="sx-c">${ctl}</span></div>`;
+const setSel = (key, val, opts) => `<label class="sx-sel"><select data-set="${key}" aria-label="${key}">${opts.map(([v, l]) => `<option value="${v}" ${String(val) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
+const setOnOff = key => setSel(key, S.settings[key] ? '1' : '0', [['1', 'On'], ['0', 'Off']]);
+function openSettings(tab) {
+  closeModal();
+  setTab = SET_TABS.some(t => t[0] === tab) ? tab : setTab;
+  if (setTab === 'admin' && !canAdmin()) setTab = 'graphics';
+  if (!setEl) { setEl = document.createElement('div'); setEl.className = 'setx'; setEl.setAttribute('role', 'dialog'); setEl.setAttribute('aria-label', 'Settings'); document.body.appendChild(setEl); }
+  renderSettings();
+}
+function closeSettings() { if (setEl) { setEl.remove(); setEl = null; } }
+function renderSettings() {
+  if (!setEl) return;
+  const tabs = SET_TABS.filter(t => t[0] !== 'admin' || canAdmin()), cur = tabs.find(t => t[0] === setTab) || tabs[0];
+  const btn = (id, label, cls = '') => `<button type="button" class="sx-btn ${cls}" id="${id}">${label}</button>`;
+  let rows = '';
+  if (setTab === 'graphics') rows = setRow('Graphics quality', setSel('gfx', S.settings.gfx, [['high', 'High'], ['medium', 'Medium'], ['low', 'Low']]))
+    + setRow('Name tags in the plaza', setOnOff('names'), 'Show names above players and bots')
+    + setRow('Graphics options', '<span class="sx-val">More coming soon</span>');
+  else if (setTab === 'audio') rows = setRow('Music', setOnOff('music')) + setRow('Sound effects', setOnOff('sfx')) + setRow('Audio', '<span class="sx-val">Sound arrives in a later update</span>');
+  else if (setTab === 'game') rows = setRow('Main screen wallpaper', `<button type="button" class="sx-btn" data-open="wallpaper">${esc(wallpaperEntry() ? wallpaperEntry().name : 'Pearl Tide')}</button>`)
+    + setRow('Skip summon animation', setOnOff('skipPull'), 'Jump straight to the results')
+    + setRow('Redeem code', btn('setRedeem', `${icon('gift')}Redeem`))
+    + setRow('Title screen', btn('setTitle', `${icon('back')}Go to title screen`));
+  else if (setTab === 'account') {
+    const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
+    rows = setRow('Account', Backend.on ? btn('setAcct', Backend.user ? 'Sign out' : 'Sign in') : `<span class="sx-val">${acct}</span>`, Backend.on ? acct : '')
+      + setRow('Player name', `<input class="sx-in" id="setName" maxlength="16" value="${esc(S.player.name)}" aria-label="Player name">`, 'Up to 16 characters')
+      + setRow('Main character', S.player.mc ? `<button type="button" class="sx-btn" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : '<span class="sx-val">Not chosen yet</span>', S.player.mc ? `${esc(mcEntry(S.player.mc).name)} · once every 72 hours` : '')
+      + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
+  } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
+      + setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`));
+  setEl.innerHTML = `<div class="setx-top"><div class="inv-title"><span class="inv-badge">${icon('gear')}</span><h2 class="ts">${cur[2]}</h2></div>
+      <nav class="inv-tabs">${tabs.map(([k, ic, l]) => `<button class="${k === setTab ? 'on' : ''}" data-settab="${k}" title="${l}" aria-label="${l}">${icon(ic)}</button>`).join('')}</nav>
+      <button class="inv-x" id="setClose" aria-label="Close">${icon('close')}</button></div>
+    <div class="setx-list">${rows}</div>
+    <div class="setx-foot">${['graphics', 'audio', 'game'].includes(setTab) ? btn('setDefault', 'Default Settings', 'big') : ''}</div>`;
+  const on = id => setEl.querySelector('#' + id);
+  on('setClose').onclick = closeSettings;
+  setEl.querySelectorAll('[data-settab]').forEach(b => b.onclick = () => { setTab = b.dataset.settab; renderSettings(); });
+  setEl.querySelectorAll('[data-set]').forEach(sel => sel.onchange = () => { const k = sel.dataset.set; S.settings[k] = k === 'gfx' ? sel.value : sel.value === '1'; persist(); });
+  const df = on('setDefault'); if (df) df.onclick = () => { S.settings = { ...S.settings, ...SET_DEFAULTS }; persist(); renderSettings(); toast('Settings set back to default.'); };
+  const nm = on('setName'); if (nm) nm.addEventListener('input', e => { S.player.name = e.target.value.trim() || 'Traveler'; player.name = S.player.name; renderMenu(); persist(); });
+  const rd = on('setRedeem'); if (rd) rd.onclick = openRedeem;
+  const tt = on('setTitle'); if (tt) tt.onclick = showTitle;
+  const ab = on('setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
+  const mb = on('setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
+  const ad = on('setAdmin'); if (ad) ad.onclick = () => { closeSettings(); openAdmin(); };
+  const eu = on('setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { renderSettings(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
+  const er = on('setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); renderSettings(); toast('EXP icon back to the default.'); };
 }
 
 /* wallpaper picker */
