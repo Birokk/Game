@@ -2021,3 +2021,19 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 /* placeholder orbs (characters without art) gently float in menus */
 .skc img.chibi,.dt-art.chibi,.sx-fig img.chibi,.cs-av img.chibi,.pf-thumb img.chibi,.avf .avi img.chibi,.sg-item img.chibi,.inv-pic>img.chibi,.sx-tab img.chibi,.nc img.chibi,#hmAvatar img.chibi{animation:orbFloat 3.4s ease-in-out infinite}
 @keyframes orbFloat{0%,100%{translate:0 0}50%{translate:0 -4%}}
+
+/* world map window: dark backdrop, pale paths, round place icons */
+.modal-back[data-kind=map] .m-body{display:grid;overflow:hidden}
+.wmap{position:relative;min-height:0;height:100%;border-radius:20px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,rgba(60,66,52,.75),rgba(14,16,12,.85))}
+.wmap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.wpin{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:2px;background:none;border:0;padding:0;color:#fff;cursor:pointer}
+.wpin-ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 40% 35%,#3d4038,#1b1c18);border:2px solid rgba(235,228,210,.75);box-shadow:0 3px 10px rgba(0,0,0,.55);transition:transform .15s}
+.wpin-ic .ic{width:22px;height:22px;color:#efe8d6}
+.wpin:hover .wpin-ic{transform:scale(1.1)}
+.wpin b{font-family:var(--display);font-weight:400;font-size:13px;color:#efe8d6;text-shadow:0 1px 4px #000,0 0 8px rgba(0,0,0,.8);white-space:nowrap}
+.wpin.locked .wpin-ic{border-color:#e05a4a}.wpin.locked .wpin-ic .ic{color:#ff7a6a}
+.wmap-tip{position:absolute;left:0;right:0;bottom:10px;margin:0;text-align:center;font-family:var(--read);font-size:12px;color:rgba(240,232,214,.7)}
+/* round minimap like the reference */
+.minimap canvas{width:150px;height:150px;border-radius:50%;background:none}
+.wpin.up{flex-direction:column-reverse}.wpin.up b{order:-1}
+@media (max-width:760px){.minimap canvas{width:96px;height:96px}}
