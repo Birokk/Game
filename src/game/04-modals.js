@@ -31,28 +31,58 @@ function openPlaceholder(key) {
     <div class="skel">${'<div></div>'.repeat(6)}</div></div>` });
 }
 
-/* mail */
+/* mail: list of letters on the left (envelope, title, sender, star), the open letter on the right (title, sender + date,
+   text, attachments), Claim all / Delete read below the list. Read in S.mailRead, claimed in S.mailClaimed,
+   starred in S.mailFav (kept by Delete read), deleted in S.mailDel. */
 const MAILS = [
-  { id:'welcome', from:'Plaza Team', title:'Welcome to Blank: Project!', body:'A starter gift to begin your collection.', reward:{ pearls:60, coins:1000 }, date:'Oct 28' },
-  { id:'maint', from:'Plaza Team', title:'Maintenance compensation', body:'Thanks for your patience during the update.', reward:{ pearls:9 }, date:'Oct 26' },
-  { id:'event', from:'Events', title:'Halloween banner opens Oct 31', body:'A spooky limited banner with two new skins.', reward:null, date:'Oct 25' }
+  { id:'welcome', from:'Plaza Team', title:'Welcome to Blank: Project!', body:'Welcome, traveler!\nThe lanterns are lit and the plaza is waiting for you. Here is a little starter gift to begin your collection. Summon your first friends, decorate your home screen and come say hi in the plaza.\nHave fun, and thank you for playing!', reward:{ pearls:60, coins:1000 }, date:'2026-10-28' },
+  { id:'maint', from:'Plaza Team', title:'Maintenance compensation', body:'Thank you for your patience during the latest update.\nAs an apology for the downtime, please accept these pearls. We are always working to make the plaza a better place.', reward:{ pearls:9 }, date:'2026-10-26' },
+  { id:'event', from:'Events', title:'Halloween banner opens Oct 31', body:'Something spooky is drifting through the lantern festival...\nA limited Halloween banner opens on October 31 with two brand-new outfits. Save your Limited tickets!', reward:null, date:'2026-10-25' }
 ];
-const rewardHTML = r => Object.entries(r).map(([k, v]) => `<span class="cost">${curIcon(k)}${fmt(v)}</span>`).join('');
-function openMail() { openModal({ title: 'Mail', ic: 'mail', wide: true, body: '<div class="mail" id="mailList"></div>', onMount: renderMail }); }
+const MAIL_CAP = 500, MAIL_R = { pearls: 5, tickets: 5, rings: 5, starlight: 5, wishes: 4, bottles: 4, coins: 3, dust: 3 };
+ICONS.mailOpen = '<path d="M3 10l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10l9 6 9-6"/>';
+const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2 6.3 20.3l1.2-6.4L2.8 9.5l6.4-.8z"/></svg>';
+let mailSel = null;
+const mailList = () => MAILS.filter(m => !(S.mailDel || []).includes(m.id));
+const mailRead = id => (S.mailRead || []).includes(id) || S.mailClaimed.includes(id);
+const mailOpen = m => !mailRead(m.id) || (m.reward && !S.mailClaimed.includes(m.id));   // still needs attention
+const mailFav = id => (S.mailFav || []).includes(id);
+function openMail() { openModal({ title: 'Mail', ic: 'mail', wide: true, kind: 'mail', body: '<div class="ml" id="mailList"></div>', onMount: renderMail }); }
+function claimMail(ids) {
+  const got = {};
+  ids.forEach(id => { const m = MAILS.find(x => x.id === id); if (!m || S.mailClaimed.includes(id)) return; S.mailClaimed.push(id);
+    if (m.reward) Object.entries(m.reward).forEach(([k, v]) => { S.wallet[k] = (S.wallet[k] || 0) + v; got[k] = (got[k] || 0) + v; }); });
+  persist(); renderMail(); renderMenu(); refreshSummon();
+  if (Object.keys(got).length) toast(`Claimed ${Object.entries(got).map(([k, v]) => `${fmt(v)} ${k === 'coins' ? 'gold' : k}`).join(' and ')}.`);
+}
+function deleteMail(ids) { S.mailDel = [...new Set([...(S.mailDel || []), ...ids])]; persist(); renderMail(); renderMenu(); }
 function renderMail() {
   const el = $('#mailList'); if (!el) return;
-  el.innerHTML = MAILS.map(m => {
-    const done = S.mailClaimed.includes(m.id);
-    return `<div class="mail-row"><div style="min-width:0"><div class="meta">${esc(m.from)} · ${esc(m.date)}</div><h4>${esc(m.title)}</h4><p>${esc(m.body)}</p>${m.reward ? `<div class="reward">${rewardHTML(m.reward)}</div>` : ''}</div>
-      <button class="btn sm ${done ? 'ghost' : 'mint'}" data-claim="${m.id}" ${done ? 'disabled' : ''}>${done ? (m.reward ? 'Claimed' : 'Read') : (m.reward ? 'Claim' : 'Mark read')}</button></div>`;
-  }).join('');
-  el.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => {
-    const m = MAILS.find(x => x.id === b.dataset.claim);
-    S.mailClaimed.push(m.id);
-    if (m.reward) Object.entries(m.reward).forEach(([k, v]) => S.wallet[k] = (S.wallet[k] || 0) + v);
-    persist(); renderMail(); renderMenu(); refreshSummon();
-    if (m.reward) toast(`Claimed ${Object.entries(m.reward).map(([k, v]) => `${fmt(v)} ${k}`).join(' and ')}.`);
-  });
+  const list = mailList();
+  if (!list.some(m => m.id === mailSel)) mailSel = list[0] ? list[0].id : null;
+  const m = list.find(x => x.id === mailSel);
+  if (m && !mailRead(m.id)) { S.mailRead = [...(S.mailRead || []), m.id]; persist(); setTimeout(renderMenu); }
+  const claimed = m && S.mailClaimed.includes(m.id), keepTop = el.querySelector('.ml-list') ? el.querySelector('.ml-list').scrollTop : 0;
+  el.innerHTML = `<section class="ml-left">
+      <div class="ml-list">${list.map(x => `<button class="ml-row ${x.id === mailSel ? 'on' : ''} ${mailOpen(x) ? 'new' : ''}" data-mail="${x.id}">
+        <span class="ml-env">${icon(mailRead(x.id) ? 'mailOpen' : 'mail')}</span><span class="ml-t"><b>${esc(x.title)}</b><small>${esc(x.from)}</small></span>
+        <span class="ml-star ${mailFav(x.id) ? 'on' : ''}">${STAR_SVG}</span></button>`).join('') || '<p class="ml-empty">No mail.</p>'}</div>
+      <span class="ml-qty">Quantity: ${list.length}/${MAIL_CAP}</span>
+      <div class="ml-btns"><button class="sx-btn" id="mailAll">Claim All</button><button class="sx-btn" id="mailDelRead">Delete Read</button></div>
+    </section>
+    <section class="ml-right">${m ? `<h2 class="ml-title">${esc(m.title)}</h2>
+      <div class="ml-from"><span>${icon('user')}${esc(m.from)}</span><span>${esc(m.date)}</span></div>
+      <div class="ml-body">${esc(m.body).replace(/\n/g, '<br>')}</div>
+      ${m.reward ? `<div class="ml-att"><span class="ml-att-h">Attachments</span><div class="ml-items">${Object.entries(m.reward).map(([k, v]) => `<span class="ml-item"><span class="inv-pic mall-ic r${MAIL_R[k] || 4}">${curIcon(k)}${claimed ? `<i class="ml-got">${icon('check')}</i>` : ''}</span><b>${fmt(v)}</b></span>`).join('')}</div></div>` : ''}
+      <div class="ml-actions"><button class="ml-fav ${mailFav(m.id) ? 'on' : ''}" id="mailFav" aria-label="${mailFav(m.id) ? 'Unstar' : 'Star'} this mail">${STAR_SVG}</button>
+        ${m.reward && !claimed ? '<button class="sx-btn big gold" id="mailClaim">Claim</button>' : '<button class="sx-btn big" id="mailDel">Delete</button>'}</div>` : '<p class="ml-empty">Your mailbox is empty.</p>'}</section>`;
+  const ls = el.querySelector('.ml-list'); if (ls) ls.scrollTop = keepTop;
+  el.querySelectorAll('[data-mail]').forEach(b => b.onclick = () => { mailSel = b.dataset.mail; renderMail(); });
+  $('#mailAll').onclick = () => { const ids = list.filter(x => x.reward && !S.mailClaimed.includes(x.id)).map(x => x.id); if (!ids.length) return toast('Nothing to claim.'); claimMail(ids); };
+  $('#mailDelRead').onclick = () => { const ids = list.filter(x => mailRead(x.id) && !mailFav(x.id) && (!x.reward || S.mailClaimed.includes(x.id))).map(x => x.id); if (!ids.length) return toast('No read mail to delete. Starred mail is kept.'); deleteMail(ids); toast(`Deleted ${ids.length} mail${ids.length === 1 ? '' : 's'}.`); };
+  const c = $('#mailClaim'); if (c) c.onclick = () => claimMail([m.id]);
+  const d = $('#mailDel'); if (d) d.onclick = () => { if (mailFav(m.id)) return toast('Unstar this mail first to delete it.'); deleteMail([m.id]); };
+  const f = $('#mailFav'); if (f) f.onclick = () => { S.mailFav = mailFav(m.id) ? S.mailFav.filter(x => x !== m.id) : [...(S.mailFav || []), m.id]; persist(); renderMail(); };
 }
 
 /* settings */
