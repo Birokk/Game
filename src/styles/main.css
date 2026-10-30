@@ -2051,3 +2051,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .sx-row.sx-block{border-radius:26px;flex-wrap:wrap;align-items:flex-start;padding:14px 18px 14px 30px}
 .sx-row.sx-block .sx-c{flex:1 1 360px;display:grid;gap:8px;justify-items:end}
 .sx-row.sx-block .ld-thumbs{justify-content:flex-end}
+.up-pre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;font-family:var(--display);font-size:clamp(90px,22vmin,220px);line-height:1;letter-spacing:.04em;color:#ffe2b8;text-shadow:0 0 30px #ff8a2a,0 0 80px rgba(255,138,42,.6);animation:upPre 1s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes upPre{0%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}40%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:1;transform:translate(-50%,-50%) scale(1.04)}}
+.rv .fk-art.up~.up-word,.rv .fake-flash~.up-word{z-index:5}
+.up-pre.out{animation:upPreOut .5s ease-in forwards}@keyframes upPreOut{to{opacity:0;transform:translate(-50%,-50%) scale(1.6);filter:brightness(3)}}

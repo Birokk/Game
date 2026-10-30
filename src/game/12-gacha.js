@@ -557,11 +557,18 @@ function advancePull() {
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return showSummary();
-  const r0 = st.results[st.order[st.i]], pre = r0.up && !r0.upShown;
-  // an upgraded pull is first revealed as the SSR it was, then transforms (upgradeReveal)
-  const r = pre ? { kind: 'entry', id: r0.up.id, rarity: 4, isNew: true } : r0, v = resultView(r);
+  const r = st.results[st.order[st.i]], v = resultView(r);
   st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
-  if (pre) { st.phase = 'upgrade'; st.readyAt = Infinity; pullLater(1500, upgradeReveal); }
+  pullEl.classList.add('revealing');
+  // an upgraded pull never shows the SSR it would have been: an orange "SSR" glow transforms straight into the UR
+  if (r.up && !r.upShown) {
+    st.phase = 'upgrade'; st.readyAt = Infinity;
+    pullEl.classList.remove('r3', 'r5'); pullEl.classList.add('r4');
+    $('#pullStage').innerHTML = `<div class="rv r4"><div class="rv-glow"></div><div class="up-pre">SSR</div>${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}</div>`;
+    if (st.fx) setTimeout(() => st.fx && st.fx.sparkle(4), 80);
+    pullLater(1000, upgradeReveal);
+    return;
+  }
   pullEl.classList.add('revealing');
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
@@ -572,14 +579,14 @@ function advancePull() {
       <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}</div>
       <div class="rv-name">${esc(v.name)}</div>
       ${r.kind === 'entry' ? `<div class="rv-tier">${rtag(r.rarity, 'xl')}</div>` : ''}
-      ${r.up ? `<span class="rv-badge up">Upgraded from ${esc(r.up.name)}!</span>` : ''}
+      ${r.up ? '<span class="rv-badge up">Upgraded from SSR!</span>' : ''}
       ${r.lost ? `<span class="rv-badge dupe">Lost the 50/50 · next UR is guaranteed</span>` : ''}
-      ${pre ? '' : r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
+      ${r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
         : r.starUp ? `<div class="rv-up">${starRow(r.starUp, r.starUp - 1)}<span>${r.starUp === MAX_STARS ? 'Max stars reached' : `Star ${r.starUp} of ${MAX_STARS}`}</span></div>`
         : `<div class="rv-up">${hasStars(findEntry(r.id)) ? starRow(MAX_STARS) : ''}<span>${hasStars(findEntry(r.id)) ? 'Max stars' : 'Already owned'}${r.starlight ? ` · +${r.starlight} ${curIcon('starlight')}` : ''}</span></div>`) : ''}
     </div>
     ${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}
-    <div class="rv-hint">${pre ? '' : 'Tap to continue'}</div>
+    <div class="rv-hint">Tap to continue</div>
   </div>`;
   if (st.fx) setTimeout(() => st.fx && st.fx.sparkle(r.rarity), 80);
 }
@@ -592,7 +599,7 @@ function upArt() {
 function upgradeReveal() {
   const st = pullState; if (!st || !pullEl || st.phase !== 'upgrade') return;
   const rv = $('#pullStage .rv'); if (!rv) return;
-  const art = upArt();
+  const art = upArt(), pre = rv.querySelector('.up-pre'); if (pre) pre.classList.add('out');
   pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake', 'r5'); pullEl.classList.remove('r4');
   rv.insertAdjacentHTML('beforeend', `<div class="fake-flash"></div>${art ? `<div class="fk-art up"><img src="${art}" alt=""><i class="fk-streak"></i></div>` : ''}<div class="up-word"><b>UPGRADE</b><span>SSR <i>→</i> UR</span></div>`);
   if (st.fx) { st.fx.burst(140, 700, 5); st.fx.sparkle(5); }
