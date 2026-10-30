@@ -2072,3 +2072,17 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 @keyframes rbBands{to{background-position:-300% 0}}
 .sph.c6::after{background:radial-gradient(circle at 72% 80%,transparent 45%,rgba(40,0,60,.25) 85%),radial-gradient(ellipse 22% 12% at 33% 22%,rgba(255,255,255,.95),transparent 72%)}
 .sph.c6 .sph-core{background:radial-gradient(circle,rgba(255,255,255,.7) 0 20%,transparent 60%)}
+.modal-back.is-wide{grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,1fr)}.modal.wide{min-height:0}
+/* admin → Skins: the chosen character as a wide banner */
+.sk-hero{position:relative;height:150px;border-radius:18px;overflow:hidden;border:2px solid color-mix(in srgb,var(--rc) 60%,transparent);background:#14141a}
+.sk-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.sk-hero img.chibi{object-fit:contain;object-position:85% 50%}
+.sk-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.75),transparent 60%)}
+.sk-hero>div{position:absolute;left:20px;bottom:16px;z-index:1;display:flex;align-items:center;gap:10px}
+.sk-hero b{font-family:var(--display);font-weight:400;font-size:28px;text-shadow:0 2px 8px #000}
+/* tap to release: a pulsing ring under the words */
+.pull.charging{cursor:pointer}
+.sph-hint.tap .tap-ring{width:34px;height:34px;border-radius:50%;border:2px solid var(--p3);box-shadow:0 0 12px var(--p2);animation:tapRing 1.4s ease-out infinite;margin-top:6px}
+@keyframes tapRing{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.pull.charging .sph{animation:sphIdle 2.2s ease-in-out infinite}
+@keyframes sphIdle{50%{transform:translateY(-6px) scale(1.03)}}

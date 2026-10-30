@@ -387,7 +387,7 @@ function showPull(results, n, bk, opts = {}) {
   pullEl.className = 'pull t3 r3 charging';
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
   pullEl.innerHTML = `<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i><i class="sph-band"></i><i class="sph-band b2"></i></div><canvas class="sph-front"></canvas></div>
-    <div class="sph-hint" id="sphHint"><b>Pull down to release</b><span>${icon('up')}${icon('up')}</span></div>
+    <div class="sph-hint tap" id="sphHint"><b>Tap to release</b><span class="tap-ring"></span></div>
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
@@ -395,14 +395,8 @@ function showPull(results, n, bk, opts = {}) {
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
-  // drag down anywhere; let go past the line to release (Enter / Space / ↓ also work)
-  const need = () => Math.max(90, innerHeight * .14), sph = $('#sph');
-  let y0 = null;
-  const drag = d => { sph.style.setProperty('--drag', d + 'px'); pullEl.style.setProperty('--pp', Math.min(1, d / need())); };
-  pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; y0 = e.clientY; pullEl.setPointerCapture(e.pointerId); pullEl.classList.add('dragging'); });
-  pullEl.addEventListener('pointermove', e => { if (y0 !== null) drag(clamp(e.clientY - y0, 0, innerHeight * .35)); });
-  const up = e => { if (y0 === null) return; const d = e.clientY - y0; y0 = null; pullEl.classList.remove('dragging'); if (d >= need()) releaseSphere(); else drag(0); };
-  pullEl.addEventListener('pointerup', up); pullEl.addEventListener('pointercancel', up);
+  // tap anywhere to release (Enter / Space / ↓ also work)
+  pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
   document.addEventListener('keydown', pullState.onKey);
 }

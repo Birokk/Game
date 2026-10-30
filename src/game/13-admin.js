@@ -424,15 +424,29 @@ function renderIconsTab() {
 function iconsChanged() { hydrateIcons(); renderMenu(); renderIconsTab(); const mi = modalEl && modalEl.querySelector('.m-ic'); if (mi) mi.innerHTML = icon('wrench'); }
 
 /* skins tab: every skin of every character, editable in place: name, rarity, full art (everywhere) and unlock art (new outfit popup only) */
-let skDelArm = null;
+let skDelArm = null, skChar = null;
 function renderSkinsTab() {
-  const chars = S.pool.filter(e => e.type === 'character').sort((a, b) => !!b.mc - !!a.mc || a.name.localeCompare(b.name));
+  // first a grid of characters (cards with their art, like the game pool); tapping one opens its skins
+  const all = S.pool.filter(e => e.type === 'character').sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
+  if (!skChar || !findEntry(skChar)) {
+    skChar = null;
+    $('#adPanel').innerHTML = `<div class="stack">
+      <div><h3>Skins</h3><p class="tiny">Pick a character to see and edit its skins, or to add a new one.</p></div>
+      <div class="pool-grid">${all.map(c => { const n = skinsOf(c.id).length;
+        return `<div class="pool-cell"><button type="button" class="skc col pool-card r${c.rarity}" data-skchar="${esc(c.id)}"><img src="${baseCard(c)}" alt="" class="${baseArt(c) ? '' : 'chibi'}">${rtag(c.rarity)}<span class="skc-nm">${esc(c.name)}<span class="skc-st">${n ? `${n} skin${n === 1 ? '' : 's'}` : 'No skins yet'}${c.mc ? ' · Main character' : ''}</span></span></button></div>`; }).join('')}</div>
+    </div>`;
+    document.querySelectorAll('[data-skchar]').forEach(b => b.onclick = () => { skChar = b.dataset.skchar; skDelArm = null; renderSkinsTab(); const body = modalEl && modalEl.querySelector('.m-body'); if (body) body.scrollTop = 0; });
+    return;
+  }
+  const chars = [findEntry(skChar)];
   const slot = (k, key, label, hint) => { const a = artFrom(k[key]);
     return `<div class="sk-slot"><div class="sk-prev ${key === 'getArt' ? 'wide' : ''}">${a ? `<img src="${a}" alt="">` : key === 'art' ? `<img src="${getArt(k)}" alt="" style="object-fit:contain;object-position:50% 100%">` : '<span class="tiny">Uses the full art</span>'}${key === 'art' ? rtag(k.rarity) : ''}</div>
       <div style="display:grid;gap:4px"><b>${label}</b><span class="tiny">${hint}</span><div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}${a ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-skup="${esc(k.id)}" data-skkey="${key}"></label>${a ? `<button class="link" data-skx="${esc(k.id)}" data-skkey="${key}">Remove</button>` : ''}</div></div></div>`; };
   const short = (k, c) => k.name.replace(c.name + ' · ', '');
   $('#adPanel').innerHTML = `<div class="stack">
-    <div><h3>Skins</h3><p class="tiny">Every character can have as many skins as you like: press <b>New skin</b> under a character for each one. Pick each skin's rarity (the tag shows on its card). <b>Full art</b> is the skin's splash art everywhere (character screen, wallpaper, collection, pulls). <b>Unlock art</b> only appears in the "new outfit" animation when the skin is bought or received; without it the full art is used. MR wedding skins come from the Marriage skins tab.</p></div>
+    <div class="row" style="gap:12px"><button class="btn ghost sm" id="skBack">${icon('back')}All characters</button></div>
+    <div class="sk-hero r${chars[0].rarity}"><img src="${baseSplash(chars[0])}" alt="" class="${baseArt(chars[0]) ? '' : 'chibi'}"><div><b>${esc(chars[0].name)}</b>${rtag(chars[0].rarity)}</div></div>
+    <div><h3>Skins</h3><p class="tiny">Every character can have as many skins as you like: press <b>New skin</b> for each one. Pick each skin's rarity (the tag shows on its card). <b>Full art</b> is the skin's splash art everywhere (character screen, wallpaper, collection, pulls). <b>Unlock art</b> only appears in the "new outfit" animation when the skin is bought or received; without it the full art is used. MR wedding skins come from the Marriage skins tab.</p></div>
     ${chars.map(c => { const list = skinsOf(c.id).sort((a, b) => a.rarity - b.rarity || a.name.localeCompare(b.name));
       return `<div class="sk-group"><div class="ad-head" style="margin:0"><h3 style="font-size:16px">${esc(c.name)} <span class="muted" style="font-family:var(--body);font-size:13px">· ${list.length} skin${list.length === 1 ? '' : 's'}</span></h3><button class="btn mint sm" data-newsk="${esc(c.id)}">${icon('plus')}New skin</button></div>
         ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head">
@@ -442,6 +456,7 @@ function renderSkinsTab() {
             <span class="row" style="gap:10px"><button class="link" data-skpv="${esc(k.id)}">Preview</button>${k.rarity === 6 ? '' : `<button class="link" data-skdel="${esc(k.id)}" style="color:${skDelArm === k.id ? '#ff6b81' : ''}">${skDelArm === k.id ? 'Tap again to delete' : 'Delete'}</button>`}</span></div>
           ${slot(k, 'art', 'Full art', 'Shown everywhere')}${slot(k, 'getArt', 'Unlock art', 'Only when bought or received')}</div>`).join('') : '<p class="tiny">No skins yet.</p>'}</div>`; }).join('')}
   </div>`;
+  $('#skBack').onclick = () => { skChar = null; renderSkinsTab(); };
   document.querySelectorAll('[data-skup]').forEach(inp => inp.onchange = async () => {
     const k = findEntry(inp.dataset.skup), key = inp.dataset.skkey, mk = `${key === 'art' ? 'art' : 'get'}:${k.id}`;
     try { await mediaSet(mk, await resizeImage(inp.files[0], key === 'art' ? SPLASH_MAX : 1920)); k[key] = 'idb:' + mk; persist(); renderSkinsTab(); renderMenu(); toast('Art saved.'); }
