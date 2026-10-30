@@ -96,7 +96,7 @@ function renderCharacters() {
     <div class="cs-sep"></div>`;
   let body;
   if (csTab === 'home') {
-    const next = c.mc ? 'Your main character. Switch between female and male in Settings, once every 72 hours.' : !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies give ${overflowOf(c)} pearls each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
+    const next = c.mc ? 'Your main character. Switch between female and male in Settings, once every 72 hours.' : !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies from summons give ${STARLIGHT_MAX[c.rarity] || STARLIGHT_MAX[4]} Corals each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
     body = `<div class="cs-boxes">
         <div class="cs-box"><span class="lbl-sm">Stars</span><b><em>${st}</em>/${MAX_STARS}</b></div>
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
@@ -187,7 +187,7 @@ function renderCharacters() {
   $('#csBack').onclick = closeCharacters;
   $('#csHelp').onclick = () => openModal({ title: 'Characters', ic: 'chars', body: `<div class="stack">
       <p class="desc">Pick a character on the left. <b>Home</b> shows stars and outfits, <b>Bond</b> is where you give gifts and, at bond level 10, propose with a ring, and <b>Character Info</b> has their profile. Badges under the name show what you've achieved with each character.</p>
-      <p class="desc">Every duplicate copy adds a star, up to ${MAX_STARS}. After that each copy gives ${OVERFLOW_PEARLS[5]} pearls for a UR or ${OVERFLOW_PEARLS[4]} for an SSR.</p>
+      <p class="desc">Every duplicate copy adds a star, up to ${MAX_STARS}. After that each copy from a summon gives ${STARLIGHT_MAX[5]} Corals for a UR or ${STARLIGHT_MAX[4]} for an SSR.</p>
       <p class="desc"><b>Skins</b> lists every outfit: scroll through them to see each one full screen. Outfits you don't own are shown in black and white. The eye button hides the menu so you can look at the art.</p></div>` });
   csEl.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { csId = b.dataset.cs; csSkin = null; renderCharacters(); });
   csEl.classList.toggle('bw', !owns(shown.id));

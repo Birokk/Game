@@ -74,9 +74,9 @@ function rollOne(bk) {
     const amount = FILLER_COINS[rarity]; S.wallet.coins += amount;
     res = { kind: 'coins', rarity, amount };
   } else {
-    res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
+    res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item, true) };
     // Corals for every character pulled; more for copies past max stars
-    if (item.type === 'character') { res.starlight = (res.pearls ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
+    if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
   }
   res.hard = rarity === 5 && p5 >= 1;   // guaranteed by hard pity: never faked out
   S.wallet.dust += DUST_PER_PULL;
@@ -181,7 +181,7 @@ function openRates(bk, histOpen) {
       ${B.bk === 'weekly' ? `<tr><td>${icon('clock')}</td><td>The featured UR is picked at random every Monday (00:00 UTC). Next change in ${shortLeft(B.ends)}.</td></tr>` : ''}
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
-    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicates give ${OVERFLOW_PEARLS[5]} pearls (UR) or ${OVERFLOW_PEARLS[4]} (SSR). If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
+    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicate characters give ${STARLIGHT_MAX[5]} Corals (UR) or ${STARLIGHT_MAX[4]} (SSR) instead of a star. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
     <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
       <div class="hist">${hist.length ? hist.map(h => `<div class="r${h.rarity}"><span>${h.rarity >= 4 ? rtag(h.rarity) : '<span class="cost">' + curIcon('coins') + '</span>'} ${esc(h.name)}</span><time>${t(h)}</time></div>`).join('') : '<p class="tiny">No pulls yet.</p>'}</div>
     </details>
@@ -265,7 +265,7 @@ function startPfx(canvas, tier) {
   const add = (x, y, vx, vy, life, size, col, streak, phys = true) => parts.push({ x, y, vx, vy, life, max: life, size, col, streak, phys });
   const api = {
     intro: true,
-    burst(n, speed, palTier = tier) { const pal = PAL[palTier]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = speed * (0.25 + Math.random()); add(W2 / 2, H2 / 2, Math.cos(a) * s, Math.sin(a) * s, 0.7 + Math.random() * 1.1, 1.4 + Math.random() * 3, rpick(pal), Math.random() < .45); } },
+    burst(n, speed, palTier = tier) { const pal = PAL[palTier]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = speed * (0.25 + Math.random()); add(W2 / 2, H2 / 2, Math.cos(a) * s, Math.sin(a) * s, 0.7 + Math.random() * 1.1, 1.4 + Math.random() * 3, rpick(pal), false); } },
     sparkle(sTier) {
       const cfg = SPARK[sTier]; sparkTier = sTier; sparkFrom = performance.now(); sparkUntil = sparkFrom + cfg.secs * 1000;
       Object.keys(acc).forEach(k => acc[k] = 0);
@@ -317,7 +317,6 @@ function startPfx(canvas, tier) {
           const pop = q < .22 ? easeBack(q / .22) : 1 - (q - .22) / .78 * .65;
           const a = Math.min(1, q / .1) * Math.pow(1 - q, .7), s = p.size * Math.max(0, pop);
           blitShift(g, 'flare', pal, p.ph, p.x, p.y, s * 2.2, s * 2.2, p.rot, a);
-          blitShift(g, 'streak', pal, p.ph + .5, p.x, p.y, s * 5.5, s * .32, 0, a * .75);
           blitShift(g, 'flare', pal, p.ph + 1, p.x, p.y, s * 1.1, s * 1.1, -p.rot * 1.6 + .785, a * .55);
           if (!p.popped && q > .28) {
             p.popped = true;
@@ -436,7 +435,7 @@ function advancePull() {
   pullEl.classList.add('revealing');
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
-    <div class="rv-rays"></div><div class="rv-glow"></div>
+    <div class="rv-glow"></div>
     ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
     <div class="rv-flash"></div><div class="rv-sweep"></div>
     <div class="rv-info">
@@ -446,7 +445,7 @@ function advancePull() {
       ${r.lost ? `<span class="rv-badge dupe">Lost the 50/50 · next UR is guaranteed</span>` : ''}
       ${r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
         : r.starUp ? `<div class="rv-up">${starRow(r.starUp, r.starUp - 1)}<span>${r.starUp === MAX_STARS ? 'Max stars reached' : `Star ${r.starUp} of ${MAX_STARS}`}</span></div>`
-        : `<div class="rv-up">${hasStars(findEntry(r.id)) ? starRow(MAX_STARS) : ''}<span>${hasStars(findEntry(r.id)) ? 'Max stars' : 'Already owned'} · +${r.pearls} ${curIcon('pearls')}</span></div>`) : ''}
+        : `<div class="rv-up">${hasStars(findEntry(r.id)) ? starRow(MAX_STARS) : ''}<span>${hasStars(findEntry(r.id)) ? 'Max stars' : 'Already owned'}${r.starlight ? ` · +${r.starlight} ${curIcon('starlight')}` : ''}</span></div>`) : ''}
     </div>
     ${st.order.length > 1 ? `<div class="rv-count">${st.i + 1} / ${st.order.length}</div>` : ''}
     <div class="rv-hint">Tap to continue</div>
@@ -465,7 +464,7 @@ function showSummary() {
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r); return `<div class="scard r${r.rarity}" style="--i:${i}">
       ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
       ${r.isNew ? '<span class="new">NEW</span>' : ''}
-      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.pearls ? `<span class="dp">+${r.pearls} pearls</span>` : ''}</div></div>`; }).join('')}</div>
+      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}

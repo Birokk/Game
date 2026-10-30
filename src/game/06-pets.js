@@ -32,11 +32,12 @@ function buySkin(id) {
   if ($('#colRoot')) renderDetail(id, 'skin');
   showSkinGet(e);
 }
-function grantEntry(item) {
+/* noPearls: summons give no pearls for extra copies (max-star characters give Corals instead); hatching still does */
+function grantEntry(item, noPearls) {
   const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
-  const starUp = hasStars(item) && prev && prev - 1 < MAX_STARS ? prev : 0;
-  const pearls = prev && !starUp ? overflowOf(item) : 0; S.wallet.pearls += pearls;
-  return { isNew: !prev, starUp, pearls };
+  const starUp = hasStars(item) && prev && prev - 1 < MAX_STARS ? prev : 0, maxed = !!prev && !starUp;
+  const pearls = maxed && !noPearls ? overflowOf(item) : 0; S.wallet.pearls += pearls;
+  return { isNew: !prev, starUp, pearls, maxed };
 }
 
 let petTab = 'hatch', petTimer = null;

@@ -27,7 +27,7 @@ function renderShop() {
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
     const e = shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
-    strip = `<span class="mall-pill on">New outfits</span><span class="mall-pill">Featured this season</span>`;
+    strip = `<span class="mall-pill on">New outfits</span>`;
     bg = e ? `<img class="mall-art" src="${baseSplash(e)}" alt="">` : '';
     body = e ? `<div class="mall-hot">
         <div class="mall-hot-name"><h1>${esc(e.name)}</h1><span class="mall-time">${rtag(e.rarity)}${par ? esc(par.name) : 'Outfit'}</span></div>
