@@ -3,9 +3,11 @@ let modalEl = null;
 /* window sizes: wide = big screen-filling window (menus like shop, mail, settings), default = medium, small = quick confirmations */
 function openModal({ title, ic, body, wide, small, kind, onMount }) {
   closeModal();
-  const back = document.createElement('div'); back.className = 'modal-back'; back.dataset.kind = kind || '';
-  back.innerHTML = `<div class="modal glass-deep ${wide ? 'wide' : small ? 'small' : ''}" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-    <header class="m-head"><span class="m-ic">${icon(ic)}</span><h2 id="mTitle">${esc(title)}</h2><button class="iconbtn" data-close aria-label="Close">${icon('close')}</button></header>
+  // every window shares the settings look: blurred see-through backdrop, title pill with a round badge, round close button;
+  // wide windows fill the screen with no box, like Settings
+  const back = document.createElement('div'); back.className = `modal-back ${wide ? 'is-wide' : ''}`; back.dataset.kind = kind || '';
+  back.innerHTML = `<div class="modal ${wide ? 'wide' : `glass-deep ${small ? 'small' : ''}`}" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <header class="m-head"><div class="inv-title"><span class="inv-badge m-ic">${icon(ic)}</span><h2 id="mTitle" class="ts">${esc(title)}</h2></div><button class="inv-x" data-close aria-label="Close">${icon('close')}</button></header>
     <div class="m-body">${body}</div></div>`;
   back.addEventListener('pointerdown', e => { if (e.target === back) closeModal(); });
   back.querySelector('[data-close]').onclick = closeModal;

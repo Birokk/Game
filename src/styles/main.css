@@ -196,7 +196,7 @@ label.btn:focus-within{outline:2px solid var(--mint);outline-offset:2px}
 .emotes button:hover{background:var(--glass-hi);transform:translateY(-2px)}
 
 /* ---------- Modals ---------- */
-.modal-back{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(5,8,20,.4);
+.modal-back{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(8,10,22,.42);backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
   padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));animation:fade .2s ease}
 .modal{width:min(580px,100%);max-height:calc(100vh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;border-radius:28px;overflow:hidden;overflow:clip;animation:pop .25s cubic-bezier(.2,.9,.3,1.2)}
@@ -770,9 +770,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 /* ---------- Summon screen (full screen) ---------- */
 .sx{position:fixed;inset:0;z-index:45;overflow:hidden;animation:fade .25s;color:#fff;
   --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:max(16px,env(safe-area-inset-left,0px));--sr:max(18px,env(safe-area-inset-right,0px));
-  background:radial-gradient(ellipse at 58% 70%,color-mix(in srgb,var(--rc) 35%,transparent),transparent 60%),
-  radial-gradient(circle at 20% 30%,rgba(255,255,255,.75) 1px,transparent 1.5px) 0 0/140px 140px,radial-gradient(circle at 70% 60%,rgba(255,255,255,.45) 1px,transparent 1.5px) 0 0/95px 95px,
-  linear-gradient(180deg,#0d1230,#151b45 55%,#2a2f6a 82%,#c9d4f5)}
+  background:radial-gradient(ellipse at 58% 70%,color-mix(in srgb,var(--rc) 16%,transparent),transparent 60%),linear-gradient(180deg,#09090d,#111116 55%,#18181e)}
 .sx-word{position:absolute;left:12%;top:2%;font-family:var(--display);font-size:clamp(90px,16vw,240px);line-height:1;color:rgba(255,255,255,.04);white-space:nowrap;pointer-events:none}
 .sx-line{position:absolute;z-index:1;left:14%;right:16%;top:4%;bottom:0;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
 .sx-fig{position:relative;flex:none;height:92%;aspect-ratio:9/16;margin:0 -5.5%;animation:sxIn .7s cubic-bezier(.2,.9,.3,1) both;animation-delay:calc(var(--i) * .08s)}
@@ -782,16 +780,16 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .sx-fig img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;display:block;filter:drop-shadow(0 0 30px rgba(0,0,0,.35))}
 .sx-fig.art img{object-fit:cover;object-position:50% 15%;-webkit-mask:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);mask:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent)}
 @keyframes sxIn{from{opacity:0;transform:translateY(24px) scale(.97)}}
-.sx-fade{position:absolute;left:0;right:0;bottom:0;height:34%;pointer-events:none;background:linear-gradient(transparent,rgba(13,18,48,.55) 50%,rgba(13,18,48,.85))}
+.sx-fade{position:absolute;left:0;right:0;bottom:0;height:20%;pointer-events:none;background:linear-gradient(transparent,rgba(5,5,8,.45) 60%,rgba(5,5,8,.7))}
 .sx-top{position:absolute;top:calc(14px + var(--st));left:var(--sl);display:flex;gap:12px;z-index:3}
 .sx-cur{position:absolute;top:calc(14px + var(--st));right:var(--sr);display:flex;gap:10px;z-index:3}
 .sx-cur .cur{min-width:150px;background:rgba(8,12,30,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .sx-tabs{position:absolute;left:var(--sl);top:calc(84px + var(--st));display:grid;gap:16px;z-index:3}
-.sx-tab{position:relative;width:250px;height:92px;border-radius:8px;overflow:hidden;text-align:left;border:3px solid rgba(255,255,255,.25);background:linear-gradient(110deg,#2a3aa0,#5a7ae0);box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .2s,border-color .2s}
+.sx-tab{position:relative;width:250px;height:92px;border-radius:8px;overflow:hidden;text-align:left;border:3px solid rgba(255,255,255,.2);background:linear-gradient(110deg,#0f0f13,#1e1e25);box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .2s,border-color .2s}
 .sx-tab:hover{transform:translateX(3px)}
 .sx-tab.on{border-color:#ffd84a;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 22px rgba(255,216,74,.55)}
-.sx-tab.lim{background:linear-gradient(110deg,#3a1a7e,#8a4ae0 55%,#ff6ec7)}
-.sx-tab img{position:absolute;right:0;top:0;width:55%;height:100%;object-fit:cover;object-position:50% 10%;-webkit-mask:linear-gradient(90deg,transparent,#000 40%);mask:linear-gradient(90deg,transparent,#000 40%)}
+.sx-tab.lim{background:linear-gradient(110deg,#0f0f13,#24202a)}
+.sx-tab img{position:absolute;right:0;top:0;width:88%;height:100%;object-fit:cover;object-position:50% 18%;-webkit-mask:linear-gradient(90deg,transparent,#000 30%);mask:linear-gradient(90deg,transparent,#000 30%)}
 .sx-tab img.chibi{top:-75%;height:300%;object-position:50% 0}
 .sx-tab b{position:absolute;left:14px;bottom:10px;font-family:var(--display);font-weight:400;font-style:italic;font-size:24px;line-height:.9;text-transform:uppercase;letter-spacing:.02em;color:#fff;
   text-shadow:0 2px 0 rgba(20,10,60,.7),0 0 12px rgba(120,160,255,.6);max-width:150px}
@@ -1123,10 +1121,10 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .asc-slot .mini img{width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block}
 .skin-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .skin-chips .chip{cursor:pointer}
-.sx-vig{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 125% 95% at 50% 45%,transparent 50%,rgba(4,6,18,.72)),linear-gradient(90deg,rgba(4,6,18,.5),transparent 26%,transparent 48%,rgba(4,6,18,.62) 82%)}
+.sx-vig{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 130% 105% at 50% 40%,transparent 58%,rgba(0,0,0,.7)),linear-gradient(90deg,rgba(0,0,0,.45),transparent 22%,transparent 60%,rgba(0,0,0,.5) 90%)}
 .sx-title::before{content:"";position:absolute;z-index:-1;inset:-60px -40px -60px -140px;background:radial-gradient(ellipse at 72% 50%,rgba(4,6,18,.78),rgba(4,6,18,.45) 45%,transparent 72%);pointer-events:none}
 .sx-title p,.sx-title h2{text-shadow:0 2px 8px rgba(0,0,0,.9),0 0 24px rgba(4,6,18,.8)}
-.sx-tab::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(4,6,18,.7),rgba(4,6,18,.25) 55%,transparent 80%);pointer-events:none}
+.sx-tab::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,.28) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%);pointer-events:none}
 .sx-tab b,.sx-tab small,.sx-tab .dot-n{z-index:2}
 .promo::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(4,6,18,.6),rgba(4,6,18,.2) 55%,transparent 75%);pointer-events:none}
 .promo .pt{z-index:2}
@@ -1931,3 +1929,17 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
   .sx-row{border-radius:22px;padding:10px 12px 10px 16px;flex-wrap:wrap}.sx-sel select,.sx-in{width:min(220px,52vw)}.sx-btn{min-width:0}
 }
 .setx-top .inv-x{margin-left:auto}@media (min-width:761px){.setx-top .inv-x{margin-left:0}}
+
+/* windows share the settings look: see-through blurred backdrop, title pill + round badge, round close; wide ones fill the screen with no box */
+.m-head{justify-content:space-between;border-bottom:0;padding:14px 14px 8px}
+.m-head .inv-title{min-width:0;flex:0 1 auto}
+.m-head .inv-title h2{flex:none;font-style:italic;font-size:clamp(20px,2.2vw,26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-head .inv-badge{color:#fff}
+.m-head .inv-x{margin-left:auto}
+.modal:not(.wide) .m-head .inv-badge{width:38px;height:38px}
+.modal:not(.wide) .m-head .inv-x{width:40px;height:40px}
+.modal-back.is-wide{padding:calc(12px + env(safe-area-inset-top,0px)) clamp(16px,5vw,90px) calc(16px + env(safe-area-inset-bottom,0px));place-items:stretch}
+.modal.wide{width:100%;height:100%;max-height:none;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:visible;animation:fade .2s}
+.modal.wide .m-head{padding:0;margin:0 calc(-1 * clamp(0px,4vw,74px))}
+.modal.wide .m-body{padding:18px 4px 4px}
+@media (max-width:760px){.modal-back.is-wide{padding-left:12px;padding-right:12px}.modal.wide .m-head{margin:0}}

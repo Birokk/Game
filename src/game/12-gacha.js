@@ -74,7 +74,7 @@ function rollOne(bk) {
     const amount = FILLER_COINS[rarity]; S.wallet.coins += amount;
     res = { kind: 'coins', rarity, amount };
   } else {
-    res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item, true) };
+    res = { kind: 'entry', id: item.id, rarity, lost, ...grantEntry(item) };
     // Corals for every character pulled; more for copies past max stars
     if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
   }
