@@ -46,7 +46,8 @@ function eventTimer(e) {
 }
 /* the wallpaper: the admin's upload, else the limited banner's art, else a night-sky gradient */
 function eventBg(e) {
-  const own = MEDIA.get('ev:' + e.id), f = findEntry(S.featuredId), art = own || (f && baseArt(f));
+  // the Mystery Box shows its premium outfit's art; other events use the admin's upload, else the limited banner's art
+  const sk = e.id === 'mystery' && mboxSkin(), own = (sk && baseArt(sk)) || MEDIA.get('ev:' + e.id), f = findEntry(S.featuredId), art = own || (f && baseArt(f));
   return art ? `<img src="${art}" alt="">` : '';
 }
 function renderEvents() {
@@ -93,7 +94,7 @@ function renderEventsTab() {
     <p class="tiny">Each event has its own wallpaper behind the event page (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the limited banner's art is used. Events with an end date disappear for players after that day.</p>
     ${list.map(e => { const bg = MEDIA.get('ev:' + e.id), login = e.id === 'login', builtin = EV_BUILTIN.includes(e.id);
       return `<div class="ev-ad">
-        <div class="ev-adprev">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">No wallpaper</span>'}</div>
+        <div class="ev-adprev">${(() => { const w = e.id === 'mystery' && mboxSkin() && baseArt(mboxSkin()) || bg; return w ? `<img src="${w}" alt="">` : '<span class="tiny">No wallpaper</span>'; })()}</div>
         <div class="stack" style="gap:8px;min-width:0">
           <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${builtin && e.id !== 'mystery' ? '<span class="tag">Built in</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
           <input class="input" data-evf="sub" data-evid="${esc(e.id)}" maxlength="80" value="${esc(e.sub || '')}" placeholder="Subtitle (optional)" aria-label="Subtitle">
