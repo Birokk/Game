@@ -291,7 +291,7 @@ let S = (() => {
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
         s.pets = { ...fresh.pets, ...(d.pets || {}) }; s.pets.frags = { ...fresh.pets.frags, ...s.pets.frags };
-        if (!Array.isArray(s.pets.inc) || s.pets.inc.length !== 3) s.pets.inc = [null, null, null];
+        if (!Array.isArray(s.pets.inc) || s.pets.inc.length < 3) s.pets.inc = [...(Array.isArray(s.pets.inc) ? s.pets.inc : []), null, null, null].slice(0, Math.max(3, (s.pets.inc || []).length));
         s.version = 4;
         return s;
       }

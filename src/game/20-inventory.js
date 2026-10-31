@@ -1,5 +1,5 @@
 /* ---------- inventory (home "Bag"): full-screen grid of everything the player holds, with a detail panel ---------- */
-const INV_CAP = 1000;
+const INV_CAP = 999;   // per category; the All tab has no cap
 const INV_TABS = [['all', 'grid', 'All'], ['summon', 'sparkle', 'Summon'], ['use', 'gift', 'Consumables'], ['pets', 'heart', 'Pets'], ['wardrobe', 'hanger', 'Wardrobe'], ['memory', 'memory', 'Memories'], ['items', 'bag', 'Items']];
 const INV_SORTS = [['rarity', 'Rarity'], ['amount', 'Amount'], ['name', 'Name']];
 let invEl = null, invTab = 'all', invSel = null, invSort = 'rarity', invDesc = true;
@@ -47,8 +47,8 @@ function renderInventory() {
     </div>
     <div class="inv-main">
       <section class="inv-left">
-        <span class="inv-count">${INV_TABS.find(t => t[0] === invTab)[2] === 'All' ? 'Item' : INV_TABS.find(t => t[0] === invTab)[2]} ${list.length}/${INV_CAP}</span>
-        <div class="inv-grid">${list.length ? list.map(x => `<button class="inv-cell r${x.r} ${x.id === invSel ? 'on' : ''}" data-inv="${esc(x.id)}" aria-label="${esc(x.name)}, ${fmt(x.n)}"><span class="inv-pic">${x.pic}</span><b>${x.single ? `${x.st ? clothStarRow(x.st, 'sm') : ''}${x.worn ? ' Worn' : ''}` || '&nbsp;' : fmt(x.n)}</b></button>`).join('')
+        <span class="inv-count">${invTab === 'all' ? `Items ${list.length}` : `${INV_TABS.find(t => t[0] === invTab)[2]} ${list.length}/${INV_CAP}`}</span>
+        <div class="inv-grid">${list.length ? list.map(x => `<button class="inv-cell r${x.r} ${x.id === invSel ? 'on' : ''}" data-inv="${esc(x.id)}" aria-label="${esc(x.name)}, ${fmt(x.n)}"><span class="inv-pic">${x.pic}${x.cat === 'wardrobe' || x.cat === 'memory' ? `<span class="inv-rt">${ctag(x.r)}</span>` : ''}</span><b>${x.single ? `${x.st ? clothStarRow(x.st, 'sm') : ''}${x.worn ? ' Worn' : ''}` || '&nbsp;' : fmt(x.n)}</b></button>`).join('')
           : `<p class="inv-empty">${icon('bag')}Nothing here yet.</p>`}</div>
         <div class="inv-bar"><label class="inv-sort"><select id="invSort" aria-label="Sort by">${INV_SORTS.map(([k, l]) => `<option value="${k}" ${invSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
           <button class="inv-dir ${invDesc ? '' : 'asc'}" id="invDir" aria-label="${invDesc ? 'Highest first' : 'Lowest first'}" title="${invDesc ? 'Highest first' : 'Lowest first'}">${icon('up')}</button></div>

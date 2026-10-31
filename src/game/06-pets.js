@@ -1,10 +1,19 @@
 /* ---------- pets: egg fragments → eggs → incubators → hatch ---------- */
 const EGG = {
-  ssr: { name: 'SSR egg', r: 4, mins: 30, frag: 10 },
-  ur: { name: 'UR egg', r: 5, mins: 120, frag: 10 }
+  ssr: { name: 'SSR egg', r: 4, mins: 240, frag: 10 },    // 4 hours
+  ur: { name: 'UR egg', r: 5, mins: 1440, frag: 10 }      // 24 hours
 };
-const EGG_STAMINA = 20, INCUBATORS = 3;
-const eggHTML = (r, cls = '') => `<span class="egg ${r} ${cls}"><i></i></span>`;
+const EGG_STAMINA = 20, INCUBATORS = 3, INC_BUY = [15, 30];   // 3 free incubators, 2 more for 15 and 30 pearls (a 6th is shown as "To be updated")
+/* the egg picture: the drawn egg, or the admin's icon (Settings → Admin → SSR / UR egg icon, media keys icon:eggssr / icon:eggur) */
+const eggHTML = (r, cls = '') => { const c = customIcon('egg' + r); return c ? `<span class="egg ${r} ${cls} custom"><img src="${c}" alt=""></span>` : `<span class="egg ${r} ${cls}"><i></i></span>`; };
+const incBought = () => clamp(S.pets.incN || 0, 0, INC_BUY.length);
+function syncIncubators() { const n = INCUBATORS + incBought(); while (S.pets.inc.length < n) S.pets.inc.push(null); }
+function buyIncubator() {
+  const k = incBought(); if (k >= INC_BUY.length) return;
+  const cost = INC_BUY[k];
+  if (S.wallet.pearls < cost) { toast(`This incubator costs ${cost} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
+  S.wallet.pearls -= cost; S.pets.incN = k + 1; syncIncubators(); persist(); renderMenu(); renderPets(); toast(`Incubator ${INCUBATORS + k + 1} unlocked.`);
+}
 const petsOf = r => S.pool.filter(e => e.type === 'pet' && e.rarity === EGG[r].r);
 /* instant hatch: 1 pearl per 2 minutes left, at least 2 */
 const hatchCost = inc => Math.max(2, Math.ceil((inc.ends - Date.now()) / 12e4));
@@ -60,6 +69,7 @@ function tickPets() {
 }
 function renderPets() {
   const root = $('#petRoot'); if (!root) return;
+  syncIncubators();
   const P = S.pets, pets = S.pool.filter(e => e.type === 'pet').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${pets.filter(e => owns(e.id)).length}/${pets.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
   if (petTab === 'mine') {
@@ -84,7 +94,10 @@ function renderPets() {
           ${ready ? `<button class="btn gold" data-hatch="${i}">${icon('sparkle')}Hatch!</button>`
             : `<span class="bar"><i id="incB${i}" style="width:${100 - left / (inc.ends - inc.start) * 100}%"></i></span><span class="tiny">${icon('clock').replace('class="ic"', 'class="ic" style="width:12px;height:12px;vertical-align:-2px"')} <span id="incT${i}">${fmtLeft(left)}</span> left</span>
               <button class="btn sm ghost" data-now="${i}">Hatch now · <span class="cost">${curIcon('pearls')}<span id="incC${i}">${hatchCost(inc)}</span></span></button>`}</div>`;
-      }).join('')}</div></div>
+      }).join('')}${INC_BUY.map((cost, k) => k < incBought() ? '' : k === incBought()
+          ? `<div class="inc locked buy"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + k + 1}</b><button class="btn gold sm" data-incbuy>Unlock · ${costHTML(cost)}</button></div>`
+          : `<div class="inc locked"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + k + 1}</b><span class="tiny">Unlock incubator ${INCUBATORS + k} first · ${cost} pearls</span></div>`).join('')}
+        <div class="inc locked soon"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + INC_BUY.length + 1}</b><span class="tiny">To be updated</span></div></div></div>
       <p class="tiny">Fragments drop from summons in place of some gold coins. Eggs also appear around the plaza: walk into one to catch it for ${EGG_STAMINA} stamina.</p>
     </div>`;
   }
@@ -107,6 +120,7 @@ function renderPets() {
     S.wallet.pearls -= cost; hatch(i);
   });
   root.querySelectorAll('[data-hatch]').forEach(b => b.onclick = () => hatch(+b.dataset.hatch));
+  const ib = root.querySelector('[data-incbuy]'); if (ib) ib.onclick = buyIncubator;
 }
 function hatch(i) {
   const inc = S.pets.inc[i], list = petsOf(inc.r); if (!list.length) return;
@@ -114,11 +128,13 @@ function hatch(i) {
   S.pets.inc[i] = null; gainExp(EXP.hatch); persist(); renderMenu(); renderPets(); refreshCharacters();
   showHatch(inc.r, item, res);
 }
-/* hatch reveal: the egg wobbles, cracks in a flash, and the pet pops out */
+/* hatch reveal: pitch dark, lights rising from the ground in the rarity colour, the egg wobbles and cracks, the pet appears in the middle */
 function showHatch(r, item, res) {
   const el = document.createElement('div'); el.className = `hatch r${item.rarity}`;
-  el.innerHTML = `<div class="hatch-rays"></div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
-    <div class="hatch-pet"><img src="${getSplash(item)}" alt="${esc(item.name)}"></div>
+  const sparks = Array.from({ length: 42 }, () => `<i style="--x:${(Math.random() * 100).toFixed(1)}%;--d:${(Math.random() * 3).toFixed(2)}s;--t:${(2.4 + Math.random() * 2.4).toFixed(2)}s;--s:${(2 + Math.random() * 4).toFixed(1)}px;--h:${Math.floor(Math.random() * 360)}"></i>`).join('');
+  const beams = Array.from({ length: 7 }, (_, i) => `<b style="--x:${(8 + i * 13 + Math.random() * 6).toFixed(1)}%;--d:${(Math.random() * 3).toFixed(2)}s;--w:${(30 + Math.random() * 50).toFixed(0)}px"></b>`).join('');
+  el.innerHTML = `<div class="hatch-ground"></div><div class="hatch-beams">${beams}</div><div class="hatch-sparks">${sparks}</div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
+    <div class="hatch-pet"><img src="${mediaArt(item) || petWide(item)}" alt="${esc(item.name)}"></div>
     <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
       ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · already owned</span></div>`}</div>
     <div class="rv-hint">Tap to continue</div>`;

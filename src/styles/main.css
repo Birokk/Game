@@ -2524,3 +2524,36 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .wdp-it .skc-on{bottom:auto;top:6px;left:auto;right:6px;z-index:2}
 .wdp-it .rdrop-glow{position:absolute;inset:auto;width:80%;aspect-ratio:1;top:14%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--rc) 45%,transparent),transparent 70%)}
 .cl-stars.inv{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);font-size:10px}
+/* inventory: rarity tag in the bottom right of gear and memory pictures */
+.inv-rt{position:absolute;right:4px;bottom:4px;z-index:2;line-height:1}
+.inv-rt .rtag{font-size:9px;padding:1px 5px;border-radius:5px}
+/* custom egg icons */
+.egg.custom{border:0;border-radius:0;background:none;overflow:visible}
+.egg.custom::before,.egg.custom::after{display:none}
+.egg.custom img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45))}
+/* incubators to unlock */
+.inc.locked{border-style:dashed;opacity:.9}
+.inc.locked .inc-glass{display:grid;place-items:center;color:rgba(255,255,255,.6)}
+.inc.locked .inc-glass .ic{width:28px;height:28px}
+.inc.locked.soon{opacity:.55}
+/* hatch: pitch dark, lights rising from the ground, pet in the middle */
+.hatch{background:#020207 !important}
+.hatch-ground{position:absolute;left:-10%;right:-10%;bottom:-20%;height:55%;background:radial-gradient(ellipse 60% 55% at 50% 100%,color-mix(in srgb,var(--rc) 55%,transparent),transparent 70%);filter:blur(10px);animation:hgPulse 3s ease-in-out infinite alternate}
+.hatch.r5 .hatch-ground{background:radial-gradient(ellipse 60% 55% at 50% 100%,rgba(168,85,247,.55),rgba(255,110,199,.25) 45%,transparent 72%)}
+@keyframes hgPulse{to{opacity:.65}}
+.hatch-sparks i{position:absolute;left:var(--x);bottom:-10px;width:var(--s);height:var(--s);border-radius:50%;background:color-mix(in srgb,var(--rc) 70%,#fff);box-shadow:0 0 8px var(--rc),0 0 3px #fff;opacity:0;animation:hSpark var(--t) linear var(--d) infinite}
+.hatch.r5 .hatch-sparks i{background:hsl(var(--h) 100% 78%);box-shadow:0 0 8px hsl(var(--h) 100% 65%)}
+@keyframes hSpark{0%{transform:translateY(0);opacity:0}12%{opacity:1}100%{transform:translateY(-100vh) translateX(20px);opacity:0}}
+.hatch-beams b{position:absolute;left:var(--x);bottom:0;width:var(--w);height:70%;background:linear-gradient(0deg,color-mix(in srgb,var(--rc) 45%,transparent),transparent);filter:blur(14px);opacity:0;animation:hBeam 3.6s ease-in-out var(--d) infinite}
+.hatch.r5 .hatch-beams b{background:linear-gradient(0deg,rgba(168,85,247,.45),rgba(62,230,208,.15) 60%,transparent)}
+@keyframes hBeam{0%,100%{opacity:0}50%{opacity:.8}}
+.hatch-pet{left:50% !important;top:46% !important;bottom:auto !important;height:auto !important;width:min(46vmin,360px) !important;aspect-ratio:1 !important;transform:translate(-50%,-50%);animation:petInC .8s 1.25s cubic-bezier(.2,1.4,.4,1) forwards !important;border-radius:22px;overflow:hidden;box-shadow:0 0 0 2px rgba(255,255,255,.25),0 0 50px color-mix(in srgb,var(--rc) 60%,transparent)}
+.hatch-pet img{object-fit:cover !important;object-position:50% 50% !important}
+.hatch-info{left:50% !important;bottom:5% !important;transform:translateX(-50%);animation:hatchInfoC .5s 1.6s ease-out forwards !important;justify-items:center !important;text-align:center;max-width:90% !important}
+@keyframes petInC{from{opacity:0;transform:translate(-50%,-50%) scale(.3)}to{opacity:1;transform:translate(-50%,-50%)}}
+@keyframes hatchInfoC{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translateX(-50%)}}
+.hatch-pet{top:37% !important;width:min(40vmin,320px) !important}
+.hatch .rv-name{font-size:clamp(26px,4vw,48px);line-height:1.05}
+.hatch .rv-badge,.hatch .rv-up{position:static !important;transform:none !important;margin:0 auto}
+.hatch-info{gap:6px !important}
+.egg.big{top:42% !important}

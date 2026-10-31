@@ -126,6 +126,7 @@ function renderSettings() {
       + setRow('Main character', S.player.mc ? `<button type="button" class="sx-btn" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : '<span class="sx-val">Not chosen yet</span>', S.player.mc ? `${esc(mcEntry(S.player.mc).name)} · once every 72 hours` : '')
       + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
   } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
+      + ['ssr', 'ur'].map(r => setRow(`${r.toUpperCase()} egg icon`, `<span class="set-exp">${eggHTML(r, 'sm')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-eggup="${r}"></label>${customIcon('egg' + r) ? `<button type="button" class="sx-btn" data-eggreset="${r}">Default</button>` : ''}`, 'The full egg in the hatchery, inventory and hatch animation')).join('')
       + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
       + setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`));
@@ -147,6 +148,8 @@ function renderSettings() {
   const ad = on('setAdmin'); if (ad) ad.onclick = () => { closeSettings(); openAdmin(); };
   const eu = on('setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { renderSettings(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
   bindUpArts(renderSettings); bindPullBg(renderSettings);
+  document.querySelectorAll('[data-eggup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:egg' + i.dataset.eggup, await resizeImage(i.files[0], 256, 'image/png'))) { renderSettings(); toast('Egg icon updated.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-eggreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:egg' + b.dataset.eggreset); renderSettings(); toast('Egg icon back to the default.'); });
   const er = on('setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); renderSettings(); toast('EXP icon back to the default.'); };
 }
 
