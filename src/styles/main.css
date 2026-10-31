@@ -2131,3 +2131,22 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .raid-ad{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .raid-adit{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px 10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--edge-soft)}
 .raid-adit .raid-pc{grid-row:1/4}
+
+/* raid clothes use the summon rarity tags; R is blue */
+.rtag.r3{background:linear-gradient(180deg,#9fd0ff,#3f8ae6);color:#06244a;box-shadow:0 0 12px rgba(80,150,255,.55)}
+.rdrop-r{background:none!important;border:0!important;transform:none!important;width:auto!important;height:auto!important;left:calc(50% - 76px)!important;top:60px!important}
+/* the Raids gate sits next to the Enter Plaza gate: a dark dungeon doorway with a purple glow and a sword */
+.portal.raidgate{left:calc(var(--sl) + 124px);border-color:rgba(190,150,255,.8);box-shadow:0 10px 26px rgba(0,0,0,.5),0 0 22px rgba(150,100,255,.3)}
+.portal.raidgate:hover{box-shadow:0 14px 30px rgba(0,0,0,.55),0 0 34px rgba(160,110,255,.55)}
+.raidgate .g-arch{background:radial-gradient(ellipse 80% 70% at 50% 95%,#e8d0ff 0,#a46bff 20%,#5a2fb8 45%,#24164a 75%,#0f0a1e)}
+.raidgate .g-arch::after{background:radial-gradient(ellipse 55% 40% at 50% 100%,rgba(230,200,255,.55),transparent 70%)}
+.raidgate .g-motes{background:radial-gradient(circle,#e3cfff 0 1.6px,transparent 2.4px) 8px 0/26px 30px,radial-gradient(circle,#a983ff 0 1.2px,transparent 2px) 0 12px/34px 38px}
+.rg-door{position:absolute;left:18%;right:18%;bottom:0;height:62%;border-radius:40px 40px 0 0;background:linear-gradient(#1a1030,#07040e);box-shadow:inset 0 0 0 4px #4a4058,inset 0 0 0 6px #2a2434}
+.rg-sword{position:absolute;left:50%;bottom:20%;width:4px;height:44%;margin-left:-2px;background:linear-gradient(#f4f0ff,#a8a0c8);border-radius:2px;box-shadow:0 0 8px #c9a8ff}
+.rg-sword::before{content:"";position:absolute;left:-7px;bottom:20%;width:18px;height:4px;border-radius:2px;background:#d6b46a}
+.rg-sword::after{content:"";position:absolute;left:-1px;bottom:-6px;width:6px;height:8px;border-radius:2px;background:#5a3d24}
+.raidgate .g-lan{background:radial-gradient(circle at 50% 40%,#f0e0ff,#9a5bff 70%);box-shadow:0 0 12px 3px rgba(160,100,255,.7)}
+.raidgate .plbl{color:#eadcff;border-top-color:rgba(190,150,255,.45)}
+.hm-tabs{left:calc(var(--sl) + 252px)}
+.menu.ui-hidden .raidgate{transform:translateY(14px)}
+@media (max-width:760px){.portal.raidgate{left:calc(var(--sl) + 94px)}.hm-tabs{left:var(--sl)}}

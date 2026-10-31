@@ -1,9 +1,9 @@
 /* ---------- Raids: dungeons that cost stamina and drop Wardrobe clothes ----------
-   One dungeon for now. Each clear costs RAID_STAMINA and gives RAID_DROPS clothing pieces from three sets (R, SSR, UR):
+   One dungeon for now. Each clear costs RAID_STAMINA and gives 1 clothing piece, or 2 with RAID_DOUBLE chance, from three sets (R, SSR, UR):
    UR 4%, SSR 10%, R the rest. The sets are ordinary Wardrobe clothes (S.clothes, flag raid + set) so the admin edits
    their pictures in admin → Raids or Wardrobe; without a picture each piece shows white line art for its slot.
    No summon animation: the drops pop up in a see-through results window. */
-const RAID_STAMINA = 20, RAID_DROPS = 2, RAID_RATES = { 5: .04, 4: .10 };
+const RAID_STAMINA = 20, RAID_DOUBLE = .33, RAID_RATES = { 5: .04, 4: .10 };
 const CRN = { 3: 'R', 4: 'SSR', 5: 'UR' };
 const RAID_SETS = [
   { set: 'r', rarity: 3, name: "Wanderer's", pieces: { hat: 'Hood', top: 'Tunic', pants: 'Trousers', shoes: 'Boots', acc: 'Charm', hand: 'Gloves' } },
@@ -35,7 +35,7 @@ function clothLine(slot) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${LINE_ART[slot] || LINE_ART.top}</svg>`;
   return lineCache[slot] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
-const ctag = r => `<span class="ctag r${r}">${CRN[r] || ''}</span>`;
+const ctag = (r, cls = '') => `<span class="rtag r${r} ${cls}">${CRN[r] || ''}</span>`;   // the summon rarity tags, plus R
 function rollRaidPiece() {
   const x = Math.random(), r = x < RAID_RATES[5] ? 5 : x < RAID_RATES[5] + RAID_RATES[4] ? 4 : 3;
   const list = raidPieces(r); return list.length ? rpick(list) : null;
@@ -45,7 +45,8 @@ function clearRaid(times) {
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
   spendStamina(cost);
   const drops = [];
-  for (let i = 0; i < times * RAID_DROPS; i++) { const x = rollRaidPiece(); if (!x) continue; const isNew = !owns(x.id); S.owned[x.id] = (S.owned[x.id] || 0) + 1; drops.push({ x, isNew }); }
+  let n = 0; for (let t = 0; t < times; t++) n += Math.random() < RAID_DOUBLE ? 2 : 1;
+  for (let i = 0; i < n; i++) { const x = rollRaidPiece(); if (!x) continue; const isNew = !owns(x.id); S.owned[x.id] = (S.owned[x.id] || 0) + 1; drops.push({ x, isNew }); }
   drops.sort((a, b) => b.x.rarity - a.x.rarity);
   gainExp(EXP.raid * times); persist(); renderMenu(); renderRaids();
   showRaidDrops(drops, times);
@@ -55,7 +56,7 @@ function showRaidDrops(drops, times) {
   const old = document.querySelector('.rdrop'); if (old) old.remove();
   const el = document.createElement('div'); el.className = 'rdrop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Raid rewards');
   el.innerHTML = `<div class="rdrop-box"><h2 class="ts">Clear rewards${times > 1 ? ` ×${times}` : ''}</h2>
-      <div class="rdrop-grid">${drops.map((d, i) => `<div class="rdrop-it r${d.x.rarity}" style="--i:${i}"><span class="rdrop-glow"></span><img src="${clothImg(d.x)}" alt="">${d.isNew ? '<span class="rdrop-new">NEW</span>' : ''}<span class="rdrop-r"><em>${CRN[d.x.rarity]}</em></span><b>${esc(d.x.name)}</b></div>`).join('') || '<p class="tiny">Nothing dropped.</p>'}</div>
+      <div class="rdrop-grid">${drops.map((d, i) => `<div class="rdrop-it r${d.x.rarity}" style="--i:${i}"><span class="rdrop-glow"></span><img src="${clothImg(d.x)}" alt="">${d.isNew ? '<span class="rdrop-new">NEW</span>' : ''}<span class="rdrop-r">${ctag(d.x.rarity, 'lg')}</span><b>${esc(d.x.name)}</b></div>`).join('') || '<p class="tiny">Nothing dropped.</p>'}</div>
       <div class="row" style="justify-content:center;gap:12px"><button class="btn gold" id="rdAgain">Clear again ${curIcon('stamina')}${RAID_STAMINA * times}</button><button class="btn ghost" id="rdDone">Done</button></div>
       <p class="tiny">Wear the pieces from any character's Wardrobe tab. Stamina left: ${stamina()}</p></div>`;
   document.body.appendChild(el);
@@ -83,7 +84,7 @@ function renderRaids() {
       <div class="evp-list">${RAIDS.map(x => `<button class="evp-item ${x.id === d.id ? 'on' : ''}" data-raid="${x.id}"><span class="evp-ic">${icon('raid')}</span><b>${esc(x.name)}</b></button>`).join('')}</div></aside>
     <section class="evp-main raid-main">
       <h1 class="evp-title">${esc(d.name)}</h1>
-      <span class="evp-time">${icon('bolt')}${RAID_STAMINA} stamina per clear · ${RAID_DROPS} drops</span>
+      <span class="evp-time">${icon('bolt')}${RAID_STAMINA} stamina per clear · 1–2 drops</span>
       <p class="evp-sub raid-desc">${esc(d.desc)}</p>
       <div class="raid-drops"><span class="lbl-sm">Possible drops</span>
         ${[5, 4, 3].map(r => `<div class="raid-row r${r}"><span class="raid-rate">${ctag(r)}<b>${pct(r)}%</b></span><div class="raid-pieces">${raidPieces(r).map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('')}</div></div>`).join('')}
@@ -102,7 +103,7 @@ function renderRaidsTab() {
   const p = $('#adPanel'); if (!p) return; ensureRaidSet();
   const bg = MEDIA.get('raid:bg');
   p.innerHTML = `<div class="stack">
-    <div><h3>Raids</h3><p class="tiny">${esc(RAIDS[0].name)}: ${RAID_STAMINA} stamina per clear, ${RAID_DROPS} drops per clear. Drop chances: UR ${RAID_RATES[5] * 100}%, SSR ${RAID_RATES[4] * 100}%, R ${Math.round((1 - RAID_RATES[5] - RAID_RATES[4]) * 100)}%.</p></div>
+    <div><h3>Raids</h3><p class="tiny">${esc(RAIDS[0].name)}: ${RAID_STAMINA} stamina per clear, 1 drop per clear (2 drops ${Math.round(RAID_DOUBLE * 100)}% of the time). Drop chances: UR ${RAID_RATES[5] * 100}%, SSR ${RAID_RATES[4] * 100}%, R ${Math.round((1 - RAID_RATES[5] - RAID_RATES[4]) * 100)}%.</p></div>
     <div class="row"><div class="ev-adprev" style="width:220px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">No wallpaper</span>'}</div>
       <div class="stack" style="gap:8px"><b>Raid screen wallpaper</b><span class="tiny">1920×1080 works best.</span><div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" id="raidBgUp"></label>${bg ? '<button class="btn ghost sm" id="raidBgDel">Remove</button>' : ''}<button class="btn ghost sm" id="raidOpen">Open Raids</button></div></div></div>
     ${RAID_SETS.map(st => `<div class="sk-group"><b>${ctag(st.rarity)} ${esc(st.name)} set</b><div class="raid-ad">${raidPieces(st.rarity).filter(x => x.set === st.set).map(x => `<div class="raid-adit r${x.rarity}">
