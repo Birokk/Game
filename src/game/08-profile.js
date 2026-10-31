@@ -5,7 +5,9 @@ const UNLOCK = {
   login: [() => S.login.streak >= 1, 'Claim a daily login reward'],
   chars3: [() => ownedChars().length >= 3, 'Own 3 characters'],
   ur: [() => ownedChars().some(e => e.rarity === 5), 'Own a UR character'],
-  max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`]
+  max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`],
+  mbtitle: [() => (S.unlocks || []).includes('mb-title'), 'Win it from the Mystery Box'],
+  mbcard: [() => (S.unlocks || []).includes('mb-card'), 'Win it from the Mystery Box']
 };
 const unlocked = o => UNLOCK[o.need][0]();
 const TITLES = [
@@ -14,7 +16,8 @@ const TITLES = [
   { id: 'lantern', name: 'Lantern Keeper', cls: 't-ember', need: 'login' },
   { id: 'collector', name: 'Star Collector', cls: 't-violet', need: 'chars3' },
   { id: 'lucky', name: 'Lucky Star', cls: 't-gold', need: 'ur' },
-  { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' }
+  { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' },
+  { id: 'boxbreaker', name: 'Box Breaker', cls: 't-mbox', need: 'mbtitle' }
 ];
 const FRAMES = [
   { id: 'simple', name: 'Silver Ring', need: 'always' },
@@ -26,7 +29,8 @@ const CARDS = [
   { id: 'starlit', name: 'Starlit Sky', need: 'always' },
   { id: 'lantern', name: 'Lantern Night', need: 'login' },
   { id: 'maple', name: 'Maple Autumn', need: 'chars3' },
-  { id: 'aurora', name: 'Prism Aurora', need: 'ur', premium: true }
+  { id: 'aurora', name: 'Prism Aurora', need: 'ur', premium: true },
+  { id: 'mystery', name: 'Mystery Night', need: 'mbcard' }
 ];
 const titleOf = () => TITLES.find(t => t.id === S.profile.title && unlocked(t)) || TITLES[0];
 const frameOf = () => FRAMES.find(f => f.id === S.profile.frame && unlocked(f)) || FRAMES[0];
