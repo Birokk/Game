@@ -180,3 +180,14 @@ function renderWallpaperPicker() {
     persist(); applyWallpaper(true); renderWallpaperPicker();
   });
 }
+
+/* ---------- info buttons: odds, drop chances and rules live behind a round (i) instead of on screen ----------
+   INFO[key]() returns { title, body }; infoBtn(key) draws the button, a click anywhere opens the window */
+const INFO = {};
+const infoBtn = (key, label = 'Drop chances and info') => `<button type="button" class="cs-info info-btn" data-info="${key}" aria-label="${esc(label)}" title="${esc(label)}">${icon('info')}</button>`;
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-info]'); if (!b || !INFO[b.dataset.info]) return;
+  e.stopPropagation(); e.preventDefault();
+  const { title, body } = INFO[b.dataset.info]();
+  openModal({ title, ic: 'info', kind: 'info', body: `<div class="stack info-body">${body}</div>` });
+}, true);

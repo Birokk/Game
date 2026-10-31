@@ -77,8 +77,10 @@ function openSpin() {
       </div>
       <button class="wheel-hub" id="spinGo" ${spinReady() ? '' : 'disabled'}>${spinReady() ? 'Spin' : 'Done'}</button></div>
     <div class="tiny" id="spinNote">${spinReady() ? 'One free spin every day.' : 'You already spun today. Come back tomorrow.'}</div>
-    <details style="width:100%"><summary>Chances</summary><div class="spin-odds">${SPIN.map(s => `<span>${curIcon(s.give)}${spinName(s)}</span><b>${s.w}%</b>`).join('')}</div></details>
+    <div class="row" style="justify-content:center;gap:8px"><span class="tiny">Chances</span><button type="button" class="cs-info" id="spinInfo" aria-label="Spin chances">${icon('info')}</button></div>
+    <div class="spin-odds" id="spinOdds" hidden>${SPIN.map(s => `<span>${curIcon(s.give)}${spinName(s)}</span><b>${s.w}%</b>`).join('')}</div>
   </div>`, onMount: () => {
+    $('#spinInfo').onclick = () => { const o = $('#spinOdds'); o.hidden = !o.hidden; };
     $('#spinGo').onclick = () => {
       if (!spinReady()) return;
       let r = Math.random() * SPIN.reduce((a, s) => a + s.w, 0), i = 0;

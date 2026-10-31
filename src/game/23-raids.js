@@ -3,7 +3,7 @@
    UR 4%, SSR 10%, R the rest. The sets are ordinary Wardrobe clothes (S.clothes, flag raid + set) so the admin edits
    their pictures in admin → Raids or Wardrobe; without a picture each piece shows white line art for its slot.
    No summon animation: the drops pop up in a see-through results window. */
-const RAID_STAMINA = 20, RAID_DOUBLE = .33, RAID_RATES = { 5: .08, 4: .10 };
+const RAID_STAMINA = 20, RAID_DOUBLE = .33, RAID_RATES = { 5: .08, 4: .20 };
 const CRN = { 3: 'R', 4: 'SSR', 5: 'UR' };
 const RAID_SETS = [
   { set: 'r', rarity: 3, name: "Wanderer's", pieces: { hat: 'Hood', top: 'Tunic', pants: 'Trousers', shoes: 'Boots', acc: 'Charm', hand: 'Gloves' } },
@@ -42,6 +42,12 @@ function clothLine(slot) {
   return lineCache[slot] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 const ctag = (r, cls = '') => `<span class="rtag r${r} ${cls}">${CRN[r] || ''}</span>`;   // the summon rarity tags, plus R
+INFO.raid = () => { const p = r => r === 3 ? Math.round((1 - RAID_RATES[5] - RAID_RATES[4]) * 100) : Math.round(RAID_RATES[r] * 100);
+  return { title: 'Raid drops', body: `<p class="desc">Each clear costs ${RAID_STAMINA} stamina and gives 1 clothing piece; ${Math.round(RAID_DOUBLE * 100)}% of clears give 2. Every clear also gives ${EXP.raid} EXP.</p>
+    <table class="cs-table"><thead><tr><th>Drop</th><th>Chance</th></tr></thead><tbody>
+      <tr><td>${ctag(5)} 2★ UR piece</td><td>${RAID_STAR2 * 100}%</td></tr>
+      ${[5, 4, 3].map(r => `<tr><td>${ctag(r)} ${CRN[r]} piece</td><td>${p(r)}%</td></tr>`).join('')}
+    </tbody></table><p class="tiny">The 2★ roll comes first; otherwise the piece is UR, SSR or R at the rates above, picked at random from that rarity's raid sets.</p>` }; };
 function rollRaidPiece() {
   const x = Math.random(), r = x < RAID_RATES[5] ? 5 : x < RAID_RATES[5] + RAID_RATES[4] ? 4 : 3;
   const list = raidPieces(r); return list.length ? rpick(list) : null;
@@ -85,7 +91,6 @@ function closeRaids() { if (raidEl) { raidEl.remove(); raidEl = null; } const d 
 function renderRaids() {
   if (!raidEl) return;
   const d = RAIDS.find(x => x.id === raidSel) || RAIDS[0], bg = MEDIA.get('raid:bg');
-  const pct = r => r === 3 ? Math.round((1 - RAID_RATES[5] - RAID_RATES[4]) * 100) : Math.round(RAID_RATES[r] * 100);
   raidEl.innerHTML = `<div class="evp-bg ${bg ? '' : 'none raid-none'}">${bg ? `<img src="${bg}" alt="">` : ''}</div><div class="evp-shade"></div>
     <div class="evp-head"><span class="inv-badge">${icon('raid')}</span><h2 class="ts">Raids</h2></div>
     <div class="raid-top"><div class="cur" id="raidStam">${curIcon('stamina')}<b>${stamina()}/${STAMINA_MAX}</b><button class="plus" id="raidPlus" aria-label="Refill stamina">${icon('plus')}</button></div><button class="inv-x" id="raidClose" aria-label="Close">${icon('close')}</button></div>
@@ -93,10 +98,10 @@ function renderRaids() {
       <div class="evp-list">${RAIDS.map(x => `<button class="evp-item ${x.id === d.id ? 'on' : ''}" data-raid="${x.id}"><span class="evp-ic">${icon('raid')}</span><b>${esc(x.name)}</b></button>`).join('')}</div></aside>
     <section class="evp-main raid-main">
       <h1 class="evp-title">${esc(d.name)}</h1>
-      <span class="evp-time">${icon('bolt')}${RAID_STAMINA} stamina per clear · 1–2 drops · ${RAID_STAR2 * 100}% 2★ UR</span>
+      <span class="evp-time">${icon('bolt')}${RAID_STAMINA} stamina per clear · 1–2 drops ${infoBtn('raid')}</span>
       <p class="evp-sub raid-desc">${esc(d.desc)}</p>
       <div class="raid-drops"><span class="lbl-sm">Possible drops</span>
-        ${[5, 4, 3].map(r => `<div class="raid-row r${r}"><span class="raid-rate">${ctag(r)}<b>${pct(r)}%</b></span><div class="raid-pieces">${raidPieces(r).map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('')}</div></div>`).join('')}
+        ${[5, 4, 3].map(r => `<div class="raid-row r${r}"><span class="raid-rate">${ctag(r)}</span><div class="raid-pieces">${raidPieces(r).map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('')}</div></div>`).join('')}
       </div>
       <div class="raid-go"><button class="btn gold" data-clear="1">Clear ×1 ${curIcon('stamina')}${RAID_STAMINA}</button><button class="btn mint" data-clear="5">Clear ×5 ${curIcon('stamina')}${RAID_STAMINA * 5}</button><button class="btn ghost" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
     </section>`;

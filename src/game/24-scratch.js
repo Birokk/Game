@@ -72,13 +72,17 @@ function scratchBoard() {
       ${open ? `<button class="btn gold" id="scrReveal">${icon('eye')}Reveal all</button>`
         : `<button class="btn gold" id="scrBuy" ${left > 0 && S.wallet.pearls >= SCRATCH_PRICE ? '' : 'disabled'}>Buy a card · ${costHTML(SCRATCH_PRICE)}</button>`}
       <span class="scr-left">${left} of ${SCRATCH_DAILY} cards left today</span>
-      <div class="scr-table"><span class="lbl-sm">Three of a kind wins</span>
-        ${SCRATCH_PRIZES.map(x => `<div class="scr-row ${x.p >= 30 ? 'big' : ''}"><span class="scr-trio">${scrIcon(x.ic)}<i>×3</i></span><b>${curIcon('pearls')}${x.p}</b><small>${odds(x.w)}</small></div>`).join('')}
-        <div class="scr-row lose"><span class="scr-trio">No match</span><b>0</b><small>${odds(SCRATCH_LOSE_W)}</small></div>
+      <div class="scr-table"><span class="lbl-sm" style="display:flex;justify-content:space-between;align-items:center">Three of a kind wins ${infoBtn('scratch', 'Prizes and odds')}</span>
+        ${SCRATCH_PRIZES.map(x => `<div class="scr-row ${x.p >= 30 ? 'big' : ''}"><span class="scr-trio">${scrIcon(x.ic)}<i>×3</i></span><b>${curIcon('pearls')}${x.p}</b></div>`).join('')}
       </div>
     </div></div>`;
 }
 /* the silver foil: drag to scratch it away; once most of every cell is clear the card is revealed */
+INFO.scratch = () => { const odds = x => { const v = x / 1e4; return v >= 1 ? `${Math.round(v * 100) / 100}%` : `${+v.toPrecision(2)}%`; };
+  return { title: 'Scratch card odds', body: `<p class="desc">A card costs ${SCRATCH_PRICE} pearls, up to ${SCRATCH_DAILY} a day. Three of the same icon wins its prize.</p>
+    <table class="cs-table"><thead><tr><th>Three of</th><th>Prize</th><th>Chance</th></tr></thead><tbody>
+      ${SCRATCH_PRIZES.map(x => `<tr><td><span class="scr-trio">${scrIcon(x.ic)}</span></td><td>${x.p} pearl${x.p === 1 ? '' : 's'}</td><td>${odds(x.w)}</td></tr>`).join('')}
+      <tr><td>No match</td><td>0</td><td>${odds(SCRATCH_LOSE_W)}</td></tr></tbody></table>` }; };
 function bindScratch() {
   const b = $('#scrBuy'); if (b) b.onclick = buyScratch;
   const r = $('#scrReveal'); if (r) r.onclick = finishScratch;

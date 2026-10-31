@@ -72,7 +72,7 @@ function confirmMbox() {
   openModal({ title: 'Make a wish?', ic: 'fountain', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
     <span class="ftn-ic big">${icon('fountain')}</span>
     <p class="desc">Spend <b>${cost} pearl${cost === 1 ? '' : 's'}</b> on pull ${i + 1} of ${MB_COST.length}?</p>
-    <span class="tiny">You have ${fmt(S.wallet.pearls)} pearls. Outfit chance this pull: ${Math.round(mboxChance() * 1000) / 10}%.</span>
+    <span class="tiny">You have ${fmt(S.wallet.pearls)} pearls.</span>
     <div class="row" style="justify-content:center"><button class="btn ghost" id="mbNo">Cancel</button><button class="btn gold" id="mbYes">Open · ${costHTML(cost)}</button></div></div>`,
     onMount: () => { $('#mbNo').onclick = closeModal; $('#mbYes').onclick = () => { closeModal(); pullMbox(); }; } });
 }
@@ -111,18 +111,21 @@ function mysteryBoard() {
         ${st.got.includes('skin') ? `<span class="mb-got">${icon('check')}Obtained</span>` : ''}</div>
       <div class="mb-info">
         <div><span class="lbl-sm">Wishes</span><b>${i} / ${MB_COST.length}</b></div>
-        <div><span class="lbl-sm">Outfit chance</span><b>${st.got.includes('skin') ? 'Obtained' : ch ? `${Math.round(ch * 1000) / 10}%` : `From pull ${MB_SKIN_FROM}`}</b></div>
+        <div><span class="lbl-sm">Outfit</span><b>${st.got.includes('skin') ? 'Obtained' : 'Still inside'}</b></div>
         <div><span class="lbl-sm">Next wish</span><b>${done ? 'Empty' : `${curIcon('pearls')}${MB_COST[i]}`}</b></div>
       </div>
-      <div class="mb-go"><span class="ftn-ic">${icon('fountain')}</span>
+      <div class="mb-go">${infoBtn('mbox', 'How the fountain works')}<span class="ftn-ic">${icon('fountain')}</span>
         ${done ? '<button class="btn ghost" disabled>The fountain is empty</button>' : `<button class="btn gold" id="mbPull" ${S.wallet.pearls >= MB_COST[i] ? '' : 'disabled'}>Make a wish · ${costHTML(MB_COST[i])}</button>`}</div>
-      <p class="evp-note">Each wish takes one prize out of the fountain, so the outfit gets likelier every time and is guaranteed by pull ${MB_COST.length}. It can't drop before pull ${MB_SKIN_FROM}, and pulling it gives you everything still left in the fountain. Prices: ${MB_COST.join(', ')} pearls.</p>
     </div>
     <div class="mb-list"><span class="lbl-sm">In the fountain · ${MB_COST.length - i} left</span>
       ${MB_ITEMS().map(x => { const got = st.got.includes(x.k), n = st.got.indexOf(x.k) + 1;
         return `<div class="mb-row r${x.r} ${got ? 'got' : ''}"><span class="mb-ic">${x.pic}</span><span class="mb-nm"><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></span>${ctag(x.r)}${got ? `<span class="mb-chk" title="Pull ${n}">${icon('check')}</span>` : ''}</div>`; }).join('')}
     </div></div>`;
 }
+INFO.mbox = () => { const st = mboxState(), ch = mboxChance();
+  return { title: 'Mystery Fountain', body: `<p class="desc">The fountain holds ${MB_COST.length} prizes. Each wish takes one out at random and it never comes back, so the outfit gets likelier with every wish and is guaranteed by wish ${MB_COST.length}. It can't come out before wish ${MB_SKIN_FROM}. Finding the outfit gives you everything still left in the fountain.</p>
+    <div class="balance"><span>Outfit chance on your next wish</span><b>${st.got.includes('skin') ? 'Obtained' : ch ? `${Math.round(ch * 1000) / 10}%` : `0% (from wish ${MB_SKIN_FROM})`}</b></div>
+    <table class="cs-table"><thead><tr><th>Wish</th>${MB_COST.map((_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead><tbody><tr><td>Pearls</td>${MB_COST.map(c => `<td>${c}</td>`).join('')}</tr></tbody></table>` }; };
 function bindMystery() { const b = $('#mbPull'); if (b) b.onclick = confirmMbox; }
 
 /* the white marble fountain used by the wish animation (water parts take the rarity colour once it opens) */
