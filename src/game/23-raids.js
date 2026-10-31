@@ -19,6 +19,12 @@ function ensureRaidSet() {
     if (!S.clothes.some(x => x.id === id)) S.clothes.push({ id, name: `${st.name} ${st.pieces[slot]}`, slot, rarity: st.rarity, char: null, img: null, raid: true, set: st.set });
   }));
 }
+/* a set's display name (raid sets from RAID_SETS, admin-made sets carry setName) and every set that drops in raids */
+const clothSetName = x => x.setName || (RAID_SETS.find(s => s.set === x.set) || {}).name || 'Clothing';
+function raidSetList() {
+  const seen = {}; raidPieces().forEach(x => { if (x.set && !seen[x.set]) seen[x.set] = { set: x.set, rarity: x.rarity, name: clothSetName(x) }; });
+  return Object.values(seen).sort((a, b) => b.rarity - a.rarity);
+}
 const raidPieces = r => (S.clothes || []).filter(x => x.raid && (r == null || x.rarity === r));
 /* default picture of a clothing piece: white line art for its slot (the admin uploads the real design) */
 const LINE_ART = {
@@ -107,7 +113,7 @@ function renderRaidsTab() {
     <div><h3>Raids</h3><p class="tiny">${esc(RAIDS[0].name)}: ${RAID_STAMINA} stamina per clear, 1 drop per clear (2 drops ${Math.round(RAID_DOUBLE * 100)}% of the time). Drop chances: UR ${RAID_RATES[5] * 100}%, SSR ${RAID_RATES[4] * 100}%, R ${Math.round((1 - RAID_RATES[5] - RAID_RATES[4]) * 100)}%.</p></div>
     <div class="row"><div class="ev-adprev" style="width:220px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">No wallpaper</span>'}</div>
       <div class="stack" style="gap:8px"><b>Raid screen wallpaper</b><span class="tiny">1920×1080 works best.</span><div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" id="raidBgUp"></label>${bg ? '<button class="btn ghost sm" id="raidBgDel">Remove</button>' : ''}<button class="btn ghost sm" id="raidOpen">Open Raids</button></div></div></div>
-    ${RAID_SETS.map(st => `<div class="sk-group"><b>${ctag(st.rarity)} ${esc(st.name)} set</b><div class="raid-ad">${raidPieces(st.rarity).filter(x => x.set === st.set).map(x => `<div class="raid-adit r${x.rarity}">
+    ${raidSetList().map(st => `<div class="sk-group"><b>${ctag(st.rarity)} ${esc(st.name)} set</b><div class="raid-ad">${raidPieces().filter(x => x.set === st.set).map(x => `<div class="raid-adit r${x.rarity}">
         <span class="raid-pc r${x.rarity}"><img src="${clothImg(x)}" alt=""></span>
         <input class="input" data-rnm="${esc(x.id)}" maxlength="30" value="${esc(x.name)}" aria-label="Piece name">
         <span class="tiny">${(WARD_SLOTS.find(s => s[0] === x.slot) || [])[1]}</span>

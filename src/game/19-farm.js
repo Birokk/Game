@@ -49,7 +49,25 @@ function farmTick() {
   if (changed) persist();
   return changed;
 }
-const farmReady = () => FARM_DEFS.some(d => farmWhole(d.id) >= 1) || FARM_DEFS.some(d => { const f = farmOf(d.id); return f.up && f.up.ends <= Date.now(); });
+/* the Base fountain (no upgrades): once a day "Try your luck"; 1 in 3 wishes gives a Limited ticket (the odds are never shown) */
+const FARM_WISH = 1 / 3;
+const fountainReady = () => (S.farmWish || {}).last !== dayKey();
+function tryFountain() {
+  if (!fountainReady()) return;
+  const won = Math.random() < FARM_WISH;
+  S.farmWish = { last: dayKey(), won };
+  if (won) S.wallet.tickets += 1;
+  persist(); renderMenu(); refreshSummon(); renderFarm();
+  toast(won ? 'Your wish came true: 1 Limited ticket!' : 'Nothing this time. Come back tomorrow.');
+}
+function fountainPanel() {
+  const ready = fountainReady(), w = S.farmWish || {};
+  return `<div class="fm-ph" style="--fc:${FARM_COL.fountain}"><div><b>Fountain</b><span class="farm-lv">Once a day</span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
+    <div class="fm-wish ${ready ? 'ready' : w.won ? 'won' : 'lost'}"><span class="ftn-ic big">${icon('fountain')}</span>
+      ${ready ? '<p class="tiny">Toss a coin into the fountain and make a wish.</p><button class="btn gold" id="fmWish">Try your luck</button>'
+        : `<b>${w.won ? 'Your wish came true!' : 'Nothing this time'}</b>${w.won ? `<span class="fm-wish-got">${curIcon('tickets')}+1 Limited ticket</span>` : ''}<span class="tiny">Come back tomorrow to try again.</span>`}</div>`;
+}
+const farmReady = () => fountainReady() || FARM_DEFS.some(d => farmWhole(d.id) >= 1) || FARM_DEFS.some(d => { const f = farmOf(d.id); return f.up && f.up.ends <= Date.now(); });
 function farmCollect(id) {
   farmSettle(id); const f = farmOf(id); let n = Math.floor(f.acc);
   if (n < 1) return 0;
@@ -85,12 +103,12 @@ const fmtDur2 = ms => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.fl
 /* ---------- the Farm screen: full screen town, a label per building, a side panel for the tapped building ---------- */
 /* label positions in % of a 16:9 stage (the wallpaper covers the screen at 16:9, so labels stay on their buildings);
    the admin can move them (admin → Farm) to match their own wallpaper: S.farmLayout[id] = {x, y} */
-const FARM_POS = { crops: { x: 25, y: 80 }, inn: { x: 52, y: 46 }, market: { x: 79, y: 74 }, pub: { x: 21, y: 47 } };
+const FARM_POS = { crops: { x: 25, y: 80 }, inn: { x: 52, y: 46 }, market: { x: 79, y: 74 }, pub: { x: 21, y: 47 }, fountain: { x: 50, y: 62 } };
 const farmPos = id => ({ ...FARM_POS[id], ...((S.farmLayout || {})[id] || {}) });
 let fmEl = null, fmSel = null, farmTimer = null;
 function openFarm(sel) {
   farmTick(); closeModal();
-  if (!fmEl) { fmEl = document.createElement('div'); fmEl.className = 'fm'; fmEl.setAttribute('role', 'dialog'); fmEl.setAttribute('aria-label', 'Farm'); document.body.appendChild(fmEl); }
+  if (!fmEl) { fmEl = document.createElement('div'); fmEl.className = 'fm'; fmEl.setAttribute('role', 'dialog'); fmEl.setAttribute('aria-label', 'Base'); document.body.appendChild(fmEl); }
   fmSel = sel || null; renderFarm();
   clearInterval(farmTimer);
   farmTimer = setInterval(() => { if (!fmEl) return clearInterval(farmTimer); if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
@@ -114,17 +132,20 @@ function renderFarm() {
         return `<button class="fm-spot ${stt.cls} ${fmSel === d.id ? 'on' : ''}" data-fm="${d.id}" style="left:${p.x}%;top:${p.y}%;--fc:${FARM_COL[d.id]}">
           ${st >= 1 && !f.up ? `<span class="fm-bubble">${farmIc(d.id)}</span>` : farmCanUp(d.id) ? `<span class="fm-arrow">${icon('up')}</span>` : ''}
           <span class="fm-label"><b>${esc(d.name)}</b>${stt.html}</span></button>`; }).join('')}
+      ${(() => { const p = farmPos('fountain'), ready = fountainReady();
+        return `<button class="fm-spot fountain ${fmSel === 'fountain' ? 'on' : ''}" data-fm="fountain" style="left:${p.x}%;top:${p.y}%;--fc:${FARM_COL.fountain}">${ready ? `<span class="fm-bubble">${icon('sparkle')}</span>` : ''}<span class="fm-label"><b>Fountain</b><span>${ready ? 'Try your luck' : 'Come back tomorrow'}</span></span></button>`; })()}
     </div>
-    <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Farm</h2><span class="fm-rate ts">${totals} / day</span></div>
+    <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Base</h2><span class="fm-rate ts">${totals} / day</span></div>
     <div class="fm-cur"><div class="cur" title="Stamina">${curIcon('stamina')}<b>${stamina()}</b></div>${['coins', 'pearls'].map(k => `<div class="cur" title="${k === 'coins' ? 'Gold coins' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
     <button class="btn gold fm-all" id="fmAll">${icon('gift')}Collect all</button>
-    ${fmSel ? `<aside class="fm-panel glass-deep" id="fmPanel">${farmPanel(farmDef(fmSel))}</aside>` : ''}`;
+    ${fmSel ? `<aside class="fm-panel glass-deep" id="fmPanel">${fmSel === 'fountain' ? fountainPanel() : farmPanel(farmDef(fmSel))}</aside>` : ''}`;
   $('#fmBack').onclick = closeFarm;
   $('#fmAll').onclick = () => { const got = FARM_DEFS.map(d => [d.id, farmCollect(d.id)]).filter(([, n]) => n); if (!got.length) { toast('Nothing to collect yet.'); return; } persist(); renderMenu(); renderFarm(); toast(`Collected ${got.map(([id, n]) => `${fmt(n)} ${farmRes(id).name}`).join(', ')}.`); };
   fmEl.querySelectorAll('[data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.fm ? null : b.dataset.fm; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;
   pn.querySelector('[data-fmx]').onclick = () => { fmSel = null; renderFarm(); };
+  const fw = $('#fmWish'); if (fw) fw.onclick = tryFountain;
   pn.querySelectorAll('[data-fcol]').forEach(b => b.onclick = () => { const n = farmCollect(b.dataset.fcol); if (!n) return; persist(); renderMenu(); renderFarm(); toast(`+${fmt(n)} ${farmRes(b.dataset.fcol).name} from the ${farmDef(b.dataset.fcol).name}.`); });
   pn.querySelectorAll('[data-freq]').forEach(b => b.onclick = () => farmPayReq(b.dataset.freq));
   pn.querySelectorAll('[data-fup]').forEach(b => b.onclick = () => farmUpgrade(b.dataset.fup));
@@ -189,7 +210,7 @@ function farmTownSVG() {
 }
 
 /* ---------- building art (SVG); the town draws each building once with farmSVG(id, 6, true) ---------- */
-const FARM_COL = { crops: '#7fd36b', inn: '#ffb067', market: '#5ab8ff', pub: '#ff6ec7' };
+const FARM_COL = { crops: '#7fd36b', inn: '#ffb067', market: '#5ab8ff', pub: '#ff6ec7', fountain: '#9fe3ff' };
 function farmSVG(id, lv, bare) {
   const W = 320, H = 190, gy = 150;
   const sky = `<defs><linearGradient id="fsky-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1640"/><stop offset="1" stop-color="#3a2a66"/></linearGradient>
@@ -261,11 +282,11 @@ function renderFarmTab() {
   const p = $('#adPanel'); if (!p) return;
   const bg = MEDIA.get('farm:bg');
   p.innerHTML = `<div class="stack">
-    <div><h3>Farm town</h3><p class="tiny">The wallpaper fills the Farm screen at 16:9 (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the drawn default town is used. Drag each label in the preview (or use the sliders) so it sits on its building in your picture.</p></div>
+    <div><h3>Base</h3><p class="tiny">The wallpaper fills the Base screen at 16:9 (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the drawn default town is used. Drag each label in the preview (or use the sliders) so it sits on its building in your picture.</p></div>
     <div class="fm-adprev" id="fmPrev">${bg ? `<img src="${bg}" alt="">` : `<div class="fm-bg">${farmTownSVG()}</div>`}
-      ${FARM_DEFS.map(d => { const q = farmPos(d.id); return `<span class="fm-dot" data-fmdrag="${d.id}" style="left:${q.x}%;top:${q.y}%;--fc:${FARM_COL[d.id]}">${esc(d.name)}</span>`; }).join('')}</div>
+      ${[...FARM_DEFS, { id: 'fountain', name: 'Fountain' }].map(d => { const q = farmPos(d.id); return `<span class="fm-dot" data-fmdrag="${d.id}" style="left:${q.x}%;top:${q.y}%;--fc:${FARM_COL[d.id]}">${esc(d.name)}</span>`; }).join('')}</div>
     <div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" id="fmUp"></label>${bg ? '<button class="btn ghost sm" id="fmDel">Use the default town</button>' : ''}<button class="btn ghost sm" id="fmResetPos">Reset label positions</button><button class="btn ghost sm" id="fmOpen">Open the farm</button></div>
-    <div class="fm-sliders">${FARM_DEFS.map(d => { const q = farmPos(d.id); return `<div class="fm-sl" style="--fc:${FARM_COL[d.id]}"><b>${esc(d.name)}</b>
+    <div class="fm-sliders">${[...FARM_DEFS, { id: 'fountain', name: 'Fountain' }].map(d => { const q = farmPos(d.id); return `<div class="fm-sl" style="--fc:${FARM_COL[d.id]}"><b>${esc(d.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${d.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${d.id}"></label></div>`; }).join('')}</div>
   </div>`;
   const setPos = (id, x, y, rerender) => {
@@ -281,7 +302,7 @@ function renderFarmTab() {
     const move = ev => { const r = box.getBoundingClientRect(); setPos(dot.dataset.fmdrag, (ev.clientX - r.left) / r.width * 100, (ev.clientY - r.top) / r.height * 100, false); };
     dot.onpointermove = move; dot.onpointerup = ev => { move(ev); dot.onpointermove = dot.onpointerup = null; setPos(dot.dataset.fmdrag, farmPos(dot.dataset.fmdrag).x, farmPos(dot.dataset.fmdrag).y, true); };
   });
-  $('#fmUp').onchange = async ev => { try { if (await mediaSet('farm:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Farm wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  $('#fmUp').onchange = async ev => { try { if (await mediaSet('farm:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Base wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const del = $('#fmDel'); if (del) del.onclick = async () => { await mediaDel('farm:bg'); renderFarmTab(); toast('Back to the default town.'); };
   $('#fmResetPos').onclick = () => { S.farmLayout = {}; persist(); renderFarmTab(); };
   $('#fmOpen').onclick = () => { closeModal(); openFarm(); };

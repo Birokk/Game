@@ -2378,34 +2378,42 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .pt-artc .skc-lock{top:4px;right:4px}
 .dt-hero.t-pet .dt-art{object-fit:contain;object-position:50% 50%}
 
-/* Mystery Fountain: grey / white / black stone, water in the prize's rarity colour */
-.ftn-ic{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:50%;flex:none;background:radial-gradient(circle at 50% 35%,#f2f3f6,#9a9da5 60%,#3a3c42);box-shadow:inset 0 0 0 2px #0b0b0e,0 4px 14px rgba(0,0,0,.4);color:#16171b;animation:mbBob 2.4s ease-in-out infinite}
+/* Mystery Fountain: a big white marble fountain whose water lights up in the prize's rarity colour */
+.ftn-ic{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:50%;flex:none;background:radial-gradient(circle at 50% 30%,#ffffff,#eef1f6 55%,#c9ced8);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9),0 0 14px rgba(190,220,255,.45),0 4px 14px rgba(0,0,0,.35);color:#5b6475;animation:mbBob 2.4s ease-in-out infinite}
 .ftn-ic .ic{width:30px;height:30px}
 .ftn-ic.sm{width:24px;height:24px;animation:none}.ftn-ic.sm .ic{width:15px;height:15px}
 .ftn-ic.big{width:84px;height:84px}.ftn-ic.big .ic{width:50px;height:50px}
-.mbx-ftn{position:absolute;left:50%;top:64%;width:min(46vw,300px);height:min(40vw,260px);transform:translate(-50%,-50%) scale(.6);opacity:0}
-.mbx.go .mbx-ftn{animation:ftnIn .7s cubic-bezier(.2,.9,.3,1.2) forwards}
-@keyframes ftnIn{to{transform:translate(-50%,-50%) scale(1);opacity:1}}
-.mbx-ftn i{position:absolute;display:block}
-.mbx-ftn .basin{left:0;right:0;bottom:0;height:30%;border-radius:8px 8px 50% 50% / 8px 8px 70% 70%;background:linear-gradient(180deg,#e9eaee,#9a9da6 45%,#4b4d55);box-shadow:inset 0 0 0 3px #0b0b0e,0 14px 30px rgba(0,0,0,.6)}
-.mbx-ftn .basin .water{left:6%;right:6%;top:-10%;height:42%;border-radius:50%}
-.mbx-ftn .stem{left:43%;width:14%;bottom:26%;height:36%;background:linear-gradient(90deg,#55575f,#d8dae0 45%,#6a6c74);box-shadow:inset 0 0 0 2px #0b0b0e}
-.mbx-ftn .top{left:27%;width:46%;bottom:58%;height:13%;border-radius:6px 6px 50% 50% / 6px 6px 80% 80%;background:linear-gradient(180deg,#f3f4f7,#a2a5ad 50%,#55575f);box-shadow:inset 0 0 0 2.5px #0b0b0e;z-index:1}
-.mbx-ftn .top .water{left:8%;right:8%;top:-18%;height:52%;border-radius:50%}
-.mbx-ftn .water{background:#9fb4c6;box-shadow:inset 0 2px 6px rgba(255,255,255,.5);transition:background-color .6s,box-shadow .6s}
-.mbx.open .mbx-ftn .water{background:var(--ac);box-shadow:inset 0 2px 8px var(--ac2),0 0 22px var(--ac)}
-.mbx-ftn .jet{left:46%;width:8%;bottom:66%;height:0;border-radius:50% 50% 0 0;background:linear-gradient(0deg,var(--ac),var(--ac2) 60%,transparent);filter:blur(1px);opacity:0;transition:height .7s cubic-bezier(.2,.9,.3,1),opacity .3s}
-.mbx.open .mbx-ftn .jet{height:120%;opacity:.95;animation:ftnJet .5s ease-in-out infinite alternate}
-@keyframes ftnJet{to{transform:scaleX(1.25)}}
-.mbx-ftn .fall{bottom:28%;width:24%;height:32%;border:4px solid var(--ac);border-bottom:0;opacity:0;transition:opacity .5s .35s}
-.mbx-ftn .fall.l{left:12%;border-right:0;border-radius:100% 0 0 0}
-.mbx-ftn .fall.r{right:12%;border-left:0;border-radius:0 100% 0 0}
-.mbx.open .mbx-ftn .fall{opacity:.75}
-.mbx.r5 .mbx-ftn .water,.mbx.r5 .mbx-ftn .jet,.mbx.r5 .mbx-ftn .fall{animation-name:ftnHue;animation-duration:2.4s;animation-iteration-count:infinite;animation-timing-function:linear}
-.mbx.r5.open .mbx-ftn .jet{animation:ftnHue 2.4s linear infinite}
-@keyframes ftnHue{to{filter:hue-rotate(360deg)}}
-.mbx.shown .mbx-ftn{opacity:.18;transition:opacity .5s}
-.mbx-sparks{top:40%}
+.mbx-ftn{position:absolute;left:50%;top:69%;width:min(78vw,500px);aspect-ratio:400/360;transform:translate(-50%,-50%) translateY(40px) scale(.85);opacity:0;filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}
+.mbx.go .mbx-ftn{animation:ftnIn .8s cubic-bezier(.2,.9,.3,1.1) forwards}
+@keyframes ftnIn{to{transform:translate(-50%,-50%);opacity:1}}
+.mbx-ftn svg{width:100%;height:100%;overflow:visible}
+.ftn-stone{fill:url(#ftnMarble);stroke:rgba(120,130,150,.55);stroke-width:1.2}
+.ftn-rim{fill:#ffffff;stroke:rgba(120,130,150,.55);stroke-width:1.2}
+.ftn-w{fill:#b9d3e6;transition:fill .8s ease}
+.ftn-flowb{fill:none;stroke:#b9d3e6;stroke-linecap:round;opacity:.55;transition:stroke .8s ease}
+.ftn-flow{fill:none;stroke:#ffffff;stroke-linecap:round;stroke-dasharray:6 16;opacity:.7;animation:ftnFlow .7s linear infinite}
+@keyframes ftnFlow{to{stroke-dashoffset:-22}}
+.mbx.open .ftn-flowb{stroke:var(--ac);opacity:.85}
+.ftn-jet{fill:none;stroke:#cfe4f3;stroke-linecap:round;stroke-dasharray:0 200;opacity:0;transition:stroke .6s}
+.ftn-jetglow{fill:none;stroke:#cfe4f3;stroke-linecap:round;stroke-dasharray:0 200;opacity:0;filter:blur(6px);transition:stroke .6s}
+.ftn-crown circle{fill:#e6f2fb;opacity:0;transition:fill .6s}
+.ftn-rip{fill:none;stroke:#e6f2fb;stroke-width:1.6;opacity:0;transform-box:fill-box;transform-origin:center}
+.mbx.open .ftn-w{fill:var(--ac)}
+.mbx.open .ftn-flow{stroke:var(--ac2);opacity:.95;animation-duration:.4s}
+.mbx.open .ftn-jet{stroke:var(--ac2);opacity:1;animation:ftnJet .7s cubic-bezier(.2,.9,.3,1) forwards,ftnJetW .35s ease-in-out .7s infinite alternate}
+.mbx.open .ftn-jetglow{stroke:var(--ac);opacity:.9;animation:ftnJet .7s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes ftnJet{to{stroke-dasharray:200 0}}
+@keyframes ftnJetW{to{stroke-width:9}}
+.mbx.open .ftn-crown circle{fill:var(--ac2);animation:ftnDrop 1.1s ease-in infinite;animation-delay:calc(.6s + var(--d))}
+@keyframes ftnDrop{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}100%{opacity:0;transform:translate(var(--x),70px)}}
+.mbx.open .ftn-rip{stroke:var(--ac2);animation:ftnRip 1.6s ease-out infinite;animation-delay:calc(.5s + var(--d))}
+@keyframes ftnRip{0%{opacity:.9;transform:scale(.2)}100%{opacity:0;transform:scale(1)}}
+.mbx.open .ftn-water-g{filter:drop-shadow(0 0 10px var(--ac))}
+.mbx.r5.open .ftn-water-g{animation:ftnHue 2.6s linear infinite}
+@keyframes ftnHue{from{filter:drop-shadow(0 0 10px var(--ac)) hue-rotate(0)}to{filter:drop-shadow(0 0 10px var(--ac)) hue-rotate(360deg)}}
+.mbx.shown .mbx-ftn{opacity:.22;transition:opacity .6s}
+.mbx-col{bottom:52%}
+.mbx-sparks{top:38%}
 
 /* CS (Character Score) and grades F → SSS */
 .grade{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:7px;font-family:var(--display);font-weight:400;font-size:14px;line-height:1;letter-spacing:-.02em;color:#fff;background:#4a4f5e;border:1.5px solid rgba(255,255,255,.35);text-shadow:0 1px 2px rgba(0,0,0,.6);transform:skewX(-8deg)}
@@ -2452,8 +2460,18 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 @keyframes sssWave{0%,100%{background-position:0 0,0 0,0% 50%}50%{background-position:0 0,0 0,100% 50%}}
 @keyframes sssGlow{from{box-shadow:0 0 10px rgba(255,40,70,.75),0 0 18px rgba(255,120,60,.35),inset 0 0 6px rgba(255,220,180,.4)}to{box-shadow:0 0 18px rgba(255,40,70,1),0 0 34px rgba(255,90,60,.7),0 0 50px rgba(255,40,140,.4),inset 0 0 10px rgba(255,230,200,.6)}}
 /* the + after the stars (CS grade S / SS / SSS) */
-.cs-plus{display:inline-block;margin-left:3px;font-family:var(--display);font-weight:400;font-size:1.25em;line-height:1;vertical-align:-.05em}
+.stars6{align-items:center}
+.cs-plus{display:inline-flex;align-items:center;justify-content:center;align-self:center;margin-left:3px;font-family:var(--body);font-weight:900;font-size:1.05em;line-height:1;height:1em;transform:translateY(-.04em)}
 .cs-plus.g-s{color:#ffd76b;text-shadow:0 0 6px rgba(255,205,90,.9)}
 .cs-plus.g-ss{background:linear-gradient(110deg,#a855f7,#ff6ec7,#3ee6d0,#a855f7);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradeWave 4s ease-in-out infinite;filter:drop-shadow(0 0 4px rgba(168,85,247,.8))}
 .cs-plus.g-sss{background:linear-gradient(115deg,#ff2a3d,#ff7a3d,#ff2a6e,#ff2a3d);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradeWave 3s ease-in-out infinite;filter:drop-shadow(0 0 4px #ff2a45) drop-shadow(0 0 8px rgba(255,90,60,.8))}
 @keyframes sssPlus{to{text-shadow:0 0 10px #ff2a45,0 0 20px rgba(255,60,90,1)}}
+/* Base fountain panel */
+.fm-wish{display:grid;justify-items:center;gap:10px;text-align:center;padding:18px 12px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.fm-wish b{font-family:var(--display);font-weight:400;font-size:20px}
+.fm-wish.won b{color:#ffe08a}
+.fm-wish-got{display:flex;align-items:center;gap:6px;font-family:var(--display);font-size:16px}
+.fm-wish-got .cic{width:22px;height:22px}
+.fm-spot.fountain .fm-bubble .ic{width:18px;height:18px}
+.wd-setform{margin-top:8px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12)}
+.wd-rename{height:32px;padding:4px 10px;font-size:13px;min-width:0;flex:1}

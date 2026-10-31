@@ -125,12 +125,37 @@ function mysteryBoard() {
 }
 function bindMystery() { const b = $('#mbPull'); if (b) b.onclick = confirmMbox; }
 
+/* the white marble fountain used by the wish animation (water parts take the rarity colour once it opens) */
+const FOUNTAIN_SVG = `<div class="mbx-ftn"><svg viewBox="0 0 400 360" aria-hidden="true">
+  <defs><linearGradient id="ftnMarble" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9dee7"/><stop offset=".35" stop-color="#ffffff"/><stop offset=".6" stop-color="#f4f6fa"/><stop offset="1" stop-color="#c3c9d4"/></linearGradient></defs>
+  <ellipse cx="200" cy="344" rx="175" ry="13" fill="rgba(0,0,0,.35)"/>
+  <path class="ftn-stone" d="M22 268Q26 336 200 340Q374 336 378 268Z"/>
+  <path d="M40 300Q200 318 360 300" fill="none" stroke="rgba(150,160,180,.45)" stroke-width="2"/>
+  <ellipse class="ftn-rim" cx="200" cy="268" rx="178" ry="30"/>
+  <g class="ftn-water-g"><ellipse class="ftn-w" cx="200" cy="270" rx="160" ry="22"/>
+    <ellipse class="ftn-rip" cx="200" cy="272" rx="120" ry="15" style="--d:0s"/><ellipse class="ftn-rip" cx="200" cy="272" rx="120" ry="15" style="--d:.55s"/><ellipse class="ftn-rip" cx="200" cy="272" rx="120" ry="15" style="--d:1.1s"/></g>
+  <path class="ftn-stone" d="M176 272L183 205Q200 196 217 205L224 272Z"/>
+  <path class="ftn-stone" d="M112 176Q122 210 200 212Q278 210 288 176Z"/>
+  <ellipse class="ftn-rim" cx="200" cy="176" rx="90" ry="15"/>
+  <g class="ftn-water-g"><ellipse class="ftn-w" cx="200" cy="177" rx="78" ry="10"/></g>
+  <path class="ftn-stone" d="M189 177L193 124L207 124L211 177Z"/>
+  <path class="ftn-stone" d="M158 120Q166 140 200 141Q234 140 242 120Z"/>
+  <ellipse class="ftn-rim" cx="200" cy="120" rx="44" ry="8"/>
+  <g class="ftn-water-g"><ellipse class="ftn-w" cx="200" cy="121" rx="36" ry="5"/>
+    <path class="ftn-flowb" stroke-width="6" d="M160 122Q146 142 132 174"/><path class="ftn-flow" stroke-width="3" d="M160 122Q146 142 132 174"/>
+    <path class="ftn-flowb" stroke-width="6" d="M240 122Q254 142 268 174"/><path class="ftn-flow" stroke-width="3" d="M240 122Q254 142 268 174"/>
+    <path class="ftn-flowb" stroke-width="8" d="M114 180Q90 222 70 266"/><path class="ftn-flow" stroke-width="5" d="M114 180Q90 222 70 266"/>
+    <path class="ftn-flowb" stroke-width="8" d="M286 180Q310 222 330 266"/><path class="ftn-flow" stroke-width="5" d="M286 180Q310 222 330 266"/>
+    <path class="ftn-jetglow" stroke-width="26" d="M200 108L200 -60"/><path class="ftn-jet" stroke-width="8" d="M200 108L200 -60"/>
+    <g class="ftn-crown">${[-34, -20, -8, 8, 20, 34, -27, 27].map((x, i) => `<circle cx="200" cy="-58" r="${3 + (i % 3)}" style="--x:${x}px;--d:${(i * .13).toFixed(2)}s"/>`).join('')}</g></g>
+  <circle cx="200" cy="108" r="8" fill="#ffffff" stroke="rgba(120,130,150,.55)"/>
+</svg></div>`;
 /* the fountain: it rises, the water jet shoots up and the water turns the prize's rarity colour (blue R, orange SSR, prism UR), then the prize appears */
 function showMboxOpen(x, note, done) {
   const el = document.createElement('div');
   el.className = `mbx r${x.r}`;
   el.innerHTML = `<div class="mbx-aura"></div><div class="mbx-col"></div><div class="mbx-sparks">${Array.from({ length: 28 }, () => `<i style="--x:${(Math.random() * 2 - 1).toFixed(2)};--d:${(Math.random() * 1.6).toFixed(2)}s;--s:${(3 + Math.random() * 5).toFixed(1)}px;--t:${(1.6 + Math.random() * 1.4).toFixed(2)}s"></i>`).join('')}</div>
-    <div class="mbx-ftn"><i class="jet"></i><i class="fall l"></i><i class="fall r"></i><i class="top"><i class="water"></i></i><i class="stem"></i><i class="basin"><i class="water"></i></i></div>
+    ${FOUNTAIN_SVG}
     <div class="mbx-prize"><span class="mbx-pic">${x.pic}</span>${ctag(x.r, 'lg')}<b>${esc(x.name)}</b><small>${esc(note || x.sub)}</small></div>
     <div class="mbx-hint">Tap to continue</div>`;
   document.body.appendChild(el);

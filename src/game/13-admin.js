@@ -8,7 +8,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Farm</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Base</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -507,12 +507,20 @@ function renderWardrobeTab() {
       <label class="field"><span>Who can wear it</span><select class="input" id="wdChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
       <div class="row" style="align-items:center"><div class="wd-prev">${wdNewImg ? `<img src="${wdNewImg}" alt="">` : '<span class="tiny">No image</span>'}</div><label class="btn ghost sm">${icon('upload')}${wdNewImg ? 'Replace' : 'Upload'} image<input type="file" accept="image/*" class="sr" id="wdUp"></label></div>
       <div class="row"><button class="btn mint" id="wdAdd">${icon('plus')}Add clothing</button><span class="err" id="wdErr" hidden>Give it a name first.</span></div>
+      <div class="wd-setform stack" style="gap:10px">
+        <div><h3>Add a set</h3><p class="tiny">Makes 6 pieces that belong together (Hat, Top, Pants, Shoes, Accessory, Hand). A character wearing all 6 gets the full-set CS bonus. They start as white line art: upload each piece's design in the list. Sets can also drop in Raids.</p></div>
+        <label class="field"><span>Set name</span><input class="input" id="wsName" maxlength="24" placeholder="e.g. Moonlit Dancer"></label>
+        <div class="field"><span>Rarity</span><div class="seg" id="wsRar">${[3, 4, 5].map(r => `<label class="r${r}"><input type="radio" name="wsR" value="${r}" ${r === 4 ? 'checked' : ''}>${CRN[r]}</label>`).join('')}</div></div>
+        <label class="field"><span>Who can wear it</span><select class="input" id="wsChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
+        <label class="switch" style="justify-self:start">Drops in Raids<input type="checkbox" id="wsRaid" checked><i></i></label>
+        <div class="row"><button class="btn mint" id="wsAdd">${icon('plus')}Add set</button><span class="err" id="wsErr" hidden>Give the set a name first.</span></div>
+      </div>
     </section>
     <section class="stack" style="align-content:start">
       <div class="ad-head" style="margin:0"><h3>Clothes <span class="muted" style="font-family:var(--body);font-size:14px">· ${S.clothes.length}</span></h3></div>
       ${WARD_SLOTS.map(([k, l]) => { const list = S.clothes.filter(x => x.slot === k);
         return `<div class="sk-group"><b>${l} · ${list.length}</b>${list.length ? list.map(x => `<div class="wd-row r${x.rarity}"><div class="wd-prev sm">${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : icon('wardrobe')}</div>
-          <div style="min-width:0;display:grid;gap:2px"><span class="nm">${esc(x.name)} ${rtag(x.rarity)}</span><span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}</span></div>
+          <div style="min-width:0;display:grid;gap:4px"><span class="row" style="gap:6px;align-items:center;flex-wrap:nowrap"><input class="input wd-rename" data-wdname="${esc(x.id)}" maxlength="30" value="${esc(x.name)}" aria-label="Name">${ctag(x.rarity)}</span><span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}${x.set ? ` · ${esc(clothSetName(x))} set${x.raid ? ' · drops in Raids' : ''}` : ''}</span></div>
           <div class="row" style="gap:8px;justify-content:flex-end"><label class="switch" style="padding:4px 8px;gap:8px;font-size:12px">Owned<input type="checkbox" data-wdown="${esc(x.id)}" ${owns(x.id) ? 'checked' : ''}><i></i></label><label class="link">Image<input type="file" accept="image/*" class="sr" data-wdimg="${esc(x.id)}"></label><button class="link" data-wddel="${esc(x.id)}" style="color:${wdDelArm === x.id ? '#ff6b81' : ''}">${wdDelArm === x.id ? 'Tap again to delete' : 'Delete'}</button></div></div>`).join('') : '<p class="tiny">None yet.</p>'}</div>`; }).join('')}
     </section></div>`;
   $('#wdUp').onchange = async ev => { try { wdNewImg = await resizeImage(ev.target.files[0], 512); renderWardrobeTab(); } catch (e) { toast(e.message); } };
@@ -522,6 +530,14 @@ function renderWardrobeTab() {
     if (wdNewImg) { await mediaSet('cloth:' + x.id, wdNewImg); x.img = 'idb:cloth:' + x.id; }
     S.clothes.push(x); wdNewImg = null; persist(); renderWardrobeTab(); toast(`Added ${name}.`);
   };
+  $('#wsAdd').onclick = () => {
+    const name = $('#wsName').value.trim(); if (!name) { $('#wsErr').hidden = false; return; }
+    const rarity = +document.querySelector('input[name=wsR]:checked').value, char = $('#wsChar').value || null, raid = $('#wsRaid').checked;
+    const set = `set-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    WARD_SLOTS.forEach(([slot, label]) => S.clothes.push({ id: `${set}-${slot}`, name: `${name} ${label}`, slot, rarity, char, img: null, set, setName: name, raid }));
+    persist(); renderWardrobeTab(); toast(`Added the ${name} set (6 pieces)${raid ? '. It drops in Raids' : ''}.`);
+  };
+  document.querySelectorAll('[data-wdname]').forEach(i => i.onchange = () => { const x = clothOf(i.dataset.wdname); if (!x) return; x.name = i.value.trim() || x.name; i.value = x.name; persist(); });
   document.querySelectorAll('[data-wdown]').forEach(i => i.onchange = () => { if (i.checked) S.owned[i.dataset.wdown] = 1; else delete S.owned[i.dataset.wdown]; persist(); });
   document.querySelectorAll('[data-wdimg]').forEach(i => i.onchange = async () => { try { const x = clothOf(i.dataset.wdimg); await mediaSet('cloth:' + x.id, await resizeImage(i.files[0], 512)); x.img = 'idb:cloth:' + x.id; persist(); renderWardrobeTab(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-wddel]').forEach(b => b.onclick = async () => {
