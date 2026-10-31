@@ -6,7 +6,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Farm</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Farm</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -25,6 +25,7 @@ function renderAdminTab() {
   if (adminTab === 'server') return renderServerTab();
   if (adminTab === 'farm') return renderFarmTab();
   if (adminTab === 'events') return renderEventsTab();
+  if (adminTab === 'raids') return renderRaidsTab();
   if (adminTab === 'pullfx') return renderPullFxTab();
   renderPoolTab();
 }
@@ -500,7 +501,7 @@ function renderWardrobeTab() {
       <div><h3>Add clothing</h3><p class="tiny">Clothes appear in each character's Wardrobe tab, in their slot. Use a square PNG with a transparent background (scaled to 512px). Players own nothing yet: switch on "Owned" below to test it until there is a way to get clothes.</p></div>
       <label class="field"><span>Name</span><input class="input" id="wdName" maxlength="30" placeholder="e.g. Lantern Hat"></label>
       <label class="field"><span>Slot</span><select class="input" id="wdSlotSel">${WARD_SLOTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
-      <div class="field"><span>Rarity</span><div class="seg" id="wdRar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="wdR" value="${r}" ${r === 4 ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div></div>
+      <div class="field"><span>Rarity</span><div class="seg" id="wdRar">${[3, 4, 5].map(r => `<label class="r${r}"><input type="radio" name="wdR" value="${r}" ${r === 4 ? "checked" : ""}>${CRN[r]}</label>`).join('')}</div></div>
       <label class="field"><span>Who can wear it</span><select class="input" id="wdChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
       <div class="row" style="align-items:center"><div class="wd-prev">${wdNewImg ? `<img src="${wdNewImg}" alt="">` : '<span class="tiny">No image</span>'}</div><label class="btn ghost sm">${icon('upload')}${wdNewImg ? 'Replace' : 'Upload'} image<input type="file" accept="image/*" class="sr" id="wdUp"></label></div>
       <div class="row"><button class="btn mint" id="wdAdd">${icon('plus')}Add clothing</button><span class="err" id="wdErr" hidden>Give it a name first.</span></div>
@@ -702,6 +703,8 @@ function renderPullFxTab() {
   p.innerHTML = `<div class="stack">
     <div><h3>Pull animation</h3><p class="tiny">Players pull the screen down to release a sphere. It rises and turns from blue (gold and fragments) to orange (SSR) to prism (UR), stopping at the best result of the pull. In ${Math.round(FAKEOUT_CHANCE * 100)}% of UR pulls (never on a hard-pity UR) the sphere stops at orange, one of the fakeout wallpapers below slides in, and the sphere transforms into UR.</p></div>
     <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button><button class="btn gold sm" data-pv="upgrade">Preview: SSR → UR upgrade</button><button class="btn gold sm" data-pv="rainbow">Preview: rainbow sphere</button></div>
+    <div><h3>Summon background</h3><p class="tiny">Your art behind the whole summon animation instead of the black background (1920×1080 works best). Also in Settings → Admin.</p></div>
+    ${pullBgHTML()}
     <div><h3>Fakeout wallpapers</h3><p class="tiny">One is picked at random for each fakeout. Wide character art works best (1920×1080; it covers the screen). Without any, the limited banner's featured character is used.</p></div>
     <div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-fkdel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No fakeout wallpapers yet.</span>'}</div>
     <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="fkUp" multiple></label></div>
@@ -713,7 +716,7 @@ function renderPullFxTab() {
     try { for (const f of ev.target.files) { const k = `fake:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.fakeArts = [...(S.fakeArts || []), k]; } persist(); renderPullFxTab(); toast('Fakeout wallpapers added.'); }
     catch (e) { toast(e.message, true); }
   };
-  bindUpArts(renderPullFxTab);
+  bindUpArts(renderPullFxTab); bindPullBg(renderPullFxTab);
   p.querySelectorAll('[data-fkdel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.fkdel); S.fakeArts = (S.fakeArts || []).filter(k => k !== b.dataset.fkdel); persist(); renderPullFxTab(); });
 }
 
@@ -730,4 +733,16 @@ function bindUpArts(rerender) {
   });
   document.querySelectorAll('[data-updel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.updel); S.upArts = (S.upArts || []).filter(k => k !== b.dataset.updel); persist(); rerender(); });
   document.querySelectorAll('[data-pv="upgrade"]').forEach(b => b.onclick = () => previewPull('upgrade'));
+}
+
+/* the art behind the summon animation (media key pull:bg), shared by admin → Summon animation and Settings → Admin */
+function pullBgHTML() {
+  const bg = MEDIA.get('pull:bg');
+  return `<div class="row" style="gap:12px;align-items:center"><div class="ev-adprev" style="width:200px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">Black (default)</span>'}</div>
+    <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} background<input type="file" accept="image/*" class="sr" data-pbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-pbgdel>Use black</button>' : ''}<button type="button" class="btn ghost sm" data-pv="ten">Preview</button></div></div>`;
+}
+function bindPullBg(rerender) {
+  document.querySelectorAll('[data-pbgup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('pull:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { rerender(); toast('Summon background saved.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-pbgdel]').forEach(b => b.onclick = async () => { await mediaDel('pull:bg'); rerender(); });
+  document.querySelectorAll('[data-pv="ten"]').forEach(b => { if (!b.onclick) b.onclick = () => { closeSettings(); previewPull('ten'); }; });
 }

@@ -175,7 +175,7 @@ function renderTitle() {
   $('#ttUid').textContent = S.account ? `UID ${S.profile.uid}` : '';
   const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); if (Backend.user) confirmSignOut(); else openSignIn(); };
 }
-function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInventory(); closeShop(); closeSettings(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
+function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInventory(); closeShop(); closeSettings(); closeRaids(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
 function enterGame() {
   if (!S.player.mc) return openMCPick();
   titleOn = false; closeModal(); renderMenu();

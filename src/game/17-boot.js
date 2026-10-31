@@ -8,6 +8,7 @@
   const cloud = await Promise.race([initBackend(), new Promise(r => setTimeout(() => r('timeout'), 8000))]);
   if (cloud === 'reload') return;
   if (cloud === 'timeout') { Backend.on = false; cloudStatus = 'offline'; console.warn('Server did not answer in time, playing offline'); }
+  ensureRaidSet();   // server content may predate the raid sets
   // move art saved by the first version (inside localStorage) into IndexedDB
   for (const e of S.pool) if (e.art && e.art.startsWith('data:')) { await mediaSet('art:' + e.id, e.art); e.art = 'idb:art:' + e.id; }
   persist();

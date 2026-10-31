@@ -164,7 +164,7 @@ if (!S.wear) S.wear = {};
 const WARD_SLOTS = [['hat', 'Hat'], ['top', 'Top'], ['pants', 'Pants'], ['shoes', 'Shoes'], ['acc', 'Accessory'], ['hand', 'Hand']];
 const WARD_NAME = Object.fromEntries(WARD_SLOTS);
 const clothOf = id => S.clothes.find(x => x.id === id);
-const clothImg = x => artFrom(x.img);
+const clothImg = x => artFrom(x.img) || clothLine(x.slot);   // white line art until the admin uploads a design
 const clothFits = (x, c) => !x.char || x.char === c.id;
 const wearOf = cid => S.wear[cid] || {};
 /* memories: art cards the admin adds (S.memories); each character equips up to MEM_SLOTS of them (S.memEq[charId]); no effect yet */

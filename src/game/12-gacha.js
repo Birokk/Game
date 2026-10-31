@@ -384,9 +384,10 @@ function showPull(results, n, bk, opts = {}) {
   const featId = bk === 'limited' && bannerInfo('limited').feat ? bannerInfo('limited').feat.id : null;
   const rainbow = best === 5 && (opts.rainbow ?? (!!featId && results.some(r => r.rarity === 5 && !r.up && r.id === featId) && Math.random() < RAINBOW_CHANCE));
   pullEl = document.createElement('div');
-  pullEl.className = 'pull t3 r3 charging';
+  const pbg = MEDIA.get('pull:bg');
+  pullEl.className = `pull t3 r3 charging ${pbg ? 'has-bg' : ''}`;
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
-  pullEl.innerHTML = `<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i><i class="sph-band"></i><i class="sph-band b2"></i></div><canvas class="sph-front"></canvas></div>
+  pullEl.innerHTML = `${pbg ? `<img class="pull-bg" src="${pbg}" alt="">` : ''}<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i><i class="sph-band"></i><i class="sph-band b2"></i></div><canvas class="sph-front"></canvas></div>
     <div class="sph-hint tap" id="sphHint"><b>Tap to release</b><span class="tap-ring"></span></div>
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);

@@ -3,8 +3,8 @@
    Settings or admin → Icons) only shows where EXP is offered as a reward. */
 const LV_MAX = 60;
 const lvNeed = lv => 100 + (lv - 1) * 50;                 // EXP to go from lv to lv + 1
-const EXP = { pull: 10, login: 50, spin: 20, ach: 30, hatch: 25, farm: 5 };
-const EXP_WAYS = [['pull', 'Summon', 'per pull'], ['login', 'Daily login', 'per day'], ['spin', 'Daily spin', 'per spin'], ['ach', 'Achievement', 'each'], ['hatch', 'Hatch a pet', 'each'], ['farm', 'Farm', 'per pearl collected']];
+const EXP = { pull: 10, login: 50, spin: 20, ach: 30, hatch: 25, farm: 5, raid: 15 };
+const EXP_WAYS = [['pull', 'Summon', 'per pull'], ['login', 'Daily login', 'per day'], ['spin', 'Daily spin', 'per spin'], ['ach', 'Achievement', 'each'], ['hatch', 'Hatch a pet', 'each'], ['farm', 'Farm', 'per pearl collected'], ['raid', 'Raid', 'per clear']];
 CUR_SVG.exp = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#3fd47e" stroke="#16683a" stroke-width="1.4"/><circle cx="12" cy="12" r="7.4" fill="none" stroke="#c8ffd9" stroke-width=".9" opacity=".8"/><path d="M12 5.2l1.9 4.3 4.6.4-3.5 3 1.1 4.6L12 15l-4.1 2.5 1.1-4.6-3.5-3 4.6-.4z" fill="#fff8c8" stroke="#16683a" stroke-width=".8" stroke-linejoin="round"/></svg>';
 ICONS.level = '<path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/><path d="M12 8v6"/><path d="M9.5 10.5L12 8l2.5 2.5"/>';
 const expTag = n => `<span class="exp-tag">${curIcon('exp')}+${fmt(n)} EXP</span>`;
