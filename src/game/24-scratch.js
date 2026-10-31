@@ -2,16 +2,16 @@
    Buy a card for 5 pearls (5 a day), scratch the silver foil, and three of the same icon wins that icon's prize.
    The prize is decided when the card is bought (weights below, in millionths), then the 3×3 grid is dealt to match:
    a win puts its icon three times and every other icon at most twice; a loss never has three of a kind.
-   Odds: return to player ≈ 96.9% (lose 3.84%, 1 pearl 13%, 3 pearls 27%, 5 pearls 25%, 7 pearls 17%, 10 pearls 14%),
+   Odds: about 30% of cards lose; return to player ≈ 96.6% (1 pearl 4.84%, 3 pearls 9%, 5 pearls 14%, 7 pearls 15%, 10 pearls 27%),
    and the big ones are very rare: 30 = 0.12%, 50 = 0.03%, 100 = 0.008%, 300 = 0.0012%.
    State (player save): S.scratch = { day, n (bought today), card: { cells[9], win (icon index or -1), prize, done } } */
 const SCRATCH_PRICE = 5, SCRATCH_DAILY = 5;
 const SCRATCH_PRIZES = [
   { p: 300, ic: 'seven', w: 12 }, { p: 100, ic: 'crown', w: 80 }, { p: 50, ic: 'diamond', w: 300 }, { p: 30, ic: 'star', w: 1200 },
-  { p: 10, ic: 'bell', w: 140000 }, { p: 7, ic: 'bag', w: 170000 }, { p: 5, ic: 'clover', w: 250000 }, { p: 3, ic: 'horseshoe', w: 270000 },
-  { p: 1, ic: 'cherry', w: 130000 }
+  { p: 10, ic: 'bell', w: 270000 }, { p: 7, ic: 'bag', w: 150000 }, { p: 5, ic: 'clover', w: 140000 }, { p: 3, ic: 'horseshoe', w: 90000 },
+  { p: 1, ic: 'cherry', w: 48400 }
 ];
-const SCRATCH_LOSE_W = 1e6 - SCRATCH_PRIZES.reduce((t, x) => t + x.w, 0);   // 38,408 = 3.8408%
+const SCRATCH_LOSE_W = 1e6 - SCRATCH_PRIZES.reduce((t, x) => t + x.w, 0);   // 300,008 = about 30%
 /* ten white line-art icons (the moon never pays: it only fills the grid) */
 const SCR_ICONS = {
   seven: '<path d="M13 11h22l-11 27"/><path d="M18 24h12"/>',
