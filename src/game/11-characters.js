@@ -39,13 +39,13 @@ function selectSkin(c, id) {
   csEl.classList.toggle('bw', !o.own);
   csEl.querySelector('.cs-name').textContent = o.kind === 'skin' ? o.entry.name : o.kind === 'base' ? c.name : `${c.name} · ${o.name}`;
   csEl.querySelectorAll('.skc').forEach(x => x.classList.toggle('sel', x.dataset.skc === id));
-  const label = o.kind === 'base' ? 'Default outfit' : o.name, wallId = o.kind === 'skin' ? o.entry.id : c.id;
+  const label = o.kind === 'base' ? 'Default outfit' : o.name, wallId = o.kind === 'skin' ? o.entry.id : wpIdFor(c, o.kind);   // each art is its own wallpaper
   $('#skAct').innerHTML = `<div class="sk-title"><b>${esc(label)}</b>${o.stars ? `<span class="chip">${o.stars}★ splash art</span>` : rtag(o.rarity)}</div>
     ${o.own ? (o.on ? `<button class="btn ghost" disabled>${icon('check')}Equipped</button>` : `<button class="btn gold" id="skEquip">${icon('hanger')}Equip ${esc(label.toLowerCase() === 'default outfit' ? 'default outfit' : label)}</button>`)
       : o.stars ? `<div class="cs-pill">${icon('lock')} Unlocks at ${o.stars} stars · ${esc(c.name)} has ${starsOf(c.id)}</div>`
       : !buyable(o.entry) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
       : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>`}
-    ${o.own && (o.kind === 'skin' || o.on) ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === wallId ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
+    ${o.own ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === wallId ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
   const eb = $('#skEquip'); if (eb) eb.onclick = () => {
     if (o.kind === 'skin') S.equip[c.id] = o.entry.id;
     else { delete S.equip[c.id]; S.artPick[c.id] = o.kind; }
@@ -79,7 +79,7 @@ function refreshCharacters() { if (csEl) renderCharacters(); }
 function renderCharacters() {
   const c = findEntry(csId); if (!csEl || !c) return closeCharacters();
   const eq = equippedOf(c), shown = (csTab === 'skins' && csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
-  const art = mediaArt(shown), shownOwned = owns(shown.id);
+  const art = mediaArt(shown), shownOwned = owns(shown.id), shownWall = shown === c ? wpIdFor(c, artKey(c)) : shown.id;   // the art on screen as a wallpaper id
   csEl.className = `cs r${c.rarity}`;
   const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
@@ -106,7 +106,7 @@ function renderCharacters() {
       ${artKey(c) !== 'base' && !eq ? `<div class="cs-pill" style="color:#e8ff7a">Showing the ${ASC.find(x => x.k === artKey(c)).label} splash art</div>` : ''}
       ${eq ? `<div class="cs-pill" style="color:#e8ff7a">Wearing ${esc(eq.name)}</div>` : ''}
       <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
-      ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shown.id ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
+      ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
@@ -122,8 +122,8 @@ function renderCharacters() {
       <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
         return `<button class="wd-slot ${wdSlot === k ? 'on' : ''} ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span></button>`; }).join('')}</div>
       <div class="lbl-sm">${WARD_NAME[wdSlot]} · ${items.filter(x => owns(x.id)).length}/${items.length} owned</div>
-      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id;
-        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'}>${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
+      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id, worn = wearersOf(x.id).filter(id => id !== c.id), busy = own && !eqd && worn.length >= (S.owned[x.id] || 0);
+        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'} ${busy ? `title="Worn by ${esc(worn.map(id => (findEntry(id) || {}).name).join(', '))}"` : ''}>${busy ? `<span class="wd-worn">Worn by ${esc((findEntry(worn[0]) || {}).name || '')}</span>` : ''}${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
       ${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}`;
   } else if (csTab === 'memory') {
@@ -136,8 +136,8 @@ function renderCharacters() {
       ${list.length ? `<div class="mem-list">${list.map(x => { const own = owns(x.id), at = E.indexOf(x.id);
         return `<button class="mem-card r${x.rarity} ${own ? '' : 'bw'} ${at >= 0 ? 'on' : ''}" data-memi="${esc(x.id)}" ${own ? '' : 'disabled'} ${x.desc ? `data-tip="${esc(`<b>${esc(x.name)}</b><span>${esc(x.desc)}</span>`)}"` : ''}>${memArt(x) ? `<img src="${memArt(x)}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(x.rarity)}${at >= 0 ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="mem-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
-      ${E[memSlot] ? `<button class="btn ghost sm" id="memOff">Remove from slot ${memSlot + 1}</button>` : ''}
-      <p class="tiny">Pick a slot, then a memory to put in it. Memories have no effect yet.</p>`;
+      ${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}
+      <p class="tiny">Each character can equip one memory: tap one to equip it (tap it again to remove it). Memories have no effect yet.</p>`;
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
@@ -152,7 +152,7 @@ function renderCharacters() {
         <div style="display:grid;gap:6px;flex:1"><b style="font-family:var(--display);font-weight:400;font-size:22px">Bond Lv. ${lv}${bd.married ? ' · Married' : ''}</b>
           <span class="bar" style="--rc:#ff6f91"><i style="width:${full ? 100 : (bd.xp - lo) / (hi - lo) * 100}%"></i></span>
           <span class="tiny">${full ? 'Max bond reached' : `${fmt(bd.xp - lo)} / ${fmt(hi - lo)} bond to level ${lv + 1} · ${fmt(bd.xp)} / ${fmt(BOND_XP[BOND_MAX])} total`}</span></div></div>
-      ${!n ? '<div class="cs-pill">Own this character to give gifts and raise your bond.</div>' : full ? '' : `<div class="lbl-sm">Give a gift</div><div class="gift-list">${Object.entries(GIFTS).map(([k, g]) =>
+      ${!n ? '<div class="cs-pill">Own this character to give gifts and raise your bond.</div>' : full ? '' : `<div class="row" style="justify-content:space-between"><span class="lbl-sm">Give a gift</span><span class="row" style="gap:6px"><button class="btn ghost sm" id="csGiftGive">${icon('heart')}Give in bulk</button><button class="btn ghost sm" id="csGiftBuy">${icon('gift')}Buy in bulk</button></span></div><div class="gift-list">${Object.entries(GIFTS).map(([k, g]) =>
         `<button class="gift" data-gift="${k}">${curIcon('g' + k)}<span><b>${g.name}</b><span class="tiny">+${g.xp} bond · ${S.gifts[k] ? `×${S.gifts[k]} in your bag` : `buy for ${fmt(g.price)} coins`}</span></span><span class="btn sm ${S.gifts[k] ? 'mint' : 'ghost'}">${S.gifts[k] ? 'Give' : 'Buy & give'}</span></button>`).join('')}</div>`}
       <div class="cs-card vow-box ${bd.married ? 'done' : ''}">
         <div class="top">${curIcon('rings')}<div>${bd.married ? `<b>Married to ${esc(c.name)}</b><span class="tiny">Since ${new Date(bd.married).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>`
@@ -197,7 +197,13 @@ function renderCharacters() {
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
     const W = { ...wearOf(c.id) };
-    if (W[x.slot] === x.id) delete W[x.slot]; else W[x.slot] = x.id;
+    if (W[x.slot] === x.id) delete W[x.slot];
+    else {
+      // each owned copy can be worn by one character: take it off someone else first
+      const others = wearersOf(x.id).filter(id => id !== c.id);
+      if (others.length >= (S.owned[x.id] || 0)) { const who = others.map(id => (findEntry(id) || {}).name).filter(Boolean).join(', '); toast(`${x.name} is worn by ${who}. Take it off ${others.length > 1 ? 'one of them' : 'them'} first.`); return; }
+      W[x.slot] = x.id;
+    }
     S.wear[c.id] = W; persist(); renderCharacters(); toast(W[x.slot] ? `${c.name} put on ${x.name}.` : `${c.name} took off ${x.name}.`);
   });
   csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; renderCharacters(); });
@@ -205,12 +211,14 @@ function renderCharacters() {
     const x = memOf(b.dataset.memi); if (!x || !owns(x.id)) return;
     const E = memEqOf(c.id), at = E.indexOf(x.id);
     if (at >= 0) { E[at] = null; toast(`Removed ${x.name}.`); }
-    else { E[memSlot] = x.id; toast(`${x.name} is in slot ${memSlot + 1}.`); const free = E.indexOf(null); if (free >= 0) memSlot = free; }
+    else { E[0] = x.id; memSlot = 0; toast(`${c.name} now holds ${x.name}.`); }
     S.memEq[c.id] = E; persist(); renderCharacters();
   });
   const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
   const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; persist(); renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
+  const gg = $('#csGiftGive'); if (gg) gg.onclick = () => openGiveGifts(c.id);
+  const gb = $('#csGiftBuy'); if (gb) gb.onclick = () => openBuyGifts(Object.keys(GIFTS).find(k => !S.gifts[k]) || 'sweets', 'coins');
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
   csEl.querySelectorAll('[data-bt-star]').forEach(b => b.onclick = () => toggleStar(c.id, +b.dataset.btStar));
   const bs = $('#csBuySkin'); if (bs) bs.onclick = () => buySkin(shown.id);
@@ -222,7 +230,7 @@ function renderCharacters() {
     if (shown === c) delete S.equip[c.id]; else S.equip[c.id] = shown.id;
     csSkin = null; persist(); renderMenu(); renderCharacters(); toast(shown === c ? `${c.name} is wearing the default outfit.` : `${c.name} is now wearing ${shown.name.replace(c.name + ' · ', '')}.`);
   };
-  const w = $('#csWall'); if (w) w.onclick = () => { S.wallpaper = shown.id; persist(); applyWallpaper(); renderCharacters(); toast(`${shown.name} is now your wallpaper.`); };
+  const w = $('#csWall'); if (w) w.onclick = () => { S.wallpaper = shownWall; persist(); applyWallpaper(); renderCharacters(); toast(`${wpName(wpParse(shownWall))} is now your wallpaper.`); };
   const on = csEl.querySelector('.cs-av.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (csView) csEl.classList.add('viewing');
 }

@@ -164,13 +164,14 @@ if (!S.wear) S.wear = {};
 const WARD_SLOTS = [['hat', 'Hat'], ['top', 'Top'], ['pants', 'Pants'], ['shoes', 'Shoes'], ['acc', 'Accessory'], ['hand', 'Hand']];
 const WARD_NAME = Object.fromEntries(WARD_SLOTS);
 const clothOf = id => S.clothes.find(x => x.id === id);
-const clothImg = x => artFrom(x.img);
+const clothImg = x => artFrom(x.img) || clothLine(x.slot);   // white line art until the admin uploads a design
 const clothFits = (x, c) => !x.char || x.char === c.id;
+const wearersOf = clothId => Object.keys(S.wear || {}).filter(cid => Object.values(S.wear[cid] || {}).includes(clothId));
 const wearOf = cid => S.wear[cid] || {};
-/* memories: art cards the admin adds (S.memories); each character equips up to MEM_SLOTS of them (S.memEq[charId]); no effect yet */
+/* memories: art cards the admin adds (S.memories); each character equips one (MEM_SLOTS) (S.memEq[charId]); no effect yet */
 if (!Array.isArray(S.memories)) S.memories = [];
 if (!S.memEq) S.memEq = {};
-const MEM_SLOTS = 3;
+const MEM_SLOTS = 1;
 const memOf = id => S.memories.find(x => x.id === id);
 const memEqOf = cid => { const a = (S.memEq[cid] || []).slice(0, MEM_SLOTS); while (a.length < MEM_SLOTS) a.push(null); return a.map(id => id && memOf(id) ? id : null); };
 const getArt = e => mediaArt(e) || portrait(e.look || S.player.look, e.rarity);

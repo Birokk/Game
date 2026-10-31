@@ -40,11 +40,10 @@ function renderMenu() {
   $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>`;
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
-  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
+  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Standard tickets: 1 pull on the permanent banner']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
-  $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} · ${curIcon('wishes')}${fmt(S.wallet.wishes)} · ${curIcon('pearls')}${COST[1]} each`;
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
   $('#evDot').hidden = !loginReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
@@ -59,15 +58,18 @@ function renderMenu() {
   $('#promo').innerHTML = `<button class="sx-tab lim promo-tab" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
       <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
-  $('#pityCard').innerHTML = `<span class="row"><span>${f ? esc(f.name) : 'Limited'} · UR pity</span><span style="color:var(--gold)">${gl.pity5} / ${HARD_PITY}</span></span>
-    <span class="bar r5"><i style="width:${gl.pity5 / HARD_PITY * 100}%;background:var(--ur)"></i></span>
-    <span class="tiny" style="color:var(--muted)">${gl.guarantee ? 'Next UR is guaranteed featured' : '50/50 on your next UR'}</span>`;
   $('#limTime').innerHTML = `${icon('clock')}Limited ends in ${shortLeft()}`;
   applyWallpaper();
 }
 
 /* stamina: 240 max, +1 every 6 minutes (nothing spends it yet) */
 const STAMINA_MAX = 240, STAMINA_MS = 6 * 60 * 1000;
+const STAMINA_CAP = 999;   // bottles, refills and the farm can go past 240, but never past 999
+/* add stamina from any source, up to the 999 cap; returns how much was actually added */
+function giveStamina(n) {
+  stamina(); const add = Math.max(0, Math.min(n, STAMINA_CAP - S.stamina.v));
+  S.stamina.v += add; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); return add;
+}
 function stamina() {
   const st = S.stamina, now = Date.now();
   if (st.v >= STAMINA_MAX) { st.t = now; return st.v; }
@@ -100,12 +102,33 @@ let uiHidden = false;
 function setUiHidden(on) { uiHidden = on; menuEl.classList.toggle('ui-hidden', on); }
 $('#hideUi').onclick = () => setUiHidden(true);
 menuEl.addEventListener('click', e => { if (uiHidden) { e.stopPropagation(); e.preventDefault(); setUiHidden(false); } }, true);
-function wallpaperEntry() { const e = S.wallpaper && findEntry(S.wallpaper); return e && owns(e.id) ? e : null; }
+/* a wallpaper id is an entry id (its base splash art) or `<charId>@art3` / `<charId>@art6` (that star splash art), so every
+   unlocked art is its own wallpaper, whatever the character has equipped */
+function wpParse(id) {
+  if (!id) return null;
+  const [eid, k] = String(id).split('@'), e = findEntry(eid); if (!e) return null;
+  const a = ASC.find(x => x.k === (k || 'base')); if (!a || (k && a.k === 'base')) return null;
+  return { id, e, k: a.k, a };
+}
+const wpOk = id => { const w = wpParse(id); return !!w && owns(w.e.id) && (w.k === 'base' || ascOpen(w.e, w.a)); };
+const wpSrc = w => w.k === 'base' ? baseSplash(w.e) : artFrom(w.e[w.k]);
+const wpHasArt = w => !!(w.k === 'base' ? baseArt(w.e) : artFrom(w.e[w.k]));
+const wpName = w => w.k === 'base' ? w.e.name : `${w.e.name} · ${w.a.label} art`;
+const wpIdFor = (e, k = 'base') => k === 'base' ? e.id : `${e.id}@${k}`;
+/* every unlocked splash art of the owned characters / skins as a choice: base art, then the 3★ and 6★ arts (locked ones flagged) */
+function artChoices(types = ['character', 'skin']) {
+  return S.pool.filter(e => types.includes(e.type) && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+    .flatMap(e => ASC.filter(a => a.k === 'base' || (e.type === 'character' && artFrom(e[a.k]))).map(a => ({ id: wpIdFor(e, a.k), e, a, open: ascOpen(e, a) })));
+}
+/* a round picture of one exact art (base: the entry's icon or base art; star art: that art) */
+const wpThumb = (w, cls = '') => w.k === 'base' ? baseThumb(w.e, cls) : `<img src="${artFrom(w.e[w.k])}" alt="" class="art ${cls}">`;
+function wallpaperInfo() { return wpOk(S.wallpaper) ? wpParse(S.wallpaper) : null; }
+function wallpaperEntry() { const w = wallpaperInfo(); return w ? w.e : null; }
 /* up to 4 home wallpapers (S.wallpapers); S.wallpaper is the one showing. Anything that sets S.wallpaper joins the list. */
 const WP_MAX = 4;
 function wpList() {
-  let list = (Array.isArray(S.wallpapers) ? S.wallpapers : []).filter(id => { const e = findEntry(id); return e && owns(id); });
-  if (S.wallpaper && owns(S.wallpaper) && findEntry(S.wallpaper) && !list.includes(S.wallpaper)) list = [S.wallpaper, ...list].slice(0, WP_MAX);
+  let list = (Array.isArray(S.wallpapers) ? S.wallpapers : []).filter(wpOk);
+  if (wpOk(S.wallpaper) && !list.includes(S.wallpaper)) list = [S.wallpaper, ...list].slice(0, WP_MAX);
   if (!S.wallpaper || !list.includes(S.wallpaper)) S.wallpaper = list[0] || null;
   if (JSON.stringify(list) !== JSON.stringify(S.wallpapers)) S.wallpapers = list;
   return list;
@@ -125,7 +148,7 @@ $('#wpNext').onclick = e => { e.stopPropagation(); stepWallpaper(1); };
 menuEl.addEventListener('click', e => { if (uiHidden || e.target.closest('button, a, input, select, textarea, label, .cur, #promo')) return; if (menuEl.classList.contains('wp-arrows')) { menuEl.classList.remove('wp-arrows'); clearTimeout(wpArrowTimer); } else showWpArrows(); });
 function applyWallpaper(fade) {
   wpList();
-  const e = wallpaperEntry();
+  const w = wallpaperInfo(), e = w && w.e;
   if (fade) wpEl.querySelectorAll('#wpSplash, #wpBlur').forEach(img => {   // crossfade: a copy of the old picture fades out over the new one
     if (img.hidden || !img.getAttribute('src')) return;
     const ghost = img.cloneNode(); ghost.removeAttribute('id'); ghost.classList.add('wp-ghost'); img.after(ghost);
@@ -133,13 +156,13 @@ function applyWallpaper(fade) {
     setTimeout(() => ghost.remove(), 900);
   });
   wpEl.classList.toggle('has-char', !!e);
-  wpEl.classList.toggle('chibi', !!e && !mediaArt(e));
+  wpEl.classList.toggle('chibi', !!e && !wpHasArt(w));
   wpEl.classList.remove('r3', 'r4', 'r5'); if (e) wpEl.classList.add('r' + e.rarity);
   [$('#wpSplash'), $('#wpBlur')].forEach(img => {
-    if (e) { const src = getSplash(e); if (img.getAttribute('src') !== src) img.src = src; img.hidden = false; }
+    if (e) { const src = wpSrc(w); if (img.getAttribute('src') !== src) img.src = src; img.hidden = false; }
     else { img.hidden = true; img.removeAttribute('src'); }
   });
-  $('#wpName').textContent = e ? e.name : 'Blank: Project';
+  $('#wpName').textContent = e ? wpName(w) : 'Blank: Project';
 }
 (function seedPearls() {
   const box = $('#wpPearls'); let h = '';
@@ -175,7 +198,7 @@ function renderTitle() {
   $('#ttUid').textContent = S.account ? `UID ${S.profile.uid}` : '';
   const sw = $('#ttSwitch'); if (sw) sw.onclick = e => { e.stopPropagation(); if (Backend.user) confirmSignOut(); else openSignIn(); };
 }
-function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInventory(); closeShop(); closeSettings(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
+function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInventory(); closeShop(); closeSettings(); closeRaids(); closeCharacters(); closeSummon(); setMenu(true); renderTitle(); titleEl.hidden = false; titleEl.classList.remove('leaving'); }
 function enterGame() {
   if (!S.player.mc) return openMCPick();
   titleOn = false; closeModal(); renderMenu();
@@ -206,7 +229,7 @@ function setMC(k, switching) {
   S.player.look = { ...MC_LOOK[k] }; player.look = S.player.look;
   if (old && old !== 'mc-' + k) {
     S.profile.showcase = S.profile.showcase.map(id => id && owns(id) ? id : null);
-    if (S.wallpaper && !owns(S.wallpaper)) { S.wallpaper = null; applyWallpaper(); }
+    if (S.wallpaper && !wpOk(S.wallpaper)) { S.wallpaper = null; applyWallpaper(); }
   }
   persist(); renderMenu();
 }

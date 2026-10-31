@@ -1,24 +1,28 @@
 /* =========================================================
-   Farm: buildings that produce materials over time (for now: pearls).
+   Farm: buildings that produce over time, each its own resource: Crops → stamina, Inn → EXP, Market → gold, Girls' Pub → pearls.
    It is its own full-screen town screen: a wallpaper (admin → Farm, or the drawn default town) with a label on each building;
    tapping a building opens its panel. Each building goes from level 0 (not built) to 7. An upgrade first needs its requirement
    (for now: pay 5 pearls), then costs gold and takes time (up to 48 h for level 7), which pearls can skip.
-   All four buildings at level 7 together make 10 pearls a day. Production keeps running and is stored up to one day's worth
-   (at least one whole pearl); only whole pearls are shown and collected.
-   State: S.farm[id] = { lv, t (last settled), acc (stored pearls), req (level whose requirement is paid), up: {to, start, ends} | null }
+   At level 7 they make 60 stamina, 500 EXP, 20,000 gold and 10 pearls a day. Production keeps running and is stored up to one
+   day's worth (at least one whole unit); only whole units are shown and collected.
+   State: S.farm[id] = { lv, t (last settled), acc (stored amount), req (level whose requirement is paid), up: {to, start, ends} | null }
    ========================================================= */
 const FARM_MAX = 7, FARM_CAP_H = 24, FARM_REQ_PEARLS = 5;
 const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1];   // share of a building's level-7 output at each level
-const fmtDay = n => String(Math.round(n * 10) / 10);   // pearls per day, at most one decimal (collecting is whole pearls only)
+const fmtDay = n => n >= 100 ? fmt(Math.round(n)) : String(Math.round(n * 10) / 10);   // per day, at most one decimal (collecting is whole units only)
+/* what each building produces */
+const FARM_RES = { pearls: { name: 'pearls', ic: 'pearls' }, coins: { name: 'gold', ic: 'coins' }, stamina: { name: 'stamina', ic: 'stamina' }, exp: { name: 'EXP', ic: 'exp' } };
+const farmRes = id => FARM_RES[farmDef(id).res];
+const farmIc = id => curIcon(farmRes(id).ic);
 const FARM_GOLD = [0, 0, 25000, 80000, 200000, 450000, 900000, 1800000];   // gold to reach each level (level 1 = the building's build cost)
 const FARM_TIME = [0, 5 * 60e3, 30 * 60e3, 2 * 36e5, 6 * 36e5, 12 * 36e5, 24 * 36e5, 48 * 36e5];   // time to reach each level: 5 min build … 48 h for level 7
 const FARM_SKIP_MIN = 10;   // finishing an upgrade right away costs 1 pearl per 10 minutes left (at least 1)
 const farmSkipCost = id => { const f = farmOf(id); return f.up ? Math.max(1, Math.ceil((f.up.ends - Date.now()) / (FARM_SKIP_MIN * 60e3))) : 0; };
 const FARM_DEFS = [
-  { id: 'crops', name: 'Crops', day: 2, build: 0, start: 1, desc: 'Fields of lantern rice and pearl melons.' },
-  { id: 'inn', name: 'Inn', day: 2, build: 10000, start: 0, desc: 'Travelers rest here and pay in pearls.' },
-  { id: 'market', name: 'Market', day: 3, build: 25000, start: 0, desc: 'Stalls that trade the town\'s goods.' },
-  { id: 'pub', name: "Girls' Pub", day: 3, build: 50000, start: 0, desc: 'Music, drinks and the liveliest crowd in town.' }
+  { id: 'crops', name: 'Crops', res: 'stamina', day: 60, build: 0, start: 1, desc: 'Fresh food from the fields keeps you going: makes stamina.' },
+  { id: 'inn', name: 'Inn', res: 'exp', day: 500, build: 10000, start: 0, desc: 'Travelers share their stories over dinner: makes EXP.' },
+  { id: 'market', name: 'Market', res: 'coins', day: 20000, build: 25000, start: 0, desc: 'Stalls that trade the town\'s goods: makes gold.' },
+  { id: 'pub', name: "Girls' Pub", res: 'pearls', day: 10, build: 50000, start: 0, desc: 'Music, drinks and the liveliest crowd in town: makes pearls.' }
 ];
 const farmDef = id => FARM_DEFS.find(d => d.id === id);
 function farmOf(id) {
@@ -26,10 +30,10 @@ function farmOf(id) {
   if (!S.farm[id]) S.farm[id] = { lv: farmDef(id).start, t: Date.now(), acc: 0, req: 0, up: null };
   return S.farm[id];
 }
-/* pearls per day: each building's level-7 output (`day`: 2 + 2 + 3 + 3 = 10 for the whole farm) × the level's share */
+/* amount per day: each building's level-7 output (`day`) × the level's share */
 const farmDaily = (id, lv = farmOf(id).lv) => farmDef(id).day * FARM_PCT[lv];
-const farmRate = (id, lv = farmOf(id).lv) => farmDaily(id, lv) / 24;   // pearls per hour (fractions build up in the background)
-const farmCap = (id, lv = farmOf(id).lv) => lv ? Math.max(1, farmDaily(id, lv) * FARM_CAP_H / 24) : 0;   // a day's worth, but always room for one whole pearl
+const farmRate = (id, lv = farmOf(id).lv) => farmDaily(id, lv) / 24;   // per hour (fractions build up in the background)
+const farmCap = (id, lv = farmOf(id).lv) => lv ? Math.max(1, farmDaily(id, lv) * FARM_CAP_H / 24) : 0;   // a day's worth, but always room for one whole unit
 const farmCapShown = id => Math.floor(farmCap(id) + 1e-9);
 const farmWhole = id => Math.floor(farmStored(id) + 1e-9);   // what the player sees and can collect
 const farmCost = (id, to) => to === 1 ? farmDef(id).build : FARM_GOLD[to];
@@ -47,9 +51,14 @@ function farmTick() {
 }
 const farmReady = () => FARM_DEFS.some(d => farmWhole(d.id) >= 1) || FARM_DEFS.some(d => { const f = farmOf(d.id); return f.up && f.up.ends <= Date.now(); });
 function farmCollect(id) {
-  farmSettle(id); const f = farmOf(id), n = Math.floor(f.acc);
+  farmSettle(id); const f = farmOf(id); let n = Math.floor(f.acc);
   if (n < 1) return 0;
-  f.acc -= n; S.wallet.pearls += n; gainExp(n * EXP.farm); return n;
+  const res = farmDef(id).res;
+  if (res === 'stamina') n = giveStamina(n);   // anything over the 999 cap stays in storage
+  f.acc -= n;
+  if (res === 'exp') gainExp(n);
+  else if (res !== 'stamina') S.wallet[res] = (S.wallet[res] || 0) + n;
+  return n;
 }
 function farmPayReq(id) {
   const f = farmOf(id), to = f.lv + 1;
@@ -93,30 +102,30 @@ function farmStatus(id) {
   const f = farmOf(id), st = farmWhole(id);
   if (f.up) return { cls: 'busy', html: `<span class="fm-time" id="fmt-${id}">Time left: ${fmtClock(f.up.ends - Date.now())}</span>` };
   if (!f.lv) return { cls: 'locked', html: '<span>Not built</span>' };
-  return { cls: '', html: `<span>Lv ${f.lv}${st >= 1 ? ` · <b id="fms-${id}">${st}</b> ${curIcon('pearls')}` : ''}</span>` };
+  return { cls: '', html: `<span>Lv ${f.lv}${st >= 1 ? ` · <b id="fms-${id}">${fmt(st)}</b> ${farmIc(id)}` : ''}</span>` };
 }
 const fmtClock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, '0')).join(':'); };
 const farmCanUp = id => { const f = farmOf(id), to = f.lv + 1; return !f.up && f.lv < FARM_MAX && (f.req >= to ? S.wallet.coins >= farmCost(id, to) : S.wallet.pearls >= FARM_REQ_PEARLS && S.wallet.coins >= farmCost(id, to)); };
 function renderFarm() {
   if (!fmEl) return;
-  const total = FARM_DEFS.reduce((t, d) => t + (farmOf(d.id).lv ? farmDaily(d.id) : 0), 0);
+  const totals = FARM_DEFS.filter(d => farmOf(d.id).lv).map(d => `${fmtDay(farmDaily(d.id))} ${farmIc(d.id)}`).join(' · ') || 'Nothing built yet';
   fmEl.innerHTML = `<div class="fm-stage">${farmBg()}
       ${FARM_DEFS.map(d => { const p = farmPos(d.id), stt = farmStatus(d.id), f = farmOf(d.id), st = farmWhole(d.id);
         return `<button class="fm-spot ${stt.cls} ${fmSel === d.id ? 'on' : ''}" data-fm="${d.id}" style="left:${p.x}%;top:${p.y}%;--fc:${FARM_COL[d.id]}">
-          ${st >= 1 && !f.up ? `<span class="fm-bubble">${curIcon('pearls')}</span>` : farmCanUp(d.id) ? `<span class="fm-arrow">${icon('up')}</span>` : ''}
+          ${st >= 1 && !f.up ? `<span class="fm-bubble">${farmIc(d.id)}</span>` : farmCanUp(d.id) ? `<span class="fm-arrow">${icon('up')}</span>` : ''}
           <span class="fm-label"><b>${esc(d.name)}</b>${stt.html}</span></button>`; }).join('')}
     </div>
-    <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Farm</h2><span class="fm-rate ts">${fmtDay(total)} ${curIcon('pearls')} / day</span></div>
-    <div class="fm-cur">${['coins', 'pearls'].map(k => `<div class="cur" title="${k === 'coins' ? 'Gold coins' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
-    <button class="btn gold fm-all" id="fmAll">${curIcon('pearls')}Collect all</button>
+    <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Farm</h2><span class="fm-rate ts">${totals} / day</span></div>
+    <div class="fm-cur"><div class="cur" title="Stamina">${curIcon('stamina')}<b>${stamina()}</b></div>${['coins', 'pearls'].map(k => `<div class="cur" title="${k === 'coins' ? 'Gold coins' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
+    <button class="btn gold fm-all" id="fmAll">${icon('gift')}Collect all</button>
     ${fmSel ? `<aside class="fm-panel glass-deep" id="fmPanel">${farmPanel(farmDef(fmSel))}</aside>` : ''}`;
   $('#fmBack').onclick = closeFarm;
-  $('#fmAll').onclick = () => { let n = 0; FARM_DEFS.forEach(d => n += farmCollect(d.id)); if (!n) { toast('Nothing to collect yet.'); return; } persist(); renderMenu(); renderFarm(); toast(`Collected ${n} pearl${n === 1 ? '' : 's'}.`); };
+  $('#fmAll').onclick = () => { const got = FARM_DEFS.map(d => [d.id, farmCollect(d.id)]).filter(([, n]) => n); if (!got.length) { toast('Nothing to collect yet.'); return; } persist(); renderMenu(); renderFarm(); toast(`Collected ${got.map(([id, n]) => `${fmt(n)} ${farmRes(id).name}`).join(', ')}.`); };
   fmEl.querySelectorAll('[data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.fm ? null : b.dataset.fm; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;
   pn.querySelector('[data-fmx]').onclick = () => { fmSel = null; renderFarm(); };
-  pn.querySelectorAll('[data-fcol]').forEach(b => b.onclick = () => { const n = farmCollect(b.dataset.fcol); if (!n) return; persist(); renderMenu(); renderFarm(); toast(`+${n} pearl${n === 1 ? '' : 's'} from the ${farmDef(b.dataset.fcol).name}.`); });
+  pn.querySelectorAll('[data-fcol]').forEach(b => b.onclick = () => { const n = farmCollect(b.dataset.fcol); if (!n) return; persist(); renderMenu(); renderFarm(); toast(`+${fmt(n)} ${farmRes(b.dataset.fcol).name} from the ${farmDef(b.dataset.fcol).name}.`); });
   pn.querySelectorAll('[data-freq]').forEach(b => b.onclick = () => farmPayReq(b.dataset.freq));
   pn.querySelectorAll('[data-fup]').forEach(b => b.onclick = () => farmUpgrade(b.dataset.fup));
   pn.querySelectorAll('[data-fskip]').forEach(b => b.onclick = () => farmSkip(b.dataset.fskip));
@@ -133,23 +142,23 @@ function farmPanel(d) {
   } else if (lv >= FARM_MAX) up = `<div class="farm-up max"><b>Max level</b><span class="tiny">This building is fully upgraded.</span></div>`;
   else {
     const cost = farmCost(d.id, to), met = f.req >= to;
-    up = `<div class="farm-up"><span class="lbl-sm">${lv ? `Next: level ${to}` : 'Build'} · ${fmtDay(farmDaily(d.id, to))} pearls/day</span>
+    up = `<div class="farm-up"><span class="lbl-sm">${lv ? `Next: level ${to}` : 'Build'} · ${fmtDay(farmDaily(d.id, to))} ${farmRes(d.id).name}/day</span>
       <div class="farm-req ${met ? 'met' : ''}">${met ? `${icon('check')}<span>Requirement met</span>` : `<span>Requirement: ${FARM_REQ_PEARLS} ${curIcon('pearls')}</span><button class="btn ghost sm" data-freq="${d.id}">Unlock</button>`}</div>
       <button class="btn ${met ? 'mint' : 'ghost'}" data-fup="${d.id}" ${met ? '' : 'disabled'}>${icon(lv ? 'up' : 'plus')}${lv ? 'Upgrade' : 'Build'} · ${cost ? `<span class="cost">${curIcon('coins')}${fmt(cost)}</span>` : 'free'} · ${fmtDur2(FARM_TIME[to])}</button></div>`;
   }
   return `<div class="fm-ph" style="--fc:${FARM_COL[d.id]}"><div><b>${esc(d.name)}</b><span class="farm-lv">${lv ? `Level ${lv} / ${FARM_MAX}` : 'Not built yet'}<span class="farm-pips">${pips}</span></span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
     <p class="tiny">${esc(d.desc)}</p>
-    ${lv ? `<div class="farm-store" style="--fc:${FARM_COL[d.id]}"><div class="row" style="justify-content:space-between"><span class="tiny">${fmtDay(farmDaily(d.id))} pearls/day · holds ${farmCapShown(d.id)}</span><span class="tiny" id="fst-${d.id}">${stored} / ${farmCapShown(d.id)}</span></div>
+    ${lv ? `<div class="farm-store" style="--fc:${FARM_COL[d.id]}"><div class="row" style="justify-content:space-between"><span class="tiny">${fmtDay(farmDaily(d.id))} ${farmRes(d.id).name}/day · holds ${fmt(farmCapShown(d.id))}</span><span class="tiny" id="fst-${d.id}">${fmt(stored)} / ${fmt(farmCapShown(d.id))}</span></div>
       <span class="bar"><i id="fsb-${d.id}" style="width:${cap ? frac / cap * 100 : 0}%"></i></span>
-      <button class="btn gold sm" data-fcol="${d.id}" ${stored >= 1 ? '' : 'disabled'}>${curIcon('pearls')}Collect ${stored}</button></div>` : ''}
+      <button class="btn gold sm" data-fcol="${d.id}" ${stored >= 1 ? '' : 'disabled'}>${farmIc(d.id)}Collect ${fmt(stored)}</button></div>` : ''}
     <div style="--fc:${FARM_COL[d.id]}">${up}</div>`;
 }
 /* once a second: timers, storage and skip prices, without rebuilding the screen */
 function updateFarmLive() {
   for (const d of FARM_DEFS) {
     const f = farmOf(d.id), st = $('#fst-' + d.id), sb = $('#fsb-' + d.id), c = document.querySelector(`[data-fcol="${d.id}"]`), s = farmWhole(d.id);
-    if (st) { const cap = farmCap(d.id); st.textContent = `${s} / ${farmCapShown(d.id)}`; sb.style.width = `${farmStored(d.id) / cap * 100}%`; if (c) { c.disabled = s < 1; c.lastChild.textContent = `Collect ${s}`; } }
-    const ms = $('#fms-' + d.id); if (ms) ms.textContent = s;
+    if (st) { const cap = farmCap(d.id); st.textContent = `${fmt(s)} / ${fmt(farmCapShown(d.id))}`; sb.style.width = `${farmStored(d.id) / cap * 100}%`; if (c) { c.disabled = s < 1; c.lastChild.textContent = `Collect ${fmt(s)}`; } }
+    const ms = $('#fms-' + d.id); if (ms) ms.textContent = fmt(s);
     if (f.up) {
       const t = $('#fupt-' + d.id), b = $('#fupb-' + d.id), lt = $('#fmt-' + d.id), sk = $('#fsk-' + d.id);
       if (t) t.textContent = `${fmtDur2(f.up.ends - Date.now())} left`; if (b) b.style.width = `${(Date.now() - f.up.start) / (f.up.ends - f.up.start) * 100}%`;

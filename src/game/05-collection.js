@@ -48,5 +48,5 @@ function renderDetail(id, backTo) {
   $('#dBack').onclick = () => renderCollection(backTo || 'character');
   const db = $('#dBuy'); if (db) db.onclick = () => buySkin(e.id);
   const wl = $('#dWall');
-  if (wl) wl.onclick = () => { S.wallpaper = e.id; persist(); applyWallpaper(); toast(`${e.name} is now your wallpaper.`); };
+  if (wl) wl.onclick = () => { S.wallpaper = wpIdFor(e, e.type === 'character' ? artKey(e) : 'base'); persist(); applyWallpaper(); toast(`${wpName(wpParse(S.wallpaper))} is now your wallpaper.`); };
 }

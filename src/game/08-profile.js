@@ -5,7 +5,9 @@ const UNLOCK = {
   login: [() => S.login.streak >= 1, 'Claim a daily login reward'],
   chars3: [() => ownedChars().length >= 3, 'Own 3 characters'],
   ur: [() => ownedChars().some(e => e.rarity === 5), 'Own a UR character'],
-  max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`]
+  max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`],
+  mbtitle: [() => (S.unlocks || []).includes('mb-title'), 'Win it from the Mystery Box'],
+  mbcard: [() => (S.unlocks || []).includes('mb-card'), 'Win it from the Mystery Box']
 };
 const unlocked = o => UNLOCK[o.need][0]();
 const TITLES = [
@@ -14,7 +16,8 @@ const TITLES = [
   { id: 'lantern', name: 'Lantern Keeper', cls: 't-ember', need: 'login' },
   { id: 'collector', name: 'Star Collector', cls: 't-violet', need: 'chars3' },
   { id: 'lucky', name: 'Lucky Star', cls: 't-gold', need: 'ur' },
-  { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' }
+  { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' },
+  { id: 'boxbreaker', name: 'Box Breaker', cls: 't-mbox', need: 'mbtitle' }
 ];
 const FRAMES = [
   { id: 'simple', name: 'Silver Ring', need: 'always' },
@@ -26,20 +29,22 @@ const CARDS = [
   { id: 'starlit', name: 'Starlit Sky', need: 'always' },
   { id: 'lantern', name: 'Lantern Night', need: 'login' },
   { id: 'maple', name: 'Maple Autumn', need: 'chars3' },
-  { id: 'aurora', name: 'Prism Aurora', need: 'ur', premium: true }
+  { id: 'aurora', name: 'Prism Aurora', need: 'ur', premium: true },
+  { id: 'mystery', name: 'Mystery Night', need: 'mbcard' }
 ];
 const titleOf = () => TITLES.find(t => t.id === S.profile.title && unlocked(t)) || TITLES[0];
 const frameOf = () => FRAMES.find(f => f.id === S.profile.frame && unlocked(f)) || FRAMES[0];
-const avatarEntry = () => { const e = S.profile.avatar && findEntry(S.profile.avatar); return e && owns(e.id) ? e : null; };
+/* S.profile.avatar = a wallpaper-style art id: '<id>' (base art / icon) or '<charId>@art3' / '@art6' */
+const avatarEntry = () => wpOk(S.profile.avatar) ? wpParse(S.profile.avatar) : null;
 const titleHTML = (t = titleOf()) => `<span class="ttl ${t.cls}">${esc(t.name)}</span>`;
 /* avatar picture inside a frame; size in px */
 function avatarHTML(size, entry = avatarEntry(), frame = frameOf().id) {
-  const img = entry ? thumbImg(entry) : `<img src="${portrait(S.player.look, 4)}" alt="" class="chibi">`;
+  const img = entry ? wpThumb(entry.e ? entry : wpParse(entry.id)) : `<img src="${portrait(S.player.look, 4)}" alt="" class="chibi">`;
   return `<span class="avf f-${frame}" style="--s:${size}px"><span class="avi">${img}</span></span>`;
 }
 /* namecard background: a design, or the art of an owned character ("char:<id>") */
 function cardBG(id) {
-  if (id && id.startsWith('char:')) { const e = findEntry(id.slice(5)); if (e && owns(e.id)) return { cls: 'nc-char', img: getSplash(e), art: !!mediaArt(e) }; }
+  if (id && id.startsWith('char:') && wpOk(id.slice(5))) { const w = wpParse(id.slice(5)); return { cls: 'nc-char', img: wpSrc(w), art: wpHasArt(w) }; }
   const c = CARDS.find(k => k.id === id && unlocked(k)) || CARDS[0];
   return { cls: 'nc-' + c.id };
 }
@@ -65,19 +70,19 @@ function renderProfile() {
       ${chars.map(e => opt(P.showcase[pfSlot] === e.id, false, `<span class="pf-thumb r${e.rarity}">${thumbImg(e)}</span>`, `data-show="${esc(e.id)}"`, esc(e.name))).join('')}</div>
       ${chars.length ? '' : '<div class="empty">You don\'t own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>'}`;
   } else if (pfTab === 'avatar') {
-    const list = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && owns(e.id));
-    opts = `<p class="tiny">Use the art of any character or skin you own as your avatar.</p><div class="pf-grid">
-      ${opt(!avatarEntry(), false, avatarHTML(64, null), 'data-av=""', 'My character')}
-      ${list.map(e => opt(avatarEntry() === e, false, avatarHTML(64, e), `data-av="${esc(e.id)}"`, esc(e.name))).join('')}</div>`;
+    const list = artChoices().filter(o => o.open), cur = avatarEntry();
+    opts = `<p class="tiny">Use any art you own as your avatar: each character's base art and its 3★ / 6★ splash arts once unlocked, and every skin.</p><div class="pf-grid">
+      ${opt(!cur, false, avatarHTML(64, null), 'data-av=""', 'My character')}
+      ${list.map(o => opt(!!cur && cur.id === o.id, false, avatarHTML(64, wpParse(o.id)), `data-av="${esc(o.id)}"`, esc(wpName(wpParse(o.id))))).join('')}</div>`;
   } else if (pfTab === 'frame') {
     opts = `<div class="pf-grid">${FRAMES.map(f => opt(frameOf() === f, !unlocked(f), avatarHTML(64, avatarEntry(), f.id) + lockTag(f), `data-fr="${f.id}"`, `${esc(f.name)}${f.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}</div>`;
   } else if (pfTab === 'title') {
     opts = `<div class="pf-grid wide">${TITLES.map(t => opt(titleOf() === t, !unlocked(t), `<span class="pf-tt">${titleHTML(t)}</span>${lockTag(t)}`, `data-tt="${t.id}"`, '')).join('')}</div>`;
   } else {
     const cur = cardBG(P.card);
-    opts = `<p class="tiny">Namecard designs, or the art of a character you own.</p><div class="pf-grid wide">
+    opts = `<p class="tiny">Namecard designs, or any art you own (base, 3★ and 6★ splash arts, skins).</p><div class="pf-grid wide">
       ${CARDS.map(k => opt(cur.cls === 'nc-' + k.id, !unlocked(k), `<span class="pf-nc">${cardLayer({ cls: 'nc-' + k.id })}</span>${lockTag(k)}`, `data-nc="${k.id}"`, `${esc(k.name)}${k.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}
-      ${chars.map(e => opt(P.card === 'char:' + e.id && cur.cls === 'nc-char', false, `<span class="pf-nc">${cardLayer(cardBG('char:' + e.id))}</span>`, `data-nc="char:${esc(e.id)}"`, esc(e.name))).join('')}</div>`;
+      ${artChoices().filter(o => o.open).map(o => opt(P.card === 'char:' + o.id && cur.cls === 'nc-char', false, `<span class="pf-nc">${cardLayer(cardBG('char:' + o.id))}</span>`, `data-nc="char:${esc(o.id)}"`, esc(wpName(wpParse(o.id))))).join('')}</div>`;
   }
   const view = pfMode === 'view';
   const mt = modalEl && modalEl.querySelector('#mTitle'); if (mt) mt.textContent = view ? 'Profile' : 'Profile settings';
