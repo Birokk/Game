@@ -98,7 +98,8 @@ const BADGES = [
   { id: 'bond5', name: 'Close Bond', desc: 'Reach bond level 5', metal: 'rose', gem: '#ff3d6a', emblem: 'heart', ok: e => bondLv(e.id) >= 5 },
   { id: 'bond10', name: 'Soulbound', desc: `Reach bond level ${BOND_MAX}`, metal: 'gold', gem: '#ff5f9a', emblem: 'heart', wings: true, glow: 'gold', ok: e => bondLv(e.id) >= BOND_MAX },
   { id: 'married', name: 'Eternal Vow', desc: `Marry this character (bond level ${BOND_MAX} and 1 ring)`, metal: 'prism', gem: '#2a1650', emblem: 'ring', wings: true, glow: 'prism', ok: e => !!bondOf(e.id).married },
-  { id: 'sss', name: 'SSS Awakened', desc: 'Awaken a star with SSS awakening (CS grade SSS + Breakthrough)', metal: 'sss', gem: '#5a0010', emblem: 'star', wings: true, glow: 'sss', ok: e => sssPaid(e.id).length > 0 }
+  { id: 'sig', name: 'Signature Style', desc: 'Wear the character\'s full signature clothing set (UR characters)', metal: 'gold', gem: '#3ee6d0', emblem: 'hanger', wings: true, glow: 'gold', ok: e => sigWorn(e) },
+  { id: 'sss', name: 'SSS Awakened', desc: 'SSS awaken this character and keep it at CS grade SSS', metal: 'sss', gem: '#5a0010', emblem: 'star', wings: true, glow: 'sss', ok: e => e.type === 'character' && sssAwakened(e.id) && isSSS(e) }
 ];
 const METALS = {
   bronze: ['#ffe0bf', '#c9864a', '#6a3510'],
@@ -114,6 +115,8 @@ function badgeSVG(b) {
   const wing = `<path d="M17 25C11 22 5 17 2 9C6 12 9 13 12 13C8 10 6 7 6 2C10 7 14 10 18 13C16 9 16 6 17 3C19 9 21 14 22 20Z" fill="url(#bm${n})" stroke="${ink}" stroke-width="1.1" stroke-linejoin="round"/><path d="M8 11L15 17M10 6L17 14" stroke="rgba(255,255,255,.55)" stroke-width=".8" fill="none"/>`;
   const emblem = b.emblem === 'star'
     ? '<path d="M28 20.5l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#fffbe8" stroke="#1e1426" stroke-width=".9" stroke-linejoin="round"/>'
+    : b.emblem === 'hanger'
+      ? '<path d="M28 21.5a2.3 2.3 0 1 1 2.2 2.9c-1 .3-1.6.9-1.6 1.8v.6M28.6 26.8L20 32.5c-.9.6-.5 1.7.6 1.7h14.8c1.1 0 1.5-1.1.6-1.7z" fill="#fffbe8" stroke="#1e1426" stroke-width=".9" stroke-linejoin="round"/>'
     : b.emblem === 'heart'
       ? '<path d="M28 35C21.5 30.5 20 27 22 24.3C23.8 22 26.6 22.5 28 24.6C29.4 22.5 32.2 22 34 24.3C36 27 34.5 30.5 28 35Z" fill="#fff0f5" stroke="#1e1426" stroke-width=".9"/>'
       : '<circle cx="28" cy="30" r="5.2" fill="none" stroke="#ffe08a" stroke-width="2.4"/><path d="M28 19.5l3.2 3-3.2 3-3.2-3z" fill="#e6f8ff" stroke="#1e1426" stroke-width=".8"/>';

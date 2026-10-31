@@ -139,9 +139,9 @@ function renderCharacters() {
         return `<button class="bt-star ${on ? 'on' : ''} ${owned ? '' : 'locked'}" data-bt-star="${i}" ${owned ? '' : 'disabled'} data-tip="${esc(`<b>Star ${i + 1}</b><span>${!owned ? `Reach ${i + 1} star${i ? 's' : ''} first.` : paid ? (on ? 'Awakened. Tap to switch off.' : 'Tap to switch on.') : `Requirement: coming soon. Awaken now for ${BT_PEARLS} pearls.`}</span>`)}"><span class="bs">★</span><span class="bl">${!owned ? icon('lock') : paid ? (on ? 'On' : 'Off') : costHTML(BT_PEARLS)}</span></button>`; }).join('')}</div>
       <div class="cs-pill">${done.length} of ${st} owned stars awakened</div>
       <div class="cs-card sss-box ${isSSS(c) ? 'on' : ''}"><div class="row" style="justify-content:space-between;align-items:center"><b class="sss-h">SSS awakening</b>${isSSS(c) ? gradeTag('SSS') : ''}</div>
-        <p class="tiny">${isSSS(c) ? `Turn awakened stars into glowing SSS stars: ${SSS_PEARLS} pearls + ${fmt(SSS_GOLD)} gold each, +${fmt(SSS_CS)} CS per star (not counted toward the grade). They only glow while this character is grade SSS.` : `Reach CS grade SSS to unlock SSS awakening. SSS stars you already have return when the grade is back to SSS.`}</p>
-        <div class="sss-stars">${Array.from({ length: MAX_STARS }, (_, i) => { const on = done.includes(i), paid = sssPaid(c.id).includes(i), live = paid && isSSS(c) && on;
-          return `<button class="sss-star ${live ? 'live' : ''} ${paid ? 'paid' : ''}" data-sss="${i}" ${!isSSS(c) || !on || paid ? 'disabled' : ''} data-tip="${esc(`<b>Star ${i + 1}</b><span>${paid ? (live ? 'SSS star' : on ? 'Glows again at grade SSS' : 'Switch the Breakthrough star on') : !on ? 'Awaken it with Breakthrough first' : !isSSS(c) ? 'Needs grade SSS' : `${SSS_PEARLS} pearls + ${fmt(SSS_GOLD)} gold`}</span>`)}">★</button>`; }).join('')}</div></div>`;
+        <p class="tiny">${sssAwakened(c.id) ? (isSSS(c) ? `Awakened: every switched-on Breakthrough star is an SSS star (+${fmt(SSS_CS)} CS each, not counted toward the grade).` : 'Awakened, but sleeping: the SSS stars come back when this character is grade SSS again.') : isSSS(c) ? `Awaken this character for ${SSS_PEARLS} pearls + ${fmt(SSS_GOLD)} gold: every switched-on Breakthrough star becomes a glowing SSS star (+${fmt(SSS_CS)} CS each, not counted toward the grade) while it stays grade SSS.` : 'Reach CS grade SSS to unlock SSS awakening.'}</p>
+        <div class="row" style="justify-content:space-between;align-items:center"><span class="stars6 r${c.rarity}" style="font-size:22px">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${done.includes(i) ? 'on bt' : ''} ${sssActive(c).includes(i) ? 'sss' : ''}">★</span>`).join('')}</span>
+          ${sssAwakened(c.id) ? `<span class="chip ${isSSS(c) ? 'gold' : ''}">${isSSS(c) ? 'SSS awakened' : 'Sleeping'}</span>` : `<button class="btn gold sm" id="sssGo" ${isSSS(c) && done.length ? '' : 'disabled'}>Awaken · ${curIcon('pearls')}${SSS_PEARLS} + ${curIcon('coins')}${fmt(SSS_GOLD)}</button>`}</div></div>`;
   } else if (csTab === 'bond') {
     const bd = bondOf(c.id), lv = bondLv(c.id), full = lv >= BOND_MAX, lo = BOND_XP[lv], hi = BOND_XP[Math.min(BOND_MAX, lv + 1)];
     const wed = c.weddingSkin && findEntry(c.weddingSkin);
@@ -226,7 +226,7 @@ function renderCharacters() {
   const gb = $('#csGiftBuy'); if (gb) gb.onclick = () => openBuyGifts(Object.keys(GIFTS).find(k => !S.gifts[k]) || 'sweets', 'coins');
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
   csEl.querySelectorAll('[data-bt-star]').forEach(b => b.onclick = () => toggleStar(c.id, +b.dataset.btStar));
-  csEl.querySelectorAll('[data-sss]').forEach(b => b.onclick = () => sssAwaken(c, +b.dataset.sss));
+  const sg = $('#sssGo'); if (sg) sg.onclick = () => sssAwaken(c);
   const bs = $('#csBuySkin'); if (bs) bs.onclick = () => buySkin(shown.id);
   csEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { S.artPick[c.id] = b.dataset.art; persist(); applyWallpaper(); renderMenu(); renderCharacters(); toast(`Now showing ${c.name}'s ${ASC.find(a => a.k === b.dataset.art).label.toLowerCase()} splash art.`); });
   const br = $('#csRing'); if (br) br.onclick = buyRing;

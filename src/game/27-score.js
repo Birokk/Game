@@ -40,32 +40,36 @@ function csBaseParts(c) {
   if (mems.length) out.push({ label: `Memory: ${mems[0].name}`, pts: mems.reduce((t, x) => t + csP('mem', +x.rarity), 0) });
   const bl = bondLv(c.id);
   if (bl) out.push({ label: `Bond level ${bl}`, pts: bl * csP('bond', r) });
+  if (sigWorn(c)) out.push({ label: 'Signature set', pts: SIG_CS });
   return out;
 }
-/* SSS awakening: while the grade is SSS, each SSS-awakened star (it must also be a switched-on Breakthrough star) glows red
-   and adds 1,000 CS on top; that extra never counts toward the grade. Costs 100 pearls + 100,000 gold per star, paid once. */
+/* SSS awakening (once per character, 100 pearls + 100,000 gold): while the grade is SSS every switched-on Breakthrough star glows red
+   and adds 1,000 CS on top; that extra never counts toward the grade. */
 const SSS_PEARLS = 100, SSS_GOLD = 100000, SSS_CS = 1000;
 const gradeScore = c => csBaseParts(c).reduce((t, x) => t + x.pts, 0);
 const isSSS = c => !!c && owns(c.id) && csGrade(gradeScore(c)) === 'SSS';
-const sssPaid = id => (S.sss || {})[id] || [];
-const sssActive = c => isSSS(c) ? sssPaid(c.id).filter(i => btOf(c.id).includes(i)) : [];
+const sssAwakened = id => { const v = (S.sss || {})[id]; return Array.isArray(v) ? v.length > 0 : !!v; };   // older saves kept a list of stars
+const sssActive = c => isSSS(c) && sssAwakened(c.id) ? btOf(c.id) : [];
+const sigWorn = c => { if (!c || +c.rarity !== 5 || !c.sigSet) return false; const w = Object.values(wearOf(c.id)).map(clothOf).filter(Boolean); return w.length === WARD_SLOTS.length && w.every(x => x.set === c.sigSet); };
+const SIG_CS = 1000;
 function csParts(c) {
   const out = csBaseParts(c); const n = out.length ? sssActive(c).length : 0;
   if (n) out.push({ label: `SSS stars (${n})`, pts: n * SSS_CS, extra: true });
   return out;
 }
-function sssAwaken(c, i) {
+/* SSS awakening: one payment for the character; every switched-on Breakthrough star becomes an SSS star while it is grade SSS */
+function sssAwaken(c) {
   if (!isSSS(c)) { toast('Reach CS grade SSS first.'); return; }
-  if (!btOf(c.id).includes(i)) { toast('Awaken and switch on this star with Breakthrough first.'); return; }
-  if (sssPaid(c.id).includes(i)) return;
+  if (sssAwakened(c.id)) return;
+  if (!btOf(c.id).length) { toast('Awaken at least one star with Breakthrough first.'); return; }
   if (S.wallet.pearls < SSS_PEARLS || S.wallet.coins < SSS_GOLD) { toast(`SSS awakening costs ${SSS_PEARLS} pearls and ${fmt(SSS_GOLD)} gold.`); return; }
   openModal({ title: 'SSS awakening', ic: 'sparkle', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
     <span class="stars6 big-sss"><span class="on bt sss">★</span></span>
-    <p class="desc">Turn star ${i + 1} of ${esc(c.name)} into an SSS star for <b>${SSS_PEARLS} pearls</b> and <b>${fmt(SSS_GOLD)} gold</b>? It glows red while ${esc(c.name)} stays grade SSS and adds ${fmt(SSS_CS)} CS (not counted toward the grade).</p>
+    <p class="desc">Awaken ${esc(c.name)} for <b>${SSS_PEARLS} pearls</b> and <b>${fmt(SSS_GOLD)} gold</b>? Every switched-on Breakthrough star becomes a glowing SSS star (+${fmt(SSS_CS)} CS each, not counted toward the grade) while ${esc(c.name)} stays grade SSS.</p>
     <div class="row" style="justify-content:center"><button class="btn ghost" id="sssNo">Cancel</button><button class="btn gold" id="sssYes">Awaken</button></div></div>`,
     onMount: () => { $('#sssNo').onclick = closeModal; $('#sssYes').onclick = () => {
-      closeModal(); S.wallet.pearls -= SSS_PEARLS; S.wallet.coins -= SSS_GOLD; S.sss = S.sss || {}; S.sss[c.id] = [...sssPaid(c.id), i];
-      persist(); renderMenu(); refreshCharacters(); toast(`Star ${i + 1} is now an SSS star!`); }; } });
+      closeModal(); S.wallet.pearls -= SSS_PEARLS; S.wallet.coins -= SSS_GOLD; S.sss = S.sss || {}; S.sss[c.id] = true;
+      persist(); renderMenu(); refreshCharacters(); toast(`${c.name} is SSS awakened!`); }; } });
 }
 const charScore = c => csParts(c).reduce((t, x) => t + x.pts, 0);
 const csGrade = n => { let g = CS_GRADES[0][0]; for (const [k, min] of CS_GRADES) if (n >= min) g = k; return g; };
@@ -102,7 +106,7 @@ function openCSInfo() {
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
       ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td></tr>
-      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
+      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
     </tbody></table>
     <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E). SSS takes a fully built UR: 6★ with every star awakened, a full UR set, a UR pet, a UR memory, max bond and several skins. From grade S a <b>+</b> appears after the character's stars, gold for S, prism for SS and red for SSS.</p>
   </div>` });

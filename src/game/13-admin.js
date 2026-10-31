@@ -96,6 +96,7 @@ function renderPoolTab() {
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
+          <label class="field" id="adSigWrap"><span>Signature clothing set (UR characters)</span><select class="input" id="adSig"></select><small class="tiny">Wearing all 6 pieces of it gives +1,000 CS and the Signature Style badge.</small></label>
           <label class="switch" id="adFeatWrap">Featured UR on the limited banner<input type="checkbox" id="adFeat"><i></i></label>
           <div class="row"><button class="btn mint" type="submit" id="adSave">${icon('plus')}Add to pool</button></div>
         </div>
@@ -147,6 +148,9 @@ function fillAdminForm(entry) {
   const r = entry ? entry.rarity : 4;
   document.querySelectorAll('input[name=adR]').forEach(i => i.checked = +i.value === r);
   $('#adFeat').checked = entry ? S.featuredId === entry.id : false;
+  const sets = {}; (S.clothes || []).forEach(x => { if (x.set && !sets[x.set]) sets[x.set] = x; });
+  $('#adSig').innerHTML = '<option value="">None</option>' + Object.values(sets).sort((a, b) => b.rarity - a.rarity).map(x => `<option value="${esc(x.set)}">${esc(clothSetName(x))} (${CRN[x.rarity] || ''})</option>`).join('');
+  $('#adSig').value = entry && entry.sigSet && sets[entry.sigSet] ? entry.sigSet : '';
   $('#adPull').checked = entry ? entry.pullable !== false : true;
   $('#adStd').checked = entry ? !!entry.standard : false;
   $('#adTitle').textContent = entry ? `Editing ${entry.name}` : 'Add to the game pool';
@@ -206,6 +210,7 @@ function adminPreview() {
   $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
   const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
+  $('#adSigWrap').hidden = r !== 5 || $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
@@ -216,7 +221,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;
