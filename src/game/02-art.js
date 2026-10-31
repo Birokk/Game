@@ -180,3 +180,7 @@ const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
 const baseArt = e => e ? artFrom(e.art) : null;
 const baseSplash = e => baseArt(e) || chibiSplash(e.look || S.player.look);
 const baseCard = e => baseArt(e) || portrait(e.look || S.player.look, e.rarity);
+
+/* how a character's art sits in the Collection / profile showcase cards (admin → Game pool → Card framing): entry.cardPos = { x, y, z } */
+const cardPos = e => ({ x: 50, y: 30, z: 1, ...((e && e.cardPos) || {}) });
+const cardImgStyle = e => { const p = cardPos(e); return `object-position:${p.x}% ${p.y}%;transform:scale(${p.z});transform-origin:${p.x}% ${p.y}%`; };

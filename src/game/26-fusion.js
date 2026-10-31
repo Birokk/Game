@@ -176,9 +176,13 @@ function autoEquip(c) {
   const pool = S.clothes.filter(avail);
   if (!pool.length) { toast('No clothes available to wear.'); return; }
   const setCount = {}; pool.forEach(x => { if (x.set) { const s = setCount[x.set] = setCount[x.set] || new Set(); s.add(x.slot); } });
+  // the main set: highest rarity, then most available pieces, then most stars; its pieces win over loose pieces of the same rarity, even 3★ ones
+  const sets = Object.keys(setCount).map(id => { const ps = pool.filter(x => x.set === id); return { id, r: Math.max(...ps.map(x => +x.rarity)), n: setCount[id].size, st: ps.reduce((t, x) => t + bestSpareStar(x.id, c.id), 0) }; })
+    .sort((a, b) => b.r - a.r || b.n - a.n || b.st - a.st);
+  const main = sets[0] && sets[0].id;
   const W = {}, St = {};
   WARD_SLOTS.forEach(([slot]) => {
-    const best = pool.filter(x => x.slot === slot).sort((a, b) => b.rarity - a.rarity || ((setCount[b.set] || { size: 0 }).size - (setCount[a.set] || { size: 0 }).size) || bestSpareStar(b.id, c.id) - bestSpareStar(a.id, c.id) || a.name.localeCompare(b.name))[0];
+    const best = pool.filter(x => x.slot === slot).sort((a, b) => b.rarity - a.rarity || ((b.set === main) - (a.set === main)) || ((setCount[b.set] || { size: 0 }).size - (setCount[a.set] || { size: 0 }).size) || bestSpareStar(b.id, c.id) - bestSpareStar(a.id, c.id) || a.name.localeCompare(b.name))[0];
     if (best) { W[slot] = best.id; St[slot] = hasClothStars(best) ? (bestSpareStar(best.id, c.id) || 1) : 1; }
   });
   S.wear[c.id] = W; S.wearSt = S.wearSt || {}; S.wearSt[c.id] = St;

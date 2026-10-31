@@ -2497,3 +2497,11 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .evp-time .info-btn{margin-left:4px}
 .info-body .cs-table td{font-family:var(--display)}
 .info-body .scr-trio .scr-ic{width:24px;height:24px}
+/* Collection character cards: same size and shape as the profile showcase cards */
+.cards.col-chars{grid-template-columns:repeat(auto-fill,196px);justify-content:start}
+.cards.col-chars .skc.col{aspect-ratio:3/4;border-radius:18px}
+.cards.col-chars .skc.col img,.pf-slot img{will-change:transform}
+/* admin card framing preview (3:4 like the cards) */
+.ad-card{position:relative;flex:none;width:120px;aspect-ratio:3/4;border-radius:14px;overflow:hidden;border:2px solid var(--edge-soft);background:var(--ink-2)}
+.ad-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ad-card-sl label{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:8px;font-size:12px}

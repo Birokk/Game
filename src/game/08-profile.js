@@ -102,7 +102,7 @@ function renderProfile() {
     </div>
     <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="row" style="gap:8px;align-items:center"><span class="tiny">Show off up to 4 characters you own · grades</span>${csInfoBtn()}</span></div>
       <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id);
-        return `<button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt=""><span class="pf-bdg">${badgeRow(e, 22, true)}</span><span class="pf-cs">${csTag(e, 'sm')}</span><span class="pf-sl">${rtag(e.rarity)}<b>${esc(e.name)}</b>${starsFor(e)}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>`; }).join('')}</div></div>
+        return `<button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}><span class="pf-bdg">${badgeRow(e, 22, true)}</span><span class="pf-cs">${csTag(e, 'sm')}</span><span class="pf-sl">${rtag(e.rarity)}<b>${esc(e.name)}</b>${starsFor(e)}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>`; }).join('')}</div></div>
     ${view ? '' : `<div class="tabs" style="margin:0">${[['avatar', 'Avatar'], ['frame', 'Avatar frame'], ['title', 'Title'], ['card', 'Namecard']].map(([k, l]) => `<button class="tab ${pfSlot < 0 && pfTab === k ? 'on' : ''}" data-pft="${k}">${l}</button>`).join('')}</div>
     ${opts}`}
   </div>`;
