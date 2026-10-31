@@ -128,7 +128,7 @@ function bindPetTab(c) {
 /* ---------- clothing stars (UR pieces only): 1★ base, two 1★ → one 2★, two 2★ → one 3★ ----------
    S.owned[id] stays the total number of copies; S.cstars[id] = { 2: n, 3: n } counts the starred ones (the rest are 1★).
    The star of each worn copy is kept in S.wearSt[charId][slot]; wearing a piece takes its best spare copy. */
-const CLOTH_MAXST = 3, RAID_STAR2 = .005;   // raids: 0.5% of drops are a 2★ UR piece
+const CLOTH_MAXST = 3, RAID_STAR2 = .015;   // raids: 1.5% of drops are a 2★ UR piece
 const hasClothStars = x => !!x && +x.rarity === 5;
 function cstarCounts(id) {
   const c = (S.cstars || {})[id] || {}, tot = S.owned[id] || 0;
@@ -158,7 +158,7 @@ const clothStarRow = (n, cls = '') => n ? `<span class="cl-stars ${cls}">${Array
 function renderStarUp(root, tabs) {
   const list = S.clothes.filter(x => hasClothStars(x) && owns(x.id)).sort((a, b) => bestOwnedStar(b.id) - bestOwnedStar(a.id) || a.name.localeCompare(b.name));
   root.innerHTML = `<div class="fu">${tabs}
-    <p class="tiny">UR clothes have up to ${CLOTH_MAXST} stars. 1★ is the base: merge two spare 1★ copies into a 2★, and two spare 2★ copies into a 3★. Worn copies are never used.</p>
+    <p class="tiny">UR clothes have up to ${CLOTH_MAXST} stars. 1★ is the base: merge two spare 1★ copies of the <b>same piece</b> (e.g. two Starlit Regalia Crowns) into a 2★, and two spare 2★ copies of it into a 3★. Different pieces never mix, and worn copies are never used.</p>
     ${list.length ? `<div class="fu-stars">${list.map(x => { const c = cstarCounts(x.id), s1 = spareAt(x.id, 1), s2 = spareAt(x.id, 2);
       return `<div class="fu-srow r5"><span class="fu-sic"><img src="${clothImg(x)}" alt=""></span><div class="fu-sinfo"><b>${esc(x.name)}</b><span class="tiny">${[1, 2, 3].map(k => `${k}★ ×${c[k]}`).join(' · ')}</span></div>
         <button class="btn ghost sm" data-mst="${esc(x.id)}" data-k="1" ${s1 >= 2 ? '' : 'disabled'}>2× ${clothStarRow(1, 'sm')} → ${clothStarRow(2, 'sm')}</button>

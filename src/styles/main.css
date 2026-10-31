@@ -2461,7 +2461,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 @keyframes sssGlow{from{box-shadow:0 0 10px rgba(255,40,70,.75),0 0 18px rgba(255,120,60,.35),inset 0 0 6px rgba(255,220,180,.4)}to{box-shadow:0 0 18px rgba(255,40,70,1),0 0 34px rgba(255,90,60,.7),0 0 50px rgba(255,40,140,.4),inset 0 0 10px rgba(255,230,200,.6)}}
 /* the + after the stars (CS grade S / SS / SSS) */
 .stars6{align-items:center}
-.cs-plus{display:inline-flex;align-items:center;justify-content:center;align-self:center;margin-left:3px;font-family:var(--body);font-weight:900;font-size:1.12em;line-height:1;height:1em;transform:translateY(-.08em)}
+.cs-plus{display:inline-flex;align-items:center;justify-content:center;align-self:center;margin-left:3px;font-family:var(--body);font-weight:900;font-size:1.12em;line-height:1;height:1em;transform:translateY(0)}
 .cs-plus.g-s{color:#ffd76b;text-shadow:0 0 6px rgba(255,205,90,.9)}
 .cs-plus.g-ss{background:linear-gradient(110deg,#a855f7,#ff6ec7,#3ee6d0,#a855f7);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradeWave 4s ease-in-out infinite;filter:drop-shadow(0 0 4px rgba(168,85,247,.8))}
 .cs-plus.g-sss{background:linear-gradient(115deg,#ff2a3d,#ff7a3d,#ff2a6e,#ff2a3d);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradeWave 3s ease-in-out infinite;filter:drop-shadow(0 0 4px #ff2a45) drop-shadow(0 0 8px rgba(255,90,60,.8))}

@@ -3,7 +3,7 @@
    UR 4%, SSR 10%, R the rest. The sets are ordinary Wardrobe clothes (S.clothes, flag raid + set) so the admin edits
    their pictures in admin → Raids or Wardrobe; without a picture each piece shows white line art for its slot.
    No summon animation: the drops pop up in a see-through results window. */
-const RAID_STAMINA = 20, RAID_DOUBLE = .33, RAID_RATES = { 5: .04, 4: .10 };
+const RAID_STAMINA = 20, RAID_DOUBLE = .33, RAID_RATES = { 5: .08, 4: .10 };
 const CRN = { 3: 'R', 4: 'SSR', 5: 'UR' };
 const RAID_SETS = [
   { set: 'r', rarity: 3, name: "Wanderer's", pieces: { hat: 'Hood', top: 'Tunic', pants: 'Trousers', shoes: 'Boots', acc: 'Charm', hand: 'Gloves' } },
