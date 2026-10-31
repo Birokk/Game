@@ -2557,3 +2557,10 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .hatch .rv-badge,.hatch .rv-up{position:static !important;transform:none !important;margin:0 auto}
 .hatch-info{gap:6px !important}
 .egg.big{top:42% !important}
+/* custom egg icons: just the picture, no frame or glow */
+.egg.custom{box-shadow:none !important;background:none !important;border:0 !important;border-radius:0 !important;overflow:visible}
+.egg.custom img{filter:none}
+.set-exp:has(.egg.custom){background:none}
+/* hatch reveal: only the pet art, no frame, a bit bigger */
+.hatch-pet{width:min(56vmin,440px) !important;border-radius:0 !important;overflow:visible !important;box-shadow:none !important;top:38% !important}
+.hatch-pet img{object-fit:contain !important;filter:drop-shadow(0 0 24px color-mix(in srgb,var(--rc) 35%,transparent))}

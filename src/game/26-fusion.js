@@ -233,3 +233,12 @@ function openWardPick(c, slot) {
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
   document.body.appendChild(el);
 }
+
+/* the drawn pet alone on a transparent background (hatch reveal for pets without art) */
+const petCutCache = new Map();
+function petCut(p) {
+  const key = JSON.stringify(p.look); if (petCutCache.has(key)) return petCutCache.get(key);
+  const c = document.createElement('canvas'); c.width = 400; c.height = 400;
+  drawPet(c.getContext('2d'), 200, 372, p.look || {}, { s: 5.4 });
+  const url = c.toDataURL('image/png'); petCutCache.set(key, url); return url;
+}

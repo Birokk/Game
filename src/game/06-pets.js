@@ -134,7 +134,7 @@ function showHatch(r, item, res) {
   const sparks = Array.from({ length: 42 }, () => `<i style="--x:${(Math.random() * 100).toFixed(1)}%;--d:${(Math.random() * 3).toFixed(2)}s;--t:${(2.4 + Math.random() * 2.4).toFixed(2)}s;--s:${(2 + Math.random() * 4).toFixed(1)}px;--h:${Math.floor(Math.random() * 360)}"></i>`).join('');
   const beams = Array.from({ length: 7 }, (_, i) => `<b style="--x:${(8 + i * 13 + Math.random() * 6).toFixed(1)}%;--d:${(Math.random() * 3).toFixed(2)}s;--w:${(30 + Math.random() * 50).toFixed(0)}px"></b>`).join('');
   el.innerHTML = `<div class="hatch-ground"></div><div class="hatch-beams">${beams}</div><div class="hatch-sparks">${sparks}</div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
-    <div class="hatch-pet"><img src="${mediaArt(item) || petWide(item)}" alt="${esc(item.name)}"></div>
+    <div class="hatch-pet"><img src="${mediaArt(item) || petCut(item)}" alt="${esc(item.name)}"></div>
     <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
       ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · already owned</span></div>`}</div>
     <div class="rv-hint">Tap to continue</div>`;
