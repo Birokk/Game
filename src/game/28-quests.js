@@ -3,15 +3,16 @@
    done: [claimed quest ids], ms: [claimed milestones]}. Quest progress comes from questAdd(id, n) hooks in the
    features (gifts, stamina, summons, fountains, gold, raids, the Base); "Log into the game" completes itself. */
 const QUESTS = [
-  { id: 'login', name: 'Log into the game', need: 1, pts: 10, ic: 'calendar' },
-  { id: 'gift', name: 'Send a gift once', need: 1, pts: 20, ic: 'gift', go: 'characters' },
-  { id: 'stamina', name: 'Spend a total of 160 stamina', need: 160, pts: 20, cur: 'stamina', go: 'raids' },
-  { id: 'summon', name: 'Summon on a character banner once', need: 1, pts: 20, ic: 'sparkle', go: 'summon' },
-  { id: 'fountain', name: 'Make a wish at a fountain', need: 1, pts: 10, ic: 'fountain', go: 'farm' },
-  { id: 'gold', name: 'Spend a total of 10,000 gold', need: 10000, pts: 20, cur: 'coins', go: 'farm' },
-  { id: 'raid', name: 'Clear a raid once', need: 1, pts: 20, ic: 'raid', go: 'raids' },
-  { id: 'base', name: 'Collect resources at the Base', need: 1, pts: 10, ic: 'farm', go: 'farm' }
+  { id: 'login', name: 'Log into the game', need: 1, pts: 10 },
+  { id: 'gift', name: 'Send a gift once', need: 1, pts: 20, go: 'characters' },
+  { id: 'stamina', name: 'Spend a total of 160 stamina', need: 160, pts: 20, go: 'raids' },
+  { id: 'summon', name: 'Summon on a character banner once', need: 1, pts: 20, go: 'summon' },
+  { id: 'fountain', name: 'Make a wish at a fountain', need: 1, pts: 10, go: 'farm' },
+  { id: 'gold', name: 'Spend a total of 10,000 gold', need: 10000, pts: 20, go: 'farm' },
+  { id: 'raid', name: 'Clear a raid once', need: 1, pts: 20, go: 'raids' },
+  { id: 'base', name: 'Collect resources at the Base', need: 1, pts: 10, go: 'farm' }
 ];
+ICONS.shell = '<path d="M12 20.5L4 9.6Q4.3 6.9 6.5 6.1Q7.4 4.1 9.2 4.1Q10.4 2.7 12 3.4Q13.6 2.7 14.8 4.1Q16.6 4.1 17.5 6.1Q19.7 6.9 20 9.6Z"/><path d="M12 20.5L6.5 6.1M12 20.5L9.2 4.1M12 20.5V3.4M12 20.5l2.8-16.4M12 20.5l5.5-14.4"/><path d="M9.6 19.6L8.4 21.4h7.2l-1.2-1.8"/>';
 const QUEST_MAX = 100, QUEST_MS = [20, 40, 60, 80, 100];
 const QUEST_CHAR_BANNERS = ['limited', 'weekly', 'standard'];   // "character banner" summons
 /* every milestone: 1 pearl, 2,000 gold, 100 EXP; 60 adds a Standard ticket, 100 a Limited ticket */
@@ -21,8 +22,9 @@ function questReward(m) {
   if (m === 100) r.push(['tickets', 1]);
   return r;
 }
-CUR_SVG.qpt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="qptG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#9fd8ff"/><stop offset=".55" stop-color="#2f8cff"/><stop offset="1" stop-color="#1747b8"/></radialGradient></defs><circle cx="12" cy="12" r="10" fill="url(#qptG)" stroke="#d8f0ff" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#fff" stroke-width="1.2" opacity=".55"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const Q_NAMES = { coins: 'gold', pearls: 'pearls', exp: 'EXP', tickets: 'Limited ticket', wishes: 'Standard ticket' };
+CUR_SVG.qpt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="qptG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff4c4"/><stop offset=".55" stop-color="#ffcf4f"/><stop offset="1" stop-color="#d99a1c"/></radialGradient></defs><circle cx="12" cy="12" r="10" fill="url(#qptG)" stroke="#fff1c2" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#4a2a00" stroke-width="1" opacity=".3"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#4a2a00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const Q_NAMES = { coins: 'gold', pearls: 'pearl', exp: 'EXP', tickets: 'Limited ticket', wishes: 'Standard ticket' };
+const qName = (k, n) => (Q_NAMES[k] || k) + (n > 1 && !['coins', 'exp'].includes(k) ? 's' : '');
 
 /* today's quest state; a new day starts fresh (and counts as logging in) */
 function qState() {
@@ -58,7 +60,7 @@ function claimQuests(ids = [], ms = []) {
   Object.entries(got).forEach(([k, n]) => { if (k !== 'exp') S.wallet[k] = (S.wallet[k] || 0) + n; });
   if (got.exp) gainExp(got.exp);
   persist(); renderMenu(); refreshSummon(); renderQuests();
-  const bits = Object.entries(got).map(([k, n]) => `${fmt(n)} ${Q_NAMES[k] || k}${(k === 'tickets' || k === 'wishes') && n > 1 ? 's' : ''}`);
+  const bits = Object.entries(got).map(([k, n]) => `${fmt(n)} ${qName(k, n)}`);
   toast([pts ? `+${pts} points` : '', bits.length ? 'Claimed ' + bits.join(', ') : ''].filter(Boolean).join(' · ') + '.');
 }
 const Q_GO = { characters: () => openCharacters(), raids: () => openRaids(), summon: () => openSummon('limited'), farm: () => openFarm() };
@@ -76,14 +78,13 @@ function renderQuests() {
   const order = q => qCan(q) ? 0 : qDone(q) ? 2 : 1;
   const list = QUESTS.slice().sort((a, b) => order(a) - order(b));
   const nodes = QUEST_MS.map(m => { const got = st.ms.includes(m), can = qmCan(m), rw = questReward(m);
-    const tip = `<b>${m} points</b><span>${rw.map(([k, n]) => `${fmt(n)} ${Q_NAMES[k]}`).join(' · ')}</span><em class="${got ? 'ok' : ''}">${got ? 'Claimed' : can ? 'Tap to claim' : `Reach ${m} points`}</em>`;
+    const tip = `<b>${m} points</b><span class="dq-tiprw">${rw.map(([k, n]) => `<i>${curIcon(k)}${fmt(n)} ${qName(k, n)}</i>`).join('')}</span><em class="${got ? 'ok' : ''}">${got ? 'Claimed' : can ? 'Tap to claim' : `Reach ${m} points`}</em>`;
     return `<div class="dq-node ${got ? 'got' : can ? 'can' : ''}" style="--x:${m / QUEST_MAX * 100}%">
       <button class="dq-dot" data-qm="${m}" data-tip="${esc(tip)}" aria-label="${m} points reward${got ? ', claimed' : can ? ', ready to claim' : ''}">${got ? icon('check') : icon('gift')}</button>
-      <span class="dq-m">${m}</span>
-      <span class="dq-rw">${rw.map(([k, n]) => `<i>${curIcon(k)}${n >= 1000 ? `${n / 1000}k` : n}</i>`).join('')}</span></div>`; }).join('');
+      <span class="dq-m">${m}</span></div>`; }).join('');
   const cards = list.map(q => { const p = qProg(q), got = qDone(q), can = qCan(q);
     return `<div class="dq-card ${got ? 'got' : can ? 'can' : ''}">
-      <div class="dq-face"><span class="dq-disc">${got ? `<span class="dq-check">${icon('check')}</span>` : q.cur ? curIcon(q.cur) : icon(q.ic)}</span>
+      <div class="dq-face"><span class="dq-disc">${got ? `<span class="dq-check">${icon('check')}</span>` : icon('shell')}</span>
         <span class="dq-pt">${curIcon('qpt')}+${q.pts}</span>
         <p class="dq-name">${esc(q.name)}</p>
         <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b></div>
