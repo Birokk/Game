@@ -2601,3 +2601,18 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .sx-mile.done{opacity:.7}
 @media (max-width:820px){.sx-mile{bottom:calc(200px + var(--sb))}}
 .setx-list{grid-auto-rows:max-content}
+/* SSS stars: red, shiny and glowing like the SSS grade */
+.stars6 span.sss,.stars6.r5 span.bt.sss,.stars6.r4 span.bt.sss{-webkit-text-fill-color:transparent;color:#ff3b54;background:linear-gradient(115deg,#ff2a3d,#ff9a3d,#ff2a6e,#ff2a3d);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradeWave 3s ease-in-out infinite;filter:drop-shadow(0 0 4px #ff2a45) drop-shadow(0 0 9px rgba(255,90,60,.85));text-shadow:none}
+.stars6.big-sss{font-size:56px}
+.sss-box{display:grid;gap:8px;border:1px solid rgba(255,80,90,.25)}
+.sss-box.on{border-color:rgba(255,60,80,.6);box-shadow:0 0 18px rgba(255,40,70,.25)}
+.sss-h{font-family:var(--display);font-weight:400;font-size:18px;color:#ffb0b8}
+.sss-stars{display:flex;gap:8px}
+.sss-star{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;line-height:1;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.35);padding:0}
+.sss-star:not(:disabled){border-color:#ff6a7a;color:#ffd0d6;cursor:pointer;animation:sssPulse 1.6s ease-in-out infinite alternate}
+.sss-star.paid{color:#ff8a96}
+.sss-star.live{background:radial-gradient(circle,rgba(255,60,80,.35),rgba(80,0,10,.6));border-color:#ff3b54;color:#fff;text-shadow:0 0 8px #ff2a45,0 0 16px rgba(255,120,60,.9)}
+@keyframes sssPulse{to{box-shadow:0 0 14px rgba(255,60,80,.7)}}
+.bdg.glow-sss .bdg-svg{animation:sssBadge 1.6s ease-in-out infinite alternate}
+@keyframes sssBadge{from{filter:drop-shadow(0 0 4px #ff2a45) drop-shadow(0 0 8px rgba(255,120,60,.6))}to{filter:drop-shadow(0 0 9px #ff2a45) drop-shadow(0 0 18px rgba(255,90,60,.95)) brightness(1.15)}}
+.cs-parts .cs-extra em,.cs-parts .cs-extra b{color:#ff8a96}

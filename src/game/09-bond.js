@@ -97,14 +97,16 @@ const BADGES = [
   { id: 'star6', name: 'Max Stars', desc: `Raise this character to ${MAX_STARS} stars`, metal: 'gold', gem: '#9b4dff', emblem: 'star', wings: true, glow: 'gold', ok: e => owns(e.id) && starsOf(e.id) >= MAX_STARS },
   { id: 'bond5', name: 'Close Bond', desc: 'Reach bond level 5', metal: 'rose', gem: '#ff3d6a', emblem: 'heart', ok: e => bondLv(e.id) >= 5 },
   { id: 'bond10', name: 'Soulbound', desc: `Reach bond level ${BOND_MAX}`, metal: 'gold', gem: '#ff5f9a', emblem: 'heart', wings: true, glow: 'gold', ok: e => bondLv(e.id) >= BOND_MAX },
-  { id: 'married', name: 'Eternal Vow', desc: `Marry this character (bond level ${BOND_MAX} and 1 ring)`, metal: 'prism', gem: '#2a1650', emblem: 'ring', wings: true, glow: 'prism', ok: e => !!bondOf(e.id).married }
+  { id: 'married', name: 'Eternal Vow', desc: `Marry this character (bond level ${BOND_MAX} and 1 ring)`, metal: 'prism', gem: '#2a1650', emblem: 'ring', wings: true, glow: 'prism', ok: e => !!bondOf(e.id).married },
+  { id: 'sss', name: 'SSS Awakened', desc: 'Awaken a star with SSS awakening (CS grade SSS + Breakthrough)', metal: 'sss', gem: '#5a0010', emblem: 'star', wings: true, glow: 'sss', ok: e => sssPaid(e.id).length > 0 }
 ];
 const METALS = {
   bronze: ['#ffe0bf', '#c9864a', '#6a3510'],
   silver: ['#ffffff', '#c3cfe6', '#4d5d7d'],
   gold: ['#fff6cc', '#f0bd4f', '#7a4e08'],
   rose: ['#ffe6ef', '#f08aa8', '#7a2042'],
-  prism: ['#d9b3ff', '#ff6ec7', '#3ee6d0']
+  prism: ['#d9b3ff', '#ff6ec7', '#3ee6d0'],
+  sss: ['#ffd0b0', '#ff2a45', '#5a0010']
 };
 let badgeN = 0;
 function badgeSVG(b) {
@@ -122,7 +124,7 @@ function badgeSVG(b) {
     <path d="M28 4L50 26Q52 28 50 30L30 50Q28 52 26 50L6 30Q4 28 6 26L26 6Q28 4 28 4Z" fill="url(#bm${n})" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>
     <path d="M28 11L45 28L28 45L11 28Z" fill="url(#bg${n})" stroke="${ink}" stroke-width="1.1" stroke-linejoin="round"/>
     <path d="M28 11L28 28L11 28Z" fill="rgba(255,255,255,.28)"/><path d="M28 28L45 28L28 45Z" fill="rgba(0,0,0,.22)"/><path d="M28 11L45 28L28 28Z" fill="rgba(255,255,255,.1)"/>
-    ${b.metal === 'prism' ? '<path d="M28 11L45 28L28 45L11 28Z" fill="none" stroke="url(#bm' + n + ')" stroke-width="1.6"/>' : ''}
+    ${b.metal === 'sss' ? '<path d="M28 11L45 28L28 45L11 28Z" fill="none" stroke="#ffb27a" stroke-width="1.6"/>' : ''}${b.metal === 'prism' ? '<path d="M28 11L45 28L28 45L11 28Z" fill="none" stroke="url(#bm' + n + ')" stroke-width="1.6"/>' : ''}
     ${emblem}
     <path d="M14 22L24 12" stroke="rgba(255,255,255,.8)" stroke-width="1.6" stroke-linecap="round"/>
     ${b.glow ? '<g class="bdg-spark" fill="#fff"><path d="M46 8l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/><path d="M9 44l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></g>' : ''}</svg>`;
