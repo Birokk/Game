@@ -73,7 +73,7 @@ async function mediaDel(k) {
   try { await DB.del(k); } catch (e) {}
 }
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
-const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968];   // every character / skin art is cropped to exactly this size
+const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968], PET_SIZE = [1254, 1254];   // pets' splash arts are square   // every character / skin art is cropped to exactly this size
 /* exact = [w, h]: cover-crop to exactly that size (keeping the middle across and the upper part top to bottom, like the art views) */
 function resizeImage(file, max, type = 'image/webp', exact) {
   return new Promise((res, rej) => {

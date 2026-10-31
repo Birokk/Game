@@ -1,11 +1,11 @@
 /* ---------- scratch cards: a built-in event on the Event page ----------
-   Buy a card for 5 pearls (5 a day), scratch the silver foil, and three of the same icon wins that icon's prize.
+   Buy a card for 5 pearls (10 a day), scratch the silver foil, and three of the same icon wins that icon's prize.
    The prize is decided when the card is bought (weights below, in millionths), then the 3×3 grid is dealt to match:
    a win puts its icon three times and every other icon at most twice; a loss never has three of a kind.
    Odds: about 30% of cards lose; return to player ≈ 96.6% (1 pearl 4.84%, 3 pearls 9%, 5 pearls 14%, 7 pearls 15%, 10 pearls 27%),
    and the big ones are very rare: 30 = 0.12%, 50 = 0.03%, 100 = 0.008%, 300 = 0.0012%.
    State (player save): S.scratch = { day, n (bought today), card: { cells[9], win (icon index or -1), prize, done } } */
-const SCRATCH_PRICE = 5, SCRATCH_DAILY = 5;
+const SCRATCH_PRICE = 5, SCRATCH_DAILY = 10;
 const SCRATCH_PRIZES = [
   { p: 300, ic: 'seven', w: 12 }, { p: 100, ic: 'crown', w: 80 }, { p: 50, ic: 'diamond', w: 300 }, { p: 30, ic: 'star', w: 1200 },
   { p: 10, ic: 'bell', w: 270000 }, { p: 7, ic: 'bag', w: 150000 }, { p: 5, ic: 'clover', w: 140000 }, { p: 3, ic: 'horseshoe', w: 90000 },

@@ -32,7 +32,7 @@ function renderDetail(id, backTo) {
   const wearable = (e.type === 'character' || e.type === 'skin') && n;
   const art = mediaArt(e);
   root.innerHTML = `<button class="btn ghost sm" id="dBack" style="margin-bottom:14px">${icon('back')}Back</button>
-    <div class="dt-hero r${e.rarity} ${n ? '' : 'unowned'}">
+    <div class="dt-hero r${e.rarity} t-${e.type} ${n ? '' : 'unowned'}">
       ${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="dt-art ${art ? '' : 'chibi'}" src="${getSplash(e)}" alt="${esc(e.name)}"><div class="dt-shade"></div>
       <div class="dt-info">
         <div class="eyebrow ts" style="color:#fff">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>

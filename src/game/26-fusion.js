@@ -67,28 +67,36 @@ function showFuseResults(got, spent) {
 /* pets with characters */
 const petEqOf = cid => { const id = (S.petEq || {})[cid], p = id && findEntry(id); return p && p.type === 'pet' && owns(p.id) ? p : null; };
 const petOwner = pid => Object.keys(S.petEq || {}).find(cid => S.petEq[cid] === pid && owns(cid)) || null;
-/* a 16:9 picture of a drawn pet (for pets without uploaded art) */
+/* a square picture of a drawn pet (for pets without uploaded art; pet splash arts are 1254×1254) */
 const petWideCache = new Map();
 function petWide(p) {
   const key = JSON.stringify(p.look) + '|' + p.rarity; if (petWideCache.has(key)) return petWideCache.get(key);
-  const c = document.createElement('canvas'); c.width = 480; c.height = 270; const g = c.getContext('2d');
-  const bg = g.createLinearGradient(0, 0, 0, 270);
+  const W = 400, H = 400, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const bg = g.createLinearGradient(0, 0, 0, H);
   if (+p.rarity === 5) { bg.addColorStop(0, 'rgba(168,85,247,.65)'); bg.addColorStop(.55, 'rgba(255,110,199,.3)'); bg.addColorStop(1, '#141d3c'); }
   else { bg.addColorStop(0, 'rgba(255,170,80,.5)'); bg.addColorStop(1, '#141d3c'); }
-  g.fillStyle = '#141d3c'; g.fillRect(0, 0, 480, 270); g.fillStyle = bg; g.fillRect(0, 0, 480, 270);
-  const gl = g.createRadialGradient(240, 170, 10, 240, 170, 170); gl.addColorStop(0, 'rgba(255,255,255,.32)'); gl.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gl; g.fillRect(0, 0, 480, 270);
-  g.fillStyle = 'rgba(255,255,255,.7)'; [[60, 50, 2], [420, 40, 1.6], [430, 150, 2.2], [40, 170, 1.4], [370, 230, 1.6], [110, 230, 1.2]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); });
-  drawPet(g, 240, 252, p.look || {}, { s: 4.4 });
+  g.fillStyle = '#141d3c'; g.fillRect(0, 0, W, H); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const gl = g.createRadialGradient(200, 240, 10, 200, 240, 200); gl.addColorStop(0, 'rgba(255,255,255,.32)'); gl.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,255,255,.7)'; [[50, 50, 2], [350, 40, 1.6], [360, 160, 2.2], [36, 200, 1.4], [330, 300, 1.6], [70, 320, 1.2]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); });
+  drawPet(g, 200, 372, p.look || {}, { s: 5.4 });
   const url = c.toDataURL('image/png'); petWideCache.set(key, url); return url;
 }
 function petCard(p, cls = '') {
   const art = mediaArt(p);
   return `<span class="pt-art"><img src="${art || petWide(p)}" alt=""></span>${rtag(p.rarity)}<span class="pt-nm"><b>${esc(p.name)}</b>${hasStars(p) ? `<span class="pt-st">${starRow(starsOf(p.id), false, p)}</span>` : ''}</span>`;
 }
+/* splash art picker for a pet, like the character's Skins carousel: base, then the 3★ / 6★ arts (locked until those stars) */
+function petArtPicker(p) {
+  const opts = ASC.filter(a => a.k === 'base' || artFrom(p[a.k])); if (opts.length < 2) return '';
+  const cur = artKey(p);
+  return `<div class="lbl-sm">Splash art</div><div class="pt-arts">${opts.map(a => { const open = ascOpen(p, a), src = a.k === 'base' ? (artFrom(p.art) || petWide(p)) : artFrom(p[a.k]);
+    return `<button class="pt-artc ${cur === a.k ? 'on' : ''} ${open ? '' : 'bw'}" data-ptart="${a.k}" data-ptid="${esc(p.id)}" ${open ? '' : `data-lock="${a.stars}"`}><img src="${src}" alt=""><span>${a.k === 'base' ? 'Base' : a.label}</span>${cur === a.k ? `<span class="skc-on">${icon('check')}</span>` : ''}${open ? '' : `<span class="skc-lock">${icon('lock')}</span>`}</button>`; }).join('')}</div>`;
+}
 function petTabHTML(c) {
   const eq = petEqOf(c.id), pets = S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => b.rarity - a.rarity || starsOf(b.id) - starsOf(a.id) || a.name.localeCompare(b.name));
   return `<div class="lbl-sm">Pet · ${eq ? '1' : '0'}/1 with ${esc(c.name)}</div>
     <div class="pt-slot ${eq ? 'full r' + eq.rarity : ''}">${eq ? petCard(eq) : `<span class="mem-empty">${icon('paw')}<span class="tiny">No pet yet</span></span>`}</div>
+    ${eq ? petArtPicker(eq) : ''}
     <div class="lbl-sm">Your pets · ${pets.length}</div>
     ${pets.length ? `<div class="pt-list">${pets.map(p => { const who = petOwner(p.id), here = who === c.id, busy = who && !here;
       return `<button class="pt-card r${p.rarity} ${here ? 'on' : ''} ${busy ? 'busy' : ''}" data-pet="${esc(p.id)}">${petCard(p)}${here ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">With ${esc((findEntry(who) || {}).name || '')}</span>` : ''}</button>`; }).join('')}</div>`
@@ -105,6 +113,11 @@ function bindPetTab(c) {
     else if (who) { toast(`${p.name} is with ${(findEntry(who) || {}).name}. Send it away from them first.`); return; }
     else { S.petEq[c.id] = p.id; toast(`${p.name} is now with ${c.name}.`); }
     persist(); renderCharacters();
+  });
+  csEl.querySelectorAll('[data-ptart]').forEach(b => b.onclick = () => {
+    const p = findEntry(b.dataset.ptid); if (!p) return;
+    if (b.dataset.lock) { toast(`This splash art unlocks at ${b.dataset.lock} stars. ${p.name} has ${starsOf(p.id)}.`); return; }
+    S.artPick[p.id] = b.dataset.ptart; persist(); renderCharacters(); toast(`${p.name} now shows the ${b.dataset.ptart === 'base' ? 'base' : ASC.find(a => a.k === b.dataset.ptart).label} splash art.`);
   });
   const off = $('#petOff'); if (off) off.onclick = () => { delete S.petEq[c.id]; persist(); renderCharacters(); };
 }

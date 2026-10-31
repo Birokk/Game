@@ -1,6 +1,8 @@
 /* =========================================================
    ADMIN
    ========================================================= */
+/* pets' splash arts are square (1254×1254), everything else 1728×968 */
+const adArtSize = () => ($('#adType') || {}).value === 'pet' ? PET_SIZE : SPLASH_SIZE;
 let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null }, adminIcon = null;
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
 function openAdmin(tab) {
@@ -63,7 +65,7 @@ function renderPoolTab() {
           <div class="frame"><img id="adPrev" alt="Splash art preview"></div>
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
-          <p class="tiny">Standard size: 1728×972 (16:9). It fills the whole screen; other shapes (like square art) are cropped to fill it, keeping the upper middle. Larger images are scaled down to 1728px wide. Without art, a placeholder chibi is shown.</p>
+          <p class="tiny">Characters and skins: every upload is cropped to exactly 1728×968 (16:9), keeping the upper middle. <b>Pets: 1254×1254 (square)</b>, including their 3★ / 6★ arts. Without art, a placeholder is shown.</p>
           <div class="asc-slots"><div class="lbl-sm">Icon</div><p class="tiny">Square picture used in the character menu, avatars and small portraits. Without one, it is cut from the art.</p>
             <div class="asc-slot"><span class="mini ic-mini"><img id="adP_icon" alt=""></span><div style="display:grid;gap:4px"><b>Icon</b><span class="tiny" id="adS_icon"></span>
               <div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}Upload<input type="file" accept="image/*" class="sr" id="adIconUp"></label><button type="button" class="link" id="adIconX">Remove</button></div></div></div>
@@ -100,11 +102,11 @@ function renderPoolTab() {
   $('#adRarity').addEventListener('change', adminPreview);
   $('#adType').addEventListener('change', adminPreview);
   $('#adArt').addEventListener('change', async ev => {
-    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE); adminPreview(); }
+    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX, 'image/webp', adArtSize()); adminPreview(); }
     catch (e) { toast(e.message); }
   });
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
-  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', adArtSize()); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
   $('#adIconX').onclick = () => { adminIcon = null; adminPreview(); };
@@ -178,7 +180,7 @@ function adminPreview() {
   $('#adUpLbl').textContent = adminArt ? 'Replace splash art' : 'Upload splash art';
   $('#adParentWrap').hidden = $('#adType').value !== 'skin';
   const isChar = $('#adType').value === 'character';
-  $('#adAscWrap').hidden = !isChar;
+  $('#adAscWrap').hidden = !isChar && $('#adType').value !== 'pet';   // characters and pets have 3★ / 6★ arts
   $('#adP_icon').src = adminIcon || adminArt || chibiSplash(readLook()); $('#adP_icon').classList.toggle('cut', !adminIcon); $('#adS_icon').textContent = adminIcon ? 'Uploaded' : 'Cut from the art'; $('#adIconX').hidden = !adminIcon;
   ['art3', 'art6'].forEach(k => { $('#adP_' + k).src = adminAsc[k] || adminArt || chibiSplash(readLook()); $('#adP_' + k).style.opacity = adminAsc[k] ? 1 : .35; $('#adS_' + k).textContent = adminAsc[k] ? 'Uploaded' : 'Uses the base art'; document.querySelector(`[data-ascx="${k}"]`).hidden = !adminAsc[k]; });
   const ed = adminEditId && findEntry(adminEditId), sk = $('#adSkins');

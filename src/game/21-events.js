@@ -5,7 +5,8 @@ const LOGIN_DAYS = [1, 1, 1, 1, 1, 1, 1];
 function eventList() {
   let list = Array.isArray(S.events) ? S.events : [];
   if (!list.some(e => e.id === 'login')) list = [{ id: 'login', name: 'Daily Login', sub: 'Sign in to claim rewards', days: [...LOGIN_DAYS] }, ...list];
-  if (!list.some(e => e.id === 'mystery')) list = [{ id: 'mystery', name: 'Mystery Box', sub: 'Limited summon · 10 pulls · premium outfit inside' }, ...list];
+  if (!list.some(e => e.id === 'mystery')) list = [{ id: 'mystery', name: 'Mystery Fountain', sub: 'Limited summon · 10 wishes · premium outfit inside' }, ...list];
+  list.forEach(e => { if (e.id === 'mystery' && e.name === 'Mystery Box') { e.name = 'Mystery Fountain'; if (e.sub === 'Limited summon · 10 pulls · premium outfit inside') e.sub = 'Limited summon · 10 wishes · premium outfit inside'; } });   // renamed
   if (!list.some(e => e.id === 'scratch')) { const i = list.findIndex(e => e.id === 'login'); list = [...list.slice(0, i + 1), { id: 'scratch', name: 'Scratch Cards', sub: 'Match three icons to win pearls' }, ...list.slice(i + 1)]; }
   if (list !== S.events) S.events = list;
   return list;
@@ -46,7 +47,7 @@ function eventTimer(e) {
 }
 /* the wallpaper: the admin's upload, else the limited banner's art, else a night-sky gradient */
 function eventBg(e) {
-  // the Mystery Box shows its premium outfit's art; other events use the admin's upload, else the limited banner's art
+  // the Mystery Fountain shows its premium outfit's art; other events use the admin's upload, else the limited banner's art
   const sk = e.id === 'mystery' && mboxSkin(), own = (sk && baseArt(sk)) || MEDIA.get('ev:' + e.id), f = findEntry(S.featuredId), art = own || (f && baseArt(f));
   return art ? `<img src="${art}" alt="">` : '';
 }
@@ -57,7 +58,7 @@ function renderEvents() {
     <div class="evp-head"><span class="inv-badge">${icon('calendar')}</span><h2 class="ts">Event</h2></div>
     <button class="inv-x evp-x" id="evClose" aria-label="Close">${icon('close')}</button>
     <aside class="evp-side"><span class="evp-pill">${icon('clock')}Limited-Time</span>
-      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? '<span class="mbx-mini sm"><i class="lid"></i><i class="body"></i></span>' : icon(x.id === 'login' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
+      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
     <section class="evp-main">
       <h1 class="evp-title">${esc(e.name || 'Event')}</h1>
       <span class="evp-time">${icon('clock')}<span id="evTime">${eventTimer(e)}</span></span>
@@ -99,7 +100,7 @@ function renderEventsTab() {
           <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${builtin && e.id !== 'mystery' ? '<span class="tag">Built in</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
           <input class="input" data-evf="sub" data-evid="${esc(e.id)}" maxlength="80" value="${esc(e.sub || '')}" placeholder="Subtitle (optional)" aria-label="Subtitle">
           ${login ? `<div class="ev-days"><span class="tiny">Limited tickets per day</span>${loginDays().map((n, i) => `<label>Day ${i + 1}<input class="input" type="number" min="1" max="99" data-evday="${i}" value="${n}"></label>`).join('')}</div>`
-            : e.id === 'mystery' ? mboxAdmin() : builtin ? '<span class="tiny">Scratch cards: 5 pearls each, 5 a day. Prizes and odds are set in the game code.</span>' : `<textarea class="input" data-evf="text" data-evid="${esc(e.id)}" rows="3" maxlength="1200" placeholder="What the event is about" aria-label="Event text">${esc(e.text || '')}</textarea>`}
+            : e.id === 'mystery' ? mboxAdmin() : builtin ? '<span class="tiny">Scratch cards: 5 pearls each, 10 a day. Prizes and odds are set in the game code.</span>' : `<textarea class="input" data-evf="text" data-evid="${esc(e.id)}" rows="3" maxlength="1200" placeholder="What the event is about" aria-label="Event text">${esc(e.text || '')}</textarea>`}
           <div class="row" style="gap:8px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-evbg="${esc(e.id)}"></label>
             ${bg ? `<button class="btn ghost sm" data-evbgdel="${esc(e.id)}">Remove wallpaper</button>` : ''}
             ${builtin ? '' : `<button class="link" data-evdel="${esc(e.id)}" style="color:${evDelArm === e.id ? '#ff6b81' : ''}">${evDelArm === e.id ? 'Tap again to delete' : 'Delete'}</button>`}</div>

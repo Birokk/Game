@@ -135,7 +135,7 @@ function artKey(e) {
   for (let i = ASC.length - 1; i > 0; i--) if (ascOpen(e, ASC[i])) return ASC[i].k;   // default: the highest unlocked
   return 'base';
 }
-const mediaArt = e => { if (!e) return null; const k = e.type === 'character' ? artKey(e) : 'base'; return (k !== 'base' && artFrom(e[k])) || artFrom(e.art); };
+const mediaArt = e => { if (!e) return null; const k = e.type === 'character' || e.type === 'pet' ? artKey(e) : 'base'; return (k !== 'base' && artFrom(e[k])) || artFrom(e.art); };
 /* the main character: chosen once (female or male), fixed preset; every chibi in the plaza is one of these two */
 const MC_LOOK = {
   f: { hair: '#ff9ec4', style: 1, skin: '#ffe0c7', shirt: '#ffffff', pants: '#7a5cff' },
