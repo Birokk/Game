@@ -130,7 +130,7 @@ function renderCharacters() {
       ${list.length ? `<div class="mem-list">${list.map(x => { const own = owns(x.id), at = E.indexOf(x.id), holder = own && at < 0 && memHolder(x.id, c.id);
         return `<button class="mem-card r${x.rarity} ${own ? '' : 'bw'} ${at >= 0 ? 'on' : ''} ${holder ? 'busy' : ''}" data-memi="${esc(x.id)}" ${own ? '' : 'disabled'} ${x.desc ? `data-tip="${esc(`<b>${esc(x.name)}</b><span>${esc(x.desc)}</span>`)}"` : ''}>${memArt(x) ? `<img src="${memArt(x)}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(x.rarity)}${at >= 0 ? `<span class="skc-on">${icon('check')}</span>` : ''}${holder ? `<span class="wd-worn">With ${esc((findEntry(holder) || {}).name || '')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="mem-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
-      ${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}
+      <div class="row" style="gap:8px">${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}<button class="btn ghost sm" id="memFuse">${icon('fuse')}Exchange memories</button></div>
       <p class="tiny">Each character can equip one memory, and a memory stays with one character at a time. Tap one to equip it (tap it again to remove it). Memories have no effect yet.</p>`;
   } else if (csTab === 'pet') {
     body = petTabHTML(c);
@@ -215,6 +215,7 @@ function renderCharacters() {
     else { E[0] = x.id; memSlot = 0; toast(`${c.name} now holds ${x.name}.`); }
     S.memEq[c.id] = E; persist(); renderCharacters();
   });
+  const mf = $('#memFuse'); if (mf) mf.onclick = () => openFuse('mem');
   const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
   const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; if ((S.wearSt || {})[c.id]) delete S.wearSt[c.id][wdSlot]; persist(); renderCharacters(); };
   const wa = $('#wdAuto'); if (wa) wa.onclick = () => autoEquip(c);

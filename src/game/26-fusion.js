@@ -9,14 +9,15 @@ const FUSE_NEXT = { 3: 4, 4: 5 };
 const spareOf = id => Math.max(0, (S.owned[id] || 0) - wearersOf(id).length);
 let fuseR = 3, fusePot = [];   // the pot: cloth ids in the order they were added
 function openFuse(r) {
-  if (FUSE_NEXT[r] || r === 'star') fuseR = r;
+  if (FUSE_NEXT[r] || r === 'star' || r === 'mem') fuseR = r;
   fusePot = [];
-  openModal({ title: 'Clothes fusion', ic: 'fuse', wide: true, kind: 'fuse', body: '<div id="fuRoot"></div>', onMount: renderFuse });
+  openModal({ title: 'Fusion', ic: 'fuse', wide: true, kind: 'fuse', body: '<div id="fuRoot"></div>', onMount: renderFuse });
 }
 function renderFuse() {
   const root = $('#fuRoot'); if (!root) return;
-  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button></div>`;
+  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button><button class="tab ${fuseR === 'mem' ? 'on' : ''}" data-fur="mem">${icon('memory')} Memories</button></div>`;
   if (fuseR === 'star') return renderStarUp(root, tabs);
+  if (fuseR === 'mem') return renderMemFuse(root, tabs);
   const to = FUSE_NEXT[fuseR], inPot = id => fusePot.filter(x => x === id).length;
   const list = S.clothes.filter(x => +x.rarity === fuseR && spareOf(x.id) > 0).sort((a, b) => spareOf(b.id) - spareOf(a.id) || a.name.localeCompare(b.name));
   const targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
@@ -43,7 +44,7 @@ function renderFuse() {
   $('#fuClear').onclick = () => { fusePot = []; renderFuse(); };
   $('#fuGo').onclick = doFuse;
 }
-function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = b.dataset.fur === 'star' ? 'star' : +b.dataset.fur; fusePot = []; renderFuse(); }); }
+function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = b.dataset.fur === 'star' || b.dataset.fur === 'mem' ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); }); }
 function doFuse() {
   const to = FUSE_NEXT[fuseR], targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   if (!n || !targets.length) return;
@@ -241,4 +242,41 @@ function petCut(p) {
   const c = document.createElement('canvas'); c.width = 400; c.height = 400;
   drawPet(c.getContext('2d'), 200, 372, p.look || {}, { s: 5.4 });
   const url = c.toDataURL('image/png'); petCutCache.set(key, url); return url;
+}
+
+/* ---------- memory exchange: 3 spare memories of one rarity → 1 random UR memory ---------- */
+let memFuseR = 4, memPot = [];
+const memSpare = id => Math.max(0, (S.owned[id] || 0) - Object.keys(S.memEq || {}).filter(cid => owns(cid) && (S.memEq[cid] || []).includes(id)).length);
+function renderMemFuse(root, tabs) {
+  const inPot = id => memPot.filter(x => x === id).length, urs = (S.memories || []).filter(m => +m.rarity === 5);
+  const list = (S.memories || []).filter(m => +m.rarity === memFuseR && memSpare(m.id) > 0), n = Math.floor(memPot.length / 3);
+  root.innerHTML = `<div class="fu">${tabs}
+    <p class="tiny">Exchange 3 spare memories of the same rarity for 1 random UR memory from every UR memory in the game. Equipped memories are never used.</p>
+    <div class="tabs" style="margin:0">${[4, 5].map(r => `<button class="tab ${memFuseR === r ? 'on' : ''}" data-mfr="${r}">3 × ${ctag(r)} → ${ctag(5)}</button>`).join('')}</div>
+    <div class="fu-pot"><div class="fu-count"><b>${memPot.length}</b> in the pot · makes <b>${n}</b> UR memor${n === 1 ? 'y' : 'ies'}${memPot.length % 3 ? ` · ${3 - memPot.length % 3} more for the next one` : ''}</div>
+      <div class="row" style="justify-content:center;gap:8px"><button class="btn ghost sm" id="mfAll" ${list.some(m => memSpare(m.id) > inPot(m.id)) ? '' : 'disabled'}>Add all</button><button class="btn ghost sm" id="mfClear" ${memPot.length ? '' : 'disabled'}>Clear</button>
+        <button class="btn gold" id="mfGo" ${n && urs.length ? '' : 'disabled'}>${icon('fuse')}Exchange ×${n}</button></div>
+      ${urs.length ? '' : '<p class="tiny" style="text-align:center">No UR memories exist yet.</p>'}</div>
+    ${list.length ? `<div class="mem-list">${list.map(m => { const k = inPot(m.id), sp = memSpare(m.id), art = artFrom(m.img);
+      return `<div class="fu-it"><button class="mem-card r${m.rarity} ${k ? 'on' : ''}" data-mfa="${esc(m.id)}" ${k >= sp ? 'disabled' : ''}>${art ? `<img src="${art}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(m.rarity)}<span class="fu-n">${k}/${sp}</span><span class="mem-nm">${esc(m.name)}</span></button>${k ? `<button class="fu-rm" data-mfr-rm="${esc(m.id)}" aria-label="Take one out">−</button>` : ''}</div>`; }).join('')}</div>`
+      : `<div class="cs-pill">No spare ${CRN[memFuseR]} memories.</div>`}</div>`;
+  bindFuseTabs(root);
+  root.querySelectorAll('[data-mfr]').forEach(b => b.onclick = () => { memFuseR = +b.dataset.mfr; memPot = []; renderFuse(); });
+  root.querySelectorAll('[data-mfa]').forEach(b => b.onclick = () => { const id = b.dataset.mfa; if (inPot(id) < memSpare(id)) memPot.push(id); renderFuse(); });
+  root.querySelectorAll('[data-mfr-rm]').forEach(b => b.onclick = () => { const i = memPot.lastIndexOf(b.dataset.mfrRm); if (i >= 0) memPot.splice(i, 1); renderFuse(); });
+  $('#mfAll').onclick = () => { list.forEach(m => { for (let k = inPot(m.id); k < memSpare(m.id); k++) memPot.push(m.id); }); renderFuse(); };
+  $('#mfClear').onclick = () => { memPot = []; renderFuse(); };
+  $('#mfGo').onclick = () => {
+    const k = Math.floor(memPot.length / 3); if (!k || !urs.length) return;
+    const used = memPot.splice(0, k * 3);
+    if (used.some(id => memSpare(id) < used.filter(x => x === id).length)) { memPot = []; renderFuse(); toast('Some of those memories are no longer spare.'); return; }
+    used.forEach(id => { S.owned[id] -= 1; if (!S.owned[id]) delete S.owned[id]; });
+    const got = Array.from({ length: k }, () => { const m = pick(urs), isNew = !S.owned[m.id]; S.owned[m.id] = (S.owned[m.id] || 0) + 1; return { m, isNew }; });
+    persist(); refreshCharacters(); renderFuse();
+    const old = document.querySelector('.rdrop'); if (old) old.remove();
+    const el = document.createElement('div'); el.className = 'rdrop';
+    el.innerHTML = `<div class="rdrop-box"><h2 class="ts">Memory exchange</h2><div class="mem-list" style="width:100%">${got.map(({ m, isNew }) => { const art = artFrom(m.img); return `<div class="mem-card r5">${art ? `<img src="${art}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(5)}${isNew ? '<span class="rdrop-new" style="right:6px;left:auto">NEW</span>' : ''}<span class="mem-nm">${esc(m.name)}</span></div>`; }).join('')}</div>
+      <div class="row" style="justify-content:center"><button class="btn gold" id="mfDone">Done</button></div><p class="tiny">${used.length} memories exchanged for ${got.length} UR memor${got.length === 1 ? 'y' : 'ies'}.</p></div>`;
+    document.body.appendChild(el); el.querySelector('#mfDone').onclick = () => el.remove(); el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  };
 }
