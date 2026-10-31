@@ -117,7 +117,7 @@ function doPull(n, bk = curBanner, free = false) {
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
   const results = Array.from({ length: n }, () => rollOne(bk));
-  if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon');
+  if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk);

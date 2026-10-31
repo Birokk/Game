@@ -2618,7 +2618,12 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .cs-parts .cs-extra em,.cs-parts .cs-extra b{color:#ff8a96}
 
 /* ---------- daily quests (28-quests.js): points track on top, quest cards in a row, like the owner's reference ---------- */
-.dq{display:flex;flex-direction:column;gap:14px;height:min(78vh,700px);min-height:0;--qp:#ff4f8b;--qt:#4ee6c8}
+.dq{display:flex;flex-direction:column;gap:12px;height:min(calc(100vh - 110px),760px);min-height:0;--qp:#ff4f8b;--qt:#4ee6c8}
+.dq-tabs{flex:none;display:flex;gap:8px}
+.dq-tab{position:relative;padding:9px 26px;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:#141417;color:#c9ccd6;font:700 16px var(--display);cursor:pointer}
+.dq-tab:hover{background:#1f1f24}
+.dq-tab.on{background:linear-gradient(180deg,#ffe28f,#ffbf3f);color:var(--gold-ink);border-color:#fff1c2;box-shadow:0 0 14px rgba(255,200,80,.4)}
+.dq-tab .dot-n{position:absolute;top:-3px;right:-3px}
 .dq-top{flex:none;display:flex;align-items:center;gap:18px;padding:14px 22px 10px;border-radius:20px;background:linear-gradient(180deg,#1f1f23,#141417);border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 .dq-pts{display:flex;align-items:center;gap:8px;flex:none}
 .dq-pts>.cic{width:58px;height:58px;filter:drop-shadow(0 0 10px rgba(255,200,80,.5))}
@@ -2644,9 +2649,9 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .dq-list{flex:1;min-height:0;display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;padding:18px;border-radius:20px;scroll-snap-type:x proximity;
   background:radial-gradient(120% 90% at 50% 0%,rgba(255,211,107,.06),transparent 60%),linear-gradient(180deg,#19191c,#0f0f11);border:1px solid rgba(255,255,255,.07)}
 .dq-card{flex:0 0 230px;display:flex;flex-direction:column;align-items:center;gap:14px;scroll-snap-align:start;min-height:0}
-.dq-face{flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 16px;border-radius:22px;text-align:center;
+.dq-face{flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-radius:22px;text-align:center;
   background:linear-gradient(180deg,#232327,#18181b);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.dq-disc{width:116px;height:116px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#050506 0 54%,#1d1d21 55% 70%,#121214 71%);box-shadow:0 0 0 1px rgba(255,255,255,.07),inset 0 0 18px rgba(0,0,0,.8);color:#e9ecf4}
+.dq-disc{flex:none;width:116px;height:116px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#050506 0 54%,#1d1d21 55% 70%,#121214 71%);box-shadow:0 0 0 1px rgba(255,255,255,.07),inset 0 0 18px rgba(0,0,0,.8);color:#e9ecf4}
 .dq-disc>.ic{width:52px;height:52px;stroke-width:1.6}
 .dq-disc>.cic{width:50px;height:50px}
 .dq-check{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#ffe28f,#ffbf3f);box-shadow:0 0 22px rgba(255,200,80,.6),0 0 0 6px rgba(255,211,107,.16);color:var(--gold-ink)}
@@ -2676,3 +2681,4 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
   .dq-pt{font-size:21px}.dq-name{font-size:15px}
   .dq-btn{min-width:120px;padding:10px 16px;font-size:15px}
 }
+@media (max-height:760px){.dq-disc{width:96px;height:96px}.dq-disc>.ic{width:44px;height:44px}.dq-check{width:56px;height:56px}.dq-name{min-height:0}}
