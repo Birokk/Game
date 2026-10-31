@@ -5,11 +5,17 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
-const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['starlight', 'shop', 'Corals Exchange'], ['dust', 'bag', 'Seaweeds Shop']];
+const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency']];
+/* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
+const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium']], PREM_PRICE = 720, PREM_LIMIT = 1;
+let exSub = 'corals';
+function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), n: 0 }; return S.premEx; }
 const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
 let shopTab = 'hot', shopEl = null, shopPick = null;
 function openShop(tab) {
-  closeModal(); if (tab === 'monthly') tab = 'dust';   // monthly pulls live in the Seaweeds shop
+  closeModal();
+  if (tab === 'monthly' || tab === 'dust') { tab = 'exchange'; exSub = 'seaweeds'; }   // monthly pulls live in the Seaweeds exchange
+  else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
   if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
   renderShop();
@@ -23,7 +29,7 @@ function renderShop() {
   const item = (id, ic, name, sub, price, cur, extra = '', r = 4) => `<div class="mall-item ${extra}"><span class="mall-ic r${r}">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
     <button class="mall-buy ${W[cur] >= price && !extra.includes('soldout') ? 'ok' : ''}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   const tab = SHOP_TABS.find(t => t[0] === shopTab);
-  let strip = `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
+  let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
     const e = shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
@@ -45,9 +51,15 @@ function renderShop() {
       <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big r${i > 2 ? 5 : 4}">${curIcon('pearls')}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets and marriage rings.</p>
-      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the permanent banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
-  } else if (shopTab === 'starlight') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
-    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
+      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
+  } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
+    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}</div>`;
+  else if (shopTab === 'exchange' && exSub === 'premium') { const pe = premEx(), left = PREM_LIMIT - pe.n, chars = S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
+    body = `<p class="tiny">Trade ${PREM_PRICE} Corals for one more copy of a character you own: it adds a star, up to ${MAX_STARS}. ${left > 0 ? `${left} / ${PREM_LIMIT} left this month.` : `Used this month. Resets on the 1st (${nextMonthIn()}).`}</p>
+      ${chars.length ? `<div class="mall-skins">${chars.map(e => { const st = starsOf(e.id), max = st >= MAX_STARS, ok = left > 0 && !max && W.starlight >= PREM_PRICE;
+        return `<div class="mall-skin r${e.rarity}"><img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${rtag(e.rarity)}<span class="mall-skin-nm"><b>${esc(e.name)}</b><small>${starRow(st, -1, e)}</small></span>
+          ${max ? '<button class="mall-buy" disabled>Max stars</button>' : left <= 0 ? '<button class="mall-buy" disabled>Sold out</button>' : `<button class="mall-buy ${ok ? 'ok' : ''}" data-prem="${esc(e.id)}">${curIcon('starlight')}${fmt(PREM_PRICE)}</button>`}</div>`; }).join('')}</div>`
+        : '<p class="mall-empty">You don\'t own any characters yet.</p>'}`; }
   else body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Seaweeds, whatever you get.</p>
     <h3 class="mall-h">Monthly pulls</h3><p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
     <div class="mall-grid">${['limited', 'standard'].map(bk => { const left = MONTHLY_LIMIT - m[bk];
@@ -65,6 +77,20 @@ function renderShop() {
   shopEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { shopPick = b.dataset.pick; renderShop(); });
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
+  shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
+  shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
+}
+function confirmPrem(id) {
+  const e = findEntry(id); if (!e || !owns(id)) return;
+  const pe = premEx(); if (pe.n >= PREM_LIMIT) { toast('You already used the Premium exchange this month.'); return; }
+  if (starsOf(id) >= MAX_STARS) { toast(`${e.name} is already at max stars.`); return; }
+  if (S.wallet.starlight < PREM_PRICE) { toast(`You need ${PREM_PRICE} Corals. You have ${fmt(S.wallet.starlight)}.`); return; }
+  openModal({ title: 'Premium exchange', ic: 'shop', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${PREM_PRICE} Corals</b> on a copy of <b>${esc(e.name)}</b>? It will go from ${starsOf(id)}★ to ${starsOf(id) + 1}★. You can do this once a month.</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="prNo">Cancel</button><button class="btn gold" id="prYes">Exchange · ${curIcon('starlight')}${PREM_PRICE}</button></div></div>`,
+    onMount: () => { $('#prNo').onclick = closeModal; $('#prYes').onclick = () => {
+      closeModal(); S.wallet.starlight -= PREM_PRICE; premEx().n++; grantEntry(e); persist(); renderMenu(); refreshCharacters(); renderShop();
+      toast(`${e.name} is now ${starsOf(id)}★.`); }; } });
 }
 function buyShop(id) {
   const W = S.wallet, pay = (cur, n) => { if (W[cur] < n) { toast(`Not enough ${cur === 'dust' ? 'Seaweeds' : 'Corals'}. You need ${fmt(n)}.`); return false; } W[cur] -= n; return true; };

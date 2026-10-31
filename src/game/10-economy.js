@@ -1,11 +1,12 @@
 /* buy summon tickets (pulls) with pearls */
 const TICKET_PEARLS = 3;
 function openBuyTickets(bk = 'limited') {
+  if (bk === 'memories') bk = 'standard';   // the memory banner uses Standard tickets
   if (bk !== 'standard') bk = 'limited';   // Limited tickets also pay for the Weekly and Outfit banners
   let n = 1; const k = TK(bk);
   openModal({ title: 'Buy pulls', ic: 'sparkle', body: `<div class="stack">
     <div class="tabs" style="margin:0">${['limited', 'standard'].map(b => `<button class="tab ${b === bk ? 'on' : ''}" data-btk="${b}">${curIcon(TK(b))}${TK_NAME[TK(b)]}s</button>`).join('')}</div>
-    <p class="desc">${TK_NAME[k]}s are one pull each on the ${bk === 'standard' ? 'permanent banner' : 'Limited, Weekly and Outfit banners'} and cost ${TICKET_PEARLS} pearls.</p>
+    <p class="desc">${TK_NAME[k]}s are one pull each on the ${bk === 'standard' ? 'Permanent and Memory banners' : 'Limited, Weekly and Outfit banners'} and cost ${TICKET_PEARLS} pearls.</p>
     <div class="buy-row">${curIcon(k)}<button class="rbtn glass" id="btMinus" aria-label="One less">−</button><input class="input" id="btN" type="number" min="1" max="999" value="1" aria-label="How many pulls"><button class="rbtn glass" id="btPlus" aria-label="One more">${icon('plus')}</button></div>
     <div class="row" style="justify-content:center">${[1, 10, 50].map(k => `<button class="btn ghost sm" data-bt="${k}">×${k}</button>`).join('')}</div>
     <div class="balance"><span>Total</span><b id="btCost"></b></div>
