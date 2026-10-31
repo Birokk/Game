@@ -126,12 +126,9 @@ function renderCharacters() {
     body = `<div class="lbl-sm">Memories · ${E.filter(Boolean).length}/${MEM_SLOTS} equipped</div>
       <div class="mem-slots">${E.map((id, i) => { const x = id && memOf(id);
         return `<button class="mem-slot ${memSlot === i ? 'on' : ''} ${x ? 'full r' + x.rarity : ''}" data-memslot="${i}">${x ? `${memArt(x) ? `<img src="${memArt(x)}" alt="">` : ''}${rtag(x.rarity)}<span class="mem-nm">${esc(x.name)}</span>` : `<span class="mem-empty">${icon('plus')}<span class="tiny">Slot ${i + 1}</span></span>`}</button>`; }).join('')}</div>
-      <div class="lbl-sm">All memories · ${list.filter(x => owns(x.id)).length}/${list.length} owned</div>
-      ${list.length ? `<div class="mem-list">${list.map(x => { const own = owns(x.id), at = E.indexOf(x.id), holder = own && at < 0 && memHolder(x.id, c.id);
-        return `<button class="mem-card r${x.rarity} ${own ? '' : 'bw'} ${at >= 0 ? 'on' : ''} ${holder ? 'busy' : ''}" data-memi="${esc(x.id)}" ${own ? '' : 'disabled'} ${x.desc ? `data-tip="${esc(`<b>${esc(x.name)}</b><span>${esc(x.desc)}</span>`)}"` : ''}>${memArt(x) ? `<img src="${memArt(x)}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(x.rarity)}${at >= 0 ? `<span class="skc-on">${icon('check')}</span>` : ''}${holder ? `<span class="wd-worn">With ${esc((findEntry(holder) || {}).name || '')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="mem-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
-        : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
+      <p class="tiny">Tap the slot to see every memory you own.</p>
       <div class="row" style="gap:8px">${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}<button class="btn ghost sm" id="memFuse">${icon('fuse')}Exchange memories</button></div>
-      <p class="tiny">Each character can equip one memory, and a memory stays with one character at a time. Tap one to equip it (tap it again to remove it). Memories have no effect yet.</p>`;
+      <p class="tiny">Each character can equip one memory. Every copy is separate: two characters can hold the same memory only with two copies. Memories have no effect yet.</p>`;
   } else if (csTab === 'pet') {
     body = petTabHTML(c);
   } else if (csTab === 'bt') {
@@ -206,7 +203,7 @@ function renderCharacters() {
     }
     S.wear[c.id] = W; persist(); renderCharacters(); toast(W[x.slot] ? `${c.name} put on ${x.name}.` : `${c.name} took off ${x.name}.`);
   });
-  csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; renderCharacters(); });
+  csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; openMemPick(c); });
   csEl.querySelectorAll('[data-memi]').forEach(b => b.onclick = () => {
     const x = memOf(b.dataset.memi); if (!x || !owns(x.id)) return;
     const E = memEqOf(c.id), at = E.indexOf(x.id);

@@ -21,7 +21,7 @@ function invItems() {
   (S.clothes || []).filter(x => owns(x.id)).forEach(x => { const slot = (WARD_SLOTS.find(s => s[0] === x.slot) || [, 'Clothing'])[1], img = clothImg(x);
     clothCopies(x.id).forEach((cp, i) => list.push({ id: `${x.id}#${i}`, cat: 'wardrobe', single: true, st: cp.star, name: x.name, n: 1, r: x.rarity, worn: cp.who ? (findEntry(cp.who) || {}).name || '' : '', tag: `Wardrobe · ${slot}`, use: `Wear it from ${x.char ? `${esc((findEntry(x.char) || {}).name || 'its character')}'s` : 'any character’s'} Wardrobe tab (${slot} slot).`, lore: '', pic: img ? `<img src="${img}" alt="">` : icon('hanger'), act: ['Characters', goTo(() => openCharacters(cp.who || x.char))] })); });
   (S.memories || []).filter(x => owns(x.id)).forEach(x => { const img = artFrom(x.img);
-    list.push({ id: x.id, cat: 'memory', name: x.name, n: S.owned[x.id], r: x.rarity, tag: 'Memory', use: `Equip it in ${x.char ? `${esc((findEntry(x.char) || {}).name || 'its character')}'s` : 'any character’s'} Memory tab.`, lore: x.desc || '', pic: img ? `<img class="wide" src="${img}" alt="">` : icon('memory'), act: ['Characters', goTo(() => openCharacters(x.char))] }); });
+    memCopies(x.id).forEach((cp, i) => list.push({ id: `${x.id}#${i}`, cat: 'memory', single: true, worn: cp.who ? (findEntry(cp.who) || {}).name || '' : '', name: x.name, n: 1, r: x.rarity, tag: 'Memory', use: `Equip it in ${x.char ? `${esc((findEntry(x.char) || {}).name || 'its character')}'s` : 'any character’s'} Memory tab.`, lore: x.desc || '', pic: img ? `<img class="wide" src="${img}" alt="">` : icon('memory'), act: ['Characters', goTo(() => openCharacters(cp.who || x.char))] })); });
   S.pool.filter(e => (e.type === 'item' || e.type === 'collectible') && owns(e.id)).forEach(e => list.push({ id: e.id, cat: 'items', name: e.name, n: S.owned[e.id], r: e.rarity, tag: e.type === 'item' ? 'Key item' : 'Collectible', use: e.type === 'item' ? 'Kept for a future update.' : 'Part of your collection.', lore: e.desc || '', pic: baseThumb(e), act: ['Collection', goTo(() => openCollection(e.type))] }));
   return list.filter(x => x.n > 0);
 }
@@ -48,14 +48,14 @@ function renderInventory() {
     <div class="inv-main">
       <section class="inv-left">
         <span class="inv-count">${invTab === 'all' ? `Items ${list.length}` : `${INV_TABS.find(t => t[0] === invTab)[2]} ${list.length}/${INV_CAP}`}</span>
-        <div class="inv-grid">${list.length ? list.map(x => `<button class="inv-cell r${x.r} ${x.id === invSel ? 'on' : ''}" data-inv="${esc(x.id)}" aria-label="${esc(x.name)}, ${fmt(x.n)}"><span class="inv-pic">${x.pic}${x.cat === 'wardrobe' || x.cat === 'memory' ? `<span class="inv-rt">${ctag(x.r)}</span>` : ''}</span><b>${x.single ? `${x.st ? clothStarRow(x.st, 'sm') : ''}${x.worn ? ' Worn' : ''}` || '&nbsp;' : fmt(x.n)}</b></button>`).join('')
+        <div class="inv-grid">${list.length ? list.map(x => `<button class="inv-cell r${x.r} ${x.id === invSel ? 'on' : ''}" data-inv="${esc(x.id)}" aria-label="${esc(x.name)}, ${fmt(x.n)}"><span class="inv-pic">${x.pic}${x.cat === 'wardrobe' || x.cat === 'memory' ? `<span class="inv-rt">${ctag(x.r)}</span>` : ''}</span><b>${x.single ? `${x.st ? clothStarRow(x.st, 'sm') : ''}${x.worn ? (x.cat === 'memory' ? ' Equipped' : ' Worn') : ''}` || '&nbsp;' : fmt(x.n)}</b></button>`).join('')
           : `<p class="inv-empty">${icon('bag')}Nothing here yet.</p>`}</div>
         <div class="inv-bar"><label class="inv-sort"><select id="invSort" aria-label="Sort by">${INV_SORTS.map(([k, l]) => `<option value="${k}" ${invSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
           <button class="inv-dir ${invDesc ? '' : 'asc'}" id="invDir" aria-label="${invDesc ? 'Highest first' : 'Lowest first'}" title="${invDesc ? 'Highest first' : 'Lowest first'}">${icon('up')}</button></div>
       </section>
       <aside class="inv-detail">${it ? `<div class="inv-dh"><span class="inv-badge sm">${icon(INV_TABS.find(t => t[0] === it.cat)[1])}</span><span>${esc(INV_TABS.find(t => t[0] === it.cat)[2])}</span></div>
         <div class="inv-hero r${it.r}"><span class="inv-medal"><span class="inv-pic">${it.pic}</span></span><div><b class="ts">${esc(it.name)}</b>${rtag(it.r)}${it.single ? (it.st ? clothStarRow(it.st, 'slot') : '') : `<span class="inv-n">×${fmt(it.n)}</span>`}</div></div>
-        <div class="inv-body"><span class="inv-tag r${it.r}">${esc(it.tag)}</span><p class="inv-use">${it.use}${it.worn ? ` <b>Worn by ${esc(it.worn)}.</b>` : ''}</p>${it.lore ? `<p class="inv-lore">${esc(it.lore)}</p>` : ''}
+        <div class="inv-body"><span class="inv-tag r${it.r}">${esc(it.tag)}</span><p class="inv-use">${it.use}${it.worn ? ` <b>${it.cat === 'memory' ? 'Equipped' : 'Worn'} by ${esc(it.worn)}.</b>` : ''}</p>${it.lore ? `<p class="inv-lore">${esc(it.lore)}</p>` : ''}
           ${it.act ? `<button class="btn gold" id="invAct">${esc(it.act[0])}</button>` : ''}</div>` : '<p class="inv-empty">Pick an item to see what it does.</p>'}</aside>
     </div>`;
   const g = invEl.querySelector('.inv-grid'); if (g) g.scrollTop = top;

@@ -395,7 +395,7 @@ function showPull(results, n, bk, opts = {}) {
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
-  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, exchange: !!opts.exchange, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = showSummary;
@@ -641,9 +641,9 @@ function showSummary() {
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
-      <button class="btn ghost" id="pullDone">${st.preview ? 'Close preview' : 'Done'}</button>
+      <button class="btn ghost" id="pullDone">${st.exchange ? 'Done' : st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    ${st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
+    ${st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
   const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();
