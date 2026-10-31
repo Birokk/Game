@@ -81,7 +81,7 @@ function renderCharacters() {
   const eq = equippedOf(c), shown = (csTab === 'skins' && csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
   const art = mediaArt(shown), shownOwned = owns(shown.id), shownWall = shown === c ? wpIdFor(c, artKey(c)) : shown.id;   // the art on screen as a wallpaper id
   csEl.className = `cs r${c.rarity}`;
-  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
+  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['pet', 'paw', 'Pet'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
@@ -125,7 +125,8 @@ function renderCharacters() {
       ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id, worn = wearersOf(x.id).filter(id => id !== c.id), busy = own && !eqd && worn.length >= (S.owned[x.id] || 0);
         return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'} ${busy ? `title="Worn by ${esc(worn.map(id => (findEntry(id) || {}).name).join(', '))}"` : ''}>${busy ? `<span class="wd-worn">Worn by ${esc((findEntry(worn[0]) || {}).name || '')}</span>` : ''}${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
-      ${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}`;
+      <div class="row" style="gap:8px">${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}<button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button></div>
+      <p class="tiny">Fusion turns 3 spare clothes of one rarity into 1 random piece of the next (R → SSR, SSR → UR).</p>`;
   } else if (csTab === 'memory') {
     const E = memEqOf(c.id), list = S.memories.filter(x => !x.char || x.char === c.id).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
     const memArt = x => artFrom(x.img);
@@ -138,6 +139,8 @@ function renderCharacters() {
         : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
       ${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}
       <p class="tiny">Each character can equip one memory: tap one to equip it (tap it again to remove it). Memories have no effect yet.</p>`;
+  } else if (csTab === 'pet') {
+    body = petTabHTML(c);
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
@@ -193,6 +196,8 @@ function renderCharacters() {
   csEl.classList.toggle('bw', !owns(shown.id));
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; csSkin = null; renderCharacters(); });
   if (csTab === 'skins') initSkinCar(c);
+  const wf = $('#wdFuse'); if (wf) wf.onclick = () => openFuse(3);
+  if (csTab === 'pet') bindPetTab(c);
   csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; renderCharacters(); });
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;

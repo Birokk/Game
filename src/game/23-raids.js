@@ -89,12 +89,13 @@ function renderRaids() {
       <div class="raid-drops"><span class="lbl-sm">Possible drops</span>
         ${[5, 4, 3].map(r => `<div class="raid-row r${r}"><span class="raid-rate">${ctag(r)}<b>${pct(r)}%</b></span><div class="raid-pieces">${raidPieces(r).map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('')}</div></div>`).join('')}
       </div>
-      <div class="raid-go"><button class="btn gold" data-clear="1">Clear ×1 ${curIcon('stamina')}${RAID_STAMINA}</button><button class="btn mint" data-clear="5">Clear ×5 ${curIcon('stamina')}${RAID_STAMINA * 5}</button></div>
+      <div class="raid-go"><button class="btn gold" data-clear="1">Clear ×1 ${curIcon('stamina')}${RAID_STAMINA}</button><button class="btn mint" data-clear="5">Clear ×5 ${curIcon('stamina')}${RAID_STAMINA * 5}</button><button class="btn ghost" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
     </section>`;
   raidEl.querySelector('#raidClose').onclick = closeRaids;
   raidEl.querySelector('#raidPlus').onclick = openStamina;
   raidEl.querySelectorAll('[data-raid]').forEach(b => b.onclick = () => { raidSel = b.dataset.raid; renderRaids(); });
   raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => clearRaid(+b.dataset.clear));
+  $('#raidFuse').onclick = () => openFuse(3);
 }
 setInterval(() => { const s = raidEl && raidEl.querySelector('#raidStam b'); if (s) s.textContent = `${stamina()}/${STAMINA_MAX}`; }, 5000);
 
