@@ -29,6 +29,7 @@ function giveGift(id, g) {
     if (S.wallet.coins < GIFTS[g].price) { toast(`${GIFTS[g].name} costs ${fmt(GIFTS[g].price)} gold coins. You have ${fmt(S.wallet.coins)}.`); return; }
     S.wallet.coins -= GIFTS[g].price;   // no gift in the bag: buy one on the spot
   } else S.gifts[g]--;
+  questAdd('gift');
   b.xp = Math.min(BOND_XP[BOND_MAX], b.xp + GIFTS[g].xp); S.bond[id] = b;
   persist(); renderMenu();
   const after = bondLv(id);

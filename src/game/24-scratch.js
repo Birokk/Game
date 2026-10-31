@@ -143,7 +143,7 @@ function openGiveGifts(id, gift) {
     modalEl.querySelectorAll('[data-gg]').forEach(b => b.onclick = () => set(b.dataset.gg));
     $('#ggGo').onclick = () => {
       const before = bondLv(id), b = { ...bondOf(id) };
-      S.gifts[gift] -= n; b.xp = Math.min(BOND_XP[BOND_MAX], b.xp + n * g.xp); S.bond[id] = b;
+      questAdd('gift'); S.gifts[gift] -= n; b.xp = Math.min(BOND_XP[BOND_MAX], b.xp + n * g.xp); S.bond[id] = b;
       persist(); renderMenu(); closeModal(); refreshCharacters();
       const after = bondLv(id);
       toast(`Gave ${n} ${g.name} to ${c.name}. +${fmt(n * g.xp)} bond${after > before ? `, bond level ${after}!${after === BOND_MAX ? ' You can now propose with a ring.' : ''}` : '.'}`);

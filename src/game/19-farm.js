@@ -55,7 +55,7 @@ const fountainReady = () => (S.farmWish || {}).last !== dayKey();
 function tryFountain() {
   if (!fountainReady()) return;
   const won = Math.random() < FARM_WISH;
-  S.farmWish = { last: dayKey(), won };
+  S.farmWish = { last: dayKey(), won }; questAdd('fountain');
   if (won) S.wallet.tickets += 1;
   persist(); renderMenu(); refreshSummon(); renderFarm();
   toast(won ? 'Your wish came true: 1 Limited ticket!' : 'Nothing this time. Come back tomorrow.');
@@ -73,7 +73,7 @@ function farmCollect(id) {
   if (n < 1) return 0;
   const res = farmDef(id).res;
   if (res === 'stamina') n = giveStamina(n);   // anything over the 999 cap stays in storage
-  f.acc -= n;
+  f.acc -= n; if (n > 0) questAdd('base');
   if (res === 'exp') gainExp(n);
   else if (res !== 'stamina') S.wallet[res] = (S.wallet[res] || 0) + n;
   return n;

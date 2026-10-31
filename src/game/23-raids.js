@@ -55,7 +55,7 @@ function rollRaidPiece() {
 function clearRaid(times) {
   const cost = RAID_STAMINA * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
-  spendStamina(cost);
+  spendStamina(cost); questAdd('raid', times);
   const drops = [];
   let n = 0; for (let t = 0; t < times; t++) n += Math.random() < RAID_DOUBLE ? 2 : 1;
   for (let i = 0; i < n; i++) {

@@ -46,6 +46,7 @@ function renderMenu() {
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
   $('#evDot').hidden = !loginReady();
+  $('#qDot').hidden = !questReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
@@ -77,7 +78,7 @@ function stamina() {
   if (k > 0) { st.v = Math.min(STAMINA_MAX, st.v + k); st.t = st.v >= STAMINA_MAX ? now : st.t + k * STAMINA_MS; persist(); }
   return st.v;
 }
-function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); S.stamina.v -= n; persist(); renderStamina(); return true; }
+function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); S.stamina.v -= n; questAdd('stamina', n); persist(); renderStamina(); return true; }
 function renderStamina() {
   const el = $('#stamVal'); if (!el) return;
   const v = stamina(), left = STAMINA_MS - (Date.now() - S.stamina.t), m = Math.floor(left / 6e4), sec = Math.floor(left % 6e4 / 1e3);

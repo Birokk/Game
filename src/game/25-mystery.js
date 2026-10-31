@@ -81,7 +81,7 @@ function pullMbox() {
   const cost = MB_COST[i];
   if (S.wallet.pearls < cost) { toast(`This pull costs ${cost} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   const k = drawMbox(st.got);
-  S.wallet.pearls -= cost; st.got.push(k);
+  S.wallet.pearls -= cost; st.got.push(k); questAdd('fountain');
   const note = grantMbox(k);
   // the outfit empties the box: everything still inside is yours too
   const rest = k === 'skin' ? MB_ITEMS().map(x => x.k).filter(x => !st.got.includes(x)) : [];

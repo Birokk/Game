@@ -2616,3 +2616,63 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .bdg.glow-sss .bdg-svg{animation:sssBadge 1.6s ease-in-out infinite alternate}
 @keyframes sssBadge{from{filter:drop-shadow(0 0 4px #ff2a45) drop-shadow(0 0 8px rgba(255,120,60,.6))}to{filter:drop-shadow(0 0 9px #ff2a45) drop-shadow(0 0 18px rgba(255,90,60,.95)) brightness(1.15)}}
 .cs-parts .cs-extra em,.cs-parts .cs-extra b{color:#ff8a96}
+
+/* ---------- daily quests (28-quests.js): points track on top, quest cards in a row, like the owner's reference ---------- */
+.dq{display:flex;flex-direction:column;gap:14px;height:min(78vh,700px);min-height:0;--qp:#ff4f8b;--qt:#4ee6c8}
+.dq-top{flex:none;display:flex;align-items:center;gap:18px;padding:14px 22px 10px;border-radius:20px;background:linear-gradient(180deg,#1f1f23,#141417);border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.dq-pts{display:flex;align-items:center;gap:8px;flex:none}
+.dq-pts>.cic{width:58px;height:58px;filter:drop-shadow(0 0 10px rgba(60,150,255,.5))}
+.dq-pts b{display:block;font:italic 900 46px/1 var(--display);color:#fff;letter-spacing:-.02em}
+.dq-pts small{display:block;font:italic 700 13px var(--display);color:#dfe6f5;margin-top:2px}
+.dq-track{position:relative;flex:1;min-width:0;height:96px;margin:0 64px 0 6px}
+.dq-bar{position:absolute;left:0;right:0;top:28px;height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.dq-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2fd6b5,var(--qt));box-shadow:0 0 12px rgba(78,230,200,.7);transition:width .5s ease}
+.dq-node{position:absolute;left:var(--x);top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px}
+.dq-dot{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#0b0b0d;border:2px solid rgba(255,255,255,.18);color:#8a8d99;cursor:pointer;padding:0;transition:transform .15s}
+.dq-dot .ic{width:20px;height:20px}
+.dq-node.can .dq-dot{border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 4px rgba(255,211,107,.18),0 0 18px rgba(255,211,107,.6);animation:dqPulse 1.4s ease-in-out infinite}
+.dq-node.got .dq-dot{background:radial-gradient(circle,#ff6aa0 0 45%,#3a0d1f 46%);border-color:var(--qp);color:#fff;box-shadow:0 0 14px rgba(255,79,139,.55)}
+.dq-dot:hover{transform:scale(1.08)}
+@keyframes dqPulse{50%{transform:scale(1.08)}}
+.dq-m{font:700 15px var(--display);color:#cfd3dc;padding:0 10px;position:relative}
+.dq-m::before,.dq-m::after{content:'';position:absolute;top:50%;width:8px;height:1px;background:rgba(255,255,255,.3)}
+.dq-m::before{right:100%}.dq-m::after{left:100%}
+.dq-rw{display:flex;gap:6px;white-space:nowrap}
+.dq-rw i{display:flex;align-items:center;gap:2px;font:700 11px var(--body);font-style:normal;color:#e7e9f0}
+.dq-rw .cic{width:14px;height:14px}
+.dq-list{flex:1;min-height:0;display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;padding:18px;border-radius:20px;scroll-snap-type:x proximity;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 14px,transparent 14px 28px),linear-gradient(180deg,#19191c,#111113);border:1px solid rgba(255,255,255,.07)}
+.dq-card{flex:0 0 230px;display:flex;flex-direction:column;align-items:center;gap:14px;scroll-snap-align:start;min-height:0}
+.dq-face{flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 16px;border-radius:22px;text-align:center;
+  background:linear-gradient(180deg,#232327,#18181b);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.dq-disc{width:116px;height:116px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#050506 0 54%,#1d1d21 55% 70%,#121214 71%);box-shadow:0 0 0 1px rgba(255,255,255,.07),inset 0 0 18px rgba(0,0,0,.8);color:#e9ecf4}
+.dq-disc>.ic{width:44px;height:44px}
+.dq-disc>.cic{width:50px;height:50px}
+.dq-check{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#ff76a8,#d81e62);box-shadow:0 0 22px rgba(255,79,139,.75),0 0 0 6px rgba(255,79,139,.18);color:#fff}
+.dq-check .ic{width:32px;height:32px;stroke-width:3}
+.dq-pt{display:flex;align-items:center;gap:6px;font:italic 900 26px var(--display);color:#f1f3f8;padding:2px 14px;border-radius:99px;background:rgba(255,255,255,.05)}
+.dq-pt .cic{width:26px;height:26px}
+.dq-name{margin:0;font:600 17px/1.3 var(--read);color:#d6d9e1;min-height:2.6em;display:flex;align-items:center}
+.dq-prog{font:700 22px var(--display);color:#fff}
+.dq-btn{min-width:150px;padding:12px 22px;border-radius:99px;border:0;font:700 17px var(--display);text-align:center;background:#0a0a0c;color:#9aa0ad;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.dq-btn.go{cursor:pointer;color:#fff;background:#2a2a30;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.dq-btn.go:hover{background:#34343b}
+.dq-btn.claim{cursor:pointer;color:var(--gold-ink);background:linear-gradient(180deg,#ffe28f,#ffbf3f);box-shadow:0 0 18px rgba(255,200,80,.55);animation:dqPulse 1.4s ease-in-out infinite}
+.dq-btn.done{color:#e9ebf1;background:#050506}
+.dq-card.got .dq-face{opacity:.55}
+.dq-card.can .dq-face{border-color:rgba(255,211,107,.55);box-shadow:0 0 22px rgba(255,211,107,.18)}
+.dq-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dq-refresh{margin-left:auto;display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:99px;background:#0d0d10;border:1px solid rgba(255,255,255,.2);font:italic 700 15px var(--display);color:#eef0f5}
+.dq-refresh .ic{width:18px;height:18px}
+@media (max-width:760px){
+  .dq{height:80vh}
+  .dq-top{flex-direction:column;align-items:stretch;padding:12px 14px 6px;gap:6px}
+  .dq-pts>.cic{width:42px;height:42px}.dq-pts b{font-size:34px}
+  .dq-track{flex:none;margin:0 22px;height:70px}
+  .dq-rw{display:none}
+  .dq-dot{width:36px;height:36px}
+  .dq-card{flex-basis:190px}
+  .dq-disc{width:88px;height:88px}
+  .dq-pt{font-size:21px}.dq-name{font-size:15px}
+  .dq-btn{min-width:120px;padding:10px 16px;font-size:15px}
+}

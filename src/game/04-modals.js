@@ -18,7 +18,6 @@ function openModal({ title, ic, body, wide, small, kind, onMount }) {
 function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; refreshCharacters(); } }
 
 const PLACEHOLDERS = {
-  quests:  ['Quests', 'quests', 'Daily and weekly missions that pay out pearls and coins.'],
   friends: ['Friends', 'friends', 'Friend list, invites, and meeting up with friends in the plaza.'],
   ranking: ['Ranking', 'trophy', 'Leaderboards for collection size, event points and more.'],
   shop:    ['Shop', 'shop', 'Pearl packs, skin bundles and the monthly pass.'],
