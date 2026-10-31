@@ -96,17 +96,12 @@ function renderCharacters() {
     <div class="cs-sep"></div>`;
   let body;
   if (csTab === 'home') {
-    const next = c.mc ? 'Your main character. Switch between female and male in Settings, once every 72 hours.' : !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies from summons give ${STARLIGHT_MAX[c.rarity] || STARLIGHT_MAX[4]} Corals each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
     body = `<div class="cs-boxes">
         <div class="cs-box"><span class="lbl-sm">Stars</span><b><em>${st}</em>/${MAX_STARS}</b></div>
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
       ${csCard(c)}
-      <div class="cs-pill">${next}</div>
-      ${artKey(c) !== 'base' && !eq ? `<div class="cs-pill" style="color:#e8ff7a">Showing the ${ASC.find(x => x.k === artKey(c)).label} splash art</div>` : ''}
-      ${eq ? `<div class="cs-pill" style="color:#e8ff7a">Wearing ${esc(eq.name)}</div>` : ''}
-      <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`

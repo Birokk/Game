@@ -191,7 +191,7 @@ const starsOf = id => { const e = findEntry(id); return e && e.type === 'skin' ?
 const hasStars = e => !!e && e.type !== 'skin';
 /* breakthrough: each owned star can be awakened into a glowing star in the character's rarity color */
 const btOf = id => (S.bt[id] || []).filter(i => i < starsOf(id));
-const starRow = (n, pop = -1, e = null) => { const bt = e ? btOf(e.id) : []; return `<span class="stars6 ${e ? 'r' + e.rarity : ''}" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''} ${bt.includes(i) ? 'bt' : ''}">★</span>`).join('')}</span>`; };
+const starRow = (n, pop = -1, e = null) => { const bt = e ? btOf(e.id) : []; return `<span class="stars6 ${e ? 'r' + e.rarity : ''}" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''} ${bt.includes(i) ? 'bt' : ''}">★</span>`).join('')}${e && e.type === 'character' ? csPlus(e) : ''}</span>`; };   // + after the stars from CS grade S
 const starsFor = e => hasStars(e) ? starRow(starsOf(e.id), -1, e) : '';
 const DUST_PER_PULL = 5, STARLIGHT = { 4: 5, 5: 10 }, STARLIGHT_MAX = { 4: 10, 5: 40 };
 const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_UR = .08;

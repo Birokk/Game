@@ -7,13 +7,15 @@
      each worn piece  R 100 · SSR 250 · UR 600, and a full 6-piece set of the same clothes adds R 500 · SSR 1,500 · UR 4,000
      pet with them    SSR   600 · UR 1,200, plus SSR 100 · UR 200 per pet star
      memory equipped  SSR   500 · UR 1,000
-   A fresh UR is 2,000 (E), a maxed-out UR with everything equipped is about 24,000; grades below. */
+     each bond level  SSR   250 · UR   400   (up to 10)
+   A fresh UR is 2,000 (E); SSS (30,000) needs a fully built UR with max bond and several skins. From grade S the
+   character's stars get a "+" in the grade's colour (csPlus). */
 const CS_PTS = {
   base: { 4: 1000, 5: 2000 }, star: { 4: 300, 5: 500 }, bt: { 4: 500, 5: 800 },
   skin: { 4: 400, 5: 800, 6: 1500 }, cloth: { 3: 100, 4: 250, 5: 600 }, set: { 3: 500, 4: 1500, 5: 4000 },
-  pet: { 4: 600, 5: 1200 }, petStar: { 4: 100, 5: 200 }, mem: { 4: 500, 5: 1000 }
+  pet: { 4: 600, 5: 1200 }, petStar: { 4: 100, 5: 200 }, mem: { 4: 500, 5: 1000 }, bond: { 4: 250, 5: 400 }
 };
-const CS_GRADES = [['F', 0], ['E', 1500], ['D', 3000], ['C', 5000], ['B', 7500], ['A', 10000], ['S', 13000], ['SS', 16500], ['SSS', 20000]];
+const CS_GRADES = [['F', 0], ['E', 1500], ['D', 3000], ['C', 5000], ['B', 7500], ['A', 10000], ['S', 13000], ['SS', 16500], ['SSS', 30000]];
 const csP = (k, r) => CS_PTS[k][r] || CS_PTS[k][4] || 0;
 /* the score broken into parts: [{ label, pts }] (empty for characters you don't own) */
 function csParts(c) {
@@ -33,11 +35,19 @@ function csParts(c) {
   if (pet) out.push({ label: `Pet: ${pet.name}`, pts: csP('pet', +pet.rarity) + starsOf(pet.id) * csP('petStar', +pet.rarity) });
   const mems = memEqOf(c.id).filter(Boolean).map(memOf).filter(Boolean);
   if (mems.length) out.push({ label: `Memory: ${mems[0].name}`, pts: mems.reduce((t, x) => t + csP('mem', +x.rarity), 0) });
+  const bl = bondLv(c.id);
+  if (bl) out.push({ label: `Bond level ${bl}`, pts: bl * csP('bond', r) });
   return out;
 }
 const charScore = c => csParts(c).reduce((t, x) => t + x.pts, 0);
 const csGrade = n => { let g = CS_GRADES[0][0]; for (const [k, min] of CS_GRADES) if (n >= min) g = k; return g; };
 const csNext = n => CS_GRADES.find(([, min]) => min > n) || null;
+/* the "+" after a character's stars once its CS grade is S, SS or SSS */
+function csPlus(c) {
+  if (!owns(c.id)) return '';
+  const g = csGrade(charScore(c));
+  return ['S', 'SS', 'SSS'].includes(g) ? `<span class="cs-plus g-${g.toLowerCase()}" title="CS grade ${g}">+</span>` : '';
+}
 const gradeTag = (g, cls = '') => `<span class="grade g-${g.toLowerCase()} ${cls}">${g}</span>`;
 /* grade badge + "CS 12,340" for an owned character, '' otherwise */
 function csTag(c, cls = '') {
@@ -64,8 +74,8 @@ function openCSInfo() {
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
       ${row('Each owned skin', 'skin', [4, 5, 6])}${row('Each worn wardrobe piece', 'cloth', [3, 4, 5])}${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}
-      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}
+      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}
     </tbody></table>
-    <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E); a 6★ UR with every star awakened, a full UR set, a UR pet and a UR memory reaches SSS.</p>
+    <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E). SSS takes a fully built UR: 6★ with every star awakened, a full UR set, a UR pet, a UR memory, max bond and several skins. From grade S a <b>+</b> appears after the character's stars, gold for S, prism for SS and red for SSS.</p>
   </div>` });
 }
