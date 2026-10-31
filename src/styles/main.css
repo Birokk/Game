@@ -2574,3 +2574,30 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .fu-it .mem-card{width:100%}
 .wdp-mems{width:100%;max-height:60vh;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .wdp-mems .mem-card .wd-worn{z-index:3}
+/* memory exchange: straight to the reveal */
+.pull.direct .sph-stage,.pull.direct .sph-hint{display:none}
+/* top-up icons: raw picture, no rarity frame */
+.mall-ic.raw{background:none !important;border:0 !important;box-shadow:none !important}
+.mall-ic.raw .cic,.mall-ic.raw img{width:80%;height:80%;object-fit:contain}
+.tu-ad{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.tu-slot{display:grid;justify-items:center;gap:4px}
+.tu-pic{width:56px;height:56px;display:grid;place-items:center}
+.tu-pic .cic,.tu-pic img{width:100%;height:100%;object-fit:contain}
+.tu-slot small{font-family:var(--display);font-size:11px}
+.tu-btn{min-width:0 !important;padding:6px 10px !important}
+/* permanent banner milestone: a round button with a yellow ring that fills up to 100 pulls */
+.sx-mile{position:absolute;right:var(--sr);bottom:calc(150px + var(--sb));z-index:3;display:grid;justify-items:center;gap:4px;background:none;border:0;color:#fff;padding:0;cursor:pointer}
+.sx-mile::before{content:"";width:64px;height:64px;border-radius:50%;background:conic-gradient(#ffd84a var(--p),rgba(255,255,255,.14) 0);box-shadow:0 4px 14px rgba(0,0,0,.4);grid-area:1/1}
+.sx-mile-in{grid-area:1/1;align-self:center;justify-self:center;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#2c2c3a,#111118);display:grid;place-content:center;justify-items:center;line-height:1}
+.sx-mile-in b{font-family:var(--display);font-weight:400;font-size:16px}
+.sx-mile-in small{font-size:9px;color:rgba(255,255,255,.6)}
+.sx-mile-in .ic{width:22px;height:22px;color:#ffd84a}
+.sx-mile-lb{font-family:var(--display);font-size:12px;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+.sx-mile.ready::before{animation:mileGlow 1.4s ease-in-out infinite alternate}
+.sx-mile.ready .sx-mile-in{background:radial-gradient(circle at 40% 30%,#fff2b0,#ffb627)}
+.sx-mile.ready .sx-mile-in b,.sx-mile.ready .sx-mile-in small{color:#3a2400}
+.sx-mile.ready .sx-mile-lb{color:#ffe58a}
+@keyframes mileGlow{from{box-shadow:0 0 10px rgba(255,216,74,.6)}to{box-shadow:0 0 26px rgba(255,216,74,1),0 0 50px rgba(255,190,60,.6)}}
+.sx-mile.done{opacity:.7}
+@media (max-width:820px){.sx-mile{bottom:calc(200px + var(--sb))}}
+.setx-list{grid-auto-rows:max-content}

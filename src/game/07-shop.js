@@ -12,6 +12,8 @@ let exSub = 'corals';
 function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), n: 0 }; return S.premEx; }
 const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
 let shopTab = 'hot', shopEl = null, shopPick = null;
+/* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
+const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
 function openShop(tab) {
   closeModal();
   if (tab === 'monthly' || tab === 'dust') { tab = 'exchange'; exSub = 'seaweeds'; }   // monthly pulls live in the Seaweeds exchange
@@ -48,7 +50,7 @@ function renderShop() {
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
     body = `<p class="tiny">Pearl packs. Real payments aren't connected yet, so these can't be bought for now.</p>
-      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big r${i > 2 ? 5 : 4}">${curIcon('pearls')}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
+      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets and marriage rings.</p>
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;

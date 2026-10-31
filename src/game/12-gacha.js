@@ -157,7 +157,7 @@ function renderSummon() {
     <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${baseArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${baseSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
     <div class="sx-fade"></div><div class="sx-vig"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
-    <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
+    <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
     <nav class="sx-tabs" aria-label="Banners">${BANNER_KEYS.map(tab).join('')}</nav>
     <div class="sx-title">
       <h2>${esc(B.title)}</h2>
@@ -173,6 +173,7 @@ function renderSummon() {
       <button class="sx-rb ts" id="sxHist"><span class="c">${icon('clock')}</span>History</button>
       <button class="sx-rb ts" data-open="shop"><span class="c">${icon('shop')}</span>Shop</button>
     </div>
+    ${bk === 'standard' ? milestoneBtn() : ''}
     <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
     <div class="sx-br">
       ${freeReady(bk) ? `<button class="sx-pull free" id="sxFree">Free daily pull<span class="dot-n"></span></button>` : ''}
@@ -186,7 +187,29 @@ function renderSummon() {
   const fr = $('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
   $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
   $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
+  const ms = $('#sxMile'); if (ms) ms.onclick = confirmMilestone;
   $('#sxHist').onclick = () => openRates(bk, true);
+}
+/* permanent banner milestone: after the first 100 pulls on it, one free random permanent UR (once) */
+const MILESTONE_PULLS = 100;
+const mileN = () => Math.min(MILESTONE_PULLS, S.gacha.standard.total || 0), mileDone = () => !!S.gacha.standard.mile;
+function milestoneBtn() {
+  const n = mileN(), ready = n >= MILESTONE_PULLS && !mileDone();
+  return `<button class="sx-mile ${ready ? 'ready' : ''} ${mileDone() ? 'done' : ''}" id="sxMile" style="--p:${n / MILESTONE_PULLS * 360}deg" aria-label="Milestone: ${n} of ${MILESTONE_PULLS} pulls"><span class="sx-mile-in">${mileDone() ? icon('check') : `<b>${n}</b><small>/${MILESTONE_PULLS}</small>`}</span><span class="sx-mile-lb">${mileDone() ? 'Claimed' : ready ? 'Claim UR' : 'Milestone'}</span></button>`;
+}
+function confirmMilestone() {
+  if (mileDone()) { toast('You already claimed the 100-pull milestone.'); return; }
+  const n = mileN();
+  if (n < MILESTONE_PULLS) { toast(`Pull ${MILESTONE_PULLS - n} more time${MILESTONE_PULLS - n === 1 ? '' : 's'} on this banner to claim a free random UR.`); return; }
+  const urs = standardURs(); if (!urs.length) { toast('There are no permanent URs yet.'); return; }
+  openModal({ title: 'Milestone reward', ic: 'sparkle', small: true, body: `<div class="stack" style="justify-content:center;justify-items:center;text-align:center"><p class="desc">You reached ${MILESTONE_PULLS} pulls on the permanent banner. Claim a free random UR from it?</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="msNo">Later</button><button class="btn gold" id="msYes">${icon('sparkle')}Claim</button></div></div>`,
+    onMount: () => { $('#msNo').onclick = closeModal; $('#msYes').onclick = () => {
+      closeModal(); const item = rpick(urs), res = { kind: 'entry', id: item.id, rarity: 5, lost: false, hard: true, ...grantEntry(item) };
+      if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += res.starlight; }
+      S.gacha.standard.mile = true; S.gacha.history.unshift({ name: item.name, rarity: 5, banner: 'standard', t: Date.now() });
+      persist(); renderMenu(); refreshSummon(); showPull([res], 1, 'standard', { preview: true, milestone: true, fake: false, rainbow: false });
+    }; } });
 }
 /* rates, pity and history for one banner */
 function openRates(bk, histOpen) {
@@ -395,14 +418,16 @@ function showPull(results, n, bk, opts = {}) {
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
-  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, exchange: !!opts.exchange, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, exchange: !!opts.exchange, milestone: !!opts.milestone, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
-  $('#pullSkip').onclick = showSummary;
+  $('#pullSkip').onclick = () => pullState && pullState.exchange ? closePull() : showSummary();
   // tap anywhere to release (Enter / Space / ↓ also work)
   pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
   document.addEventListener('keydown', pullState.onKey);
+  // direct: skip the sphere and go straight to the reveal (memory exchange)
+  if (opts.direct) { pullEl.classList.add('direct'); pullClear(pullState); if (pullState.sfx) { pullState.sfx.stop(); pullState.sfx = null; } advancePull(); }
 }
 const pullLater = (ms, fn) => pullState && pullState.timers.push(setTimeout(fn, ms));
 function pullClear(st) { clearTimeout(st.timer); (st.timers || []).forEach(clearTimeout); st.timers = []; if (st.onKey) document.removeEventListener('keydown', st.onKey); st.onKey = null; }
@@ -572,7 +597,7 @@ function advancePull() {
   st.i++; st.phase = 'reveal';
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
-  if (st.i >= st.order.length) return showSummary();
+  if (st.i >= st.order.length) return st.exchange ? closePull() : showSummary();
   const r = st.results[st.order[st.i]], v = resultView(r);
   st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
   pullEl.classList.add('revealing');
@@ -641,9 +666,9 @@ function showSummary() {
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
-      <button class="btn ghost" id="pullDone">${st.exchange ? 'Done' : st.preview ? 'Close preview' : 'Done'}</button>
+      <button class="btn ghost" id="pullDone">${st.exchange || st.milestone ? 'Done' : st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    ${st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
+    ${st.milestone ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Milestone reward: 100 pulls on the permanent banner.</p>' : st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
   const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();

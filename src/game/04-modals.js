@@ -127,6 +127,7 @@ function renderSettings() {
       + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
   } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
       + ['ssr', 'ur'].map(r => setRow(`${r.toUpperCase()} egg icon`, `<span class="set-exp">${eggHTML(r, 'sm')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-eggup="${r}"></label>${customIcon('egg' + r) ? `<button type="button" class="sx-btn" data-eggreset="${r}">Default</button>` : ''}`, 'The full egg in the hatchery, inventory and hatch animation')).join('')
+      + `<div class="sx-row sx-block"><span class="sx-l">Top Up icons<small>The picture of each pearl pack in the shop's Top Up tab (shown as is, no frame)</small></span><div class="sx-c"><div class="tu-ad">${TOPUP.map(([n], i) => `<div class="tu-slot"><span class="tu-pic">${topupIcon(i)}</span><small>${fmt(n)}</small><label class="sx-btn tu-btn">${icon('upload')}<input type="file" accept="image/*" class="sr" data-tuup="${i}"></label>${MEDIA.get('topup:' + i) ? `<button type="button" class="link" data-tureset="${i}">Default</button>` : ''}</div>`).join('')}</div></div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
       + setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`));
@@ -150,6 +151,8 @@ function renderSettings() {
   bindUpArts(renderSettings); bindPullBg(renderSettings);
   document.querySelectorAll('[data-eggup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:egg' + i.dataset.eggup, await resizeImage(i.files[0], 256, 'image/png'))) { renderSettings(); toast('Egg icon updated.'); } } catch (e) { toast(e.message, true); } });
   document.querySelectorAll('[data-eggreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:egg' + b.dataset.eggreset); renderSettings(); toast('Egg icon back to the default.'); });
+  document.querySelectorAll('[data-tuup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('topup:' + i.dataset.tuup, await resizeImage(i.files[0], 512, 'image/png'))) { renderSettings(); toast('Top Up icon updated.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-tureset]').forEach(b => b.onclick = async () => { await mediaDel('topup:' + b.dataset.tureset); renderSettings(); toast('Top Up icon back to the default.'); });
   const er = on('setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); renderSettings(); toast('EXP icon back to the default.'); };
 }
 

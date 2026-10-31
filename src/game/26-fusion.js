@@ -303,6 +303,6 @@ function renderMemFuse(root, tabs) {
     used.forEach(id => { S.owned[id] -= 1; if (!S.owned[id]) delete S.owned[id]; });
     const results = Array.from({ length: k }, () => { const m = pick(urs), isNew = !S.owned[m.id]; S.owned[m.id] = (S.owned[m.id] || 0) + 1; return { kind: 'entry', id: m.id, rarity: +m.rarity, isNew, starUp: 0, maxed: !isNew }; });
     persist(); refreshCharacters(); renderFuse();
-    showPull(results, k, 'memories', { preview: true, exchange: true });   // the summon reveal, nothing else is spent or added
+    showPull(results, k, 'memories', { preview: true, exchange: true, direct: true });   // the summon reveal, nothing else is spent or added
   };
 }
