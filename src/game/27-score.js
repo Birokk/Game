@@ -15,7 +15,7 @@ const CS_PTS = {
   skin: { 4: 400, 5: 800, 6: 1500 }, cloth: { 3: 100, 4: 250, 5: 600 }, set: { 3: 500, 4: 1500, 5: 4000 },
   pet: { 4: 600, 5: 1200 }, petStar: { 4: 100, 5: 200 }, mem: { 4: 500, 5: 1000 }, bond: { 4: 250, 5: 400 }
 };
-const CS_GRADES = [['F', 0], ['E', 1500], ['D', 3000], ['C', 5000], ['B', 7500], ['A', 10000], ['S', 13000], ['SS', 16500], ['SSS', 30000]];
+const CS_GRADES = [['F', 0], ['E', 1500], ['D', 3000], ['C', 5000], ['B', 7500], ['A', 10000], ['S', 15000], ['SS', 20000], ['SSS', 30000]];
 const csP = (k, r) => CS_PTS[k][r] || CS_PTS[k][4] || 0;
 /* the score broken into parts: [{ label, pts }] (empty for characters you don't own) */
 function csParts(c) {
@@ -49,11 +49,11 @@ function csPlus(c) {
   return ['S', 'SS', 'SSS'].includes(g) ? `<span class="cs-plus g-${g.toLowerCase()}" title="CS grade ${g}">+</span>` : '';
 }
 const gradeTag = (g, cls = '') => `<span class="grade g-${g.toLowerCase()} ${cls}">${g}</span>`;
-/* grade badge + "CS 12,340" for an owned character, '' otherwise */
+/* just the grade badge for an owned character ('' otherwise); the score itself is only shown on the Home tab */
 function csTag(c, cls = '') {
   if (!c || !owns(c.id)) return '';
   const n = charScore(c);
-  return `<span class="cs-tag ${cls}">${gradeTag(csGrade(n))}<b>CS ${fmt(n)}</b></span>`;
+  return `<span class="cs-tag ${cls}" title="Character Score ${fmt(n)}">${gradeTag(csGrade(n))}</span>`;
 }
 const csInfoBtn = (cls = '') => `<button class="cs-info ${cls}" data-csinfo aria-label="How CS grades work">${icon('info')}</button>`;
 function bindCSInfo(root) { (root || document).querySelectorAll('[data-csinfo]').forEach(b => b.onclick = e => { e.stopPropagation(); openCSInfo(); }); }
@@ -62,7 +62,7 @@ function csCard(c) {
   if (!owns(c.id)) return '';
   const parts = csParts(c), n = parts.reduce((t, x) => t + x.pts, 0), g = csGrade(n), nx = csNext(n), lo = (CS_GRADES.find(([k]) => k === g) || [0, 0])[1];
   return `<div class="cs-card cs-score">
-    <div class="cs-score-top">${gradeTag(g, 'big')}<div class="cs-score-n"><span class="lbl-sm">Character Score</span><b>CS ${fmt(n)}</b>
+    <div class="cs-score-top">${gradeTag(g, 'big')}<div class="cs-score-n"><span class="lbl-sm">CS (Character Score)</span><b>${fmt(n)}</b>
       ${nx ? `<span class="bar cs-bar"><i style="width:${(n - lo) / (nx[1] - lo) * 100}%"></i></span><span class="tiny">${fmt(nx[1] - n)} CS to grade ${nx[0]}</span>` : '<span class="tiny">Top grade reached</span>'}</div>${csInfoBtn()}</div>
     <div class="cs-parts">${parts.map(x => `<span><em>${esc(x.label)}</em><b>+${fmt(x.pts)}</b></span>`).join('')}</div></div>`;
 }
