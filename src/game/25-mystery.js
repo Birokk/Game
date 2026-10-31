@@ -101,31 +101,33 @@ function showMboxRest(rest, done) {
     <div class="row" style="justify-content:flex-end"><button class="btn gold" id="mbRestOk">Collect</button></div></div>`,
     onMount: () => { $('#mbRestOk').onclick = () => { closeModal(); done && done(); }; } });
 }
+/* the event page side (like the owner's reference): the outfit's full art is the page wallpaper, a tidy description
+   in the top-right corner, and at the bottom an Info button and the big wish button with the n / 10 counter beside it */
+const mbRows = () => { const st = mboxState();
+  return MB_ITEMS().map(x => { const got = st.got.includes(x.k), n = st.got.indexOf(x.k) + 1;
+    return `<div class="mb-row r${x.r} ${got ? 'got' : ''}"><span class="mb-ic">${x.pic}</span><span class="mb-nm"><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></span>${ctag(x.r)}${got ? `<span class="mb-chk" title="Wish ${n}">${icon('check')}</span>` : ''}</div>`; }).join(''); };
 function mysteryBoard() {
-  const st = mboxState(), sk = mboxSkin(), i = st.got.length, done = i >= MB_COST.length, ch = mboxChance();
-  const art = sk && baseArt(sk);
-  return `<div class="mb">
-    <div class="mb-stage">
-      <div class="mb-prem r5 ${st.got.includes('skin') ? 'got' : ''}">${art ? `<img src="${art}" alt="">` : sk ? `<img src="${baseSplash(sk)}" alt="" class="chibi">` : ''}
-        <span class="mb-prem-tag">${rtag(5)}<b>Premium drop</b></span><span class="mb-prem-nm">${sk ? esc(sk.name) : 'No outfit chosen yet'}</span>
-        ${st.got.includes('skin') ? `<span class="mb-got">${icon('check')}Obtained</span>` : ''}</div>
-      <div class="mb-info">
-        <div><span class="lbl-sm">Wishes</span><b>${i} / ${MB_COST.length}</b></div>
-        <div><span class="lbl-sm">Outfit</span><b>${st.got.includes('skin') ? 'Obtained' : 'Still inside'}</b></div>
-        <div><span class="lbl-sm">Next wish</span><b>${done ? 'Empty' : `${curIcon('pearls')}${MB_COST[i]}`}</b></div>
+  const st = mboxState(), sk = mboxSkin(), i = st.got.length, done = i >= MB_COST.length, owner = sk && findEntry(sk.parent);
+  const hl = t => `<em>${esc(t)}</em>`;
+  return `<div class="mb2">
+    <p class="mb2-desc">This fountain may hold ${sk ? `the limited outfit ${hl(sk.name)}${owner && !sk.name.includes(owner.name) ? ` for ${hl(owner.name)}` : ''}` : 'a limited outfit'}, Limited and Standard tickets, pearls, the title ${hl('Fountain Wisher')} and more.</p>
+    ${st.got.includes('skin') ? `<span class="mb2-drawn"><i>${icon('check')}Outfit obtained</i></span>` : ''}
+    <div class="mb2-bottom">
+      <button class="mb2-infob" data-info="mbox" aria-label="Info: prizes left, outfit chance and prices"><span>${icon('info')}</span><b>Info</b></button>
+      <div class="mb2-bar">
+        <span class="mb2-count"><small>${done ? 'All wishes made' : 'Wishes'}</small><b>${i}<i>/ ${MB_COST.length}</i></b></span>
+        ${done ? '<button class="mb2-go" disabled><b>The fountain is empty</b></button>'
+          : `<button class="mb2-go" id="mbPull" ${S.wallet.pearls >= MB_COST[i] ? '' : 'disabled'}><b>Make a wish</b><span class="mb2-cost">${curIcon('pearls')}${MB_COST[i]}</span><span class="mb2-chev">»</span></button>`}
       </div>
-      <div class="mb-go">${infoBtn('mbox', 'How the fountain works')}<span class="ftn-ic">${icon('fountain')}</span>
-        ${done ? '<button class="btn ghost" disabled>The fountain is empty</button>' : `<button class="btn gold" id="mbPull" ${S.wallet.pearls >= MB_COST[i] ? '' : 'disabled'}>Make a wish · ${costHTML(MB_COST[i])}</button>`}</div>
-    </div>
-    <div class="mb-list"><span class="lbl-sm">In the fountain · ${MB_COST.length - i} left</span>
-      ${MB_ITEMS().map(x => { const got = st.got.includes(x.k), n = st.got.indexOf(x.k) + 1;
-        return `<div class="mb-row r${x.r} ${got ? 'got' : ''}"><span class="mb-ic">${x.pic}</span><span class="mb-nm"><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></span>${ctag(x.r)}${got ? `<span class="mb-chk" title="Pull ${n}">${icon('check')}</span>` : ''}</div>`; }).join('')}
     </div></div>`;
 }
 INFO.mbox = () => { const st = mboxState(), ch = mboxChance();
   return { title: 'Mystery Fountain', body: `<p class="desc">The fountain holds ${MB_COST.length} prizes. Each wish takes one out at random and it never comes back, so the outfit gets likelier with every wish and is guaranteed by wish ${MB_COST.length}. It can't come out before wish ${MB_SKIN_FROM}. Finding the outfit gives you everything still left in the fountain.</p>
+    <div class="balance"><span>Wishes made</span><b>${st.got.length} / ${MB_COST.length}</b></div>
+    <div class="balance"><span>Next wish</span><b>${st.got.length >= MB_COST.length ? 'The fountain is empty' : `${curIcon('pearls')}${MB_COST[st.got.length]} pearls`}</b></div>
     <div class="balance"><span>Outfit chance on your next wish</span><b>${st.got.includes('skin') ? 'Obtained' : ch ? `${Math.round(ch * 1000) / 10}%` : `0% (from wish ${MB_SKIN_FROM})`}</b></div>
-    <table class="cs-table"><thead><tr><th>Wish</th>${MB_COST.map((_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead><tbody><tr><td>Pearls</td>${MB_COST.map(c => `<td>${c}</td>`).join('')}</tr></tbody></table>` }; };
+    <table class="cs-table"><thead><tr><th>Wish</th>${MB_COST.map((_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead><tbody><tr><td>Pearls</td>${MB_COST.map(c => `<td>${c}</td>`).join('')}</tr></tbody></table>
+    <span class="lbl-sm">In the fountain · ${MB_COST.length - st.got.length} left</span><div class="mb-list">${mbRows()}</div>` }; };
 function bindMystery() { const b = $('#mbPull'); if (b) b.onclick = confirmMbox; }
 
 /* the white marble fountain used by the wish animation (water parts take the rarity colour once it opens) */

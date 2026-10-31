@@ -54,15 +54,16 @@ function eventBg(e) {
 function renderEvents() {
   if (!evEl) return;
   const list = eventList().filter(eventLive), e = eventOf(evSel) || list[0];
-  evEl.innerHTML = `<div class="evp-bg ${eventBg(e) ? '' : 'none'}">${eventBg(e)}</div><div class="evp-shade"></div>
+  evEl.innerHTML = `<div class="evp-bg ${eventBg(e) ? '' : 'none'} ${e.id === 'mystery' ? 'full' : ''}">${eventBg(e)}</div><div class="evp-shade"></div>
     <div class="evp-head"><span class="inv-badge">${icon('calendar')}</span><h2 class="ts">Event</h2></div>
+    ${e.id === 'mystery' || e.id === 'scratch' ? `<div class="evp-cur"><span class="cur" title="Pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b><button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button></span></div>` : ''}
     <button class="inv-x evp-x" id="evClose" aria-label="Close">${icon('close')}</button>
     <aside class="evp-side"><span class="evp-pill">${icon('clock')}Limited-Time</span>
       <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
     <section class="evp-main">
       <h1 class="evp-title">${esc(e.name || 'Event')}</h1>
       <span class="evp-time">${icon('clock')}<span id="evTime">${eventTimer(e)}</span></span>
-      ${e.sub ? `<p class="evp-sub">${esc(e.sub)}</p>` : ''}
+      ${e.sub && e.id !== 'mystery' ? `<p class="evp-sub">${esc(e.sub)}</p>` : ''}
       ${e.id === 'login' ? loginBoard() : e.id === 'scratch' ? scratchBoard() : e.id === 'mystery' ? mysteryBoard() : e.text ? `<div class="evp-text">${esc(e.text).replace(/\n/g, '<br>')}</div>` : ''}
     </section>`;
   $('#evClose').onclick = closeEvents;
