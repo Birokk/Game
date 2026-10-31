@@ -35,6 +35,38 @@ function giveGift(id, g) {
   toast(after > before ? `Bond level ${after} with ${e.name}!${after === BOND_MAX ? ' You can now propose with a ring.' : ''}` : `${e.name} loved the ${GIFTS[g].name}. +${GIFTS[g].xp} bond.`);
   refreshCharacters();
 }
+/* bulk-buy gifts: pick a gift and an amount; cur = 'coins' (gold, Bond tab) or 'dust' (Seaweeds, shop) */
+const GIFT_MAX_BUY = 999;
+const giftPrice = (k, cur) => cur === 'dust' ? DUST_GIFTS[k] : GIFTS[k].price;
+const GIFT_CUR = { coins: 'gold', dust: 'Seaweeds' };
+function openBuyGifts(gift = 'sweets', cur = 'coins') {
+  if (!GIFTS[gift]) gift = 'sweets';
+  let n = 1; const g = GIFTS[gift], price = giftPrice(gift, cur), have = () => S.wallet[cur] || 0, most = () => clamp(Math.floor(have() / price), 1, GIFT_MAX_BUY);
+  openModal({ title: 'Buy gifts', ic: 'gift', kind: 'giftbuy', body: `<div class="stack">
+    <div class="tabs" style="margin:0">${Object.entries(GIFTS).map(([k, x]) => `<button class="tab ${k === gift ? 'on' : ''}" data-bgk="${k}">${curIcon('g' + k)}${x.name}</button>`).join('')}</div>
+    <p class="desc">${g.name}: +${fmt(g.xp)} bond each, ${fmt(price)} ${GIFT_CUR[cur]} each. You have ${fmt(S.gifts[gift] || 0)} in your bag.</p>
+    <div class="buy-row">${curIcon('g' + gift)}<button class="rbtn glass" id="bgMinus" aria-label="One less">−</button><input class="input" id="bgN" type="number" min="1" max="${GIFT_MAX_BUY}" value="1" aria-label="How many gifts"><button class="rbtn glass" id="bgPlus" aria-label="One more">${icon('plus')}</button></div>
+    <div class="row" style="justify-content:center">${[1, 5, 10, 50].map(k => `<button class="btn ghost sm" data-bg="${k}">×${k}</button>`).join('')}<button class="btn ghost sm" data-bg="max">Max</button></div>
+    <div class="balance"><span>Total</span><b id="bgCost"></b></div>
+    <div class="balance"><span>Bond it gives</span><b id="bgXp"></b></div>
+    <div class="row" style="justify-content:space-between"><span class="tiny">You have ${fmt(have())} ${GIFT_CUR[cur]}.</span><button class="btn gold" id="bgGo">Buy</button></div>
+  </div>`, onMount: () => {
+    const set = v => { n = v === 'max' ? most() : clamp(Math.floor(+v || 1), 1, GIFT_MAX_BUY); $('#bgN').value = n;
+      $('#bgCost').innerHTML = `${curIcon(cur)}${fmt(n * price)}`; $('#bgXp').textContent = `+${fmt(n * g.xp)} bond`;
+      $('#bgGo').disabled = have() < n * price; $('#bgGo').textContent = `Buy ${n}`; };
+    set(1);
+    $('#bgN').oninput = e => set(e.target.value);
+    $('#bgMinus').onclick = () => set(n - 1); $('#bgPlus').onclick = () => set(n + 1);
+    modalEl.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => set(b.dataset.bg));
+    modalEl.querySelectorAll('[data-bgk]').forEach(b => b.onclick = () => openBuyGifts(b.dataset.bgk, cur));
+    $('#bgGo').onclick = () => {
+      const cost = n * price;
+      if (have() < cost) { toast(`You need ${fmt(cost)} ${GIFT_CUR[cur]}.`); return; }
+      S.wallet[cur] -= cost; S.gifts[gift] = (S.gifts[gift] || 0) + n; persist(); renderMenu(); refreshCharacters(); if (shopEl) renderShop(); closeModal();
+      toast(`Bought ${n} ${g.name} for ${fmt(cost)} ${GIFT_CUR[cur]}. You now have ${fmt(S.gifts[gift])}.`);
+    };
+  } });
+}
 function buyRing() {
   if (S.wallet.pearls < RING_PRICE) { toast(`A ring costs ${RING_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   S.wallet.pearls -= RING_PRICE; S.wallet.rings++; persist(); renderMenu(); refreshCharacters(); toast('Bought 1 ring.');

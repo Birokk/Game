@@ -437,6 +437,13 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .wpt .lab{position:absolute;left:0;right:0;bottom:0;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(5,8,20,.85));font-weight:900;font-size:13px}
 .wpt .chk{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:grid;place-items:center}
 .wpt .chk .ic{width:15px;height:15px}
+.wpt-star{position:absolute;top:8px;left:8px;padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,#ffe58a,#ffb84a);color:#3a2500;font-family:var(--display);font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.wpt.locked img{filter:grayscale(1) brightness(.55)}
+.wpt.locked{cursor:not-allowed}
+.wpt.locked:hover{transform:none}
+.wpt-lock{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:2px;color:#fff;font-family:var(--display);text-shadow:0 2px 6px rgba(0,0,0,.8)}
+.wpt-lock .ic{width:26px;height:26px}
+.wpt-lock small{font-size:13px}
 
 /* admin */
 .admin{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}

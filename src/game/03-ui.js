@@ -100,12 +100,33 @@ let uiHidden = false;
 function setUiHidden(on) { uiHidden = on; menuEl.classList.toggle('ui-hidden', on); }
 $('#hideUi').onclick = () => setUiHidden(true);
 menuEl.addEventListener('click', e => { if (uiHidden) { e.stopPropagation(); e.preventDefault(); setUiHidden(false); } }, true);
-function wallpaperEntry() { const e = S.wallpaper && findEntry(S.wallpaper); return e && owns(e.id) ? e : null; }
+/* a wallpaper id is an entry id (its base splash art) or `<charId>@art3` / `<charId>@art6` (that star splash art), so every
+   unlocked art is its own wallpaper, whatever the character has equipped */
+function wpParse(id) {
+  if (!id) return null;
+  const [eid, k] = String(id).split('@'), e = findEntry(eid); if (!e) return null;
+  const a = ASC.find(x => x.k === (k || 'base')); if (!a || (k && a.k === 'base')) return null;
+  return { id, e, k: a.k, a };
+}
+const wpOk = id => { const w = wpParse(id); return !!w && owns(w.e.id) && (w.k === 'base' || ascOpen(w.e, w.a)); };
+const wpSrc = w => w.k === 'base' ? baseSplash(w.e) : artFrom(w.e[w.k]);
+const wpHasArt = w => !!(w.k === 'base' ? baseArt(w.e) : artFrom(w.e[w.k]));
+const wpName = w => w.k === 'base' ? w.e.name : `${w.e.name} · ${w.a.label} art`;
+const wpIdFor = (e, k = 'base') => k === 'base' ? e.id : `${e.id}@${k}`;
+/* every unlocked splash art of the owned characters / skins as a choice: base art, then the 3★ and 6★ arts (locked ones flagged) */
+function artChoices(types = ['character', 'skin']) {
+  return S.pool.filter(e => types.includes(e.type) && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+    .flatMap(e => ASC.filter(a => a.k === 'base' || (e.type === 'character' && artFrom(e[a.k]))).map(a => ({ id: wpIdFor(e, a.k), e, a, open: ascOpen(e, a) })));
+}
+/* a round picture of one exact art (base: the entry's icon or base art; star art: that art) */
+const wpThumb = (w, cls = '') => w.k === 'base' ? baseThumb(w.e, cls) : `<img src="${artFrom(w.e[w.k])}" alt="" class="art ${cls}">`;
+function wallpaperInfo() { return wpOk(S.wallpaper) ? wpParse(S.wallpaper) : null; }
+function wallpaperEntry() { const w = wallpaperInfo(); return w ? w.e : null; }
 /* up to 4 home wallpapers (S.wallpapers); S.wallpaper is the one showing. Anything that sets S.wallpaper joins the list. */
 const WP_MAX = 4;
 function wpList() {
-  let list = (Array.isArray(S.wallpapers) ? S.wallpapers : []).filter(id => { const e = findEntry(id); return e && owns(id); });
-  if (S.wallpaper && owns(S.wallpaper) && findEntry(S.wallpaper) && !list.includes(S.wallpaper)) list = [S.wallpaper, ...list].slice(0, WP_MAX);
+  let list = (Array.isArray(S.wallpapers) ? S.wallpapers : []).filter(wpOk);
+  if (wpOk(S.wallpaper) && !list.includes(S.wallpaper)) list = [S.wallpaper, ...list].slice(0, WP_MAX);
   if (!S.wallpaper || !list.includes(S.wallpaper)) S.wallpaper = list[0] || null;
   if (JSON.stringify(list) !== JSON.stringify(S.wallpapers)) S.wallpapers = list;
   return list;
@@ -125,7 +146,7 @@ $('#wpNext').onclick = e => { e.stopPropagation(); stepWallpaper(1); };
 menuEl.addEventListener('click', e => { if (uiHidden || e.target.closest('button, a, input, select, textarea, label, .cur, #promo')) return; if (menuEl.classList.contains('wp-arrows')) { menuEl.classList.remove('wp-arrows'); clearTimeout(wpArrowTimer); } else showWpArrows(); });
 function applyWallpaper(fade) {
   wpList();
-  const e = wallpaperEntry();
+  const w = wallpaperInfo(), e = w && w.e;
   if (fade) wpEl.querySelectorAll('#wpSplash, #wpBlur').forEach(img => {   // crossfade: a copy of the old picture fades out over the new one
     if (img.hidden || !img.getAttribute('src')) return;
     const ghost = img.cloneNode(); ghost.removeAttribute('id'); ghost.classList.add('wp-ghost'); img.after(ghost);
@@ -133,13 +154,13 @@ function applyWallpaper(fade) {
     setTimeout(() => ghost.remove(), 900);
   });
   wpEl.classList.toggle('has-char', !!e);
-  wpEl.classList.toggle('chibi', !!e && !mediaArt(e));
+  wpEl.classList.toggle('chibi', !!e && !wpHasArt(w));
   wpEl.classList.remove('r3', 'r4', 'r5'); if (e) wpEl.classList.add('r' + e.rarity);
   [$('#wpSplash'), $('#wpBlur')].forEach(img => {
-    if (e) { const src = getSplash(e); if (img.getAttribute('src') !== src) img.src = src; img.hidden = false; }
+    if (e) { const src = wpSrc(w); if (img.getAttribute('src') !== src) img.src = src; img.hidden = false; }
     else { img.hidden = true; img.removeAttribute('src'); }
   });
-  $('#wpName').textContent = e ? e.name : 'Blank: Project';
+  $('#wpName').textContent = e ? wpName(w) : 'Blank: Project';
 }
 (function seedPearls() {
   const box = $('#wpPearls'); let h = '';
@@ -206,7 +227,7 @@ function setMC(k, switching) {
   S.player.look = { ...MC_LOOK[k] }; player.look = S.player.look;
   if (old && old !== 'mc-' + k) {
     S.profile.showcase = S.profile.showcase.map(id => id && owns(id) ? id : null);
-    if (S.wallpaper && !owns(S.wallpaper)) { S.wallpaper = null; applyWallpaper(); }
+    if (S.wallpaper && !wpOk(S.wallpaper)) { S.wallpaper = null; applyWallpaper(); }
   }
   persist(); renderMenu();
 }
