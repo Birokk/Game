@@ -116,12 +116,9 @@ function renderCharacters() {
     const items = S.clothes.filter(x => x.slot === wdSlot && clothFits(x, c)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
     body = `<div class="lbl-sm">Wardrobe · ${on}/${WARD_SLOTS.length} equipped</div>
       <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
-        return `<button class="wd-slot ${wdSlot === k ? 'on' : ''} ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span>${hasClothStars(x) ? clothStarRow(wornStarOf(c.id, k), 'slot') : ''}</button>`; }).join('')}</div>
-      <div class="lbl-sm">${WARD_NAME[wdSlot]} · ${items.filter(x => owns(x.id)).length}/${items.length} owned</div>
-      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id, worn = wearersOf(x.id).filter(id => id !== c.id), busy = own && !eqd && worn.length >= (S.owned[x.id] || 0);
-        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'} ${busy ? `title="Worn by ${esc(worn.map(id => (findEntry(id) || {}).name).join(', '))}"` : ''}>${busy ? `<span class="wd-worn">Worn by ${esc((findEntry(worn[0]) || {}).name || '')}</span>` : ''}${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}${own && hasClothStars(x) ? clothStarRow(eqd ? wornStarOf(c.id, wdSlot) : bestOwnedStar(x.id), 'item') : ''}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
-        : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
-      <div class="row" style="gap:8px">${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}<button class="btn mint sm" id="wdAuto">${icon('sparkle')}Auto-equip best</button><button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button></div>
+        return `<button class="wd-slot ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span>${hasClothStars(x) ? clothStarRow(wornStarOf(c.id, k), 'slot') : ''}</button>`; }).join('')}</div>
+      <p class="tiny">Tap a slot to see every piece you own for it.</p>
+      <div class="row" style="gap:8px"><button class="btn mint sm" id="wdAuto">${icon('sparkle')}Auto-equip best</button><button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button></div>
       <p class="tiny">Fusion turns 3 spare clothes of one rarity into 1 random piece of the next (R → SSR, SSR → UR).</p>`;
   } else if (csTab === 'memory') {
     const E = memEqOf(c.id), list = S.memories.filter(x => !x.char || x.char === c.id).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
@@ -195,7 +192,7 @@ function renderCharacters() {
   bindCSInfo(csEl);
   const wf = $('#wdFuse'); if (wf) wf.onclick = () => openFuse(3);
   if (csTab === 'pet') bindPetTab(c);
-  csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; renderCharacters(); });
+  csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; openWardPick(c, wdSlot); });
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
     const W = { ...wearOf(c.id) };

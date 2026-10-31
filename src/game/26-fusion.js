@@ -190,3 +190,46 @@ function autoEquip(c) {
 }
 /* memories: one character at a time */
 const memHolder = (id, except) => Object.keys(S.memEq || {}).find(cid => cid !== except && owns(cid) && (S.memEq[cid] || []).includes(id)) || null;
+
+/* ---------- clothes as individual copies (never stacked in the wardrobe picker or the inventory) ----------
+   clothCopies(id) → [{ id, star, who (charId wearing it or null), slot }] built from S.owned / S.cstars / S.wear / S.wearSt */
+function clothCopies(id) {
+  const x = clothOf(id); if (!x) return [];
+  const counts = hasClothStars(x) ? cstarCounts(id) : { 1: S.owned[id] || 0, 2: 0, 3: 0 }, out = [];
+  const worn = { 1: [], 2: [], 3: [] };
+  Object.keys(S.wear || {}).forEach(cid => Object.entries(S.wear[cid] || {}).forEach(([slot, w]) => { if (w === id) worn[hasClothStars(x) ? clamp(wornStarOf(cid, slot), 1, 3) : 1].push({ cid, slot }); }));
+  [3, 2, 1].forEach(k => { for (let i = 0; i < counts[k]; i++) { const w = worn[k][i]; out.push({ id, star: hasClothStars(x) ? k : 0, who: w ? w.cid : null, slot: w ? w.slot : null }); } });
+  return out;
+}
+/* every copy of every owned piece for one slot, best first */
+const slotCopies = (c, slot) => S.clothes.filter(x => x.slot === slot && clothFits(x, c) && owns(x.id)).flatMap(x => clothCopies(x.id).map(cp => ({ ...cp, x })))
+  .sort((a, b) => b.x.rarity - a.x.rarity || b.star - a.star || a.x.name.localeCompare(b.x.name) || (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || (!!a.who - !!b.who));
+/* the see-through picker that opens when a wardrobe slot is tapped */
+function openWardPick(c, slot) {
+  const old = document.querySelector('.wdpick'); if (old) old.remove();
+  const el = document.createElement('div'); el.className = 'rdrop wdpick'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', `${WARD_NAME[slot]} pieces`);
+  const render = () => {
+    const list = slotCopies(c, slot), cur = wearOf(c.id)[slot];
+    el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">${esc(WARD_NAME[slot])}</h2><span class="tiny">${list.length} piece${list.length === 1 ? '' : 's'} in your inventory · tap one to wear it</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
+      ${list.length ? `<div class="wdp-grid">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine, who = busy ? (findEntry(cp.who) || {}).name || '' : '';
+        return `<button class="wdp-it r${cp.x.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdp="${i}" ${busy ? 'disabled' : ''}><span class="rdrop-glow"></span><img src="${clothImg(cp.x)}" alt="">${ctag(cp.x.rarity)}${cp.star ? clothStarRow(cp.star, 'item') : ''}<b>${esc(cp.x.name)}</b>${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">Worn by ${esc(who)}</span>` : ''}</button>`; }).join('')}</div>`
+        : `<div class="cs-pill">You don't have any ${esc(WARD_NAME[slot].toLowerCase())} pieces yet. Clear raids or fuse clothes to find some.</div>`}
+      <div class="row" style="justify-content:center;gap:10px">${cur ? `<button class="btn ghost" data-wdpoff>Take off</button>` : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;
+    el.querySelectorAll('[data-wdpx]').forEach(b => b.onclick = () => el.remove());
+    const off = el.querySelector('[data-wdpoff]'); if (off) off.onclick = () => { const W = { ...wearOf(c.id) }; delete W[slot]; S.wear[c.id] = W; if ((S.wearSt || {})[c.id]) delete S.wearSt[c.id][slot]; persist(); renderCharacters(); render(); };
+    el.querySelectorAll('[data-wdp]').forEach(b => b.onclick = () => {
+      const cp = list[+b.dataset.wdp]; if (!cp || (cp.who && cp.who !== c.id)) return;
+      const W = { ...wearOf(c.id) }; S.wearSt = S.wearSt || {}; S.wearSt[c.id] = { ...(S.wearSt[c.id] || {}) };
+      if (cp.who === c.id && cp.slot === slot) { delete W[slot]; delete S.wearSt[c.id][slot]; toast(`${c.name} took off ${cp.x.name}.`); }
+      else {
+        const k = cp.star || 1;
+        if (hasClothStars(cp.x) && spareAt(cp.x.id, k, c.id) < 1) { toast('That copy is already worn.'); return; }
+        W[slot] = cp.x.id; S.wearSt[c.id][slot] = k; toast(`${c.name} put on ${cp.x.name}${cp.star ? ` (${cp.star}★)` : ''}.`);
+      }
+      S.wear[c.id] = W; persist(); renderCharacters(); render();
+    });
+  };
+  render();
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+}
