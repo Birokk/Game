@@ -10,7 +10,7 @@ const cardHTML = e => {
 /* character cards in the collection: same look as the skin cards (rarity top left, name and stars at the bottom) */
 const charCardHTML = e => {
   const own = owns(e.id);
-  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">${rtag(e.rarity)}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">${rtag(e.rarity)}${own ? `<span class="col-cs">${csTag(e, 'sm')}</span>` : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
 };
 const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
@@ -37,7 +37,7 @@ function renderDetail(id, backTo) {
       <div class="dt-info">
         <div class="eyebrow ts" style="color:#fff">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>
         <h3>${esc(e.name)}</h3>
-        <div>${rtag(e.rarity, 'lg')}</div>
+        <div class="row" style="gap:10px;align-items:center">${rtag(e.rarity, 'lg')}${e.type === 'character' ? csTag(e) : ''}</div>
         <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
         ${n && hasStars(e) ? `<div class="stars-big">${starsFor(e)}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies from summons give ${e.type === 'character' ? `${STARLIGHT_MAX[e.rarity] || STARLIGHT_MAX[4]} Corals each` : 'nothing extra'}.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>

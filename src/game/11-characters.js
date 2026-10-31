@@ -102,6 +102,7 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
+      ${csCard(c)}
       <div class="cs-pill">${next}</div>
       ${artKey(c) !== 'base' && !eq ? `<div class="cs-pill" style="color:#e8ff7a">Showing the ${ASC.find(x => x.k === artKey(c)).label} splash art</div>` : ''}
       ${eq ? `<div class="cs-pill" style="color:#e8ff7a">Wearing ${esc(eq.name)}</div>` : ''}
@@ -196,6 +197,7 @@ function renderCharacters() {
   csEl.classList.toggle('bw', !owns(shown.id));
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; csSkin = null; renderCharacters(); });
   if (csTab === 'skins') initSkinCar(c);
+  bindCSInfo(csEl);
   const wf = $('#wdFuse'); if (wf) wf.onclick = () => openFuse(3);
   if (csTab === 'pet') bindPetTab(c);
   csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; renderCharacters(); });
