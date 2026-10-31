@@ -152,7 +152,7 @@ function renderCharacters() {
         <div style="display:grid;gap:6px;flex:1"><b style="font-family:var(--display);font-weight:400;font-size:22px">Bond Lv. ${lv}${bd.married ? ' · Married' : ''}</b>
           <span class="bar" style="--rc:#ff6f91"><i style="width:${full ? 100 : (bd.xp - lo) / (hi - lo) * 100}%"></i></span>
           <span class="tiny">${full ? 'Max bond reached' : `${fmt(bd.xp - lo)} / ${fmt(hi - lo)} bond to level ${lv + 1} · ${fmt(bd.xp)} / ${fmt(BOND_XP[BOND_MAX])} total`}</span></div></div>
-      ${!n ? '<div class="cs-pill">Own this character to give gifts and raise your bond.</div>' : full ? '' : `<div class="row" style="justify-content:space-between"><span class="lbl-sm">Give a gift</span><button class="btn ghost sm" id="csGiftBuy">${icon('gift')}Buy gifts in bulk</button></div><div class="gift-list">${Object.entries(GIFTS).map(([k, g]) =>
+      ${!n ? '<div class="cs-pill">Own this character to give gifts and raise your bond.</div>' : full ? '' : `<div class="row" style="justify-content:space-between"><span class="lbl-sm">Give a gift</span><span class="row" style="gap:6px"><button class="btn ghost sm" id="csGiftGive">${icon('heart')}Give in bulk</button><button class="btn ghost sm" id="csGiftBuy">${icon('gift')}Buy in bulk</button></span></div><div class="gift-list">${Object.entries(GIFTS).map(([k, g]) =>
         `<button class="gift" data-gift="${k}">${curIcon('g' + k)}<span><b>${g.name}</b><span class="tiny">+${g.xp} bond · ${S.gifts[k] ? `×${S.gifts[k]} in your bag` : `buy for ${fmt(g.price)} coins`}</span></span><span class="btn sm ${S.gifts[k] ? 'mint' : 'ghost'}">${S.gifts[k] ? 'Give' : 'Buy & give'}</span></button>`).join('')}</div>`}
       <div class="cs-card vow-box ${bd.married ? 'done' : ''}">
         <div class="top">${curIcon('rings')}<div>${bd.married ? `<b>Married to ${esc(c.name)}</b><span class="tiny">Since ${new Date(bd.married).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>`
@@ -217,6 +217,7 @@ function renderCharacters() {
   const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
   const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; persist(); renderCharacters(); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
+  const gg = $('#csGiftGive'); if (gg) gg.onclick = () => openGiveGifts(c.id);
   const gb = $('#csGiftBuy'); if (gb) gb.onclick = () => openBuyGifts(Object.keys(GIFTS).find(k => !S.gifts[k]) || 'sweets', 'coins');
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
   csEl.querySelectorAll('[data-bt-star]').forEach(b => b.onclick = () => toggleStar(c.id, +b.dataset.btStar));

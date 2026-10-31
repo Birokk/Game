@@ -42,9 +42,9 @@ function bannerInfo(bk) {
   return { bk, kind: 'pool', word: 'PEARL WISH', tab: 'Permanent', feat: null, lose: std, ur: std, ssr, ends: null, title: bannerName('standard') };
 }
 /* a summon is paid with summon tickets (1 ticket = 1 pull) when you have enough, otherwise with pearls */
-/* each banner has its own ticket: Limited tickets for the limited banner, Wish tickets for the permanent one */
+/* each banner has its own ticket: Limited tickets for the limited banner, Standard tickets for the permanent one */
 const TK = bk => bk === 'standard' ? 'wishes' : 'tickets';
-const TK_NAME = { tickets: 'Limited ticket', wishes: 'Wish ticket' };
+const TK_NAME = { tickets: 'Limited ticket', wishes: 'Standard ticket' };
 const payFor = (n, bk = curBanner) => S.wallet[TK(bk)] >= n ? { k: TK(bk), amt: n } : { k: 'pearls', amt: COST[n] };
 const canPull = (n, bk = curBanner) => S.wallet[TK(bk)] >= n || S.wallet.pearls >= COST[n];
 const payHTML = (n, bk = curBanner) => { const p = payFor(n, bk); return `<span class="cost">${curIcon(p.k)}${p.k === 'pearls' ? p.amt : '×' + p.amt}</span>`; };
@@ -174,8 +174,7 @@ function renderSummon() {
       ${freeReady(bk) ? `<button class="sx-pull free" id="sxFree">Free daily pull<span class="dot-n"></span></button>` : ''}
       <button class="sx-pull" data-pull="1">Summon 1 ${payHTML(1, bk)}</button>
       <button class="sx-pull gold" data-pull="10">Summon 10 ${payHTML(10, bk)}${dot}</button>
-    </div>
-    <div class="sx-note">UR pity ${g.pity5}/${HARD_PITY} · SSR pity ${g.pity4}/10 · ${fmt(g.total)} pulls on this banner</div>`;
+    </div>`;
   $('#sxBack').onclick = closeSummon;
   smEl.querySelectorAll('[data-focus]').forEach(b => b.onclick = () => { smFocus = +b.dataset.focus; renderSummon(); });
   smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; smFocus = 0; renderSummon(); });

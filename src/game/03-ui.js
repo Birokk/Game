@@ -40,11 +40,10 @@ function renderMenu() {
   $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>`;
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
-  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Wish tickets: 1 pull on the permanent banner']].map(([k, l]) =>
+  $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Standard tickets: 1 pull on the permanent banner']].map(([k, l]) =>
     `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
-  $('#summonCost').innerHTML = `${curIcon('tickets')}${fmt(S.wallet.tickets)} · ${curIcon('wishes')}${fmt(S.wallet.wishes)} · ${curIcon('pearls')}${COST[1]} each`;
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
   $('#evDot').hidden = !loginReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
@@ -59,15 +58,18 @@ function renderMenu() {
   $('#promo').innerHTML = `<button class="sx-tab lim promo-tab" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
       <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
-  $('#pityCard').innerHTML = `<span class="row"><span>${f ? esc(f.name) : 'Limited'} · UR pity</span><span style="color:var(--gold)">${gl.pity5} / ${HARD_PITY}</span></span>
-    <span class="bar r5"><i style="width:${gl.pity5 / HARD_PITY * 100}%;background:var(--ur)"></i></span>
-    <span class="tiny" style="color:var(--muted)">${gl.guarantee ? 'Next UR is guaranteed featured' : '50/50 on your next UR'}</span>`;
   $('#limTime').innerHTML = `${icon('clock')}Limited ends in ${shortLeft()}`;
   applyWallpaper();
 }
 
 /* stamina: 240 max, +1 every 6 minutes (nothing spends it yet) */
 const STAMINA_MAX = 240, STAMINA_MS = 6 * 60 * 1000;
+const STAMINA_CAP = 999;   // bottles, refills and the farm can go past 240, but never past 999
+/* add stamina from any source, up to the 999 cap; returns how much was actually added */
+function giveStamina(n) {
+  stamina(); const add = Math.max(0, Math.min(n, STAMINA_CAP - S.stamina.v));
+  S.stamina.v += add; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); return add;
+}
 function stamina() {
   const st = S.stamina, now = Date.now();
   if (st.v >= STAMINA_MAX) { st.t = now; return st.v; }

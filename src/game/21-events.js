@@ -5,12 +5,14 @@ const LOGIN_DAYS = [1, 1, 1, 1, 1, 1, 1];
 function eventList() {
   let list = Array.isArray(S.events) ? S.events : [];
   if (!list.some(e => e.id === 'login')) list = [{ id: 'login', name: 'Daily Login', sub: 'Sign in to claim rewards', days: [...LOGIN_DAYS] }, ...list];
+  if (!list.some(e => e.id === 'scratch')) { const i = list.findIndex(e => e.id === 'login'); list = [...list.slice(0, i + 1), { id: 'scratch', name: 'Scratch Cards', sub: 'Match three icons to win pearls' }, ...list.slice(i + 1)]; }
   if (list !== S.events) S.events = list;
   return list;
 }
 const eventOf = id => eventList().find(e => e.id === id);
 const eventEnd = e => e.end ? new Date(e.end + 'T23:59:59').getTime() : null;
-const eventLive = e => e.id === 'login' || !eventEnd(e) || eventEnd(e) > Date.now();
+const EV_BUILTIN = ['login', 'scratch'];
+const eventLive = e => EV_BUILTIN.includes(e.id) || !eventEnd(e) || eventEnd(e) > Date.now();
 const loginDays = () => { const d = (eventOf('login') || {}).days; return LOGIN_DAYS.map((v, i) => Math.max(0, Math.floor(+(d || [])[i] || 0)) || v); };
 function loginState() {
   const y = new Date(); y.setDate(y.getDate() - 1);
@@ -38,7 +40,7 @@ function closeEvents() { if (evEl) { evEl.remove(); evEl = null; } clearInterval
 const dhLeft = ms => { const m = Math.max(0, Math.floor(ms / 6e4)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return d ? `${d}d ${h}h` : `${h}h ${m % 60}m`; };
 function eventTimer(e) {
   if (!e) return '';
-  if (e.id === 'login') { const t = new Date(); t.setHours(24, 0, 0, 0); return `Resets in ${dhLeft(t - Date.now())}`; }
+  if (EV_BUILTIN.includes(e.id)) { const t = new Date(); t.setHours(24, 0, 0, 0); return `Resets in ${dhLeft(t - Date.now())}`; }
   return eventEnd(e) ? dhLeft(eventEnd(e) - Date.now()) : 'Ongoing';
 }
 /* the wallpaper: the admin's upload, else the limited banner's art, else a night-sky gradient */
@@ -53,16 +55,17 @@ function renderEvents() {
     <div class="evp-head"><span class="inv-badge">${icon('calendar')}</span><h2 class="ts">Event</h2></div>
     <button class="inv-x evp-x" id="evClose" aria-label="Close">${icon('close')}</button>
     <aside class="evp-side"><span class="evp-pill">${icon('clock')}Limited-Time</span>
-      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${icon(x.id === 'login' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${x.id === 'login' && loginReady() ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
+      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : icon(x.id === 'login' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'scratch' && scratchOpen()) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
     <section class="evp-main">
       <h1 class="evp-title">${esc(e.name || 'Event')}</h1>
       <span class="evp-time">${icon('clock')}<span id="evTime">${eventTimer(e)}</span></span>
       ${e.sub ? `<p class="evp-sub">${esc(e.sub)}</p>` : ''}
-      ${e.id === 'login' ? loginBoard() : e.text ? `<div class="evp-text">${esc(e.text).replace(/\n/g, '<br>')}</div>` : ''}
+      ${e.id === 'login' ? loginBoard() : e.id === 'scratch' ? scratchBoard() : e.text ? `<div class="evp-text">${esc(e.text).replace(/\n/g, '<br>')}</div>` : ''}
     </section>`;
   $('#evClose').onclick = closeEvents;
   evEl.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { evSel = b.dataset.ev; renderEvents(); });
   evEl.querySelectorAll('.evl-day.now').forEach(b => b.onclick = claimLogin);
+  if (e.id === 'scratch') bindScratch();
 }
 /* the 7-day sign-in board: days 1-6 in a 3×2 grid, day 7 as a tall gold card */
 function loginBoard() {
@@ -86,17 +89,17 @@ function renderEventsTab() {
   p.innerHTML = `<div class="stack">
     <div class="ad-head" style="margin:0"><h3>Events</h3><div class="row"><button class="btn mint sm" id="evAdd">${icon('plus')}New event</button><button class="btn ghost sm" id="evOpen">Open events</button></div></div>
     <p class="tiny">Each event has its own wallpaper behind the event page (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the limited banner's art is used. Events with an end date disappear for players after that day.</p>
-    ${list.map(e => { const bg = MEDIA.get('ev:' + e.id), login = e.id === 'login';
+    ${list.map(e => { const bg = MEDIA.get('ev:' + e.id), login = e.id === 'login', builtin = EV_BUILTIN.includes(e.id);
       return `<div class="ev-ad">
         <div class="ev-adprev">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">No wallpaper</span>'}</div>
         <div class="stack" style="gap:8px;min-width:0">
-          <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${login ? '<span class="tag">Built in</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
+          <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${builtin ? '<span class="tag">Built in</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
           <input class="input" data-evf="sub" data-evid="${esc(e.id)}" maxlength="80" value="${esc(e.sub || '')}" placeholder="Subtitle (optional)" aria-label="Subtitle">
           ${login ? `<div class="ev-days"><span class="tiny">Limited tickets per day</span>${loginDays().map((n, i) => `<label>Day ${i + 1}<input class="input" type="number" min="1" max="99" data-evday="${i}" value="${n}"></label>`).join('')}</div>`
-            : `<textarea class="input" data-evf="text" data-evid="${esc(e.id)}" rows="3" maxlength="1200" placeholder="What the event is about" aria-label="Event text">${esc(e.text || '')}</textarea>`}
+            : builtin ? '<span class="tiny">Scratch cards: 5 pearls each, 5 a day. Prizes and odds are set in the game code.</span>' : `<textarea class="input" data-evf="text" data-evid="${esc(e.id)}" rows="3" maxlength="1200" placeholder="What the event is about" aria-label="Event text">${esc(e.text || '')}</textarea>`}
           <div class="row" style="gap:8px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-evbg="${esc(e.id)}"></label>
             ${bg ? `<button class="btn ghost sm" data-evbgdel="${esc(e.id)}">Remove wallpaper</button>` : ''}
-            ${login ? '' : `<button class="link" data-evdel="${esc(e.id)}" style="color:${evDelArm === e.id ? '#ff6b81' : ''}">${evDelArm === e.id ? 'Tap again to delete' : 'Delete'}</button>`}</div>
+            ${builtin ? '' : `<button class="link" data-evdel="${esc(e.id)}" style="color:${evDelArm === e.id ? '#ff6b81' : ''}">${evDelArm === e.id ? 'Tap again to delete' : 'Delete'}</button>`}</div>
         </div></div>`; }).join('')}
   </div>`;
   p.querySelectorAll('[data-evf]').forEach(i => i.onchange = () => { const e = eventOf(i.dataset.evid); if (!e) return; e[i.dataset.evf] = i.value.trim() || null; if (i.dataset.evf === 'name' && !e.name) e.name = 'Event'; persist(); });

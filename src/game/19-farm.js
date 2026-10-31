@@ -51,12 +51,13 @@ function farmTick() {
 }
 const farmReady = () => FARM_DEFS.some(d => farmWhole(d.id) >= 1) || FARM_DEFS.some(d => { const f = farmOf(d.id); return f.up && f.up.ends <= Date.now(); });
 function farmCollect(id) {
-  farmSettle(id); const f = farmOf(id), n = Math.floor(f.acc);
+  farmSettle(id); const f = farmOf(id); let n = Math.floor(f.acc);
   if (n < 1) return 0;
-  f.acc -= n; const res = farmDef(id).res;
+  const res = farmDef(id).res;
+  if (res === 'stamina') n = giveStamina(n);   // anything over the 999 cap stays in storage
+  f.acc -= n;
   if (res === 'exp') gainExp(n);
-  else if (res === 'stamina') { stamina(); S.stamina.v += n; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); }
-  else S.wallet[res] = (S.wallet[res] || 0) + n;
+  else if (res !== 'stamina') S.wallet[res] = (S.wallet[res] || 0) + n;
   return n;
 }
 function farmPayReq(id) {

@@ -35,7 +35,7 @@ function claimLevels(list) {
   list.forEach(lv => { if (lvClaimed(lv) || lv > playerLv().lv) return; (S.lvClaimed = S.lvClaimed || []).push(lv); lvReward(lv).forEach(([k, n]) => { S.wallet[k] = (S.wallet[k] || 0) + n; got[k] = (got[k] || 0) + n; }); });
   if (!Object.keys(got).length) return;
   persist(); renderMenu(); refreshSummon(); renderLevel();
-  toast('Claimed ' + Object.entries(got).map(([k, n]) => `${fmt(n)} ${({ coins: 'gold', pearls: 'pearls', tickets: 'Limited tickets', wishes: 'Wish tickets', bottles: 'stamina bottles' })[k] || k}`).join(', ') + '.');
+  toast('Claimed ' + Object.entries(got).map(([k, n]) => `${fmt(n)} ${({ coins: 'gold', pearls: 'pearls', tickets: 'Limited tickets', wishes: 'Standard tickets', bottles: 'stamina bottles' })[k] || k}`).join(', ') + '.');
 }
 function openLevel() { openModal({ title: 'Level rewards', ic: 'level', wide: true, kind: 'level', body: '<div id="lvRoot"></div>', onMount: () => { renderLevel(true); } }); }
 function renderLevel(scrollToNext) {

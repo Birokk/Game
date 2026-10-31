@@ -29,13 +29,13 @@ function openBuyTickets(bk = 'limited') {
 /* stamina: details; +60 from a recovery bottle or for 1 pearl */
 const STAMINA_REFILLS = [1, 1, 2, 2, 3, 3];   // pearl cost of each daily refill
 const refillsUsed = () => S.stamRefill && S.stamRefill.day === dayKey() ? S.stamRefill.n : 0;
-function addStamina() { stamina(); S.stamina.v += BOTTLE_STAMINA; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); persist(); renderMenu(); openStamina(); toast(`+${BOTTLE_STAMINA} stamina.`); }
+function addStamina() { const n = giveStamina(BOTTLE_STAMINA); persist(); renderMenu(); openStamina(); toast(`+${n} stamina.${n < BOTTLE_STAMINA ? ` Stamina is capped at ${STAMINA_CAP}.` : ''}`); }
 const BOTTLE_STAMINA = 60;
 function openStamina() {
   const v = stamina(), left = STAMINA_MS - (Date.now() - S.stamina.t);
   openModal({ title: 'Stamina', ic: 'bolt', body: `<div class="stack">
     <div class="balance"><span>${curIcon('stamina')} Stamina</span><b>${v} / ${STAMINA_MAX}</b></div>
-    <p class="tiny">${v >= STAMINA_MAX ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every 6 minutes. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
+    <p class="tiny">${v >= STAMINA_MAX ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every 6 minutes up to ${STAMINA_MAX}; bottles, refills and the farm can raise it up to ${STAMINA_CAP}. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
     <div class="frag-row">${curIcon('bottles')}<div style="display:grid;flex:1"><b>Stamina recovery bottle</b><span class="tiny">Restores ${BOTTLE_STAMINA} stamina · you have ${S.wallet.bottles}</span></div>
       <button class="btn mint sm" id="useBottle" ${S.wallet.bottles ? '' : 'disabled'}>Use</button></div>
     ${(() => { const used = refillsUsed(), cost = STAMINA_REFILLS[used];
@@ -43,10 +43,11 @@ function openStamina() {
         <span class="refills">${STAMINA_REFILLS.map((c, i) => `<i class="${i < used ? 'used' : i === used ? 'next' : ''}">${c}</i>`).join('')}</span></div>
       ${cost ? `<button class="btn gold sm" id="buyStam" ${S.wallet.pearls >= cost ? '' : 'disabled'}>${costHTML(cost)}</button>` : '<button class="btn ghost sm" disabled>Resets tomorrow</button>'}</div>`; })()}
     <p class="tiny">Bottles come from the daily spin.</p></div>`, onMount: () => {
-    $('#useBottle').onclick = () => { if (!S.wallet.bottles) return; S.wallet.bottles--; addStamina(); };
+    $('#useBottle').onclick = () => { if (!S.wallet.bottles) return; if (stamina() >= STAMINA_CAP) { toast(`Stamina is at the ${STAMINA_CAP} cap.`); return; } S.wallet.bottles--; addStamina(); };
     const bs = $('#buyStam'); if (bs) bs.onclick = () => {
       const used = refillsUsed(), cost = STAMINA_REFILLS[used];
       if (!cost || S.wallet.pearls < cost) return;
+      if (stamina() >= STAMINA_CAP) { toast(`Stamina is at the ${STAMINA_CAP} cap.`); return; }
       S.wallet.pearls -= cost; S.stamRefill = { day: dayKey(), n: used + 1 }; addStamina();
     };
   } });
@@ -55,7 +56,7 @@ function openStamina() {
 /* daily spin: one free spin a day; the ring is a 1% jackpot */
 const SPIN = [
   { give: 'coins', n: 2000, w: 25 }, { give: 'pearls', n: 1, w: 20 }, { give: 'bottles', n: 1, w: 15, name: 'Stamina bottle' }, { give: 'pearls', n: 3, w: 12 },
-  { give: 'coins', n: 5000, w: 10 }, { give: 'wishes', n: 1, w: 12, name: 'Wish ticket' }, { give: 'pearls', n: 5, w: 5 }, { give: 'rings', n: 1, w: 1, name: 'Marriage ring', jackpot: true }
+  { give: 'coins', n: 5000, w: 10 }, { give: 'wishes', n: 1, w: 12, name: 'Standard ticket' }, { give: 'pearls', n: 5, w: 5 }, { give: 'rings', n: 1, w: 1, name: 'Marriage ring', jackpot: true }
 ];
 const spinReady = () => S.spin.last !== dayKey();
 const spinName = s => s.name || `${fmt(s.n)} ${s.give === 'coins' ? 'gold coins' : s.n === 1 ? 'pearl' : 'pearls'}`;
