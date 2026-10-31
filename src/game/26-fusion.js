@@ -9,17 +9,19 @@ const FUSE_NEXT = { 3: 4, 4: 5 };
 const spareOf = id => Math.max(0, (S.owned[id] || 0) - wearersOf(id).length);
 let fuseR = 3, fusePot = [];   // the pot: cloth ids in the order they were added
 function openFuse(r) {
-  if (FUSE_NEXT[r]) fuseR = r;
+  if (FUSE_NEXT[r] || r === 'star') fuseR = r;
   fusePot = [];
   openModal({ title: 'Clothes fusion', ic: 'fuse', wide: true, kind: 'fuse', body: '<div id="fuRoot"></div>', onMount: renderFuse });
 }
 function renderFuse() {
   const root = $('#fuRoot'); if (!root) return;
+  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button></div>`;
+  if (fuseR === 'star') return renderStarUp(root, tabs);
   const to = FUSE_NEXT[fuseR], inPot = id => fusePot.filter(x => x === id).length;
   const list = S.clothes.filter(x => +x.rarity === fuseR && spareOf(x.id) > 0).sort((a, b) => spareOf(b.id) - spareOf(a.id) || a.name.localeCompare(b.name));
   const targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   root.innerHTML = `<div class="fu">
-    <div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}</div>
+    ${tabs}
     <div class="fu-pot">
       <div class="fu-slots">${[0, 1, 2].map(i => { const id = fusePot[fusePot.length - (fusePot.length % 3 || (fusePot.length ? 3 : 0)) + i], x = id && clothOf(id);
         return `<span class="fu-slot r${fuseR} ${x ? 'full' : ''}">${x ? `<img src="${clothImg(x)}" alt="">` : '<i>+</i>'}</span>`; }).join('')}
@@ -34,13 +36,14 @@ function renderFuse() {
       return `<div class="fu-it r${x.rarity} ${k ? 'on' : ''}"><button class="fu-add" data-fua="${esc(x.id)}" ${k >= sp ? 'disabled' : ''} aria-label="Add ${esc(x.name)}"><img src="${clothImg(x)}" alt="">${ctag(x.rarity)}<span class="fu-nm">${esc(x.name)}</span><span class="fu-n">${k}/${sp}</span></button>${k ? `<button class="fu-rm" data-fur-rm="${esc(x.id)}" aria-label="Take one out">−</button>` : ''}</div>`; }).join('')}</div>`
       : `<div class="cs-pill">No spare ${CRN[fuseR]} clothes. Clear raids to find more.</div>`}
   </div>`;
-  root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = +b.dataset.fur; fusePot = []; renderFuse(); });
+  bindFuseTabs(root);
   root.querySelectorAll('[data-fua]').forEach(b => b.onclick = () => { const id = b.dataset.fua; if (inPot(id) < spareOf(id)) fusePot.push(id); renderFuse(); });
   root.querySelectorAll('[data-fur-rm]').forEach(b => b.onclick = () => { const i = fusePot.lastIndexOf(b.dataset.furRm); if (i >= 0) fusePot.splice(i, 1); renderFuse(); });
   $('#fuAll').onclick = () => { list.forEach(x => { for (let k = inPot(x.id); k < spareOf(x.id); k++) fusePot.push(x.id); }); renderFuse(); };
   $('#fuClear').onclick = () => { fusePot = []; renderFuse(); };
   $('#fuGo').onclick = doFuse;
 }
+function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = b.dataset.fur === 'star' ? 'star' : +b.dataset.fur; fusePot = []; renderFuse(); }); }
 function doFuse() {
   const to = FUSE_NEXT[fuseR], targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   if (!n || !targets.length) return;
@@ -121,3 +124,65 @@ function bindPetTab(c) {
   });
   const off = $('#petOff'); if (off) off.onclick = () => { delete S.petEq[c.id]; persist(); renderCharacters(); };
 }
+
+/* ---------- clothing stars (UR pieces only): 1★ base, two 1★ → one 2★, two 2★ → one 3★ ----------
+   S.owned[id] stays the total number of copies; S.cstars[id] = { 2: n, 3: n } counts the starred ones (the rest are 1★).
+   The star of each worn copy is kept in S.wearSt[charId][slot]; wearing a piece takes its best spare copy. */
+const CLOTH_MAXST = 3, RAID_STAR2 = .005;   // raids: 0.5% of drops are a 2★ UR piece
+const hasClothStars = x => !!x && +x.rarity === 5;
+function cstarCounts(id) {
+  const c = (S.cstars || {})[id] || {}, tot = S.owned[id] || 0;
+  let n3 = Math.min(c[3] || 0, tot), n2 = Math.min(c[2] || 0, tot - n3);
+  return { 1: Math.max(0, tot - n2 - n3), 2: n2, 3: n3 };
+}
+function wornStars(id, except) {
+  const out = { 1: 0, 2: 0, 3: 0 };
+  Object.keys(S.wear || {}).forEach(cid => { if (cid === except) return; Object.entries(S.wear[cid] || {}).forEach(([slot, x]) => { if (x === id) out[clamp(((S.wearSt || {})[cid] || {})[slot] || 1, 1, 3)]++; }); });
+  return out;
+}
+const spareAt = (id, k, except) => cstarCounts(id)[k] - wornStars(id, except)[k];
+const bestSpareStar = (id, except) => [3, 2, 1].find(k => spareAt(id, k, except) > 0) || 0;
+const bestOwnedStar = id => { const c = cstarCounts(id); return c[3] ? 3 : c[2] ? 2 : c[1] ? 1 : 0; };
+const wornStarOf = (cid, slot) => ((S.wearSt || {})[cid] || {})[slot] || 1;
+/* add one copy of a piece at a given star */
+function addCloth(id, k = 1) { S.owned[id] = (S.owned[id] || 0) + 1; if (k > 1) { S.cstars = S.cstars || {}; const c = S.cstars[id] = S.cstars[id] || {}; c[k] = (c[k] || 0) + 1; } }
+/* merge two spare copies at star k into one at k + 1 */
+function mergeStar(id, k) {
+  if (k >= CLOTH_MAXST || spareAt(id, k) < 2) return false;
+  S.cstars = S.cstars || {}; const c = S.cstars[id] = { ...cstarCounts(id) }; delete c[1];
+  if (k > 1) c[k] -= 2; c[k + 1] = (c[k + 1] || 0) + 1; S.owned[id] -= 1;
+  return true;
+}
+const clothStarRow = (n, cls = '') => n ? `<span class="cl-stars ${cls}">${Array.from({ length: CLOTH_MAXST }, (_, i) => `<i class="${i < n ? 'on' : ''}">★</i>`).join('')}</span>` : '';
+/* the star-up tab of the fusion window */
+function renderStarUp(root, tabs) {
+  const list = S.clothes.filter(x => hasClothStars(x) && owns(x.id)).sort((a, b) => bestOwnedStar(b.id) - bestOwnedStar(a.id) || a.name.localeCompare(b.name));
+  root.innerHTML = `<div class="fu">${tabs}
+    <p class="tiny">UR clothes have up to ${CLOTH_MAXST} stars. 1★ is the base: merge two spare 1★ copies into a 2★, and two spare 2★ copies into a 3★. Worn copies are never used.</p>
+    ${list.length ? `<div class="fu-stars">${list.map(x => { const c = cstarCounts(x.id), s1 = spareAt(x.id, 1), s2 = spareAt(x.id, 2);
+      return `<div class="fu-srow r5"><span class="fu-sic"><img src="${clothImg(x)}" alt=""></span><div class="fu-sinfo"><b>${esc(x.name)}</b><span class="tiny">${[1, 2, 3].map(k => `${k}★ ×${c[k]}`).join(' · ')}</span></div>
+        <button class="btn ghost sm" data-mst="${esc(x.id)}" data-k="1" ${s1 >= 2 ? '' : 'disabled'}>2× ${clothStarRow(1, 'sm')} → ${clothStarRow(2, 'sm')}</button>
+        <button class="btn ghost sm" data-mst="${esc(x.id)}" data-k="2" ${s2 >= 2 ? '' : 'disabled'}>2× ${clothStarRow(2, 'sm')} → ${clothStarRow(3, 'sm')}</button></div>`; }).join('')}</div>
+      <div class="row" style="justify-content:center"><button class="btn gold" id="mstAll" ${list.some(x => spareAt(x.id, 1) >= 2 || spareAt(x.id, 2) >= 2) ? '' : 'disabled'}>Merge everything possible</button></div>`
+      : '<div class="cs-pill">You don\'t own any UR clothes yet.</div>'}
+  </div>`;
+  bindFuseTabs(root);
+  root.querySelectorAll('[data-mst]').forEach(b => b.onclick = () => { const x = clothOf(b.dataset.mst); if (mergeStar(x.id, +b.dataset.k)) { persist(); refreshCharacters(); renderFuse(); toast(`${x.name} is now ${+b.dataset.k + 1}★.`); } });
+  const all = $('#mstAll'); if (all) all.onclick = () => { let n = 0; list.forEach(x => { while (mergeStar(x.id, 1)) n++; while (mergeStar(x.id, 2)) n++; }); persist(); refreshCharacters(); renderFuse(); toast(`${n} merge${n === 1 ? '' : 's'} done.`); };
+}
+/* ---------- auto-equip: highest rarity per slot, preferring the set with the most available pieces ---------- */
+function autoEquip(c) {
+  const avail = x => clothFits(x, c) && (S.owned[x.id] || 0) - wearersOf(x.id).filter(id => id !== c.id).length > 0;
+  const pool = S.clothes.filter(avail);
+  if (!pool.length) { toast('No clothes available to wear.'); return; }
+  const setCount = {}; pool.forEach(x => { if (x.set) { const s = setCount[x.set] = setCount[x.set] || new Set(); s.add(x.slot); } });
+  const W = {}, St = {};
+  WARD_SLOTS.forEach(([slot]) => {
+    const best = pool.filter(x => x.slot === slot).sort((a, b) => b.rarity - a.rarity || ((setCount[b.set] || { size: 0 }).size - (setCount[a.set] || { size: 0 }).size) || bestSpareStar(b.id, c.id) - bestSpareStar(a.id, c.id) || a.name.localeCompare(b.name))[0];
+    if (best) { W[slot] = best.id; St[slot] = hasClothStars(best) ? (bestSpareStar(best.id, c.id) || 1) : 1; }
+  });
+  S.wear[c.id] = W; S.wearSt = S.wearSt || {}; S.wearSt[c.id] = St;
+  persist(); renderCharacters(); toast(`${c.name} is wearing the best available clothes (${Object.keys(W).length}/${WARD_SLOTS.length}).`);
+}
+/* memories: one character at a time */
+const memHolder = (id, except) => Object.keys(S.memEq || {}).find(cid => cid !== except && owns(cid) && (S.memEq[cid] || []).includes(id)) || null;
