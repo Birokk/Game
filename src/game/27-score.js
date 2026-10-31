@@ -3,7 +3,7 @@
      owning it        SSR 1,000 · UR 2,000
      each star        SSR   300 · UR   500   (up to 6)
      each awakened    SSR   500 · UR   800   (Breakthrough stars switched on)
-     each owned skin  SSR   400 · UR   800 · MR 1,500
+     each owned skin  SSR   400 · UR   800 · MR 1,000   (by the skin's rarity; 3★ / 6★ splash arts don't count)
      each worn piece  R 100 · SSR 250 · UR 600, and a full 6-piece set of the same clothes adds R 500 · SSR 1,500 · UR 4,000
      pet with them    SSR   600 · UR 1,200, plus SSR 100 · UR 200 per pet star
      memory equipped  SSR   500 · UR 1,000
@@ -12,7 +12,7 @@
    character's stars get a "+" in the grade's colour (csPlus). */
 const CS_PTS = {
   base: { 4: 1000, 5: 2000 }, star: { 4: 300, 5: 500 }, bt: { 4: 500, 5: 800 },
-  skin: { 4: 400, 5: 800, 6: 1500 }, cloth: { 3: 100, 4: 250, 5: 600 }, set: { 3: 500, 4: 1500, 5: 4000 },
+  skin: { 4: 400, 5: 800, 6: 1000 }, cloth: { 3: 100, 4: 250, 5: 600 }, set: { 3: 500, 4: 1500, 5: 4000 },
   pet: { 4: 600, 5: 1200 }, petStar: { 4: 100, 5: 200 }, mem: { 4: 500, 5: 1000 }, bond: { 4: 250, 5: 400 }
 };
 const CS_GRADES = [['F', 0], ['E', 1500], ['D', 3000], ['C', 5000], ['B', 7500], ['A', 10000], ['S', 15000], ['SS', 20000], ['SSS', 30000]];
@@ -26,13 +26,13 @@ function csParts(c) {
   const bt = (S.bt[c.id] || []).filter(i => i < st).length;
   if (bt) out.push({ label: `${bt} awakened star${bt === 1 ? '' : 's'}`, pts: bt * csP('bt', r) });
   const sk = skinsOf(c.id).filter(k => owns(k.id));
-  if (sk.length) out.push({ label: `${sk.length} skin${sk.length === 1 ? '' : 's'}`, pts: sk.reduce((t, k) => t + csP('skin', +k.rarity), 0) });
+  if (sk.length) out.push({ label: 'Skins', pts: sk.reduce((t, k) => t + csP('skin', +k.rarity), 0) });
   const worn = Object.values(wearOf(c.id)).map(clothOf).filter(Boolean);
   if (worn.length) out.push({ label: `${worn.length} wardrobe piece${worn.length === 1 ? '' : 's'}`, pts: worn.reduce((t, x) => t + csP('cloth', +x.rarity), 0) });
   const set = worn.length === WARD_SLOTS.length && worn[0].set && worn.every(x => x.set === worn[0].set) ? worn[0] : null;
   if (set) out.push({ label: 'Full clothing set', pts: csP('set', +set.rarity) });
   const pet = petEqOf(c.id);
-  if (pet) out.push({ label: `Pet: ${pet.name}`, pts: csP('pet', +pet.rarity) + starsOf(pet.id) * csP('petStar', +pet.rarity) });
+  if (pet) { out.push({ label: `Pet: ${pet.name}`, pts: csP('pet', +pet.rarity) }); const ps = starsOf(pet.id); if (ps) out.push({ label: `Pet stars (${ps})`, pts: ps * csP('petStar', +pet.rarity) }); }
   const mems = memEqOf(c.id).filter(Boolean).map(memOf).filter(Boolean);
   if (mems.length) out.push({ label: `Memory: ${mems[0].name}`, pts: mems.reduce((t, x) => t + csP('mem', +x.rarity), 0) });
   const bl = bondLv(c.id);
@@ -73,7 +73,7 @@ function openCSInfo() {
     <div class="cs-grades">${CS_GRADES.map(([g, min], i) => `<div>${gradeTag(g)}<b>${fmt(min)}</b><small>${CS_GRADES[i + 1] ? `to ${fmt(CS_GRADES[i + 1][1] - 1)}` : 'and up'}</small></div>`).join('')}</div>
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
-      ${row('Each owned skin', 'skin', [4, 5, 6])}${row('Each worn wardrobe piece', 'cloth', [3, 4, 5])}${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}
+      ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}${row('Each worn wardrobe piece', 'cloth', [3, 4, 5])}${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}
       ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}
     </tbody></table>
     <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E). SSS takes a fully built UR: 6★ with every star awakened, a full UR set, a UR pet, a UR memory, max bond and several skins. From grade S a <b>+</b> appears after the character's stars, gold for S, prism for SS and red for SSS.</p>
