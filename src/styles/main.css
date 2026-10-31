@@ -329,7 +329,7 @@ details summary{cursor:pointer;font-weight:900}
 .rv.has-art .rv-rays,.rv.has-art .rv-glow{display:none}
 .rv.has-art::after{content:"";position:absolute;left:0;right:0;bottom:0;height:52%;z-index:1;pointer-events:none;background:linear-gradient(transparent,rgba(5,8,22,.85))}
 @keyframes rvZoom{from{opacity:0;scale:1.08}}
-.rv-coin{position:absolute;right:16%;top:50%;width:min(36vw,240px);height:min(36vw,240px);transform:translateY(-50%);display:grid;place-items:center;animation:rvIn .7s cubic-bezier(.2,.9,.3,1) both}
+.rv-coin{position:absolute;right:20%;top:50%;width:min(18vw,128px);height:min(18vw,128px);transform:translateY(-50%);display:grid;place-items:center;animation:rvIn .7s cubic-bezier(.2,.9,.3,1) both}
 .rv-coin .cic{width:100%;height:100%}
 @keyframes rvIn{from{opacity:0;translate:70px 0;scale:.96}}
 .rv-info{position:absolute;left:max(24px,6vw);bottom:16%;display:grid;gap:10px;max-width:46%;z-index:2}
@@ -855,8 +855,40 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
   .sx-skip{left:auto;right:var(--sr);transform:none;bottom:calc(92px + var(--sb));font-size:16px}
   .sx-br{left:var(--sl);bottom:calc(14px + var(--sb));gap:10px}
   .sx-pull{min-width:0;flex:1;height:54px;font-size:18px;padding:0 10px;gap:6px}
-  .sx-pull .cost{font-size:15px}
+  .sx-pull .cost{font-size:12px;gap:3px}
+  .sx-pull .cost .cic{width:16px;height:16px}
+  .sx-pull{font-size:13px;height:50px;padding:0 6px;white-space:normal;line-height:1.05;text-align:center;flex-wrap:wrap;gap:2px 4px}
+  .sx-tab{height:60px}
+  .sx-tab b{font-size:13px;left:8px;bottom:6px}
+  .sx-tab small{font-size:8px;left:8px;top:5px;letter-spacing:.06em}
   .sx-note{display:none}
+}
+
+/* summon screen: compact UI on wider screens so more of the banner art shows */
+@media (min-width:821px){
+  .sx-cur .cur{min-width:118px;padding:5px 10px;font-size:14px}
+  .sx-tabs{top:calc(70px + var(--st));gap:10px}
+  .sx-tab{width:196px;height:70px;border-width:2px}
+  .sx-tab b{font-size:18px;left:11px;bottom:8px}
+  .sx-tab small{font-size:9px;left:11px;top:6px}
+  .sx-title{top:20%;max-width:min(520px,46vw);gap:4px}
+  .sx-title h2{font-size:clamp(30px,3.6vw,54px)}
+  .sx-title p{font-size:clamp(15px,1.4vw,20px)}
+  .sx-title .lim-time,.sx-title .chip{font-size:12px}
+  .sx-feat button{width:40px;height:40px}
+  .sx-rule{bottom:calc(112px + var(--sb))}
+  .sx-bl{gap:14px}
+  .sx-rb{font-size:13px}
+  .sx-rb .c{width:48px;height:48px}
+  .sx-rb .c .ic{width:22px;height:22px}
+  .sx-skip{left:auto;right:calc(var(--sr) + 6px);transform:none;bottom:calc(80px + var(--sb));font-size:15px;gap:8px}
+  .sx-skip i{width:22px;height:22px}
+  .sx-skip input:checked+i::after{font-size:14px}
+  .sx-br{bottom:calc(18px + var(--sb));gap:12px}
+  .sx-pull{height:50px;min-width:196px;padding:0 20px;font-size:21px;gap:9px}
+  .sx-pull .cost{font-size:16px}
+  .sx-pull .cost .cic{width:20px;height:20px}
+  .sx-note{font-size:10px;bottom:calc(2px + var(--sb))}
 }
 
 /* minimalist round menu icons, stamina pill, daily login, summon hero art */
@@ -1367,7 +1399,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .mc-card img.art{max-width:none;aspect-ratio:auto;max-height:46vh;border-radius:12px}
 .mc-card b{font-family:var(--display);font-weight:400;font-size:22px}
 /* skins carousel */
-.mem-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mem-slots{display:grid;grid-template-columns:minmax(0,300px);gap:8px}
 .mem-slot,.mem-card{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:var(--glass);border:2px solid var(--edge-soft);color:inherit;padding:0}
 .mem-slot.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
 .mem-slot.full{border-color:var(--rc);background:var(--ink-2)}
@@ -1375,7 +1407,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .mem-slot img,.mem-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mem-empty{display:grid;justify-items:center;gap:2px;opacity:.6}
 .mem-empty .ic{width:20px;height:20px}
-.mem-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:34vh;overflow-y:auto;padding-right:4px}
+.mem-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;max-height:40vh;overflow-y:auto;padding-right:4px}
 .mem-card{background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--rc) 30%,transparent),var(--ink-2) 75%)}
 .mem-card.on{border-color:#fff}
 .mem-card.bw img{filter:grayscale(1) brightness(.7)}
@@ -1402,6 +1434,8 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .wd-item.on{border-color:#fff}
 .wd-item img{width:74%;height:74%;object-fit:contain;margin-bottom:14px}
 .wd-item.bw img{filter:grayscale(1) brightness(.7)}
+.wd-item.busy img{opacity:.45}
+.wd-worn{position:absolute;left:4px;right:4px;top:50%;transform:translateY(-50%);padding:3px 4px;border-radius:8px;background:rgba(5,8,20,.8);font-family:var(--display);font-size:9px;line-height:1.2;text-align:center;color:#ffd6e6}
 .wd-item .rtag{position:absolute;top:6px;left:6px;font-size:10px;padding:1px 6px}
 .wd-item .skc-on{bottom:auto;top:6px;left:auto;right:6px}
 .wd-nm{position:absolute;left:0;right:0;bottom:0;padding:12px 4px 5px;background:linear-gradient(transparent,rgba(5,8,20,.9));font-family:var(--display);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

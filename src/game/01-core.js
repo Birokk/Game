@@ -73,8 +73,9 @@ async function mediaDel(k) {
   try { await DB.del(k); } catch (e) {}
 }
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
-const SPLASH_MAX = 1728;
-function resizeImage(file, max, type = 'image/webp') {
+const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968];   // every character / skin art is cropped to exactly this size
+/* exact = [w, h]: cover-crop to exactly that size (keeping the middle across and the upper part top to bottom, like the art views) */
+function resizeImage(file, max, type = 'image/webp', exact) {
   return new Promise((res, rej) => {
     if (!file || !file.type.startsWith('image/')) return rej(new Error('That file is not an image. Pick a PNG, JPG, WebP or SVG.'));
     const reader = new FileReader();
@@ -82,8 +83,11 @@ function resizeImage(file, max, type = 'image/webp') {
       const img = new Image();
       img.onload = () => {
         const w = img.naturalWidth || max, h = img.naturalHeight || max, k = Math.min(1, max / Math.max(w, h));
-        const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        const c = document.createElement('canvas');
+        if (exact) {
+          c.width = exact[0]; c.height = exact[1]; const s = Math.max(c.width / w, c.height / h), dw = w * s, dh = h * s;
+          c.getContext('2d').drawImage(img, (c.width - dw) / 2, (c.height - dh) * .3, dw, dh);
+        } else { c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); }
         let url = c.toDataURL(type, 0.9);
         if (!url.startsWith('data:' + type)) url = c.toDataURL('image/png');
         res(url);

@@ -591,7 +591,7 @@ function advancePull() {
     <div class="rv-info">
       <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}</div>
       <div class="rv-name">${esc(v.name)}</div>
-      ${r.kind === 'entry' ? `<div class="rv-tier">${rtag(r.rarity, 'xl')}</div>` : ''}
+      <div class="rv-tier">${r.kind === 'entry' ? rtag(r.rarity, 'xl') : ctag(3, 'xl')}</div>
       ${r.up ? '<span class="rv-badge up">Upgraded from SSR!</span>' : ''}
       ${r.lost ? `<span class="rv-badge dupe">Lost the 50/50 · next UR is guaranteed</span>` : ''}
       ${r.kind === 'entry' ? (r.isNew ? '<span class="rv-badge">New</span>'
@@ -634,7 +634,7 @@ function showSummary() {
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r); return `<div class="scard r${r.rarity}" style="--i:${i}">
       ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
       ${r.isNew ? '<span class="new">NEW</span>' : ''}${r.up ? '<span class="new upg">UPGRADED</span>' : ''}
-      <div class="foot"><span class="st">${r.kind === 'coins' ? 'Gold coins' : r.kind === 'frag' ? 'Egg fragment' : rtag(r.rarity)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
+      <div class="foot"><span class="st">${r.kind === 'entry' ? rtag(r.rarity) : ctag(3)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}

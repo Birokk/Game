@@ -100,11 +100,11 @@ function renderPoolTab() {
   $('#adRarity').addEventListener('change', adminPreview);
   $('#adType').addEventListener('change', adminPreview);
   $('#adArt').addEventListener('change', async ev => {
-    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX); adminPreview(); }
+    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE); adminPreview(); }
     catch (e) { toast(e.message); }
   });
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
-  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
   $('#adIconX').onclick = () => { adminIcon = null; adminPreview(); };
@@ -460,7 +460,7 @@ function renderSkinsTab() {
   $('#skBack').onclick = () => { skChar = null; renderSkinsTab(); };
   document.querySelectorAll('[data-skup]').forEach(inp => inp.onchange = async () => {
     const k = findEntry(inp.dataset.skup), key = inp.dataset.skkey, mk = `${key === 'art' ? 'art' : 'get'}:${k.id}`;
-    try { await mediaSet(mk, await resizeImage(inp.files[0], key === 'art' ? SPLASH_MAX : 1920)); k[key] = 'idb:' + mk; persist(); renderSkinsTab(); renderMenu(); toast('Art saved.'); }
+    try { await mediaSet(mk, await (key === 'art' ? resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE) : resizeImage(inp.files[0], 1920))); k[key] = 'idb:' + mk; persist(); renderSkinsTab(); renderMenu(); toast('Art saved.'); }
     catch (e) { toast(e.message); }
   });
   document.querySelectorAll('[data-skx]').forEach(b => b.onclick = async () => {
@@ -539,7 +539,7 @@ function renderMemoriesTab() {
   const list = [...S.memories].sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   $('#adPanel').innerHTML = `<div class="admin">
     <section class="stack" style="align-content:start">
-      <div><h3>Add a memory</h3><p class="tiny">Memories are art cards each character can equip (${MEM_SLOTS} slots) in the Memory tab. Use the standard 1728×972 art. Players own none yet: switch on "Owned" below to test until there is a way to get them. Equipping does nothing yet.</p></div>
+      <div><h3>Add a memory</h3><p class="tiny">Memories are art cards each character can equip (one each) in the Memory tab. Use the standard 1728×972 art. Players own none yet: switch on "Owned" below to test until there is a way to get them. Equipping does nothing yet.</p></div>
       <label class="field"><span>Name</span><input class="input" id="memName" maxlength="40" placeholder="e.g. First Lantern Night"></label>
       <div class="field"><span>Rarity</span><div class="seg" id="memRar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="memR" value="${r}" ${r === 4 ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div></div>
       <label class="field"><span>Who can equip it</span><select class="input" id="memChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
@@ -595,7 +595,7 @@ function renderMRTab() {
     return k;
   };
   document.querySelectorAll('[data-mrup]').forEach(inp => inp.onchange = async () => {
-    try { const k = ensure(inp.dataset.mrup); await mediaSet('art:' + k.id, await resizeImage(inp.files[0], SPLASH_MAX)); k.art = 'idb:art:' + k.id; persist(); renderMRTab(); renderMenu(); toast(`MR art saved for ${findEntry(inp.dataset.mrup).name}.`); }
+    try { const k = ensure(inp.dataset.mrup); await mediaSet('art:' + k.id, await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE)); k.art = 'idb:art:' + k.id; persist(); renderMRTab(); renderMenu(); toast(`MR art saved for ${findEntry(inp.dataset.mrup).name}.`); }
     catch (e) { toast(e.message); }
   });
   document.querySelectorAll('[data-mrsave]').forEach(b => b.onclick = () => { ensure(b.dataset.mrsave); persist(); renderMRTab(); toast('Saved.'); });

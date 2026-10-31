@@ -122,8 +122,8 @@ function renderCharacters() {
       <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
         return `<button class="wd-slot ${wdSlot === k ? 'on' : ''} ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span></button>`; }).join('')}</div>
       <div class="lbl-sm">${WARD_NAME[wdSlot]} · ${items.filter(x => owns(x.id)).length}/${items.length} owned</div>
-      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id;
-        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'}>${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
+      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id, worn = wearersOf(x.id).filter(id => id !== c.id), busy = own && !eqd && worn.length >= (S.owned[x.id] || 0);
+        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'} ${busy ? `title="Worn by ${esc(worn.map(id => (findEntry(id) || {}).name).join(', '))}"` : ''}>${busy ? `<span class="wd-worn">Worn by ${esc((findEntry(worn[0]) || {}).name || '')}</span>` : ''}${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
       ${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}`;
   } else if (csTab === 'memory') {
@@ -136,8 +136,8 @@ function renderCharacters() {
       ${list.length ? `<div class="mem-list">${list.map(x => { const own = owns(x.id), at = E.indexOf(x.id);
         return `<button class="mem-card r${x.rarity} ${own ? '' : 'bw'} ${at >= 0 ? 'on' : ''}" data-memi="${esc(x.id)}" ${own ? '' : 'disabled'} ${x.desc ? `data-tip="${esc(`<b>${esc(x.name)}</b><span>${esc(x.desc)}</span>`)}"` : ''}>${memArt(x) ? `<img src="${memArt(x)}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(x.rarity)}${at >= 0 ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="mem-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
         : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
-      ${E[memSlot] ? `<button class="btn ghost sm" id="memOff">Remove from slot ${memSlot + 1}</button>` : ''}
-      <p class="tiny">Pick a slot, then a memory to put in it. Memories have no effect yet.</p>`;
+      ${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}
+      <p class="tiny">Each character can equip one memory: tap one to equip it (tap it again to remove it). Memories have no effect yet.</p>`;
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
@@ -197,7 +197,13 @@ function renderCharacters() {
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
     const W = { ...wearOf(c.id) };
-    if (W[x.slot] === x.id) delete W[x.slot]; else W[x.slot] = x.id;
+    if (W[x.slot] === x.id) delete W[x.slot];
+    else {
+      // each owned copy can be worn by one character: take it off someone else first
+      const others = wearersOf(x.id).filter(id => id !== c.id);
+      if (others.length >= (S.owned[x.id] || 0)) { const who = others.map(id => (findEntry(id) || {}).name).filter(Boolean).join(', '); toast(`${x.name} is worn by ${who}. Take it off ${others.length > 1 ? 'one of them' : 'them'} first.`); return; }
+      W[x.slot] = x.id;
+    }
     S.wear[c.id] = W; persist(); renderCharacters(); toast(W[x.slot] ? `${c.name} put on ${x.name}.` : `${c.name} took off ${x.name}.`);
   });
   csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; renderCharacters(); });
@@ -205,7 +211,7 @@ function renderCharacters() {
     const x = memOf(b.dataset.memi); if (!x || !owns(x.id)) return;
     const E = memEqOf(c.id), at = E.indexOf(x.id);
     if (at >= 0) { E[at] = null; toast(`Removed ${x.name}.`); }
-    else { E[memSlot] = x.id; toast(`${x.name} is in slot ${memSlot + 1}.`); const free = E.indexOf(null); if (free >= 0) memSlot = free; }
+    else { E[0] = x.id; memSlot = 0; toast(`${c.name} now holds ${x.name}.`); }
     S.memEq[c.id] = E; persist(); renderCharacters();
   });
   const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
