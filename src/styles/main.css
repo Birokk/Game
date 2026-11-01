@@ -3615,3 +3615,19 @@ button.pt-slot:hover{border-color:#fff}
 .rp-tag.dbl{background:linear-gradient(90deg,#ff6ec7,#3ee6d0);color:#1a0f2e}
 .rp-tag.rb{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff);color:#1a0f2e}
 .rp-tag.mw{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;animation:shimmer 2s linear infinite;color:#1a0f2e}
+
+/* raids v2: gear raids + Golden Vault stages */
+.raid-pill2{margin-top:14px}
+.raid-setnm{font-family:var(--read);font-size:12px;color:rgba(233,236,255,.65);white-space:nowrap;align-self:center;margin-left:auto;padding-left:10px}
+.evp-bg.none.raid-none.gold-none{background:radial-gradient(ellipse at 70% 30%,rgba(255,200,90,.35),transparent 55%),radial-gradient(ellipse at 20% 90%,rgba(180,110,20,.35),transparent 60%),linear-gradient(160deg,#120b02,#2a1a05 50%,#0c0702)!important}
+.gv-stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:8px}
+.gv-st{position:relative;display:grid;justify-items:center;gap:6px;padding:12px 6px 10px;border-radius:16px;color:#fff;background:linear-gradient(180deg,rgba(70,48,10,.75),rgba(25,16,4,.85));border:1.5px solid rgba(255,214,120,.35);box-shadow:inset 0 1px 0 rgba(255,240,200,.15)}
+.gv-st b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1;color:#ffe08a;text-shadow:0 0 10px rgba(255,200,80,.6)}
+.gv-gold{display:inline-flex;align-items:center;gap:4px;font-family:var(--display);font-size:14px}.gv-gold .cic{width:18px;height:18px}
+.gv-st small{display:inline-flex;align-items:center;gap:4px;font-family:var(--read);font-size:11px;color:rgba(255,240,210,.75)}.gv-st small .cic,.gv-st small .ic{width:13px;height:13px}
+.gv-st.on{border-color:transparent;background:linear-gradient(180deg,rgba(90,62,12,.9),rgba(30,20,4,.95)) padding-box,var(--cry-grad) border-box;box-shadow:0 0 16px var(--cry-glow)}
+.gv-st.locked{filter:grayscale(.7) brightness(.7);cursor:not-allowed}
+.raid-home{display:inline-flex;align-items:center;gap:6px;margin-left:10px}.raid-home select{width:auto;padding:4px 8px}
+.raid-adbg{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}.raid-adbgit{display:grid;gap:6px;justify-items:start}
+@media (max-width:720px){.gv-stages{grid-template-columns:repeat(3,minmax(0,1fr))}.raid-setnm{display:none}}
+.raid-row{grid-template-columns:64px minmax(0,1fr) auto!important}
