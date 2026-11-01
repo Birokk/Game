@@ -3448,3 +3448,13 @@ button.pt-slot:hover{border-color:#fff}
 @keyframes mwIn{0%{opacity:0;transform:translateX(-50%) scale(2.4)}60%{opacity:1}100%{opacity:1;transform:translateX(-50%) scale(1)}}
 .pull.revealing .maxwin{display:none}
 .sum h2.mw{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 2s linear infinite;font-size:44px}
+
+/* fakeout: the SSR sphere vanishes, the wallpaper emerges, then the sphere returns as UR over it */
+.pull.sph-gone .sph-stage{animation:sphVanish .45s ease-in forwards}
+@keyframes sphVanish{0%{opacity:1;transform:scale(1)}40%{opacity:1;transform:scale(1.15);filter:brightness(2)}100%{opacity:0;transform:scale(.2);filter:brightness(3)}}
+.sph-vanish{position:absolute;left:50%;top:50%;width:46vmin;height:46vmin;margin:-23vmin 0 0 -23vmin;z-index:3;border-radius:50%;pointer-events:none;background:radial-gradient(circle,#fff 0 20%,rgba(255,176,103,.8) 45%,transparent 70%);animation:sphVanFlash .6s ease-out forwards}
+@keyframes sphVanFlash{0%{opacity:0;transform:scale(.4)}30%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
+.pull.sph-return .sph-stage{animation:sphReturn .8s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes sphReturn{0%{opacity:0;transform:scale(.1);filter:brightness(3)}60%{opacity:1;filter:brightness(1.6)}100%{opacity:1;transform:scale(1);filter:none}}
+.pull.revealing .sph-vanish{display:none}
+.sum h2 .sum-mw{display:inline-block;margin-left:14px;padding:2px 14px;border-radius:10px;font-size:.8em;vertical-align:middle;background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 2s linear infinite;border:2px solid rgba(255,255,255,.5);box-shadow:0 0 16px rgba(255,255,255,.25);filter:drop-shadow(0 0 8px rgba(255,110,199,.6))}

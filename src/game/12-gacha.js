@@ -471,12 +471,12 @@ function releaseSphere() {
   if (st.best >= 4) pullLater(rise * .3, () => sphereTier(4));
   let urAt;
   // fakeout: the sphere finishes its rise as an SSR; where the SSR would burst, the wallpaper pops up instead and the sphere turns UR
-  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 2000; pullLater(urAt, fakeTransform); }
+  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 1500; pullLater(urAt, fakeTransform); pullLater(urAt + 1300, fakeArtOut); urAt += 500; }
   else if (st.best === 5) { urAt = rise * .62; pullLater(urAt, () => sphereTier(5)); }
   let after = st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400);
   // double: the sphere is already UR, then the two wallpapers slide in, hold, and blow out
   if (st.double) { const inAt = st.fake ? urAt + 1300 : Math.max(urAt + 1100, rise - 600); pullLater(inAt, doubleArtIn); pullLater(inAt + 2800, doubleArtOut); after = inAt + 3500; urAt = inAt + 2800; }
-  if (st.rainbow) { const rbAt = st.double ? urAt + 800 : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); if (st.maxwin) pullLater(rbAt + 500, maxWinBanner); pullLater(rbAt + (st.maxwin ? 3200 : 2400), burstSphere); }
+  if (st.rainbow) { const rbAt = st.double ? urAt + 800 : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + (st.maxwin ? 3200 : 2400), burstSphere); }
   else pullLater(after, burstSphere);
 }
 /* the rarer the pull, the slower the sphere rises (blue, SSR, UR) */
@@ -511,25 +511,22 @@ function doubleArtOut() {
   pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake');
   if (st.fx) st.fx.burst(140, 760, 5);
 }
-/* Max Win: a big rainbow "MAX WIN" over the rainbow sphere */
-function maxWinBanner() {
-  if (!pullState || !pullEl) return;
-  pullEl.insertAdjacentHTML('beforeend', '<div class="maxwin"><b>MAX WIN</b><small>5+ UR guaranteed</small></div>');
-  if (pullState.fx) pullState.fx.burst(240, 1000, 5);
-}
 function fakeArtIn() {
   const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
-  pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`);
+  // the SSR sphere vanishes and, instead of the SSR burst, the wallpaper emerges; the sphere comes back as UR (fakeTransform)
+  pullEl.classList.add('sph-gone');
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-vanish"></div><div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`);
 }
 function fakeTransform() {
   const st = pullState; if (!st || !pullEl) return;
-  const a = pullEl.querySelector('.fk-art'); if (a) a.classList.add('out');
-  pullEl.classList.add('fakeout');
+  pullEl.classList.remove('sph-gone'); pullEl.classList.add('fakeout', 'sph-return');
   pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');   // no ray burst: lightning, flash and the quake carry it
   $('#sph').classList.add('crack');
   sphereTier(5);
   st.fx.burst(120, 640, 5);
 }
+/* the fakeout wallpaper fades away once the UR sphere has shown itself over it */
+function fakeArtOut() { const a = pullEl && pullEl.querySelector('.fk-art:not(.dbl)'); if (a) a.classList.add('out'); }
 function burstSphere() {
   const st = pullState; if (!st || !pullEl) return;
   st.phase = 'burst';
@@ -717,7 +714,7 @@ function showSummary() {
   $('#pullSkip').hidden = true;
   const one = st.results.length === 1;
   $('#pullStage').innerHTML = `<div class="sum">
-    <h2 class="${st.maxwin ? 'mw' : ''}">${st.maxwin ? 'MAX WIN!' : 'Summon results'}</h2>
+    <h2>Summon results${st.maxwin ? ' <span class="sum-mw">MAX WIN</span>' : ''}</h2>
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r), e = r.kind === 'entry' && findEntry(r.id), mem = e && e.type === 'memory' && memOf(e.id);
       const pic = mem ? `<span class="scard-mem">${memCellPic(mem, 0)}</span>` : v.card ? `<img src="${v.card}" alt="" class="${e && baseArt(e) ? '' : 'chibi'}" ${e && baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`;
       return `<div class="scard r${r.rarity}" style="--i:${i}">
