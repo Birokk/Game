@@ -307,7 +307,8 @@ const easeBack = x => 1 + 2.4 * Math.pow(x - 1, 3) + 1.4 * Math.pow(x - 1, 2);
 /* canvas particles: meteor sparks, charge-in streaks, burst, reveal sparkles */
 function startPfx(canvas, tier) {
   const g = canvas.getContext('2d'), parts = [], t0 = performance.now(), tB = TIER_BURST[tier];
-  let W2 = 0, H2 = 0, dpr2 = 1, raf = 0, last = t0, burstDone = false, sparkTier = 0, sparkFrom = 0, sparkUntil = 0;
+  let W2 = 0, H2 = 0, dpr2 = 1, raf = 0, last = t0, burstDone = false, sparkTier = 0, sparkFrom = 0, sparkUntil = 0, ambTier = 0;
+  const amb = { flare: 0, twk: 0, dust: 0, bokeh: 0 };
   const acc = { flare: 0, twk: 0, dust: 0, bokeh: 0 };
   const spark = (sp, o) => parts.push(Object.assign({ sp, life: 1, max: 1, size: 10, rot: Math.random() * Math.PI, vr: (Math.random() - .5) * 1.6, ph: Math.random() * 3, dph: .8 + Math.random() * 1.2, seed: Math.random() * 100, vx: 0, vy: 0 }, o));
   const fit = () => { dpr2 = Math.min(2, devicePixelRatio || 1); W2 = canvas.clientWidth; H2 = canvas.clientHeight; canvas.width = W2 * dpr2; canvas.height = H2 * dpr2; };
@@ -326,6 +327,8 @@ function startPfx(canvas, tier) {
       }
       for (let i = 0; i < 3; i++) { const life = 1.1 + i * .2; spark('flare', { x: W2 / 2 + (Math.random() - .5) * W2 * .5, y: H2 * (.25 + Math.random() * .4), life, max: life, size: (46 + Math.random() * 26) * cfg.size }); }
     },
+    // gentle never-ending sparkles in one rarity's colours (the summon results screen)
+    ambient(t) { ambTier = t; sparkTier = t; sparkUntil = 0; },
     stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); }
   };
   function frame(now) {
@@ -352,6 +355,14 @@ function startPfx(canvas, tier) {
       while (acc.twk >= 1) { acc.twk--; const life = .45 + Math.random() * .55; spark('twk', { x: Math.random() * W2, y: Math.random() * H2 * .92, life, max: life, size: (10 + Math.random() * 18) * sz }); }
       while (acc.dust >= 1) { acc.dust--; const life = 1.3 + Math.random() * 1.3; spark('dust', { x: Math.random() * W2, y: H2 * (.2 + Math.random() * .85), vx: (Math.random() - .5) * 20, vy: -(18 + Math.random() * 55), life, max: life, size: (2 + Math.random() * 4.5) * sz }); }
       while (acc.bokeh >= 1) { acc.bokeh--; const life = 2.2 + Math.random() * 1.4; spark('bokeh', { x: Math.random() * W2, y: H2 * (.3 + Math.random() * .8), vx: (Math.random() - .5) * 10, vy: -(10 + Math.random() * 22), life, max: life, size: (28 + Math.random() * 60) * sz }); }
+    }
+    if (ambTier) {
+      const cfg = SPARK[ambTier], k = dt * .3, sz = cfg.size;
+      amb.flare += cfg.flare * k * .35; amb.twk += cfg.twk * k * .6; amb.dust += cfg.dust * k; amb.bokeh += cfg.bokeh * k;
+      while (amb.flare >= 1) { amb.flare--; const life = 1.2 + Math.random() * .8; spark('flare', { x: Math.random() * W2, y: Math.random() * H2 * .9, life, max: life, size: (22 + Math.random() * 30) * sz }); }
+      while (amb.twk >= 1) { amb.twk--; const life = .6 + Math.random() * .7; spark('twk', { x: Math.random() * W2, y: Math.random() * H2, life, max: life, size: (8 + Math.random() * 14) * sz }); }
+      while (amb.dust >= 1) { amb.dust--; const life = 2 + Math.random() * 2; spark('dust', { x: Math.random() * W2, y: H2 * (.3 + Math.random() * .8), vx: (Math.random() - .5) * 16, vy: -(16 + Math.random() * 40), life, max: life, size: (2 + Math.random() * 4) * sz }); }
+      while (amb.bokeh >= 1) { amb.bokeh--; const life = 2.6 + Math.random() * 1.6; spark('bokeh', { x: Math.random() * W2, y: H2 * (.3 + Math.random() * .8), vx: (Math.random() - .5) * 8, vy: -(8 + Math.random() * 18), life, max: life, size: (26 + Math.random() * 54) * sz }); }
     }
     g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.clearRect(0, 0, W2, H2); g.globalCompositeOperation = 'lighter';
     for (let i = parts.length - 1; i >= 0; i--) {
@@ -658,7 +669,11 @@ function showSummary() {
   const st = pullState; if (!st) return;
   pullClear(st); st.phase = 'summary';
   if (st.fx) st.fx.intro = false;
-  pullEl.classList.add('revealing');
+  // the results sit on the same summon background as the pull, with sparkles in the colours of the best rarity pulled
+  const top = Math.max(3, ...st.results.map(r => r.rarity >= 6 ? 5 : r.rarity || 3));
+  pullEl.classList.add('revealing', 'summary');
+  pullEl.classList.remove('t3', 't4', 't5', 't6', 'r3', 'r4', 'r5'); pullEl.classList.add('t' + top, 'r' + top);
+  if (st.fx) st.fx.ambient(top);
   $('#pullSkip').hidden = true;
   const one = st.results.length === 1;
   $('#pullStage').innerHTML = `<div class="sum">

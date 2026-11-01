@@ -75,7 +75,7 @@ function spinSlices() {
 }
 function openSpin() {
   const SL = spinSlices();
-  const conic = SPIN.map((s, i) => `${s.jackpot ? '#e8b04a' : i % 2 ? '#2a2f6a' : '#3d2a6e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
+  const conic = SPIN.map((s, i) => `${s.jackpot ? '#f2b8ee' : i % 2 ? '#2c2560' : '#4a2f7e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
   openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
       <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">

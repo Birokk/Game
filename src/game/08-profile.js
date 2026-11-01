@@ -93,6 +93,7 @@ function renderProfile() {
       <div class="pf-me">${avatarHTML(108)}
         <div class="pf-who"><span class="pf-lvrow"><button class="pf-vip" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipBadge()}${vipCanClaim() ? '<span class="dot-n"></span>' : ''}</button><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span></span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="${pfEditName ? 'Save name' : 'Change name'}">${icon(pfEditName ? 'check' : 'edit')}</button></span>${titleHTML()}</div>
       </div>
+    </div>
       <div class="pf-stats">
         <div><b>${chars.length}/${allChars.length}</b><span>Characters</span></div>
         <div><b>${ownedOf('pet').length}/${S.pool.filter(e => e.type === 'pet').length}</b><span>Pets</span></div>
@@ -100,7 +101,6 @@ function renderProfile() {
         <div title="UR characters and unique UR memories you own"><b>${urs}</b><span>URs owned</span></div>
         <div class="tcs" title="Total CS: the Character Score of every character you own, added up"><b>${fmt(totalCS)}</b><span>Total CS</span></div>
       </div>
-    </div>
     <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="row" style="gap:8px;align-items:center"><span class="tiny">Show off up to 4 characters you own · grades</span>${csInfoBtn()}</span></div>
       <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id), mid = e && memEqOf(e.id)[0], mm = mid && memOf(mid), mst = mm ? (memCopies(mm.id), memEqStar(e.id)) : 0, mart = mm && artFrom(mm.img);
         const memPrev = e ? (mm ? `<span class="pf-mem mem-fr mst${mst}" data-memview="${esc(mm.id)}|${mst}" title="${esc(mm.name)} · hold to view">${mart ? `<img src="${mart}" alt="">` : icon('memory')}<span class="pf-mem-tag">${rtag(mm.rarity)}${memStarRow(mst)}</span></span>` : '<span class="pf-mem none"><span class="tiny">No memory</span></span>') : '';
