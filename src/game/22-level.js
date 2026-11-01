@@ -31,7 +31,7 @@ function lvReward(lv) {
 const lvClaimed = lv => (S.lvClaimed || []).includes(lv);
 const lvReady = () => { const L = playerLv().lv; for (let i = 1; i <= L; i++) if (!lvClaimed(i)) return true; return false; };
 /* shared "You got" window for claimed rewards: got = {currencyKey: amount} */
-const REW_NAMES = { coins: ['gold', 'gold'], pearls: ['pearl', 'pearls'], tickets: ['Limited ticket', 'Limited tickets'], wishes: ['Standard ticket', 'Standard tickets'], bottles: ['stamina bottle', 'stamina bottles'], exp: ['EXP', 'EXP'], starlight: ['Coral', 'Corals'], dust: ['Seaweed', 'Seaweeds'], rings: ['ring', 'rings'] };
+const REW_NAMES = { coins: ['gold', 'gold'], pearls: ['pearl', 'pearls'], tickets: ['Limited ticket', 'Limited tickets'], wishes: ['Standard ticket', 'Standard tickets'], bottles: ['stamina bottle', 'stamina bottles'], exp: ['EXP', 'EXP'], starlight: ['Coral', 'Corals'], dust: ['Seaweed', 'Seaweeds'], rings: ['ring', 'rings'], memtk: ['UR memory ticket', 'UR memory tickets'] };
 const REW_R = { tickets: 5, pearls: 5, starlight: 5, rings: 5, wishes: 4, bottles: 4, coins: 3, exp: 3, dust: 3 };
 function showRewards(title, got, sub = '') {
   const items = Object.entries(got).filter(([, n]) => n > 0); if (!items.length) return;

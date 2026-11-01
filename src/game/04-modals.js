@@ -55,7 +55,7 @@ function claimMail(ids) {
   ids.forEach(id => { const m = allMail().find(x => x.id === id); if (!m || S.mailClaimed.includes(id)) return; S.mailClaimed.push(id);
     if (m.reward) Object.entries(m.reward).forEach(([k, v]) => { S.wallet[k] = (S.wallet[k] || 0) + v; got[k] = (got[k] || 0) + v; }); });
   persist(); renderMail(); renderMenu(); refreshSummon();
-  if (Object.keys(got).length) toast(`Claimed ${Object.entries(got).map(([k, v]) => `${fmt(v)} ${k === 'coins' ? 'gold' : k}`).join(' and ')}.`);
+  if (Object.keys(got).length) showRewards('Mail rewards', got, `${ids.filter(id => S.mailClaimed.includes(id)).length > 1 ? 'Every attachment claimed' : 'Attachment claimed'}`);
 }
 function deleteMail(ids) { S.mailDel = [...new Set([...(S.mailDel || []), ...ids])]; persist(); renderMail(); renderMenu(); }
 function renderMail() {

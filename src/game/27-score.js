@@ -54,9 +54,10 @@ const isSSS = c => !!c && owns(c.id) && csGrade(gradeScore(c)) === 'SSS';
 const sssAwakened = id => { const v = (S.sss || {})[id]; return Array.isArray(v) ? v.length > 0 : !!v; };   // older saves kept a list of stars
 const sssActive = c => isSSS(c) && sssAwakened(c.id) ? btOf(c.id) : [];
 const sigWorn = c => { if (!c || +c.rarity !== 5 || !c.sigSet) return false; const w = Object.values(wearOf(c.id)).map(clothOf).filter(Boolean); return w.length === WARD_SLOTS.length && w.every(x => x.set === c.sigSet); };
-const UR_PLUS_CS = 40000;   // a UR character with 40,000 CS or more shows as UR+ (charRtag, character screen badge)
-const urPlus = c => !!c && c.type === 'character' && +c.rarity === 5 && owns(c.id) && charScore(c) >= UR_PLUS_CS;
-const charRtag = (e, cls = '') => urPlus(e) ? `<span class="rtag r5 plus ${cls}">UR<i>+</i></span>` : rtag(e.rarity, cls);
+const UR_PLUS_CS = 40000, SSR_PLUS_CS = 25000;   // a UR character with 40,000+ CS shows as UR+, an SSR character with 25,000+ CS as SSR+ (charRtag, character screen badge)
+const PLUS_CS = { 5: UR_PLUS_CS, 4: SSR_PLUS_CS };
+const urPlus = c => !!c && c.type === 'character' && !!PLUS_CS[+c.rarity] && owns(c.id) && charScore(c) >= PLUS_CS[+c.rarity];   // UR+ or SSR+
+const charRtag = (e, cls = '') => urPlus(e) ? `<span class="rtag r${e.rarity} plus ${cls}">${RNAME[e.rarity]}<i>+</i></span>` : rtag(e.rarity, cls);
 const SIG_CS = 1000, MEM_STAR_CS = 200, SIG_MEM_CS = 500;   // memory: +200 per star of the equipped copy, +500 when it is one of the character's signature memories
 function csParts(c) {
   const out = csBaseParts(c); const n = out.length ? sssActive(c).length : 0;
@@ -108,7 +109,7 @@ function openCSInfo() {
   const row = (l, k, rs) => `<tr><td>${l}</td>${[3, 4, 5, 6].map(r => `<td>${rs.includes(r) && CS_PTS[k][r] ? fmt(CS_PTS[k][r]) : '–'}</td>`).join('')}</tr>`;
   openModal({ title: 'Character Score (CS)', ic: 'info', kind: 'csinfo', body: `<div class="stack">
     <p class="desc">Every character has a <b>CS</b>: points for everything it owns or wears. Rarer things give more. The total sets its grade, from F up to SSS.</p>
-    <div class="cs-grades">${CS_GRADES.map(([g, min], i) => `<div>${gradeTag(g)}<b>${fmt(min)}</b><small>${CS_GRADES[i + 1] ? `to ${fmt(CS_GRADES[i + 1][1] - 1)}` : 'and up'}</small></div>`).join('')}<div class="cs-urplus"><span class="rtag r5 plus">UR<i>+</i></span><b>${fmt(UR_PLUS_CS)}</b><small>UR characters</small></div></div>
+    <div class="cs-grades">${CS_GRADES.map(([g, min], i) => `<div>${gradeTag(g)}<b>${fmt(min)}</b><small>${CS_GRADES[i + 1] ? `to ${fmt(CS_GRADES[i + 1][1] - 1)}` : 'and up'}</small></div>`).join('')}<div class="cs-urplus ssr"><span class="rtag r4 plus">SSR<i>+</i></span><b>${fmt(SSR_PLUS_CS)}</b><small>SSR characters</small></div><div class="cs-urplus"><span class="rtag r5 plus">UR<i>+</i></span><b>${fmt(UR_PLUS_CS)}</b><small>UR characters</small></div></div>
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
       ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td></tr>
