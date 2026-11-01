@@ -126,9 +126,10 @@ function renderCharacters() {
     const memArt = x => artFrom(x.img);
     body = `<div class="lbl-sm">Memories · ${E.filter(Boolean).length}/${MEM_SLOTS} equipped</div>
       <div class="mem-slots">${E.map((id, i) => { const x = id && memOf(id);
-        return `<button class="mem-slot ${memSlot === i ? 'on' : ''} ${x ? 'full r' + x.rarity : ''}" data-memslot="${i}">${x ? `${memArt(x) ? `<img src="${memArt(x)}" alt="">` : ''}${rtag(x.rarity)}<span class="mem-nm">${esc(x.name)}</span>` : `<span class="mem-empty">${icon('plus')}<span class="tiny">Slot ${i + 1}</span></span>`}</button>`; }).join('')}</div>
-      <p class="tiny">Tap the slot to see every memory you own.</p>
-      <div class="row" style="gap:8px">${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}<button class="btn ghost sm" id="memFuse">${icon('fuse')}Exchange memories</button></div>
+        const st = x ? (memCopies(x.id), memEqStar(c.id)) : 0;
+        return `<button class="mem-slot ${memSlot === i ? 'on' : ''} ${x ? `full mem-fr mst${st} r${x.rarity}` : ''}" data-memslot="${i}" ${x ? `data-memview="${esc(x.id)}|${st}"` : ''}>${x ? `${memArt(x) ? `<img src="${memArt(x)}" alt="">` : ''}${rtag(x.rarity)}${memStarRow(st)}<span class="mem-nm">${esc(x.name)}</span>` : `<span class="mem-empty">${icon('plus')}<span class="tiny">Slot ${i + 1}</span></span>`}</button>`; }).join('')}</div>
+      <p class="tiny">Tap the slot to see every memory you own · hold it to view the memory.</p>
+      <div class="row" style="gap:8px">${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}<button class="btn ghost sm" id="memStar">${icon('fuse')}Memory stars</button><button class="btn ghost sm" id="memFuse">${icon('fuse')}Exchange memories</button></div>
       <p class="tiny">Each character can equip one memory. Every copy is separate: two characters can hold the same memory only with two copies. Memories have no effect yet.</p>`;
   } else if (csTab === 'pet') {
     body = petTabHTML(c);
@@ -230,6 +231,7 @@ function renderCharacters() {
     S.memEq[c.id] = E; persist(); renderCharacters();
   });
   const mf = $('#memFuse'); if (mf) mf.onclick = () => openFuse('mem');
+  const ms = $('#memStar'); if (ms) ms.onclick = () => openFuse('memst');
   const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
   const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; if ((S.wearSt || {})[c.id]) delete S.wearSt[c.id][wdSlot]; persist(); renderCharacters(); };
   const wa = $('#wdAuto'); if (wa) wa.onclick = () => autoEquip(c);

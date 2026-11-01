@@ -9,15 +9,16 @@ const FUSE_NEXT = { 3: 4, 4: 5 };
 const spareOf = id => Math.max(0, (S.owned[id] || 0) - wearersOf(id).length);
 let fuseR = 3, fusePot = [];   // the pot: cloth ids in the order they were added
 function openFuse(r) {
-  if (FUSE_NEXT[r] || r === 'star' || r === 'mem' || r === 'pet') fuseR = r;
+  if (FUSE_NEXT[r] || ['star', 'mem', 'memst', 'pet'].includes(r)) fuseR = r;
   fusePot = [];
   openModal({ title: 'Fusion', ic: 'fuse', wide: true, kind: 'fuse', body: '<div id="fuRoot"></div>', onMount: renderFuse });
 }
 function renderFuse() {
   const root = $('#fuRoot'); if (!root) return;
-  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button><button class="tab ${fuseR === 'mem' ? 'on' : ''}" data-fur="mem">${icon('memory')} Memories</button><button class="tab ${fuseR === 'pet' ? 'on' : ''}" data-fur="pet">${icon('paw')} Pets</button></div>`;
+  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button><button class="tab ${fuseR === 'mem' ? 'on' : ''}" data-fur="mem">${icon('memory')} Memories</button><button class="tab ${fuseR === 'memst' ? 'on' : ''}" data-fur="memst">${icon('memory')} Memory Stars</button><button class="tab ${fuseR === 'pet' ? 'on' : ''}" data-fur="pet">${icon('paw')} Pets</button></div>`;
   if (fuseR === 'star') return renderStarUp(root, tabs);
   if (fuseR === 'pet') return renderPetFuse(root, tabs);
+  if (fuseR === 'memst') return renderMemStarFuse(root, tabs);
   if (fuseR === 'mem') return renderMemFuse(root, tabs);
   const to = FUSE_NEXT[fuseR], inPot = id => fusePot.filter(x => x === id).length;
   const list = S.clothes.filter(x => +x.rarity === fuseR && spareOf(x.id) > 0).sort((a, b) => spareOf(b.id) - spareOf(a.id) || a.name.localeCompare(b.name));
@@ -45,7 +46,7 @@ function renderFuse() {
   $('#fuClear').onclick = () => { fusePot = []; renderFuse(); };
   $('#fuGo').onclick = doFuse;
 }
-function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = ['star', 'mem', 'pet'].includes(b.dataset.fur) ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); }); }
+function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = ['star', 'mem', 'memst', 'pet'].includes(b.dataset.fur) ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); }); }
 function doFuse() {
   const to = FUSE_NEXT[fuseR], targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   if (!n || !targets.length) return;
@@ -246,8 +247,50 @@ function autoEquip(c) {
 const memHolders = (id, except) => Object.keys(S.memEq || {}).filter(cid => cid !== except && owns(cid) && (S.memEq[cid] || []).includes(id));
 /* a memory is "held" only when every owned copy is with someone else */
 const memHolder = (id, except) => { const h = memHolders(id, except); return h.length >= (S.owned[id] || 0) ? h[0] || null : null; };
-/* every owned copy of a memory, one entry each: [{ id, who }] (who = character holding that copy) */
-function memCopies(id) { const h = memHolders(id), n = S.owned[id] || 0; return Array.from({ length: n }, (_, i) => ({ id, who: h[i] || null })); }
+/* every owned copy of a memory, one entry each: [{ id, st, who }] (st = its stars 0–3, who = character holding that copy).
+   Stars live in S.memSt[memId] = [stars per copy] (synced with S.owned like pets); a holder's copy is S.memEqSt[charId]. */
+function memCopiesSt(id) {
+  S.memSt = S.memSt || {};
+  const a = S.memSt[id] || [], n = S.owned[id] || 0;
+  while (a.length < n) a.push(0);
+  if (a.length > n) { a.sort((x, y) => y - x); a.length = n; }
+  S.memSt[id] = a; return a;
+}
+const memEqStar = cid => ((S.memEqSt || {})[cid]) || 0;
+function memCopies(id) {
+  const out = memCopiesSt(id).slice().sort((a, b) => b - a).map(st => ({ id, st, who: null }));
+  memHolders(id).sort((a, b) => memEqStar(b) - memEqStar(a)).forEach(cid => {
+    const c = out.find(x => !x.who && x.st === memEqStar(cid)) || out.find(x => !x.who);
+    if (c) { c.who = cid; if (c.st !== memEqStar(cid)) { S.memEqSt = S.memEqSt || {}; S.memEqSt[cid] = c.st; } }
+  });
+  return out;
+}
+/* memory stars: fuse 1 copy into another of the same memory → +1★ (0★ base, up to 3★); the lowest spare copy is used up */
+function memFusePlan(id) {
+  const cps = memCopies(id), tgt = cps.filter(c => c.st < MEM_MAXST).sort((a, b) => b.st - a.st || !!b.who - !!a.who)[0];
+  const feed = tgt && cps.filter(c => c !== tgt && !c.who).sort((a, b) => a.st - b.st)[0];
+  return tgt && feed ? { tgt, feed } : null;
+}
+function fuseMemStar(id) {
+  const m = memOf(id), plan = memFusePlan(id); if (!m || !plan) return;
+  const arr = memCopiesSt(id); arr.splice(arr.indexOf(plan.tgt.st), 1); arr.splice(arr.indexOf(plan.feed.st), 1); arr.push(plan.tgt.st + 1);
+  S.owned[id] -= 1; S.memSt[id] = arr;
+  if (plan.tgt.who) { S.memEqSt = S.memEqSt || {}; S.memEqSt[plan.tgt.who] = plan.tgt.st + 1; }
+  persist(); refreshCharacters(); renderFuse();
+  toast(`${m.name} is now ${plan.tgt.st + 1}★${plan.tgt.who ? ` (with ${(findEntry(plan.tgt.who) || {}).name})` : ''}.`);
+}
+function renderMemStarFuse(root, tabs) {
+  const mems = (S.memories || []).filter(m => owns(m.id)).sort((a, b) => !!memFusePlan(b.id) - !!memFusePlan(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+  root.innerHTML = `<div class="fu">${tabs}
+    <p class="tiny">Fuse one copy of a memory into another copy of the same memory: the best copy gets +1★ (0★ base, up to ${MEM_MAXST}★) and the lowest spare copy is used up. A copy someone holds can get the star but is never used up. Hold a memory to view it.</p>
+    ${mems.length ? `<div class="pf-list">${mems.map(m => { const cps = memCopies(m.id), plan = memFusePlan(m.id), art = artFrom(m.img), top = cps[0] ? cps[0].st : 0;
+      return `<div class="pf-row r${m.rarity}"><span class="pf-pic wide mem-fr mst${top}" data-memview="${esc(m.id)}|${top}">${art ? `<img src="${art}" alt="">` : icon('memory')}</span>
+        <div class="pf-info"><b>${esc(m.name)}</b>${rtag(m.rarity)}<div class="pf-copies">${cps.map(c => `<span class="pf-cp ${c.who ? 'with' : ''} ${plan && (c === plan.tgt || c === plan.feed) ? (c === plan.tgt ? 'tgt' : 'feed') : ''}">${c.st}★${c.who ? ` · ${esc((findEntry(c.who) || {}).name || '')}` : ''}</span>`).join('')}</div></div>
+        ${plan ? `<button class="btn gold sm" data-msfuse="${esc(m.id)}">${icon('fuse')}${plan.tgt.st}★ → ${plan.tgt.st + 1}★</button>` : `<span class="tiny pf-why">${cps.length < 2 ? 'Needs another copy' : cps.every(c => c.st >= MEM_MAXST || c.who) ? 'No spare copy' : `Max ${MEM_MAXST}★`}</span>`}</div>`; }).join('')}</div>`
+      : '<div class="cs-pill">You don\'t have any memories yet. Pull them on the Memory banner.</div>'}</div>`;
+  bindFuseTabs(root);
+  root.querySelectorAll('[data-msfuse]').forEach(b => b.onclick = () => fuseMemStar(b.dataset.msfuse));
+}
 /* the see-through picker that opens from the Memory slot */
 function openMemPick(c) {
   const old = document.querySelector('.wdpick'); if (old) old.remove();
@@ -258,7 +301,7 @@ function openMemPick(c) {
       .sort((a, b) => b.m.rarity - a.m.rarity || a.m.name.localeCompare(b.m.name) || (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || (!!a.who - !!b.who));
     el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">Memory</h2><span class="tiny">${list.length} memor${list.length === 1 ? 'y' : 'ies'} in your inventory · tap one to equip it</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
       ${list.length ? `<div class="mem-list wdp-mems">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine, art = artFrom(cp.m.img);
-        return `<button class="mem-card r${cp.m.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-mp="${i}" ${busy ? 'disabled' : ''}>${art ? `<img src="${art}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(cp.m.rarity)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">Equipped by ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}<span class="mem-nm">${esc(cp.m.name)}</span></button>`; }).join('')}</div>`
+        return `<button class="mem-card mem-fr mst${cp.st} r${cp.m.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-mp="${i}" data-memview="${esc(cp.m.id)}|${cp.st}" ${busy ? 'disabled' : ''}>${art ? `<img src="${art}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(cp.m.rarity)}${memStarRow(cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">Equipped by ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}<span class="mem-nm">${esc(cp.m.name)}</span></button>`; }).join('')}</div>`
         : '<div class="cs-pill">You don\'t have any memories yet. Pull them on the Memory banner.</div>'}
       <div class="row" style="justify-content:center;gap:10px">${cur ? '<button class="btn ghost" data-mpoff>Remove memory</button>' : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;
     el.querySelectorAll('[data-wdpx]').forEach(b => b.onclick = () => el.remove());
@@ -266,7 +309,7 @@ function openMemPick(c) {
     el.querySelectorAll('[data-mp]').forEach(b => b.onclick = () => {
       const cp = list[+b.dataset.mp]; if (!cp || (cp.who && cp.who !== c.id)) return;
       if (cp.who === c.id) { S.memEq[c.id] = [null]; toast(`Removed ${cp.m.name}.`); }
-      else { S.memEq[c.id] = [cp.m.id]; toast(`${c.name} now holds ${cp.m.name}.`); }
+      else { S.memEq[c.id] = [cp.m.id]; S.memEqSt = S.memEqSt || {}; S.memEqSt[c.id] = cp.st; toast(`${c.name} now holds ${cp.m.name} (${cp.st}★).`); }
       persist(); renderCharacters(); render();
     });
   };
