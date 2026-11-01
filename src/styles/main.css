@@ -2852,3 +2852,49 @@ button.pt-slot:hover{border-color:#fff}
 .camp-slot .ex-av{width:58px;height:58px}
 .camp-slot .ic{width:22px;height:22px}
 .fm-cur .cur .ic{width:18px;height:18px}
+
+/* Potential (32-potential.js): gems above the stars, the plan board */
+.stars6>span{position:relative}
+.pot-ic{display:none}
+.cs-traits .pot-ic,.stars-big .pot-ic{display:block;position:absolute;left:50%;bottom:100%;width:1.35em;height:1.35em;transform:translate(-50%,-2px);opacity:.42;filter:grayscale(.4);pointer-events:auto}
+.cs-traits .pot-ic.done,.stars-big .pot-ic.done{opacity:1;filter:drop-shadow(0 0 5px rgba(200,162,255,.9));animation:potBob 2.6s ease-in-out infinite}
+.pot-ic .pot-svg{width:100%;height:100%;display:block}
+@keyframes potBob{50%{transform:translate(-50%,-5px)}}
+.cs-traits:has(.pot-ic) .stars6,.stars-big:has(.pot-ic) .stars6{padding-top:1.45em}
+.pot{display:grid;gap:10px}
+.pot-head{display:flex;align-items:center;gap:10px}
+.pot-head b{display:block;font:400 20px var(--display)}
+.pot-gem-big{width:44px;height:44px;flex:none;filter:drop-shadow(0 0 10px var(--cry-glow))}
+.pot-gem-big .pot-svg{width:100%;height:100%}
+.pot-pages{display:flex;gap:6px;flex-wrap:wrap}
+.pot-pg{display:flex;align-items:center;gap:4px;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(10,10,20,.6);color:#fff;font:400 14px var(--display);cursor:pointer}
+.pot-pg small{font-size:10px;opacity:.7;display:flex}
+.pot-pg small .ic{width:11px;height:11px}
+.pot-pg.on{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 12px var(--cry-glow)}
+.pot-pg.locked{opacity:.5}
+.pot-pg.done:not(.on){border-color:#c8a2ff;color:#e6d6ff}
+.pot-board{position:relative;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
+  background:radial-gradient(circle at 50% 48%,rgba(200,162,255,.28),transparent 45%),repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 10px,transparent 10px 20px),linear-gradient(160deg,#2a1d4f,#151230 60%,#24183f);border:1px solid rgba(200,162,255,.35)}
+.pot-lines{position:absolute;inset:0;width:100%;height:100%}
+.pot-lines line{stroke:rgba(255,255,255,.18);stroke-width:1.4;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.pot-lines line.on{stroke:#f5afe8;stroke-width:3;filter:drop-shadow(0 0 3px #c8a2ff)}
+.pot-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;z-index:1}
+.pot-orb{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#120e24;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.55)}
+.pot-orb .ic{width:20px;height:20px}
+.pot-orb b{font:400 20px var(--display);color:var(--cry-ink)}
+.pot-orb .pot-svg{width:70%;height:70%}
+.pot-node.done .pot-orb{background:var(--cry-grad);border-color:var(--cry-edge);color:var(--cry-ink);box-shadow:0 0 14px var(--cry-glow)}
+.pot-node.done .pot-orb .ic{stroke-width:3}
+.pot-node.next .pot-orb{background:radial-gradient(circle,#fff 0 30%,#e9c7ff 60%,#b89bff);border-color:#fff;animation:potPulse 1.4s ease-in-out infinite}
+@keyframes potPulse{50%{box-shadow:0 0 0 6px rgba(200,162,255,.25),0 0 20px var(--cry-glow)}}
+.pot-node.core .pot-orb{width:76px;height:76px}
+.pot-node.core.locked .pot-orb .ic{width:26px;height:26px}
+.pot-lbl{display:grid;justify-items:center;font:400 11px var(--display);color:#fff;text-shadow:0 1px 4px #000;white-space:nowrap}
+.pot-lbl small{font-size:10px;color:#f5afe8}
+.pot-next{position:absolute;top:-12px;right:-14px;padding:1px 6px;border-radius:6px;background:var(--cry-grad-h);color:var(--cry-ink);font:400 10px var(--display);transform:rotate(8deg)}
+.pot-board.shut .pot-node{opacity:.35}
+.pot-shut{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;background:rgba(8,6,20,.55);font:400 15px var(--display)}
+.pot-shut .ic{width:30px;height:30px}
+.pot-foot{display:flex;justify-content:center}
+.pot-ok{background:var(--cry-grad-h);color:var(--cry-ink)}
+.pot-ok .ic{width:14px;height:14px}

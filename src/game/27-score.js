@@ -41,6 +41,7 @@ function csBaseParts(c) {
   const bl = bondLv(c.id);
   if (bl) out.push({ label: `Bond level ${bl}`, pts: bl * csP('bond', r) });
   if (sigWorn(c)) out.push({ label: 'Signature set', pts: SIG_CS });
+  const pt = potTotal(c.id); if (pt) out.push({ label: `Potential (${pt})`, pts: pt * POT_CS });
   return out;
 }
 /* SSS awakening (once per character, 100 pearls + 100,000 gold): while the grade is SSS every switched-on Breakthrough star glows red
@@ -106,7 +107,7 @@ function openCSInfo() {
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
       ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td></tr>
-      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
+      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Each Potential upgrade</td><td>–</td><td>100</td><td>100</td><td>–</td></tr><tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
     </tbody></table>
     <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E). SSS takes a fully built UR: 6★ with every star awakened, a full UR set, a UR pet, a UR memory, max bond and several skins. From grade S a <b>+</b> appears after the character's stars, gold for S, prism for SS and red for SSS.</p>
   </div>` });

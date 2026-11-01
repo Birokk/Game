@@ -82,7 +82,7 @@ function renderCharacters() {
   const eq = equippedOf(c), shown = (csTab === 'skins' && csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
   const art = mediaArt(shown), shownOwned = owns(shown.id), shownWall = shown === c ? wpIdFor(c, artKey(c)) : shown.id;   // the art on screen as a wallpaper id
   csEl.className = `cs r${c.rarity}`;
-  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['pet', 'paw', 'Pet'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
+  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['pet', 'paw', 'Pet'], ['bt', 'sparkle', 'Breakthrough'], ['pot', 'potential', 'Potential'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
@@ -132,6 +132,8 @@ function renderCharacters() {
       <p class="tiny">Each character can equip one memory. Every copy is separate: two characters can hold the same memory only with two copies. Memories have no effect yet.</p>`;
   } else if (csTab === 'pet') {
     body = petTabHTML(c);
+  } else if (csTab === 'pot') {
+    body = potTabHTML(c);
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
@@ -203,6 +205,7 @@ function renderCharacters() {
   bindCSInfo(csEl);
   const wf = $('#wdFuse'); if (wf) wf.onclick = () => openFuse(3);
   if (csTab === 'pet') bindPetTab(c);
+  if (csTab === 'pot') bindPotTab(c);
   csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; openWardPick(c, wdSlot); });
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
