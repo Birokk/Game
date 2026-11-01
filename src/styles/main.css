@@ -964,7 +964,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .nc{position:absolute;inset:0;overflow:hidden;border-radius:inherit}
 .nc img{position:absolute;right:0;top:0;width:60%;height:100%;object-fit:cover;object-position:50% 15%;-webkit-mask:linear-gradient(90deg,transparent,#000 40%);mask:linear-gradient(90deg,transparent,#000 40%)}
 .nc img.chibi{top:-72%;height:290%;object-position:50% 0}
-.nc-char{background:linear-gradient(110deg,#141a38,#2a2f6a)}
+.nc-char{background:linear-gradient(110deg,#000,#0b0b0e)}
 .nc-pearl{background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.55) 0 7%,rgba(220,200,255,.25) 12%,transparent 22%),linear-gradient(180deg,#000 0%,#0a0612 30%,#3a2160 60%,#c776b8 88%,#ffb3cf)}
 .nc-pearl::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:radial-gradient(ellipse at 30% 100%,rgba(255,255,255,.18),transparent 60%),radial-gradient(ellipse at 80% 110%,rgba(255,255,255,.15),transparent 55%)}
 .nc-starlit{background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.9) 1px,transparent 1.6px) 0 0/60px 60px,radial-gradient(circle at 70% 60%,rgba(200,220,255,.7) 1px,transparent 1.6px) 0 0/43px 43px,radial-gradient(ellipse at 75% 40%,rgba(90,140,255,.35),transparent 60%),linear-gradient(160deg,#060a24,#121a4a 60%,#1e1450)}
