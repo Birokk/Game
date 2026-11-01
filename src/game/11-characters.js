@@ -29,7 +29,7 @@ function outfitCards(c) {
 }
 const startCardId = c => { const eq = equippedOf(c), k = artKey(c); return eq ? eq.id : k === 'base' ? c.id : `${c.id}@${k}`; };
 function skinCard(o) {
-  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}" ${o.art && o.fr ? `style="${o.fr}"` : ''}><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">${'★'.repeat(o.stars === 6 ? 2 : 1)}${o.stars}</span>` : rtag(o.rarity)}</button>`;
+  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}" ${o.art && o.fr ? `style="${o.fr}"` : ''}><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">★${o.stars}</span>` : rtag(o.rarity)}</button>`;
 }
 function selectSkin(c, id) {
   const o = outfitCards(c).find(x => x.id === id); if (!o || !csEl) return;
@@ -86,7 +86,7 @@ function renderCharacters() {
   const head = `<div class="cs-head">
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
-      ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity}">${RNAME[c.rarity]}</span>` : ''}
+      ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity} ${urPlus(c) ? 'plus' : ''}">${RNAME[c.rarity]}${urPlus(c) ? '<i>+</i>' : ''}</span>` : ''}
     </div>
     <div class="cs-sep"></div>
     <div class="cs-traits">${starRow(st, -1, c)}

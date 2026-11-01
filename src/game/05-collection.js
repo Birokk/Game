@@ -5,17 +5,17 @@ function openCollection(filter = 'character') {
 }
 const cardHTML = e => {
   const n = S.owned[e.id] || 0;
-  return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starsFor(e) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]}</div></div></button>`;
+  return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starsFor(e) : 'Not owned'}</span><div class="card-foot"><div>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]}</div></div></button>`;
 };
 /* character cards in the collection: same look as the skin cards (rarity top left, name and stars at the bottom) */
 const charCardHTML = e => {
   const own = owns(e.id);
-  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${rtag(e.rarity)}${own ? `<span class="col-cs">${csTag(e, 'sm')}</span>` : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}${own ? `<span class="col-cs">${csTag(e, 'sm')}</span>` : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
 };
 /* skin cards in the collection: the same 3:4 portrait card (with the skin's card framing) */
 const skinColCard = e => {
   const own = owns(e.id), par = findEntry(e.parent);
-  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${rtag(e.rarity)}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(par ? e.name.replace(par.name + ' · ', '') : e.name)}<span class="skc-st">${par ? esc(par.name) : 'Outfit'}</span></span></button>`;
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(par ? e.name.replace(par.name + ' · ', '') : e.name)}<span class="skc-st">${par ? esc(par.name) : 'Outfit'}</span></span></button>`;
 };
 const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
@@ -42,7 +42,7 @@ function renderDetail(id, backTo) {
       <div class="dt-info">
         <div class="eyebrow ts" style="color:#fff">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>
         <h3>${esc(e.name)}</h3>
-        <div class="row" style="gap:10px;align-items:center">${rtag(e.rarity, 'lg')}${e.type === 'character' ? csTag(e) : ''}</div>
+        <div class="row" style="gap:10px;align-items:center">${e.type === 'character' ? charRtag(e, 'lg') : rtag(e.rarity, 'lg')}${e.type === 'character' ? csTag(e) : ''}</div>
         <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
         ${n && hasStars(e) ? `<div class="stars-big">${starsFor(e)}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies from summons give ${e.type === 'character' ? `${STARLIGHT_MAX[e.rarity] || STARLIGHT_MAX[4]} Corals each` : 'nothing extra'}.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>

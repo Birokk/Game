@@ -54,6 +54,9 @@ const isSSS = c => !!c && owns(c.id) && csGrade(gradeScore(c)) === 'SSS';
 const sssAwakened = id => { const v = (S.sss || {})[id]; return Array.isArray(v) ? v.length > 0 : !!v; };   // older saves kept a list of stars
 const sssActive = c => isSSS(c) && sssAwakened(c.id) ? btOf(c.id) : [];
 const sigWorn = c => { if (!c || +c.rarity !== 5 || !c.sigSet) return false; const w = Object.values(wearOf(c.id)).map(clothOf).filter(Boolean); return w.length === WARD_SLOTS.length && w.every(x => x.set === c.sigSet); };
+const UR_PLUS_CS = 40000;   // a UR character with 40,000 CS or more shows as UR+ (charRtag, character screen badge)
+const urPlus = c => !!c && c.type === 'character' && +c.rarity === 5 && owns(c.id) && charScore(c) >= UR_PLUS_CS;
+const charRtag = (e, cls = '') => urPlus(e) ? `<span class="rtag r5 plus ${cls}">UR<i>+</i></span>` : rtag(e.rarity, cls);
 const SIG_CS = 1000, MEM_STAR_CS = 200, SIG_MEM_CS = 500;   // memory: +200 per star of the equipped copy, +500 when it is one of the character's signature memories
 function csParts(c) {
   const out = csBaseParts(c); const n = out.length ? sssActive(c).length : 0;
