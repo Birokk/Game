@@ -437,7 +437,7 @@ function showPull(results, n, bk, opts = {}) {
   const pbg = MEDIA.get('pull:bg');
   pullEl.className = `pull t3 r3 charging ${pbg ? 'has-bg' : ''}`;
   pullEl.setAttribute('role', 'dialog'); pullEl.setAttribute('aria-label', 'Summon results');
-  pullEl.innerHTML = `${pbg ? `<img class="pull-bg" src="${pbg}" alt="">` : ''}<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-ring"></i><i class="sph-band"></i><i class="sph-band b2"></i></div><canvas class="sph-front"></canvas></div>
+  pullEl.innerHTML = `${pbg ? `<img class="pull-bg" src="${pbg}" alt="">` : ''}<div class="sph-stage"><canvas class="sph-back"></canvas><div class="sph-beam"></div><div class="sph c3" id="sph"><i class="sph-swirl"></i><i class="sph-core"></i><i class="sph-glint"></i><i class="sph-glint g2"></i><i class="sph-glint g3"></i></div><canvas class="sph-front"></canvas></div>
     <div class="sph-hint tap" id="sphHint"><b>Tap to release</b><span class="tap-ring"></span></div>
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
@@ -471,7 +471,7 @@ function releaseSphere() {
   if (st.best >= 4) pullLater(rise * .3, () => sphereTier(4));
   let urAt;
   // fakeout: the sphere finishes its rise as an SSR; where the SSR would burst, the wallpaper pops up instead and the sphere turns UR
-  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 1500; pullLater(urAt, fakeTransform); pullLater(urAt + 1300, fakeArtOut); urAt += 500; }
+  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 2000; pullLater(urAt, fakeTransform); pullLater(urAt + 1300, fakeArtOut); urAt += 500; }
   else if (st.best === 5) { urAt = rise * .62; pullLater(urAt, () => sphereTier(5)); }
   let after = st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400);
   // double: the sphere is already UR, then the two wallpapers slide in, hold, and blow out
@@ -515,7 +515,8 @@ function fakeArtIn() {
   const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
   // the SSR sphere vanishes and, instead of the SSR burst, the wallpaper emerges; the sphere comes back as UR (fakeTransform)
   pullEl.classList.add('sph-gone');
-  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-vanish"></div><div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`);
+  pullEl.insertAdjacentHTML('beforeend', '<div class="sph-vanish"></div>');
+  pullLater(550, () => { if (pullEl) pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`); });
 }
 function fakeTransform() {
   const st = pullState; if (!st || !pullEl) return;
@@ -602,16 +603,26 @@ function startSphereFx(root) {
       if (q < 1 && b) { fg.beginPath(); fg.arc(b.x, b.y, 40 + q * Math.max(W, H) * .8, 0, 7); fg.strokeStyle = rgba(col(2), (1 - q) * .8); fg.lineWidth = 10 * (1 - q) + 1; fg.shadowColor = col(1); fg.shadowBlur = 30; fg.stroke(); fg.shadowBlur = 0; }
     }
     if (b && b.o > .05) {
-      // orbiting sparks on tilted rings: far side drawn behind the sphere, near side in front
-      const rings = tier >= 5 ? 3 : tier === 4 ? 2 : 1;
-      for (let k = 0; k < rings; k++) {
-        const tilt = [-.35, .5, -1.1][k], rx = b.r * (1.45 + k * .25), ry = rx * .3, sp = [1, -1.3, .8][k] * (1 + pp * 2), n = 14 + tier * 4;
-        for (let j = 0; j < n; j++) {
-          const a = j / n * Math.PI * 2 + t * sp, cx = Math.cos(a) * rx, cy = Math.sin(a) * ry, depth = Math.sin(a);
-          const x = b.x + cx * Math.cos(tilt) - cy * Math.sin(tilt), y = b.y + cx * Math.sin(tilt) + cy * Math.cos(tilt);
-          const g = depth < 0 ? bg : fg, size = (1.4 + (depth + 1) * 1.3) * (tier >= 5 ? 1.3 : 1);
-          g.fillStyle = rgba(col(j % 3, t * 2), (depth < 0 ? .35 : .9) * b.o); g.beginPath(); g.arc(x, y, size, 0, 7); g.fill();
-        }
+      // soft light rays fanning out behind the sphere, slowly turning (a magic star, not a planet's ring)
+      const nr = 6 + tier * 2, rl = b.r * (2.2 + tier * .35 + pp * 1.2);
+      bg.save(); bg.translate(b.x, b.y); bg.globalCompositeOperation = 'lighter';
+      for (let j = 0; j < nr; j++) {
+        const a = j / nr * Math.PI * 2 + t * .18 * (j % 2 ? 1 : -.6), w = b.r * (.16 + .06 * Math.sin(t * 2 + j)), L = rl * (.7 + .3 * Math.sin(t * 1.3 + j * 1.7));
+        const gr = bg.createLinearGradient(0, 0, Math.cos(a) * L, Math.sin(a) * L); gr.addColorStop(0, rgba(col(j % 3, t), .45 * b.o)); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        bg.fillStyle = gr; bg.beginPath(); bg.moveTo(Math.cos(a + Math.PI / 2) * w, Math.sin(a + Math.PI / 2) * w); bg.lineTo(Math.cos(a) * L, Math.sin(a) * L); bg.lineTo(Math.cos(a - Math.PI / 2) * w, Math.sin(a - Math.PI / 2) * w); bg.closePath(); bg.fill();
+      }
+      bg.restore();
+      // energy wisps spiralling into the sphere from every direction
+      const W2 = root._wisps || (root._wisps = []);
+      if (W2.length < 10 + tier * 6 && Math.random() < .5 + pp) W2.push({ a: Math.random() * 7, d: b.r * (2 + Math.random() * 1.6), s: (Math.random() < .5 ? -1 : 1) * (1.4 + Math.random()), c: Math.floor(Math.random() * 3), tr: [] });
+      fg.lineCap = 'round';
+      for (let i = W2.length - 1; i >= 0; i--) {
+        const w = W2[i]; w.a += w.s * dt * (1.2 + pp); w.d -= dt * b.r * (1 + pp * 1.5);
+        const x = b.x + Math.cos(w.a) * w.d, y = b.y + Math.sin(w.a) * w.d; w.tr.push([x, y]); if (w.tr.length > 9) w.tr.shift();
+        if (w.d < b.r * .85) { W2.splice(i, 1); continue; }
+        const fade = Math.min(1, (w.d - b.r * .85) / (b.r * .6)) * b.o;
+        fg.strokeStyle = rgba(col(w.c, t * 2), .75 * fade); fg.lineWidth = tier >= 5 ? 2.4 : 1.8; fg.beginPath(); w.tr.forEach(([px, py], k) => k ? fg.lineTo(px, py) : fg.moveTo(px, py)); fg.stroke();
+        fg.fillStyle = rgba('#ffffff', .9 * fade); fg.beginPath(); fg.arc(x, y, tier >= 5 ? 2.2 : 1.6, 0, 7); fg.fill();
       }
       // charging: sparks pulled into the sphere
       if (root.classList.contains('charging') && Math.random() < .3 + pp) { const a = Math.random() * 7, d = b.r * (3 + Math.random() * 2); motes.push({ x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d, life: .7, max: .7 }); }
