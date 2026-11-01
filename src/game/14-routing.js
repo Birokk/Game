@@ -18,6 +18,7 @@ document.addEventListener('click', e => {
   else if (k === 'events') openEvents(t.dataset.ev);
   else if (k === 'bag') openInventory();
   else if (k === 'level') openLevel();
+  else if (k === 'vip') openVip();
   else if (k === 'spin') openSpin();
   else if (k === 'ach') openAch();
   else if (k === 'quests') openQuests();

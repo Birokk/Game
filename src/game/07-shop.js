@@ -54,8 +54,10 @@ function renderShop() {
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
-    body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
-      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
+    const vx = vipState().xp, vl = vipLv(vx), vh = VIP_XP[vl];
+    body = `<button class="mall-vip" data-open="vip">${vipBadge(vl)}<span class="mv-txt"><b>${vh ? `${fmt(vh - vx)} VIP EXP to VIP ${vl + 1}` : 'Highest VIP level'}</b><small>${VIP_PER_USD} VIP EXP for every $1 · daily rewards</small></span>${vipCanClaim() ? '<span class="dot-n"></span>' : ''}<span class="mv-go">VIP rewards ›</span></button>
+      <p class="tiny">${TOPUP_FREE ? 'Pearl packs. Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
+      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets and marriage rings.</p>
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
@@ -93,7 +95,7 @@ function renderShop() {
   shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
-  shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const n = TOPUP[+b.dataset.topup][0]; S.wallet.pearls += n; persist(); renderMenu(); refreshSummon(); renderShop(); showRewards('Top Up', { pearls: n }, 'Free while testing'); });
+  shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const [n, usd] = TOPUP[+b.dataset.topup]; S.wallet.pearls += n; const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop(); showRewards('Top Up', { pearls: n, vip: vx }, 'Free while testing'); });
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
   shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
