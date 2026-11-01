@@ -91,7 +91,7 @@ function renderProfile() {
     ${view ? '' : `<div class="row pf-back"><button class="btn ghost sm" id="pfBack">${icon('back')}Back to profile</button><span class="tiny">Tap a showcase slot, or pick an avatar, frame, title or namecard below.</span></div>`}
     <div class="pf-card">${cardLayer(cardBG(P.card))}${view ? `<button class="pf-set" id="pfSet" aria-label="Profile settings" data-tip="${esc('<b>Profile settings</b><span>Avatar, frame, title, namecard, showcase and name</span>')}">${icon('gear')}<span>Profile settings</span></button>` : ''}
       <div class="pf-me">${avatarHTML(108)}
-        <div class="pf-who"><span class="pf-lvrow"><button class="pf-vip" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipBadge()}${vipReady() ? '<span class="dot-n"></span>' : ''}</button><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span></span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="${pfEditName ? 'Save name' : 'Change name'}">${icon(pfEditName ? 'check' : 'edit')}</button></span>${titleHTML()}</div>
+        <div class="pf-who"><span class="pf-lvrow"><button class="pf-vip" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipBadge()}${vipReady() ? '<span class="dot-n"></span>' : ''}</button><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span></span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="Change name">${icon('edit')}</button></span>${titleHTML()}</div>
       </div>
     </div>
       <div class="pf-stats">
@@ -118,7 +118,7 @@ function renderProfile() {
   const sb = $('#pfSet'); if (sb) sb.onclick = () => { pfMode = 'edit'; renderProfile(); };
   const bb = $('#pfBack'); if (bb) bb.onclick = () => { pfMode = 'view'; pfSlot = -1; pfEditName = false; renderProfile(); };
   const pe = $('#pfEdit'); if (pe && view) pe.remove();
-  if (pe && !view) pe.onclick = () => { if (pfEditName) saveName(); else { pfEditName = true; renderProfile(); const i = $('#pfNameIn'); i.focus(); i.select(); } };
+  if (pe && !view) pe.onclick = () => openRename(() => { openProfile(); pfMode = 'edit'; renderProfile(); });
   const ni = $('#pfNameIn'); if (ni) ni.onkeydown = e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { e.stopPropagation(); pfEditName = false; renderProfile(); } };
   root.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; pfSlot = -1; renderProfile(); });
   root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { if (view) { pfMode = 'edit'; } pfSlot = pfSlot === +b.dataset.slot ? -1 : +b.dataset.slot; renderProfile(); });
@@ -132,3 +132,35 @@ function renderProfile() {
   root.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { P.title = b.dataset.tt; save(); });
   root.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { P.card = b.dataset.nc; save(); });
 }
+
+/* ---------- name change: 1 name change ticket (wallet nametk) and once every 72 hours (S.player.nameAt) ----------
+   Tickets are sold in the shop: Pearl Shop 10 pearls, Exchange → Corals 25 Corals (NAMETK_PEARLS / NAMETK_CORALS). */
+const NAME_CD_MS = 72 * 3600e3, NAMETK_PEARLS = 10, NAMETK_CORALS = 25;
+const nameLeft = () => Math.max(0, (S.player.nameAt || 0) + NAME_CD_MS - Date.now());
+const nameLeftTxt = () => { const s = nameLeft() / 1000, d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.ceil(s % 3600 / 60); return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`; };
+function openRename(back) {
+  const tk = S.wallet.nametk || 0, cd = nameLeft();
+  openModal({ title: 'Change name', ic: 'edit', small: true, body: `<div class="stack rn">
+    <div class="rn-row"><span class="rn-ic">${curIcon('nametk')}</span><span><b>Name change ticket</b><small>You have ${tk} · 1 is used per change</small></span><button class="btn ghost sm" id="rnBuy">Buy</button></div>
+    ${cd ? `<p class="rn-cd">${icon('clock')}You can change your name again in <b>${nameLeftTxt()}</b> (once every 72 hours).</p>` : ''}
+    <input class="input" id="rnIn" maxlength="16" value="${esc(S.player.name)}" aria-label="New name" ${cd ? 'disabled' : ''}>
+    <span class="tiny">Up to 16 characters. Names can be changed once every 72 hours.</span>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="rnNo">Cancel</button><button class="btn gold" id="rnGo" ${cd || !tk ? 'disabled' : ''}>${cd ? 'On cooldown' : tk ? `Change · 1 ${curIcon('nametk')}` : 'No ticket'}</button></div></div>`,
+    onMount: () => {
+      const i = $('#rnIn'); if (!cd) { i.focus(); i.select(); }
+      $('#rnNo').onclick = () => { closeModal(); if (back) back(); };
+      $('#rnBuy').onclick = () => { closeModal(); openShop('pearl'); };
+      const go = () => {
+        const v = i.value.trim().slice(0, 16);
+        if (nameLeft()) return toast(`You can change your name again in ${nameLeftTxt()}.`);
+        if (!(S.wallet.nametk > 0)) return toast('You need a name change ticket. Buy one in the shop.');
+        if (!v) return toast('Enter a name.');
+        if (v === S.player.name) return toast('That is already your name.');
+        S.wallet.nametk--; S.player.name = v; S.player.nameAt = Date.now(); if (typeof player !== 'undefined') player.name = v;
+        persist(); renderMenu(); closeModal(); if (back) back(); if (typeof renderSettings === 'function') try { renderSettings(); } catch (e) {}
+        toast(`You're now called ${v}. Next change in 72 hours.`);
+      };
+      $('#rnGo').onclick = go; i.onkeydown = e => { if (e.key === 'Enter') go(); };
+    } });
+}
+CUR_SVG.nametk = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="ntkG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".5" stop-color="#c8a2ff"/><stop offset="1" stop-color="#94b8ff"/></linearGradient></defs><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5h15A1.5 1.5 0 0 1 21 7.5v2a2.5 2.5 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5v-2a2.5 2.5 0 0 0 0-5z" fill="url(#ntkG)" stroke="#fff" stroke-width="1.1"/><path d="M8.5 15.5l.6-2.4 5.3-5.3a1.2 1.2 0 0 1 1.7 1.7l-5.3 5.3z" fill="#2b1855" opacity=".75"/><path d="M8 16.3h3" stroke="#2b1855" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg>';

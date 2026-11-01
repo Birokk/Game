@@ -573,7 +573,8 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .hm-tr{top:calc(12px + var(--st));right:var(--sr);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cur{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 10px;border-radius:999px;font-weight:900;font-variant-numeric:tabular-nums;background:rgba(8,12,30,.55);border:1px solid var(--edge-soft);min-width:116px}
 .cur b{flex:1;text-align:center}
-.cur .plus{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--glass-hi);color:var(--gold)}
+.cur .plus{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--cry-grad);color:var(--cry-ink);border:1.5px solid var(--cry-edge);box-shadow:0 0 8px var(--cry-glow)}
+.cur .plus:hover{filter:brightness(1.08)}
 .cur .plus .ic{width:14px;height:14px}
 .rbtn{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;transition:background .2s,transform .2s}
 .rbtn:hover{background:var(--glass-hi);transform:translateY(-1px)}
@@ -3487,3 +3488,11 @@ button.pt-slot:hover{border-color:#fff}
 .vip-num.v-sss b{text-shadow:0 0 8px #ff2a45,0 0 14px rgba(255,120,60,.7)}
 /* Max Win burst stamp */
 .pull .stamp.mw{font-size:clamp(64px,13vmin,150px);white-space:nowrap;background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(255,255,255,.7)) drop-shadow(0 0 40px rgba(255,110,199,.6))}
+/* name change window */
+.rn{gap:12px}
+.rn-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.rn-row>span:nth-child(2){flex:1;display:grid;gap:2px}.rn-row small{font-family:var(--read);font-size:12px;opacity:.7}
+.rn-ic .cic{width:34px;height:34px}
+.rn-cd{display:flex;align-items:center;gap:8px;margin:0;padding:8px 12px;border-radius:12px;background:rgba(245,175,232,.12);border:1px solid rgba(245,175,232,.35);font-family:var(--read);font-size:13px}.rn-cd .ic{width:16px;height:16px}
+.btn .cic{width:18px;height:18px;vertical-align:-4px}
+.sx-name{font-family:var(--display);font-size:15px;margin-right:10px}

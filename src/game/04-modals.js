@@ -120,7 +120,7 @@ function renderSettings() {
   else if (setTab === 'account') {
     const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
     rows = setRow('Account', Backend.on ? btn('setAcct', Backend.user ? 'Sign out' : 'Sign in') : `<span class="sx-val">${acct}</span>`, Backend.on ? acct : '')
-      + setRow('Player name', `<input class="sx-in" id="setName" maxlength="16" value="${esc(S.player.name)}" aria-label="Player name">`, 'Up to 16 characters')
+      + setRow('Player name', `<span class="sx-name">${esc(S.player.name)}</span>${btn('setName', 'Change')}`, nameLeft() ? `Next change in ${nameLeftTxt()} · uses 1 name change ticket` : 'Uses 1 name change ticket · once every 72 hours')
       + setRow('Main character', S.player.mc ? `<button type="button" class="sx-btn" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : '<span class="sx-val">Not chosen yet</span>', S.player.mc ? `${esc(mcEntry(S.player.mc).name)} · once every 72 hours` : '')
       + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
   } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
@@ -144,7 +144,7 @@ function renderSettings() {
   setEl.querySelectorAll('[data-settab]').forEach(b => b.onclick = () => { setTab = b.dataset.settab; renderSettings(); });
   setEl.querySelectorAll('[data-set]').forEach(sel => sel.onchange = () => { const k = sel.dataset.set; S.settings[k] = k === 'gfx' ? sel.value : sel.value === '1'; persist(); });
   const df = on('setDefault'); if (df) df.onclick = () => { S.settings = { ...S.settings, ...SET_DEFAULTS }; persist(); renderSettings(); toast('Settings set back to default.'); };
-  const nm = on('setName'); if (nm) nm.addEventListener('input', e => { S.player.name = e.target.value.trim() || 'Traveler'; player.name = S.player.name; renderMenu(); persist(); });
+  const nm = on('setName'); if (nm) nm.onclick = () => openRename();
   const rd = on('setRedeem'); if (rd) rd.onclick = openRedeem;
   const tt = on('setTitle'); if (tt) tt.onclick = showTitle;
   const ab = on('setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
