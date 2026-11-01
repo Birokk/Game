@@ -3127,10 +3127,11 @@ button.pt-slot:hover{border-color:#fff}
 /* 6★ characters: the animated prism border with twin spinning comets of 3★ memories (st6, 36-ranking.js) */
 .skc.st6,.pf-slot.st6{border-color:transparent;background:linear-gradient(var(--ink-2),var(--ink-2)) padding-box,linear-gradient(110deg,#a855f7,#ff6ec7,#3ee6d0,#ffd36b,#a855f7) border-box;background-size:100% 100%,300% 100%;animation:mstWave 3s linear infinite;box-shadow:0 0 14px rgba(255,110,199,.5)}
 .skc.st6{border-width:3px}
-.skc.st6::after,.pf-slot.st6::after,.cs-av.st6 .ring::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:3px;z-index:3;pointer-events:none;
+.skc.st6::after,.pf-slot.st6::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:3px;z-index:3;pointer-events:none;
   background:conic-gradient(from var(--mfa),transparent 0 22%,#ff6ec7 36%,#fff 40%,transparent 44% 72%,#3ee6d0 86%,#fff 90%,transparent 94%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:mfSpin 2.6s linear infinite}
-.cs-av.st6 .ring{position:relative;background:linear-gradient(110deg,#a855f7,#ff6ec7,#3ee6d0,#ffd36b,#a855f7);background-size:300% 100%;animation:mstWave 3s linear infinite;box-shadow:0 0 12px rgba(255,110,199,.5)}
+/* (roster avatars keep a plain rarity ring) */
+.cs-av.st6-off .ring{position:relative;background:linear-gradient(110deg,#a855f7,#ff6ec7,#3ee6d0,#ffd36b,#a855f7);background-size:300% 100%;animation:mstWave 3s linear infinite;box-shadow:0 0 12px rgba(255,110,199,.5)}
 .cs-av.st6.on .ring{box-shadow:0 0 0 3px #e8ff7a,0 0 20px #c8ff5a}
 
 /* ---------- Ranking (36-ranking.js) ---------- */
@@ -3534,10 +3535,14 @@ button.pt-slot:hover{border-color:#fff}
 .rk-row.top3 .rk-n i b{color:#4a1f08;text-shadow:0 1px 0 rgba(255,230,210,.6)}
 .rk-row .rk-n{overflow:visible}
 .rk-list{padding-top:16px}
-/* character home: your place in that character's ranking */
-.cs-rankb{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;margin-bottom:10px;border-radius:16px;text-align:left;color:#fff;background:linear-gradient(90deg,rgba(200,162,255,.22),rgba(148,184,255,.08));border:1.5px solid rgba(200,162,255,.5)}
-.cs-rankb.r1{background:linear-gradient(90deg,rgba(255,206,92,.32),rgba(255,206,92,.06));border-color:rgba(255,214,110,.8)}
-.cs-rankb.r2{background:linear-gradient(90deg,rgba(214,224,245,.3),rgba(214,224,245,.06));border-color:rgba(225,232,250,.75)}
-.cs-rankb.r3{background:linear-gradient(90deg,rgba(214,140,90,.32),rgba(214,140,90,.06));border-color:rgba(230,160,110,.75)}
-.cs-rankn{font-family:var(--display);font-size:26px;line-height:1;min-width:52px;text-align:center}
-.cs-rankb>span:last-child{display:grid;gap:2px}.cs-rankb b{font-family:var(--display);font-weight:400;font-size:15px}.cs-rankb small{font-family:var(--read);font-size:12px;opacity:.75}
+/* character home: your place in that character's ranking (same medal as the ranking rows, no card border) */
+.cs-rankb.rk-row{display:flex;align-items:center;gap:14px;width:auto;padding:8px 4px 4px;margin:6px 0 10px;background:none!important;border:0!important;box-shadow:none!important;color:#fff;text-align:left}
+.cs-rankt{font-family:var(--display);font-weight:400;font-size:17px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.cs-rankb.top1 .cs-rankt{color:#ffe08a}.cs-rankb.top2 .cs-rankt{color:#e6ecff}.cs-rankb.top3 .cs-rankt{color:#ffc9a3}
+
+/* 6★ SSR: the same animated border in SSR orange (no UR prism) */
+.skc.st6-r4,.pf-slot.st6-r4{background:linear-gradient(var(--ink-2),var(--ink-2)) padding-box,linear-gradient(110deg,#ff8a2a,#ffd09a,#ffb067,#fff1dd,#ff8a2a) border-box;background-size:100% 100%,300% 100%;box-shadow:0 0 14px rgba(255,160,80,.55)}
+.skc.st6-r4::after,.pf-slot.st6-r4::after{background:conic-gradient(from var(--mfa),transparent 0 22%,#ffb067 36%,#fff 40%,transparent 44% 72%,#ff7a1a 86%,#fff 90%,transparent 94%)}
+/* currency "+" exactly centred */
+.cur .plus{padding:0;line-height:0;flex:none}
+.cur .plus .ic{display:block;width:14px;height:14px;margin:0}

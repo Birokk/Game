@@ -102,7 +102,7 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
-      ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb r${Math.min(rk, 4)}" data-csrank="${esc(c.id)}"><span class="cs-rankn">#${rk}</span><span><b>Top ${rk <= 3 ? 3 : 10} in the ranking</b><small>Character CS ranking for ${esc(c.name)}</small></span></button>` : ''; })()}
+      ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb rk-row ${rk <= 3 ? 'top top' + rk : 'top10'}" data-csrank="${esc(c.id)}" aria-label="Open the ranking"><span class="rk-n"><i><b>${rk}</b></i></span><b class="cs-rankt">#${rk} Server CS Ranking</b></button>` : ''; })()}
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
@@ -187,7 +187,7 @@ function renderCharacters() {
   const keepList = U.querySelector('.cs-list') ? U.querySelector('.cs-list').scrollTop : 0;
   U.innerHTML = `
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
-    <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${st6(e)} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
+    <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
         <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}</button>`).join('')}</nav>
     <div class="cs-side cs-ui">
