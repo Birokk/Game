@@ -93,7 +93,7 @@ function renderRaids() {
   const d = RAIDS.find(x => x.id === raidSel) || RAIDS[0], bg = MEDIA.get('raid:bg');
   raidEl.innerHTML = `<div class="evp-bg ${bg ? '' : 'none raid-none'}">${bg ? `<img src="${bg}" alt="">` : ''}</div><div class="evp-shade"></div>
     <div class="evp-head"><span class="inv-badge">${icon('raid')}</span><h2 class="ts">Raids</h2></div>
-    <div class="raid-top"><div class="cur" id="raidStam">${curIcon('stamina')}<b>${stamina()}/${STAMINA_MAX}</b><button class="plus" id="raidPlus" aria-label="Refill stamina">${icon('plus')}</button></div><button class="inv-x" id="raidClose" aria-label="Close">${icon('close')}</button></div>
+    <div class="raid-top"><div class="cur" id="raidStam">${curIcon('stamina')}<b>${stamina()}/${stamMax()}</b><button class="plus" id="raidPlus" aria-label="Refill stamina">${icon('plus')}</button></div><button class="inv-x" id="raidClose" aria-label="Close">${icon('close')}</button></div>
     <aside class="evp-side"><span class="evp-pill">${icon('raid')}Dungeons</span>
       <div class="evp-list">${RAIDS.map(x => `<button class="evp-item ${x.id === d.id ? 'on' : ''}" data-raid="${x.id}"><span class="evp-ic">${icon('raid')}</span><b>${esc(x.name)}</b></button>`).join('')}</div></aside>
     <section class="evp-main raid-main">
@@ -111,7 +111,7 @@ function renderRaids() {
   raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => clearRaid(+b.dataset.clear));
   $('#raidFuse').onclick = () => openFuse(3);
 }
-setInterval(() => { const s = raidEl && raidEl.querySelector('#raidStam b'); if (s) s.textContent = `${stamina()}/${STAMINA_MAX}`; }, 5000);
+setInterval(() => { const s = raidEl && raidEl.querySelector('#raidStam b'); if (s) s.textContent = `${stamina()}/${stamMax()}`; }, 5000);
 
 /* admin → Raids: the dungeon wallpaper and the design of every raid piece */
 function renderRaidsTab() {

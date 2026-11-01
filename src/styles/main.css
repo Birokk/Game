@@ -2748,3 +2748,25 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 @media (max-width:640px){.fm-cur{top:calc(66px + env(safe-area-inset-top,0px));right:10px}.fm-cur .cur{padding:3px 10px}}
 .fm-scroll{position:absolute;inset:0;overflow:hidden}
 @media (max-aspect-ratio:16/9) and (max-width:900px){.fm-scroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.fm-scroll::-webkit-scrollbar{display:none}.fm-scroll .fm-stage{left:0;transform:translateY(-50%)}}
+
+/* monthly memberships (30-membership.js): two cards in the shop's Hot Picks */
+.pass-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:stretch}
+.pass-box{position:relative;display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:22px;background:linear-gradient(160deg,color-mix(in srgb,var(--pc) 22%,#16161d),#101016 60%);border:1px solid color-mix(in srgb,var(--pc) 45%,transparent);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.pass-box.on{box-shadow:0 0 0 2px var(--pc),0 0 26px color-mix(in srgb,var(--pc) 45%,transparent)}
+.pass-card{display:grid;place-items:center;align-self:center;justify-self:center;width:min(240px,100%);aspect-ratio:8/5;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+.pass-card .cic,.pass-card img{width:100%;height:100%;object-fit:contain}
+.pass-card.big{width:200px}
+.pass-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pass-head h3{margin:0;font:400 22px var(--display)}
+.pass-state{font:400 13px var(--display);padding:3px 12px;border-radius:999px;background:rgba(0,0,0,.35);color:var(--pc)}
+.pass-box.on .pass-state{background:var(--pc);color:#1a1020}
+.pass-perks{list-style:none;margin:0;padding:0;display:grid;gap:7px;flex:1}
+.pass-perks li{display:flex;align-items:center;gap:10px;font-family:var(--read);font-size:14px;color:#e8e9f0}
+.pass-pi{flex:none;width:26px;height:26px;display:grid;place-items:center}
+.pass-pi .cic,.pass-pi .ic,.pass-pi .egg{width:22px;height:22px}
+.pass-buy{align-self:stretch;min-width:0}
+.pass-buy .cic{width:22px;height:22px}
+.pass-buy.poor{filter:grayscale(.5) brightness(.8)}
+.pass-ok{font:400 17px var(--display);color:var(--gold)}
+.pass-set{width:64px!important}
+.pass-set .cic,.pass-set img{width:100%;height:100%;object-fit:contain}

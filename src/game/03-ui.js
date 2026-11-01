@@ -36,6 +36,7 @@ const thumbImg = (e, cls = '') => {
 /* banner portraits: the entry's own icon or base art, never the player's equipped outfit or star art */
 const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${baseCard(e)}" alt="" class="${baseArt(e) ? 'art' : 'chibi'} ${cls}">`; };
 function renderMenu() {
+  passDaily();   // a membership's daily reward goes to Mail once a day
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>`;
   $('#lvDot').hidden = !lvReady();
@@ -63,27 +64,32 @@ function renderMenu() {
   applyWallpaper();
 }
 
-/* stamina: 240 max, +1 every 6 minutes (nothing spends it yet) */
-const STAMINA_MAX = 240, STAMINA_MS = 6 * 60 * 1000;
-const STAMINA_CAP = 999;   // bottles, refills and the farm can go past 240, but never past 999
+/* stamina: 240 max, +1 every 6 minutes; the monthly memberships raise both (300 / 4.8 min, 360 / 4 min; the best active one counts) */
+const STAMINA_BASE = 240, STAMINA_BASE_MS = 6 * 60 * 1000;
+const PASS_STAM = { p1: [300, 4.8 * 60e3], p2: [360, 4 * 60e3] };
+const passOn = id => ((S.member || {})[id] || 0) > Date.now();
+const stamMax = () => Math.max(STAMINA_BASE, ...Object.keys(PASS_STAM).filter(passOn).map(k => PASS_STAM[k][0]));
+const stamMs = () => Math.min(STAMINA_BASE_MS, ...Object.keys(PASS_STAM).filter(passOn).map(k => PASS_STAM[k][1]));
+const stamEvery = () => { const m = stamMs() / 6e4; return `${Math.round(m * 10) / 10} minute${m === 1 ? '' : 's'}`; };
+const STAMINA_CAP = 999;   // bottles, refills and the farm can go past the max, but never past 999
 /* add stamina from any source, up to the 999 cap; returns how much was actually added */
 function giveStamina(n) {
   stamina(); const add = Math.max(0, Math.min(n, STAMINA_CAP - S.stamina.v));
-  S.stamina.v += add; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); return add;
+  S.stamina.v += add; if (S.stamina.v >= stamMax()) S.stamina.t = Date.now(); return add;
 }
 function stamina() {
   const st = S.stamina, now = Date.now();
-  if (st.v >= STAMINA_MAX) { st.t = now; return st.v; }
-  const k = Math.floor((now - st.t) / STAMINA_MS);
-  if (k > 0) { st.v = Math.min(STAMINA_MAX, st.v + k); st.t = st.v >= STAMINA_MAX ? now : st.t + k * STAMINA_MS; persist(); }
+  if (st.v >= stamMax()) { st.t = now; return st.v; }
+  const k = Math.floor((now - st.t) / stamMs());
+  if (k > 0) { st.v = Math.min(stamMax(), st.v + k); st.t = st.v >= stamMax() ? now : st.t + k * stamMs(); persist(); }
   return st.v;
 }
-function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= STAMINA_MAX) S.stamina.t = Date.now(); S.stamina.v -= n; questAdd('stamina', n); persist(); renderStamina(); return true; }
+function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= stamMax()) S.stamina.t = Date.now(); S.stamina.v -= n; questAdd('stamina', n); persist(); renderStamina(); return true; }
 function renderStamina() {
   const el = $('#stamVal'); if (!el) return;
-  const v = stamina(), left = STAMINA_MS - (Date.now() - S.stamina.t), m = Math.floor(left / 6e4), sec = Math.floor(left % 6e4 / 1e3);
-  el.innerHTML = `${v}<span style="color:var(--muted);font-weight:800">/${STAMINA_MAX}</span>`;
-  $('#stamPill').title = v >= STAMINA_MAX ? 'Stamina is full' : `Stamina · +1 in ${m}:${String(sec).padStart(2, '0')}`;
+  const v = stamina(), left = stamMs() - (Date.now() - S.stamina.t), m = Math.floor(left / 6e4), sec = Math.floor(left % 6e4 / 1e3);
+  el.innerHTML = `${v}<span style="color:var(--muted);font-weight:800">/${stamMax()}</span>`;
+  $('#stamPill').title = v >= stamMax() ? 'Stamina is full' : `Stamina · +1 in ${m}:${String(sec).padStart(2, '0')}`;
 }
 setInterval(() => { if (menuOpen) renderStamina(); }, 1000);
 

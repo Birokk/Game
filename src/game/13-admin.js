@@ -682,7 +682,7 @@ function renderWalletTab() {
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
     <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button><button class="btn ghost sm" id="wSpin">Reset daily spin</button></div>
     <div><h3>Bond &amp; marriage</h3><p class="tiny">Test helpers. Rings are also editable in the wallet above.</p></div>
-    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
+    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wPass">Memberships: end both</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -697,9 +697,9 @@ function renderWalletTab() {
   $('#wForm').onsubmit = e => e.preventDefault();
   $('#wSave').onclick = () => { CUR_KEYS.forEach(k => { const v = Math.max(0, Math.floor(+$('#w_' + k).value || 0)); S.wallet[k] = v; }); persist(); renderMenu(); refreshSummon(); toast('Wallet saved.'); };
   $('#wAdd').onclick = () => { S.wallet.pearls += 300; persist(); renderMenu(); renderWalletTab(); toast('Added 300 pearls.'); };
-  $('#wStam').onclick = () => toast(spendStamina(60) ? `Spent 60 stamina. ${S.stamina.v}/${STAMINA_MAX} left.` : 'Not enough stamina.');
-  $('#wFill').onclick = () => { S.stamina = { v: STAMINA_MAX, t: Date.now() }; persist(); renderStamina(); toast('Stamina refilled.'); };
-  $('#wSpin').onclick = () => { S.spin.last = null; persist(); renderMenu(); toast('The daily spin is ready again.'); };
+  $('#wStam').onclick = () => toast(spendStamina(60) ? `Spent 60 stamina. ${S.stamina.v}/${stamMax()} left.` : 'Not enough stamina.');
+  $('#wFill').onclick = () => { S.stamina = { v: stamMax(), t: Date.now() }; persist(); renderStamina(); toast('Stamina refilled.'); };
+  $('#wSpin').onclick = () => { S.spin.last = null; S.spin.n = 0; persist(); renderMenu(); toast('The daily spin is ready again.'); };
   $('#wLogin').onclick = () => { S.login.last = null; persist(); renderMenu(); toast('Daily login can be claimed again.'); };
   $('#wRings').onclick = () => { S.wallet.rings += 5; persist(); renderMenu(); renderWalletTab(); toast('Added 5 rings.'); };
   $('#wGifts').onclick = () => { Object.keys(GIFTS).forEach(k => S.gifts[k] += 5); persist(); toast('Added 5 of each gift.'); };
@@ -710,6 +710,7 @@ function renderWalletTab() {
   $('#wLvReset').onclick = () => { S.player.xp = 0; S.lvClaimed = []; persist(); renderMenu(); toast('Level reset to 1.'); };
   $('#wScratch').onclick = () => { S.scratch = { day: dayKey(), n: 0, card: null }; persist(); if (evEl) renderEvents(); toast(`Scratch cards reset: ${SCRATCH_DAILY} cards available again today.`); };
   $('#wFarmReset').onclick = () => { S.farm = {}; persist(); renderMenu(); toast('Farm reset.'); };
+  $('#wPass').onclick = () => { S.member = {}; S.memberDay = {}; persist(); renderMenu(); renderStamina(); toast('Both memberships ended.'); };
   $('#wExpd').onclick = () => { Object.values(S.expd || {}).forEach(e => { e.ends = Date.now() - 1; }); persist(); renderMenu(); toast('Every expedition is back.'); };
   $('#wMCcd').onclick = () => { S.player.mcAt = null; persist(); toast('Main character switch cooldown cleared.'); };
   $('#wMC').onclick = () => { S.player.mc = null; S.player.mcAt = null; persist(); toast('Main character choice reset. You will pick again on the next start.'); };

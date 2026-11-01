@@ -11,7 +11,7 @@ const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Pr
 let exSub = 'corals';
 function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), n: 0 }; return S.premEx; }
 const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
-let shopTab = 'hot', shopEl = null, shopPick = null;
+let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
 const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
 function openShop(tab) {
@@ -34,10 +34,10 @@ function renderShop() {
   let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
-    const e = shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
-    strip = `<span class="mall-pill on">New outfits</span>`;
+    const e = hotSub === 'skins' && shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
+    strip = [['pass', 'Memberships'], ['skins', 'New outfits']].map(([k, l]) => `<button class="mall-pill ${k === hotSub ? 'on' : ''}" data-hotsub="${k}">${l}</button>`).join('');
     bg = e ? `<img class="mall-art" src="${baseSplash(e)}" alt="">` : '';
-    body = e ? `<div class="mall-hot">
+    body = hotSub === 'pass' ? passShopHTML() : e ? `<div class="mall-hot">
         <div class="mall-hot-name"><h1>${esc(e.name)}</h1><span class="mall-time">${rtag(e.rarity)}${par ? esc(par.name) : 'Outfit'}</span></div>
         <div class="mall-thumbs">${picks.map(x => `<button class="mall-thumb ${x.id === shopPick ? 'on' : ''}" data-pick="${esc(x.id)}"><img src="${baseCard(x)}" alt=""><b>${esc(x.name)}</b></button>`).join('')}</div>
         <div class="mall-price"><span>${curIcon('pearls')}<b>${SKIN_PRICE}</b></span>${owns(e.id) ? '<button class="mall-go owned" disabled>Owned</button>' : `<button class="mall-go" data-skin="${esc(e.id)}">Buy ${icon('up')}</button>`}</div>
@@ -72,11 +72,13 @@ function renderShop() {
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
       <div class="inv-cur">${['pearls', 'starlight', 'dust'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(W[k])}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
     <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b></button>`).join('')}</aside>
-    <section class="mall-main ${shopTab === 'hot' ? 'hot' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
+    <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && hotSub === 'pass' ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
     <p class="mall-foot">Please spend responsibly.</p>`;
   $('#shopClose').onclick = closeShop;
   shopEl.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { shopTab = b.dataset.stab; renderShop(); });
   shopEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { shopPick = b.dataset.pick; renderShop(); });
+  shopEl.querySelectorAll('[data-hotsub]').forEach(b => b.onclick = () => { hotSub = b.dataset.hotsub; renderShop(); });
+  shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
