@@ -71,21 +71,21 @@ function bpGain(n, capped = true) {
   if (bpLv() > before) setTimeout(() => toast(`Pearl Honor level ${bpLv()}!`), 300);
   return add;
 }
-/* rewards per level (placeholders): {currency: amount} */
+/* rewards per level (placeholders): one item per level and track, {currency: amount} */
 function bpReward(lv, track) {
   if (track === 'free') {
-    if (lv % 10 === 0) return { tickets: 1, pearls: 10 };
+    if (lv % 10 === 0) return { tickets: 1 };
     if (lv % 5 === 0) return { wishes: 1 };
     if (lv % 2) return { coins: 3000 };
     return lv % 4 === 2 ? { bottles: 1 } : { dust: 20 };
   }
-  if (lv === BP_MAX) return { memtk: 1, pearls: 100 };
-  if (lv === 40) return { memtk: 1, pearls: 30 };
-  if (lv % 10 === 0) return { pearls: 30, tickets: 2 };
+  if (lv === 40 || lv === BP_MAX) return { memtk: 1 };
+  if (lv % 10 === 0) return { pearls: 30 };
   if (lv % 5 === 0) return { tickets: 2 };
-  return lv % 2 ? { pearls: 3 } : { starlight: 5 };
+  return lv % 2 ? { pearls: 5 } : { starlight: 5 };
 }
-const bpRewR = r => r.memtk ? 5 : r.tickets || (r.pearls || 0) >= 10 ? 5 : r.wishes || r.starlight || r.bottles ? 4 : 3;
+/* a reward as a square inventory card in its rarity colours (REW_R), amount under it */
+const bpItem = (k, n, extra = '', cls = '', attrs = '') => `<button type="button" class="inv-cell bp-sq r${REW_R[k] || 4} ${cls}" ${attrs} title="${fmt(n)} ${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}"><span class="inv-pic">${curIcon(k)}${extra}</span><b>${fmt(n)}</b></button>`;
 const bpCanClaim = (lv, track) => { const st = bpState(); return lv <= bpLv() && !st[track].includes(lv) && (track === 'free' || st.tier > 0); };
 const bpClaimable = () => { const out = []; for (let lv = 1; lv <= bpLv(); lv++) ['free', 'paid'].forEach(t => { if (bpCanClaim(lv, t)) out.push([lv, t]); }); return out; };
 const bpMissionsReady = () => Object.keys(BP_SETS).some(set => BP_SETS[set].list.some(q => qCan(q, set)));
@@ -164,9 +164,8 @@ function renderHonor(jump) {
     <button class="btn gold sm bp-buylv" id="bpBuyLv" ${lv >= BP_MAX ? 'disabled' : ''}>${icon('plus')}Purchase level</button></div>`;
   let body = '';
   if (bpTab === 'rewards') {
-    const cell = (l, t) => { const r = bpReward(l, t), got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
-      return `<button class="bp-cell r${bpRewR(r)} ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''}" data-bpc="${l}|${t}" title="${Object.entries(r).map(([k, n]) => `${fmt(n)} ${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}`).join(' + ')}">
-        ${Object.entries(r).map(([k, n]) => `<span class="bp-it">${curIcon(k)}<b>${fmt(n)}</b></span>`).join('')}${got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : ''}</button>`; };
+    const cell = (l, t) => { const [k, n] = Object.entries(bpReward(l, t))[0], got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
+      return bpItem(k, n, got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : '', `bp-cell ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''} ${lock ? 'locked' : ''}`, `data-bpc="${l}|${t}"`); };
     const cols = Array.from({ length: BP_MAX }, (_, i) => i + 1).map(l => `<div class="bp-col ${l === lv ? 'now' : ''} ${l <= lv ? 'reached' : ''} ${l % 10 === 0 ? 'big' : ''}" data-lv="${l}"><span class="bp-lvt">Lv. ${l}</span>${cell(l, 'free')}${cell(l, 'paid')}</div>`).join('');
     const n = bpClaimable().length;
     body = `<div class="bp-rew">
@@ -190,19 +189,19 @@ function renderHonor(jump) {
           ${done ? '<button class="btn ghost sm" disabled>Done</button>' : can ? `<button class="btn gold sm" data-bpmc="1">Claim</button>` : q.go ? `<button class="btn ghost sm" data-bpgo="${q.go}">Go</button>` : '<button class="btn ghost sm" disabled>In progress</button>'}</div>`; }).join('')}</div></div>`;
   } else {
     const card = o => { const owned = st.tier >= o.tier, upg = st.tier === 1 && o.tier === 2, usd = upg ? (parseFloat(o.usd) - parseFloat(BP_OFFERS[0].usd)).toFixed(2) : o.usd;
-      const sample = [5, 10, 40, 80].map(l => bpReward(l, 'paid'));
+      const sample = [1, 2, 5, 10, 40, 80].map(l => bpReward(l, 'paid'));
       return `<div class="bp-offer t${o.tier}"><div class="bp-ofl"><span class="bp-emb big">${bpEmblem(o.tier)}</span><b>${o.name}</b></div>
         <div class="bp-ofr"><span class="lbl-sm">Get now</span>
-          <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => `<span class="bp-ofit r5">${curIcon(k)}<b>${fmt(n)}</b></span>`).join('')}<span class="bp-ofit r5 av">${avatarHTML(36, avatarEntry(), 'crown')}<small>Frame</small></span><span class="bp-ofit r5 nc-it"><span class="nc nc-honor"></span><small>Namecard</small></span>` : '<span class="tiny">The Pearl Glory track on all 80 levels</span>'}</div>
+          <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => bpItem(k, n)).join('')}<span class="inv-cell bp-sq r5"><span class="inv-pic bp-avpic">${avatarHTML(40, avatarEntry(), 'crown')}</span><b>Frame</b></span><span class="inv-cell bp-sq r5"><span class="inv-pic"><span class="nc nc-honor"></span></span><b>Namecard</b></span>` : '<span class="tiny">The Pearl Glory track on all 80 levels</span>'}</div>
           ${o.tier === 2 ? `<span class="bp-ofx">Also raises <b>${o.levels}</b> Pearl Honor levels at once.</span>` : ''}
           <span class="lbl-sm">Available after leveling up</span>
-          <div class="bp-ofits">${sample.map(r => Object.entries(r).map(([k, n]) => `<span class="bp-ofit r${bpRewR(r)}">${curIcon(k)}<b>${fmt(n)}</b></span>`).join('')).join('')}<span class="bp-ofit more">…</span></div>
+          <div class="bp-ofits">${sample.map(r => Object.entries(r).map(([k, n]) => bpItem(k, n)).join('')).join('')}<span class="bp-more">…</span></div>
           <button class="bp-price" data-bpbuy="${o.id}" ${owned ? 'disabled' : ''}>${owned ? 'Unlocked' : `$${usd}${o.was && !upg ? ` <s>$${o.was}</s>` : ''}${TOPUP_FREE ? ' · free test' : ''}`}</button></div></div>`; };
     body = `<div class="bp-unlock"><div class="bp-uleft"><div class="bp-show big"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(96, avatarEntry(), 'crown')}</span><b>Pearl Crown</b><small>Avatar frame + Pearl Honor namecard</small></div>
       <p class="tiny">Unlock <b>Pearl Glory</b> and raise Pearl Honor to level ${BP_MAX} to collect every Glory reward of the season. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
       <div class="bp-offers">${BP_OFFERS.map(card).join('')}</div></div>`;
   }
-  root.innerHTML = `<div class="bp"><div class="bp-tabs">${tabs.map(([k, ic, l]) => `<button class="bp-tab ${k === bpTab ? 'on' : ''}" data-bptab="${k}" aria-label="${l}"><span>${icon(ic)}</span><small>${l}</small>${k !== bpTab && dotFor(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div>${head}${body}</div>`;
+  root.innerHTML = `<div class="bp"><div class="bp-tabs">${tabs.map(([k, ic, l]) => `<button class="bp-tab ${k === bpTab ? 'on' : ''}" data-bptab="${k}" aria-label="${l}"><span class="bp-ti">${icon(ic)}</span><small>${l}</small>${k !== bpTab && dotFor(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div>${head}${body}</div>`;
   root.querySelectorAll('[data-bptab]').forEach(b => b.onclick = () => { bpTab = b.dataset.bptab; renderHonor(true); });
   root.querySelectorAll('[data-bpm]').forEach(b => b.onclick = () => { bpMTab = b.dataset.bpm; renderHonor(); });
   root.querySelectorAll('[data-bpc]').forEach(b => b.onclick = () => { const [l, t] = b.dataset.bpc.split('|'); if (bpCanClaim(+l, t)) bpClaimAll(); else if (t === 'paid' && !st.tier) { bpTab = 'unlock'; renderHonor(); } });
