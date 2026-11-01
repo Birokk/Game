@@ -83,8 +83,8 @@ function claimQuests(ids = [], ms = [], set = qTab) {
   Object.entries(got).forEach(([k, n]) => { if (k !== 'exp') S.wallet[k] = (S.wallet[k] || 0) + n; });
   if (got.exp) gainExp(got.exp);
   persist(); renderMenu(); refreshSummon(); renderQuests();
-  const bits = Object.entries(got).map(([k, n]) => `${fmt(n)} ${qName(k, n)}`);
-  toast([pts ? `+${pts} points` : '', bits.length ? 'Claimed ' + bits.join(', ') : ''].filter(Boolean).join(' · ') + '.');
+  if (Object.keys(got).length) showRewards(`${Q_SETS[set].title} quest rewards`, got, `${ms.filter(m => st.ms.includes(m)).length ? `Points rewards claimed` : ''}${pts ? ` · +${pts} points` : ''}`.replace(/^ · /, ''));
+  else toast(`+${pts} points from ${ids.length} quest${ids.length === 1 ? '' : 's'}.`);
 }
 const Q_GO = { characters: () => openCharacters(), raids: () => openRaids(), summon: () => openSummon('limited'), farm: () => openFarm() };
 function qLeft(set = qTab) { const s = Math.max(0, Q_SETS[set].next() - new Date()) / 1000, d = Math.floor(s / 86400);
@@ -130,8 +130,8 @@ function renderQuests() {
       <span class="dq-refresh">${icon('clock')}Refresh time: <b id="dqLeft">${qLeft()}</b></span>
     </div></div>`;
   $('#dqList').scrollLeft = keep;
-  root.querySelectorAll('[data-qc]').forEach(b => b.onclick = () => claimQuests([b.dataset.qc]));
-  root.querySelectorAll('[data-qm]').forEach(b => b.onclick = () => { if (qmCan(+b.dataset.qm, set)) claimQuests([], [+b.dataset.qm]); });
+  root.querySelectorAll('[data-qc]').forEach(b => b.onclick = () => claimQuests(L.filter(q => qCan(q, set)).map(q => q.id)));
+  root.querySelectorAll('[data-qm]').forEach(b => b.onclick = () => { if (qmCan(+b.dataset.qm, set)) claimQuests([], QUEST_MS); });
   root.querySelectorAll('[data-qtab]').forEach(b => b.onclick = () => { qTab = b.dataset.qtab; renderQuests(); });
   root.querySelectorAll('[data-qgo]').forEach(b => b.onclick = () => { const f = Q_GO[b.dataset.qgo]; closeModal(); if (f) f(); });
   const all = $('#dqAll'); if (all) all.onclick = () => claimQuests(readyQ, QUEST_MS);
