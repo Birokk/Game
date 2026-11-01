@@ -3600,3 +3600,18 @@ button.pt-slot:hover{border-color:#fff}
 /* upgrade popup: up to 6 slots wrap in rows instead of scrolling */
 .upop .up-slots{flex-wrap:wrap;justify-content:center;overflow:visible;max-width:340px}
 .upop .up-slots .up-slot{width:72px;height:72px}
+
+/* CS grade on character cards: the grade badge only, no round pill behind it */
+.cs-tag{background:none;border:0;padding:0;gap:0}
+/* best pulls (replays) in the rates / history window */
+.rp-list{display:grid;gap:8px;margin-top:10px}
+.rp-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
+.rp-row.mw{border-color:rgba(255,255,255,.5);background:linear-gradient(90deg,rgba(255,77,109,.15),rgba(255,240,77,.1),rgba(77,210,255,.15))}
+.rp-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.rp-meta{font-family:var(--read);font-size:12px;color:rgba(233,236,255,.65);white-space:nowrap}
+.rp-tag{font-family:var(--display);font-size:11px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.12)}
+.rp-tag.ur{background:var(--ur);color:#fff}
+.rp-tag.up{background:linear-gradient(90deg,#ff8a2a,#a855f7);color:#fff}
+.rp-tag.dbl{background:linear-gradient(90deg,#ff6ec7,#3ee6d0);color:#1a0f2e}
+.rp-tag.rb{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff);color:#1a0f2e}
+.rp-tag.mw{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;animation:shimmer 2s linear infinite;color:#1a0f2e}
