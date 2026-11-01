@@ -38,7 +38,7 @@ const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<i
 function renderMenu() {
   passDaily();   // a membership's daily reward goes to Mail once a day
   $('#pname').textContent = S.player.name;
-  $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>` + (vipCanClaim() ? '<span class="dot-n vipdot" title="VIP daily reward ready"></span>' : '');
+  $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>` + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Standard tickets: 1 pull on the permanent banner']].map(([k, l]) =>
