@@ -108,7 +108,7 @@ function openCSInfo() {
   const row = (l, k, rs) => `<tr><td>${l}</td>${[3, 4, 5, 6].map(r => `<td>${rs.includes(r) && CS_PTS[k][r] ? fmt(CS_PTS[k][r]) : '–'}</td>`).join('')}</tr>`;
   openModal({ title: 'Character Score (CS)', ic: 'info', kind: 'csinfo', body: `<div class="stack">
     <p class="desc">Every character has a <b>CS</b>: points for everything it owns or wears. Rarer things give more. The total sets its grade, from F up to SSS.</p>
-    <div class="cs-grades">${CS_GRADES.map(([g, min], i) => `<div>${gradeTag(g)}<b>${fmt(min)}</b><small>${CS_GRADES[i + 1] ? `to ${fmt(CS_GRADES[i + 1][1] - 1)}` : 'and up'}</small></div>`).join('')}</div>
+    <div class="cs-grades">${CS_GRADES.map(([g, min], i) => `<div>${gradeTag(g)}<b>${fmt(min)}</b><small>${CS_GRADES[i + 1] ? `to ${fmt(CS_GRADES[i + 1][1] - 1)}` : 'and up'}</small></div>`).join('')}<div class="cs-urplus"><span class="rtag r5 plus">UR<i>+</i></span><b>${fmt(UR_PLUS_CS)}</b><small>UR characters</small></div></div>
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
       ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td></tr>

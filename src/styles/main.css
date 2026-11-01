@@ -3010,6 +3010,7 @@ button.pt-slot:hover{border-color:#fff}
 
 /* UR+ (27-score.js): a UR character at 40,000 CS or more */
 .rtag.plus i,.cs-badge.plus i{font-style:normal;display:inline-block;margin-left:1px;color:#fff;text-shadow:0 0 6px #fff,0 0 12px #ff6ec7;animation:urPlus 2.4s ease-in-out infinite}
-.cs-badge.plus i{font-size:.8em;vertical-align:super}
+.cs-badge.plus i{font-size:.8em;vertical-align:.12em}
 .rtag.plus{box-shadow:0 0 12px rgba(255,110,199,.75)}
 @keyframes urPlus{50%{text-shadow:0 0 10px #fff,0 0 20px #3ee6d0}}
+.cs-grades>div.cs-urplus{border-color:rgba(255,110,199,.45);background:linear-gradient(160deg,rgba(168,85,247,.18),rgba(255,110,199,.08))}
