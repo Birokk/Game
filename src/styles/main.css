@@ -3264,7 +3264,7 @@ button.pt-slot:hover{border-color:#fff}
 .avf.f-crown::before{inset:calc(var(--s) * -.085);border-radius:50%;background:conic-gradient(from 0deg,#ffe4f6,#f5afe8,#c8a2ff,#94b8ff,#fff,#f5afe8,#c8a2ff,#ffe4f6);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--s) * .085),#000 calc(100% - var(--s) * .08));mask:radial-gradient(farthest-side,transparent calc(100% - var(--s) * .085),#000 calc(100% - var(--s) * .08));
   filter:drop-shadow(0 0 calc(var(--s) * .07) rgba(200,162,255,.9));animation:spin 6s linear infinite}
-.avf.f-crown::after{content:"♛";top:calc(var(--s) * -.26);left:50%;transform:translateX(-50%);font-size:calc(var(--s) * .32);line-height:1;color:#fff;background:var(--cry-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 calc(var(--s) * .05) rgba(245,175,232,.9)) drop-shadow(0 1px 1px rgba(43,24,85,.6))}
+.avf.f-crown::after{content:"☾";top:calc(var(--s) * -.26);left:50%;transform:translateX(-50%);font-size:calc(var(--s) * .32);line-height:1;color:#fff;background:var(--cry-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 calc(var(--s) * .05) rgba(245,175,232,.9)) drop-shadow(0 1px 1px rgba(43,24,85,.6))}
 .avf.f-crown .avi{box-shadow:0 0 0 calc(var(--s) * .025) #fff,inset 0 0 calc(var(--s) * .12) rgba(200,162,255,.5)}
 /* Pearl Honor namecard */
 .nc-honor{background:radial-gradient(ellipse at 82% 20%,rgba(255,228,246,.55),transparent 38%),radial-gradient(ellipse at 15% 90%,rgba(148,184,255,.4),transparent 45%),linear-gradient(125deg,#000 0%,#1c0f38 28%,#6e3aa8 55%,#e79ad9 82%,#ffe4f6)}
@@ -3314,3 +3314,45 @@ button.pt-slot:hover{border-color:#fff}
 .bp-mtop{padding:10px 14px;border-radius:16px;background:linear-gradient(180deg,#1d1a2e,#121020);border:1.5px solid rgba(200,170,255,.32)}
 .bp-mtop .tiny{color:rgba(233,236,255,.75)}
 .bp-uleft>.tiny{padding:12px 14px;border-radius:14px;background:linear-gradient(180deg,#1d1a2e,#121020);border:1.5px solid rgba(200,170,255,.32);color:rgba(233,236,255,.8)}
+
+/* Pearl Honor v3: centred in the window, bigger on large screens, plum panels with crystal gradient borders */
+.modal-back[data-kind=honor] #bpRoot{min-height:calc(100dvh - 150px);display:grid;align-content:center}
+.bp{--colw:92px;--bpp:linear-gradient(180deg,#2b1f42 0%,#1b1429 55%,#140f1f 100%);--bpb:linear-gradient(135deg,rgba(255,228,246,.6),rgba(200,162,255,.35) 50%,rgba(148,184,255,.55))}
+@media (min-width:1500px){.bp{--colw:112px;max-width:1500px}}
+@media (min-width:1900px){.bp{--colw:124px;max-width:1680px}}
+.bp-col{flex-basis:var(--colw)}
+.bp-labels{grid-template-rows:44px calc(var(--colw) + 13px) calc(var(--colw) + 13px)}
+.bp-head,.bp-lab,.bp-track,.bp-m,.bp-offer,.bp-show,.bp-capnote,.bp-mtop,.bp-uleft>.tiny{background:var(--bpp) padding-box,var(--bpb) border-box;border:1.5px solid transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.4)}
+.bp-head{background:radial-gradient(120% 140% at 0% 0%,rgba(245,175,232,.16),transparent 55%) padding-box,var(--bpp) padding-box,var(--bpb) border-box}
+.bp-track{background:linear-gradient(180deg,#160f22,#0f0b18) padding-box,var(--bpb) border-box}
+.bp-col{background:#1e1630;border:1px solid rgba(200,162,255,.14)}
+.bp-col.reached{background:linear-gradient(180deg,#2e2147,#1e1630)}
+.bp-col.now{background:linear-gradient(180deg,#3d2a5c,#24193a) padding-box,var(--cry-grad) border-box;border:1.5px solid transparent}
+.bp-lvt{background:#2a2040;color:rgba(233,236,255,.7)}
+.bp-col.reached .bp-lvt{background:#3a2c56;color:#fff}
+.bp-lab.paid{background:radial-gradient(100% 80% at 50% 0%,rgba(245,175,232,.3),transparent 70%) padding-box,linear-gradient(180deg,#4a2860,#24143a) padding-box,var(--cry-grad) border-box}
+.bp-lab.paid.locked{background:linear-gradient(180deg,#33224a,#1b1429) padding-box,var(--bpb) border-box}
+.bp-tab>.bp-ti{background:linear-gradient(180deg,#2b1f42,#17111f) padding-box,var(--bpb) border-box;border:1.5px solid transparent}
+.bp-offer.t2{background:radial-gradient(90% 120% at 0% 0%,rgba(245,175,232,.22),transparent 60%) padding-box,linear-gradient(180deg,#45244f,#1d1126) padding-box,var(--cry-grad) border-box;border:1.5px solid transparent;box-shadow:0 0 26px rgba(245,175,232,.22),inset 0 1px 0 rgba(255,255,255,.1)}
+.bp-m.can{background:radial-gradient(80% 140% at 0% 50%,rgba(245,175,232,.14),transparent 60%) padding-box,var(--bpp) padding-box,var(--cry-grad) border-box}
+.bp-mic{background:#120d1c}
+.bp-show{background:none;border:1.5px solid var(--cry-edge)}
+.bp-show.big,.bp-side .bp-show{background:none}
+
+/* secret double UR: the fakeout with two wallpapers split on the diagonal (doubleArtIn) */
+.fk-art.dbl{background:#000;animation:none}
+.fk-half{position:absolute;inset:0;overflow:hidden}
+.fk-half img{width:100%;height:100%;object-fit:cover;display:block}
+.fk-half.a{clip-path:polygon(0 0,64% 0,36% 100%,0 100%);animation:fkHalfA .8s cubic-bezier(.2,.9,.25,1) both}
+.fk-half.b{clip-path:polygon(64% 0,100% 0,100% 100%,36% 100%);animation:fkHalfB .8s .18s cubic-bezier(.2,.9,.25,1) both}
+.fk-half.a img{object-position:30% 30%;animation:fkDrift 3s ease-out both}
+.fk-half.b img{object-position:70% 30%;animation:fkDrift 3s .18s ease-out both}
+@keyframes fkHalfA{0%{transform:translate(-60%,-30%);opacity:0}100%{transform:none;opacity:1}}
+@keyframes fkHalfB{0%{transform:translate(60%,30%);opacity:0}100%{transform:none;opacity:1}}
+.fk-split{position:absolute;inset:0;width:100%;height:100%;z-index:2;overflow:visible;pointer-events:none;filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 14px #ff6ec7) drop-shadow(0 0 22px #3ee6d0)}
+.fk-split line{stroke:#fff;stroke-width:5;vector-effect:non-scaling-stroke}
+.fk-split{clip-path:inset(0 0 100% 0);animation:fkSplit .55s .55s ease-out forwards}
+@keyframes fkSplit{to{clip-path:inset(0 0 0 0)}}
+.fk-art.dbl::after{background:radial-gradient(ellipse 30% 40% at 50% 47%,rgba(0,0,0,.4),transparent 70%),linear-gradient(0deg,rgba(5,8,22,.5),transparent 35%)}
+.fk-art.dbl .fk-streak{transform:skewX(-16deg)}
+.stamp.dbl small{font-size:.42em;margin-left:.08em;vertical-align:super}

@@ -759,6 +759,7 @@ function previewPull(kind) {
   const coin = () => ({ kind: 'coins', amount: 500, rarity: 3 }), frag = () => ({ kind: 'frag', frag: 'ssr', rarity: 3 });
   if (kind === 'rainbow') { const f = bannerInfo('limited').feat; const u = f ? { kind: 'entry', id: f.id, rarity: 5, isNew: true, starUp: 0, pearls: 0 } : ent(5); closeModal(); closeSettings(); return showPull([u], 1, 'limited', { preview: true, fake: false, rainbow: true }); }
   if (kind === 'upgrade') { const u = ent(5), d = ent(4); if (u.kind === 'entry' && d.kind === 'entry') u.up = { id: d.id, name: findEntry(d.id).name }; closeModal(); closeSettings(); return showPull([u], 1, 'limited', { preview: true, fake: false }); }
+  if (kind === 'double') { const res = [coin(), ent(5), coin(), frag(), ent(4), coin(), ent(5), coin(), coin(), frag()]; closeModal(); closeSettings(); return showPull(res, res.length, 'limited', { preview: true, double: true, rainbow: false }); }
   const res = kind === 'blue' ? [coin()] : kind === 'ssr' ? [ent(4)] : kind === 'ten' ? [coin(), ent(4), frag(), coin(), coin(), ent(5), coin(), frag(), coin(), ent(4)] : [ent(5)];
   closeModal(); showPull(res, res.length, 'limited', { preview: true, fake: kind === 'fake' });
 }
@@ -767,7 +768,7 @@ function renderPullFxTab() {
   const list = (S.fakeArts || []).filter(k => MEDIA.get(k));
   p.innerHTML = `<div class="stack">
     <div><h3>Pull animation</h3><p class="tiny">Players pull the screen down to release a sphere. It rises and turns from blue (gold and fragments) to orange (SSR) to prism (UR), stopping at the best result of the pull. In ${Math.round(FAKEOUT_CHANCE * 100)}% of UR pulls (never on a hard-pity UR) the sphere stops at orange, one of the fakeout wallpapers below slides in, and the sphere transforms into UR.</p></div>
-    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button><button class="btn gold sm" data-pv="upgrade">Preview: SSR → UR upgrade</button><button class="btn gold sm" data-pv="rainbow">Preview: rainbow sphere</button></div>
+    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button><button class="btn gold sm" data-pv="upgrade">Preview: SSR → UR upgrade</button><button class="btn gold sm" data-pv="rainbow">Preview: rainbow sphere</button><button class="btn ghost sm" data-pv="double">Preview: double UR</button></div>
     <div><h3>Summon background</h3><p class="tiny">Your art behind the whole summon animation instead of the black background (1920×1080 works best). Also in Settings → Admin.</p></div>
     ${pullBgHTML()}
     <div><h3>Fakeout wallpapers</h3><p class="tiny">One is picked at random for each fakeout. Wide character art works best (1920×1080; it covers the screen). Without any, the limited banner's featured character is used.</p></div>

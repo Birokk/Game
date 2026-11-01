@@ -3,17 +3,17 @@
    800 Honor EXP per level (BP_LV_XP). Honor EXP comes from the pass missions: daily (BP_DAILY) and weekly (BP_WEEKLY),
    built like the Quests and counted by the same questAdd hooks; at most 8,000 Honor EXP a week (BP_WEEK_CAP, resets
    Monday 00:00 local). Levels can also be bought with pearls (BP_LV_PEARLS, not capped).
-   Two reward tracks per level (bpReward): Pearl Gift (free) and Pearl Glory (paid). Two paid options (BP_OFFERS):
-   Pearl Glory $9.99 unlocks the paid track; Pearl Crown $19.99 also gives 300 pearls, 10 Limited tickets (10 pulls),
-   the Pearl Crown avatar frame, the Pearl Honor namecard and +10 levels at once. Real payments aren't connected:
+   Two reward tracks per level (bpReward): Pearl Gift (free) and Coral Tide (paid). Two paid options (BP_OFFERS):
+   Coral Tide $9.99 unlocks the paid track; Moon Tide $19.99 also gives 300 pearls, 10 Limited tickets (10 pulls),
+   the Moonlit Halo avatar frame, the Pearl Honor namecard and +10 levels at once. Real payments aren't connected:
    while TOPUP_FREE is on they are free test buttons (and still give VIP EXP).
-   State S.bp {season, xp, tier: 0 | 1 Glory | 2 Crown, free: [levels], paid: [levels], wk: {key, xp}};
+   State S.bp {season, xp, tier: 0 | 1 Coral Tide | 2 Moon Tide (ids glory / crown kept for saves), free: [levels], paid: [levels], wk: {key, xp}};
    missions S.bpq (daily) / S.bpwq (weekly), same shape as S.quests / S.wquests. Rewards are placeholders for now. */
-const BP_EPOCH = new Date(2026, 9, 12), BP_WEEKS = 8, BP_MAX = 80, BP_LV_XP = 800, BP_WEEK_CAP = 8000, BP_LV_PEARLS = 15;
-const BP_NAMES = { free: 'Pearl Gift', paid: 'Pearl Glory' };
+const BP_EPOCH = new Date(2026, 9, 12), BP_WEEKS = 8, BP_MAX = 80, BP_LV_XP = 800, BP_WEEK_CAP = 8000, BP_LV_PEARLS = 3;
+const BP_NAMES = { free: 'Pearl Gift', paid: 'Coral Tide' };
 const BP_OFFERS = [
-  { tier: 1, id: 'glory', name: 'Pearl Glory', usd: '9.99', now: {}, levels: 0, desc: 'Unlocks the Pearl Glory rewards on every level.' },
-  { tier: 2, id: 'crown', name: 'Pearl Crown', usd: '19.99', was: '24.99', now: { pearls: 300, tickets: 10 }, levels: 10, desc: 'Everything in Pearl Glory, plus extra pearls, 10 pulls, an avatar frame and a namecard. Also raises 10 Honor levels at once.' }
+  { tier: 1, id: 'glory', name: 'Coral Tide', usd: '9.99', now: {}, levels: 0, desc: 'Unlocks the Coral Tide rewards on every level.' },
+  { tier: 2, id: 'crown', name: 'Moon Tide', usd: '19.99', was: '24.99', now: { pearls: 300, tickets: 10 }, levels: 10, desc: 'Everything in Coral Tide, plus extra pearls, 10 pulls, an avatar frame and a namecard. Also raises 10 Honor levels at once.' }
 ];
 const BP_DAILY = [
   { id: 'login', name: 'Log into the game', need: 1, xp: 100 },
@@ -113,14 +113,14 @@ function bpBuy(offer) {
   const usd = st.tier === 1 && o.tier === 2 ? (parseFloat(o.usd) - parseFloat(BP_OFFERS[0].usd)).toFixed(2) : o.usd;
   openModal({ title: `Unlock ${o.name}?`, ic: 'sparkle', small: true, body: `<div class="stack" style="text-align:center;justify-items:center">
     <span class="bp-emb big">${bpEmblem(o.tier)}</span><p class="desc">${o.desc}</p>
-    <span class="tiny">$${usd}${st.tier === 1 && o.tier === 2 ? ' (upgrade from Pearl Glory)' : ''} · free while testing</span>
+    <span class="tiny">$${usd}${st.tier === 1 && o.tier === 2 ? ' (upgrade from Coral Tide)' : ''} · free while testing</span>
     <div class="row" style="justify-content:center"><button class="btn ghost" id="bpNo">Cancel</button><button class="btn gold" id="bpYes">Unlock · free test</button></div></div>`,
     onMount: () => { $('#bpNo').onclick = closeModal; $('#bpYes').onclick = () => {
       closeModal(); const prev = st.tier; st.tier = o.tier;
       const got = { ...o.now }; if (o.tier === 2) { S.unlocks = [...new Set([...(S.unlocks || []), 'bp-crown'])]; bpGain(o.levels * BP_LV_XP, false); }
       bpGrant(got); vipFromUsd(usd); got.vip = Math.round(parseFloat(usd) * VIP_PER_USD);
       persist(); renderMenu(); refreshSummon(); openHonor('rewards');
-      showRewards(o.name + ' unlocked', got, o.tier === 2 ? `${prev ? '' : 'Pearl Glory rewards unlocked · '}+${o.levels} levels · Pearl Crown frame and Pearl Honor namecard added to your profile` : 'The Pearl Glory rewards are unlocked on every level');
+      showRewards(o.name + ' unlocked', got, o.tier === 2 ? `${prev ? '' : 'Coral Tide rewards unlocked · '}+${o.levels} levels · Moonlit Halo frame and Pearl Honor namecard added to your profile` : 'The Coral Tide rewards are unlocked on every level');
     }; } });
 }
 function bpBuyLevels() {
@@ -139,14 +139,14 @@ function bpBuyLevels() {
 /* emblems (gift box for the free track, a medal for the paid ones) */
 const bpEmblem = tier => tier ? `<svg viewBox="0 0 64 64" class="bp-svg" aria-hidden="true"><defs><linearGradient id="bpE${tier}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".4" stop-color="#f5afe8"/><stop offset=".72" stop-color="#c8a2ff"/><stop offset="1" stop-color="#94b8ff"/></linearGradient></defs>
   <path d="M20 4h24l-4 18H24z" fill="${tier === 2 ? '#ff7ac8' : '#8f7bff'}" opacity=".85"/><circle cx="32" cy="38" r="20" fill="url(#bpE${tier})" stroke="#fff" stroke-width="2"/><circle cx="32" cy="38" r="14" fill="none" stroke="#2b1855" stroke-width="1.4" opacity=".35"/>
-  ${tier === 2 ? '<path d="M22 42l3-11 7 6 7-6 3 11z" fill="#fff" stroke="#2b1855" stroke-width="1.2" stroke-linejoin="round"/><circle cx="25" cy="30" r="1.8" fill="#fff"/><circle cx="32" cy="35" r="1.8" fill="#fff"/><circle cx="39" cy="30" r="1.8" fill="#fff"/>' : '<circle cx="32" cy="38" r="7" fill="#fff"/><circle cx="29.5" cy="35.5" r="2.2" fill="#f5afe8"/>'}</svg>`
+  ${tier === 2 ? '<path d="M36 27a11 11 0 1 0 6 19 9 9 0 1 1-6-19z" fill="#fff" stroke="#2b1855" stroke-width="1.2" stroke-linejoin="round"/><circle cx="40" cy="31" r="1.4" fill="#fff"/><circle cx="44" cy="37" r="1" fill="#fff"/>' : '<circle cx="32" cy="38" r="7" fill="#fff"/><circle cx="29.5" cy="35.5" r="2.2" fill="#f5afe8"/>'}</svg>`
   : `<svg viewBox="0 0 64 64" class="bp-svg" aria-hidden="true"><rect x="12" y="26" width="40" height="28" rx="4" fill="none" stroke="#fff" stroke-width="2.4"/><path d="M8 26h48M32 26v28" stroke="#fff" stroke-width="2.4"/><path d="M32 26c-4-9-15-11-15-4 0 4 9 4 15 4zm0 0c4-9 15-11 15-4 0 4-9 4-15 4z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M50 8l1.4 3.2 3.2 1.4-3.2 1.4L50 17.2 48.6 14l-3.2-1.4 3.2-1.4z" fill="#fff"/></svg>`;
 ICONS.medal = '<circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 3h7l-2 6.3h-3z"/><path d="M12 12.4l.8 1.6 1.7.2-1.3 1.2.4 1.7-1.6-.9-1.6.9.4-1.7-1.3-1.2 1.7-.2z"/>';
 
-/* profile items from Pearl Crown */
-FRAMES.push({ id: 'crown', name: 'Pearl Crown', need: 'bpcrown', premium: true });
+/* profile items from Moon Tide */
+FRAMES.push({ id: 'crown', name: 'Moonlit Halo', need: 'bpcrown', premium: true });
 CARDS.push({ id: 'honor', name: 'Pearl Honor', need: 'bpcrown', premium: true });
-UNLOCK.bpcrown = [() => (S.unlocks || []).includes('bp-crown'), 'Unlock Pearl Crown in Pearl Honor'];
+UNLOCK.bpcrown = [() => (S.unlocks || []).includes('bp-crown'), 'Unlock Moon Tide in Pearl Honor'];
 
 /* ---------- the Pearl Honor window ---------- */
 let bpTab = 'rewards', bpMTab = 'bpd';
@@ -160,7 +160,7 @@ function renderHonor(jump) {
   const head = `<div class="bp-head"><span class="bp-lvc"><small>Lv</small><b>${lv}</b></span>
     <div class="bp-hinfo"><div class="bp-hrow"><span><b>Season ${st.season + 1}</b> · Ends in ${bpLeftTxt()}</span><span>${lv >= BP_MAX ? 'Max level' : `${fmt(into)} / ${fmt(BP_LV_XP)}`}</span></div>
       <div class="bp-bar"><i style="width:${Math.min(100, into / BP_LV_XP * 100)}%"></i></div>
-      <div class="bp-hrow tiny"><span>${st.tier === 2 ? 'Pearl Crown active' : st.tier === 1 ? 'Pearl Glory active' : 'Free track'}</span><span>Weekly EXP limit ${fmt(st.wk.xp)} / ${fmt(BP_WEEK_CAP)}</span></div></div>
+      <div class="bp-hrow tiny"><span>${st.tier === 2 ? 'Moon Tide active' : st.tier === 1 ? 'Coral Tide active' : 'Free track'}</span><span>Weekly EXP limit ${fmt(st.wk.xp)} / ${fmt(BP_WEEK_CAP)}</span></div></div>
     <button class="btn gold sm bp-buylv" id="bpBuyLv" ${lv >= BP_MAX ? 'disabled' : ''}>${icon('plus')}Purchase level</button></div>`;
   let body = '';
   if (bpTab === 'rewards') {
@@ -171,7 +171,7 @@ function renderHonor(jump) {
     body = `<div class="bp-rew">
       <div class="bp-labels"><div class="bp-lab"><span class="bp-emb">${bpEmblem(0)}</span><b>${BP_NAMES.free}</b></div><div class="bp-lab paid ${st.tier ? '' : 'locked'}"><span class="bp-emb">${bpEmblem(1)}</span><b>${BP_NAMES.paid}</b>${st.tier ? '' : `<small>${icon('lock')}Locked</small>`}</div></div>
       <div class="bp-track" id="bpTrack">${cols}</div>
-      <div class="bp-side"><div class="bp-show"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(64, avatarEntry(), 'crown')}</span><b>Pearl Crown</b><small>Frame + namecard</small></div>
+      <div class="bp-side"><div class="bp-show"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(64, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + namecard</small></div>
         ${st.tier ? `<button class="btn gold bp-claim" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>` : `<button class="btn gold bp-claim" data-bptab="unlock">Unlock ${BP_NAMES.paid}</button><button class="btn ghost sm" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>`}</div>
     </div>`;
   } else if (bpTab === 'missions') {
@@ -192,13 +192,13 @@ function renderHonor(jump) {
       const sample = [1, 2, 5, 10, 40, 80].map(l => bpReward(l, 'paid'));
       return `<div class="bp-offer t${o.tier}"><div class="bp-ofl"><span class="bp-emb big">${bpEmblem(o.tier)}</span><b>${o.name}</b></div>
         <div class="bp-ofr"><span class="lbl-sm">Get now</span>
-          <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => bpItem(k, n)).join('')}<span class="inv-cell bp-sq r5"><span class="inv-pic bp-avpic">${avatarHTML(40, avatarEntry(), 'crown')}</span><b>Frame</b></span><span class="inv-cell bp-sq r5"><span class="inv-pic"><span class="nc nc-honor"></span></span><b>Namecard</b></span>` : '<span class="tiny">The Pearl Glory track on all 80 levels</span>'}</div>
+          <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => bpItem(k, n)).join('')}<span class="inv-cell bp-sq r5"><span class="inv-pic bp-avpic">${avatarHTML(40, avatarEntry(), 'crown')}</span><b>Frame</b></span><span class="inv-cell bp-sq r5"><span class="inv-pic"><span class="nc nc-honor"></span></span><b>Namecard</b></span>` : '<span class="tiny">The Coral Tide track on all 80 levels</span>'}</div>
           ${o.tier === 2 ? `<span class="bp-ofx">Also raises <b>${o.levels}</b> Pearl Honor levels at once.</span>` : ''}
           <span class="lbl-sm">Available after leveling up</span>
           <div class="bp-ofits">${sample.map(r => Object.entries(r).map(([k, n]) => bpItem(k, n)).join('')).join('')}<span class="bp-more">…</span></div>
           <button class="bp-price" data-bpbuy="${o.id}" ${owned ? 'disabled' : ''}>${owned ? 'Unlocked' : `$${usd}${o.was && !upg ? ` <s>$${o.was}</s>` : ''}${TOPUP_FREE ? ' · free test' : ''}`}</button></div></div>`; };
-    body = `<div class="bp-unlock"><div class="bp-uleft"><div class="bp-show big"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(96, avatarEntry(), 'crown')}</span><b>Pearl Crown</b><small>Avatar frame + Pearl Honor namecard</small></div>
-      <p class="tiny">Unlock <b>Pearl Glory</b> and raise Pearl Honor to level ${BP_MAX} to collect every Glory reward of the season. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
+    body = `<div class="bp-unlock"><div class="bp-uleft"><div class="bp-show big"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(96, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + Pearl Honor namecard</small></div>
+      <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
       <div class="bp-offers">${BP_OFFERS.map(card).join('')}</div></div>`;
   }
   root.innerHTML = `<div class="bp"><div class="bp-tabs">${tabs.map(([k, ic, l]) => `<button class="bp-tab ${k === bpTab ? 'on' : ''}" data-bptab="${k}" aria-label="${l}"><span class="bp-ti">${icon(ic)}</span><small>${l}</small>${k !== bpTab && dotFor(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div>${head}${body}</div>`;
