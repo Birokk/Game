@@ -3631,3 +3631,5 @@ button.pt-slot:hover{border-color:#fff}
 .raid-adbg{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}.raid-adbgit{display:grid;gap:6px;justify-items:start}
 @media (max-width:720px){.gv-stages{grid-template-columns:repeat(3,minmax(0,1fr))}.raid-setnm{display:none}}
 .raid-row{grid-template-columns:64px minmax(0,1fr) auto!important}
+/* character screen "view the art": hide the whole UI layer, the panel's fade-in animation included */
+.cs.viewing .cs-ui,.cs.viewing .cs-panel{opacity:0!important;visibility:hidden;animation:none!important;pointer-events:none}

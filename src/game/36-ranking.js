@@ -114,10 +114,16 @@ const RANK_REW_BOARDS = [['total', 'Power', 'Total CS'], ['char', 'Heroes', 'Cha
 const RANK_PLACE = ['', 'Champion', 'Vanguard', 'Challenger'], RANK_METAL = ['', 'Gold', 'Silver', 'Bronze'], RANK_ORD = ['', '1st', '2nd', '3rd'];
 const RANK_HOURS_PEARLS = p => p === 1 ? 30 : p === 2 ? 20 : p === 3 ? 15 : p && p <= 10 ? 10 : 0;
 const rankHas = (b, p) => !!S.rankRew && S.rankRew.wk === playWeek() && (S.rankRew.places || {})[b] === p;
+/* three titles only, one per place: held while you are that place in any ranking (Total CS, Character CS, Achievements, VIP) */
+const rankHasPlace = p => RANK_REW_BOARDS.some(([b]) => rankHas(b, p));
+[1, 2, 3].forEach(p => {
+  UNLOCK['rkt' + p] = [() => rankHasPlace(p), `Finish ${RANK_ORD[p]} in a weekly ranking (worn for 7 days)`];
+  TITLES.push({ id: 'rk-' + p, name: RANK_PLACE[p], cls: `t-rk${p}`, need: 'rkt' + p, rank: true });
+});
+const rankTitle = p => TITLES.find(t => t.id === 'rk-' + p);
 RANK_REW_BOARDS.forEach(([b, theme, label]) => [1, 2, 3].forEach(p => {
   const id = `rk-${b}-${p}`, need = 'rk' + b + p;
   UNLOCK[need] = [() => rankHas(b, p), `Finish ${RANK_ORD[p]} in the ${label} ranking (worn for 7 days)`];
-  TITLES.push({ id, name: `${RANK_PLACE[p]} of ${theme}`, cls: `t-rk${p}`, need, rank: true });
   CARDS.push({ id, name: `${theme} Crest · ${RANK_METAL[p]}`, cls: `nc-rk nc-rkp${p} nc-rkb-${b}`, need, premium: p === 1 });
 }));
 const rankResetTxt = () => { const s = Math.max(0, weekStart().getTime() + 7 * 864e5 - Date.now()) / 1000, d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600); return d ? `${d}d ${h}h` : `${h}h ${Math.floor(s % 3600 / 60)}m`; };
@@ -135,7 +141,8 @@ let rankStandCache = null;
 function rankTitleOf(p) {
   if (p.me) return titleHTML(titleOf());
   if (!rankStandCache || rankStandCache.wk !== playWeek()) rankStandCache = { wk: playWeek(), s: rankStandings(false) };
-  for (const [b] of RANK_REW_BOARDS) { const i = rankStandCache.s[b].indexOf(p.name); if (i >= 0 && i < 3) return titleHTML(TITLES.find(t => t.id === `rk-${b}-${i + 1}`)); }
+  const best = Math.min(...RANK_REW_BOARDS.map(([b]) => { const i = rankStandCache.s[b].indexOf(p.name); return i >= 0 && i < 3 ? i + 1 : 9; }));
+  if (best <= 3) return titleHTML(rankTitle(best));
   const base = TITLES.filter(t => !t.rank && t.need !== 'mbtitle');
   return titleHTML(base[Math.floor(seeded('rankttl:' + p.name)() * base.length)]);
 }
@@ -146,15 +153,17 @@ function rankSettle(force) {
   const stand = rankStandings(!force), places = {};
   RANK_TABS.forEach(T => { const i = stand[T.id].indexOf('@me'); places[T.id] = i >= 0 ? i + 1 : null; });
   S.rankRew = { wk, places };
-  const won = RANK_REW_BOARDS.filter(([b]) => places[b] && places[b] <= 3).map(([b, theme, label]) => `${label} ${RANK_ORD[places[b]]}: title "${RANK_PLACE[places[b]]} of ${theme}" + namecard "${theme} Crest · ${RANK_METAL[places[b]]}"`);
+  const won = RANK_REW_BOARDS.filter(([b]) => places[b] && places[b] <= 3).map(([b, theme, label]) => `${label} ${RANK_ORD[places[b]]}: namecard "${theme} Crest · ${RANK_METAL[places[b]]}"`);
+  const topP = Math.min(...RANK_REW_BOARDS.map(([b]) => places[b] && places[b] <= 3 ? places[b] : 9));
+  if (topP <= 3) won.unshift(`Title "${RANK_PLACE[topP]}" (your best place: ${RANK_ORD[topP]})`);
   const pearls = RANK_HOURS_PEARLS(places.hours);
   sendMail({ id: 'rank-' + wk + (force ? '-' + Date.now().toString(36) : ''), from: 'Ranking', title: 'Weekly ranking results',
     body: `Your places: ${RANK_TABS.map(T => `${T.label} #${places[T.id] || '-'}`).join(' · ')}.\n${won.length ? `Yours to wear for the next 7 days (equip them in Profile settings):\n${won.join('\n')}` : 'No title or namecard this week. Reach the top 3 of a ranking to earn one.'}${pearls ? `\nHours played #${places.hours}: ${pearls} pearls attached.` : ''}`,
     reward: pearls ? { pearls } : null });
   persist();
-  if (force) toast(`Rankings settled: ${won.length} title${won.length === 1 ? '' : 's'}${pearls ? `, ${pearls} pearls` : ''}. Check your Mail.`);
+  if (force) toast(`Rankings settled: ${won.length ? won.length + ' reward' + (won.length === 1 ? '' : 's') : 'no title or namecard'}${pearls ? `, ${pearls} pearls` : ''}. Check your Mail.`);
 }
 INFO.rank = () => ({ title: 'Weekly ranking rewards', body: `<div class="stack"><p class="desc">Every Monday at 00:00 the rankings are settled and a letter with your results arrives in your Mail.</p>
-  <p class="desc"><b>Total CS, Character CS, Achievements and VIP:</b> the top 3 receive that ranking's title and namecard (gold for 1st, silver for 2nd, bronze for 3rd). They last 7 days; next week's result replaces them.</p>
+  <p class="desc"><b>Total CS, Character CS, Achievements and VIP:</b> the top 3 receive a title for their place (Champion for 1st, Vanguard for 2nd, Challenger for 3rd; your best place counts) and that ranking's namecard (gold, silver or bronze). They last 7 days; next week's result replaces them.</p>
   <p class="desc"><b>Hours this week:</b> pearls instead: 1st 30, 2nd 20, 3rd 15, 4th to 10th 10.</p>
-  <div class="rk-rewlist">${RANK_REW_BOARDS.map(([b, , label]) => `<div><span class="lbl-sm">${label}</span>${[1, 2, 3].map(p => titleHTML(TITLES.find(t => t.id === `rk-${b}-${p}`))).join('')}</div>`).join('')}</div></div>` });
+  <div class="rk-rewlist"><div><span class="lbl-sm">Titles</span>${[1, 2, 3].map(p => titleHTML(rankTitle(p))).join('')}</div></div></div>` });

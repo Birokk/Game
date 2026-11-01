@@ -20,7 +20,7 @@ const skinColCard = e => {
 const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
   const root = $('#colRoot'); if (!root) return;
-  const tabs = [['character', 'Characters'], ['skin', 'Skins'], ['pet', 'Pets'], ['collectible', 'Collectibles'], ['item', 'Items']];
+  const tabs = [['character', 'Characters'], ['skin', 'Skins'], ['pet', 'Pets'], ['collectible', 'Collectibles']];
   const inTab = k => S.pool.filter(e => e.type === k && !mcOff(e.id));
   const list = inTab(filter).filter(e => !colOwnedOnly || owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   root.innerHTML = `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === filter ? 'on' : ''}" data-tab="${k}">${l}<span>${inTab(k).filter(e => owns(e.id)).length}/${inTab(k).length}</span></button>`).join('')}
