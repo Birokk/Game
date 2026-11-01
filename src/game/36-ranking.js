@@ -4,7 +4,7 @@
    players made up from a fixed seed (rankBots; the hours tab changes every week); the player's own row uses real data.
    Play time: S.playtime {wk: Monday's dayKey, ms} counts time with the game open and visible (resets every Monday).
    Also here: st6(e), the class that gives a 6★ character's card / avatar the animated prism border of 3★ memories. */
-const st6 = e => e && e.type === 'character' && owns(e.id) && starsOf(e.id) >= MAX_STARS ? 'st6' : '';
+const st6 = e => e && e.type === 'character' && owns(e.id) && starsOf(e.id) >= MAX_STARS ? `st6 st6-r${+e.rarity === 5 ? 5 : 4}` : '';   // SSR gets the orange version
 
 /* play time this week */
 const playWeek = () => dayKey(weekStart());
