@@ -3,7 +3,7 @@
    ========================================================= */
 /* pets' splash arts are square (1254×1254), everything else 1728×968 */
 const adArtSize = () => ($('#adType') || {}).value === 'pet' ? PET_SIZE : SPLASH_SIZE;
-let adminCard = { x: 50, y: 30, z: 1 }, adminCards = {}, adminCardK = 'base';   // card framing per art: base / art3 / art6
+let adminCard = { x: 50, y: 30, z: 1 }, adminCards = {}, adminCardK = 'base', adminSigMems = [];   // card framing per art: base / art3 / art6
 let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null }, adminIcon = null;
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
 function openAdmin(tab) {
@@ -97,6 +97,7 @@ function renderPoolTab() {
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
+          <div class="field" id="adSigMemWrap"><span>Signature memories (memories that feature this character)</span><div class="row" id="adSigMem" style="gap:6px;flex-wrap:wrap"></div><small class="tiny">Tap to toggle. Equipping one of them gives the character +500 CS.</small></div>
           <label class="field" id="adSigWrap"><span>Signature clothing set (UR characters)</span><select class="input" id="adSig"></select><small class="tiny">Wearing all 6 pieces of it gives +1,000 CS and the Signature Style badge.</small></label>
           <label class="switch" id="adFeatWrap">Featured UR on the limited banner<input type="checkbox" id="adFeat"><i></i></label>
           <div class="row"><button class="btn mint" type="submit" id="adSave">${icon('plus')}Add to pool</button></div>
@@ -152,6 +153,10 @@ function fillAdminForm(entry) {
   const sets = {}; (S.clothes || []).forEach(x => { if (x.set && !sets[x.set]) sets[x.set] = x; });
   $('#adSig').innerHTML = '<option value="">None</option>' + Object.values(sets).sort((a, b) => b.rarity - a.rarity).map(x => `<option value="${esc(x.set)}">${esc(clothSetName(x))} (${CRN[x.rarity] || ''})</option>`).join('');
   $('#adSig').value = entry && entry.sigSet && sets[entry.sigSet] ? entry.sigSet : '';
+  adminSigMems = [...((entry && entry.sigMems) || [])];
+  const drawSigMem = () => { $('#adSigMem').innerHTML = (S.memories || []).length ? S.memories.slice().sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).map(m => `<button type="button" class="chip ${adminSigMems.includes(m.id) ? 'on' : ''}" data-sigmem="${esc(m.id)}">${rtag(m.rarity)} ${esc(m.name)}</button>`).join('') : '<span class="tiny">No memories yet (admin → Memories).</span>';
+    $('#adSigMem').querySelectorAll('[data-sigmem]').forEach(b => b.onclick = () => { const id = b.dataset.sigmem, i = adminSigMems.indexOf(id); if (i >= 0) adminSigMems.splice(i, 1); else adminSigMems.push(id); drawSigMem(); }); };
+  drawSigMem();
   $('#adPull').checked = entry ? entry.pullable !== false : true;
   $('#adStd').checked = entry ? !!entry.standard : false;
   $('#adTitle').textContent = entry ? `Editing ${entry.name}` : 'Add to the game pool';
@@ -217,6 +222,7 @@ function adminPreview() {
   const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
   $('#adSigWrap').hidden = r !== 5 || $('#adType').value !== 'character';
+  $('#adSigMemWrap').hidden = $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
@@ -227,7 +233,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;
@@ -597,6 +603,8 @@ function renderMemoriesTab() {
         <div style="min-width:0;display:grid;gap:4px"><input class="input sk-nm" data-memnm="${esc(x.id)}" maxlength="40" value="${esc(x.name)}" aria-label="Memory name">
           <div class="seg sk-rar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="memr-${esc(x.id)}" value="${r}" data-memr="${esc(x.id)}" ${x.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div>
           <span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}</span>
+          <details class="mem-frm"><summary class="tiny">Icon framing (the square card in the inventory and fusion)</summary><div class="row" style="gap:10px;align-items:center"><span class="mem-frm-prev">${artFrom(x.img) ? `<img src="${artFrom(x.img)}" alt="" style="${memIconStyle(x)}" data-memfprev="${esc(x.id)}">` : icon('memory')}</span>
+            <div class="stack ad-card-sl" style="gap:4px;flex:1">${[['x', 'Left / right', 0, 100, 1], ['y', 'Up / down', 0, 100, 1], ['z', 'Zoom', 100, 300, 5]].map(([k, l, mn, mx, stp]) => `<label>${l} <input type="range" min="${mn}" max="${mx}" step="${stp}" value="${k === 'z' ? Math.round(memIconPos(x).z * 100) : memIconPos(x)[k]}" data-memf="${esc(x.id)}" data-k="${k}"></label>`).join('')}<button type="button" class="link" data-memfreset="${esc(x.id)}" style="justify-self:start">Reset framing</button></div></div></details>
           <div class="row" style="gap:8px"><label class="switch" style="padding:4px 8px;gap:8px;font-size:12px">Owned<input type="checkbox" data-memown="${esc(x.id)}" ${owns(x.id) ? 'checked' : ''}><i></i></label><label class="link">Art<input type="file" accept="image/*" class="sr" data-memimg="${esc(x.id)}"></label><button class="link" data-memdel="${esc(x.id)}" style="color:${memDelArm === x.id ? '#ff6b81' : ''}">${memDelArm === x.id ? 'Tap again to delete' : 'Delete'}</button></div></div></div>`).join('') : '<p class="tiny">No memories yet.</p>'}
     </section></div>`;
   $('#memUp').onchange = async ev => { try { memNewImg = await resizeImage(ev.target.files[0], SPLASH_MAX); renderMemoriesTab(); } catch (e) { toast(e.message); } };
@@ -608,6 +616,9 @@ function renderMemoriesTab() {
   };
   document.querySelectorAll('[data-memnm]').forEach(i => i.onchange = () => { memOf(i.dataset.memnm).name = i.value.trim() || 'Memory'; persist(); toast('Memory renamed.'); });
   document.querySelectorAll('[data-memr]').forEach(i => i.onchange = () => { memOf(i.dataset.memr).rarity = +i.value; persist(); renderMemoriesTab(); });
+  document.querySelectorAll('[data-memf]').forEach(i => i.oninput = () => { const x = memOf(i.dataset.memf); const p = { ...memIconPos(x), [i.dataset.k]: i.dataset.k === 'z' ? +i.value / 100 : +i.value }; x.iconPos = p; const im = document.querySelector(`[data-memfprev="${i.dataset.memf}"]`); if (im) im.style.cssText = memIconStyle(x); });
+  document.querySelectorAll('[data-memf]').forEach(i => i.onchange = () => persist());
+  document.querySelectorAll('[data-memfreset]').forEach(b => b.onclick = () => { memOf(b.dataset.memfreset).iconPos = null; persist(); renderMemoriesTab(); });
   document.querySelectorAll('[data-memown]').forEach(i => i.onchange = () => { if (i.checked) S.owned[i.dataset.memown] = 1; else delete S.owned[i.dataset.memown]; persist(); });
   document.querySelectorAll('[data-memimg]').forEach(i => i.onchange = async () => { try { const x = memOf(i.dataset.memimg); await mediaSet('mem:' + x.id, await resizeImage(i.files[0], SPLASH_MAX)); x.img = 'idb:mem:' + x.id; persist(); renderMemoriesTab(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-memdel]').forEach(b => b.onclick = async () => {

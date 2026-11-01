@@ -262,7 +262,7 @@ function openMemPick(c) {
       .sort((a, b) => b.m.rarity - a.m.rarity || a.m.name.localeCompare(b.m.name) || (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || (!!a.who - !!b.who));
     el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">Memory</h2><span class="tiny">${list.length} memor${list.length === 1 ? 'y' : 'ies'} in your inventory · tap one to equip it</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
       ${list.length ? `<div class="up-list wdp-cells">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine;
-        return invCell({ r: cp.m.rarity, pic: `${memCellPic(cp.m, cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}`, under: `${memStarRow(cp.st)}${mine ? ' <span class="up-who">Equipped</span>' : busy ? ` <span class="up-who">${whoName(cp.who)}</span>` : ''}`,
+        return invCell({ r: cp.m.rarity, pic: `${memCellPic(cp.m, cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}`, under: `${memStarRow(cp.st)}${mine ? '<span class="up-who">Equipped</span>' : busy ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`,
           cls: `${mine ? 'on' : ''} ${busy ? 'busy' : ''}`, attrs: `data-mp="${i}" data-memview="${esc(cp.m.id)}|${cp.st}" ${busy ? 'disabled' : ''} title="${esc(cp.m.name)}${busy ? ` · equipped by ${whoName(cp.who)}` : ''}"` }); }).join('')}</div>`
         : '<div class="cs-pill">You don\'t have any memories yet. Pull them on the Memory banner.</div>'}
       <div class="row" style="justify-content:center;gap:10px">${cur ? '<button class="btn ghost" data-mpoff>Remove memory</button>' : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;

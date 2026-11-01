@@ -38,6 +38,8 @@ function csBaseParts(c) {
   if (pet) { out.push({ label: `Pet: ${pet.name}`, pts: csP('pet', +pet.rarity) }); const ps = petEqStar(c.id); if (ps) out.push({ label: `Pet stars (${ps})`, pts: ps * csP('petStar', +pet.rarity) }); }
   const mems = memEqOf(c.id).filter(Boolean).map(memOf).filter(Boolean);
   if (mems.length) out.push({ label: `Memory: ${mems[0].name}`, pts: mems.reduce((t, x) => t + csP('mem', +x.rarity), 0) });
+  if (mems.length) { memCopies(mems[0].id); const ms = memEqStar(c.id); if (ms) out.push({ label: `Memory stars (${ms})`, pts: ms * MEM_STAR_CS }); }
+  if (mems.length && (c.sigMems || []).includes(mems[0].id)) out.push({ label: 'Signature memory', pts: SIG_MEM_CS });
   const bl = bondLv(c.id);
   if (bl) out.push({ label: `Bond level ${bl}`, pts: bl * csP('bond', r) });
   if (sigWorn(c)) out.push({ label: 'Signature set', pts: SIG_CS });
@@ -52,7 +54,7 @@ const isSSS = c => !!c && owns(c.id) && csGrade(gradeScore(c)) === 'SSS';
 const sssAwakened = id => { const v = (S.sss || {})[id]; return Array.isArray(v) ? v.length > 0 : !!v; };   // older saves kept a list of stars
 const sssActive = c => isSSS(c) && sssAwakened(c.id) ? btOf(c.id) : [];
 const sigWorn = c => { if (!c || +c.rarity !== 5 || !c.sigSet) return false; const w = Object.values(wearOf(c.id)).map(clothOf).filter(Boolean); return w.length === WARD_SLOTS.length && w.every(x => x.set === c.sigSet); };
-const SIG_CS = 1000;
+const SIG_CS = 1000, MEM_STAR_CS = 200, SIG_MEM_CS = 500;   // memory: +200 per star of the equipped copy, +500 when it is one of the character's signature memories
 function csParts(c) {
   const out = csBaseParts(c); const n = out.length ? sssActive(c).length : 0;
   if (n) out.push({ label: `SSS stars (${n})`, pts: n * SSS_CS, extra: true });
@@ -107,7 +109,7 @@ function openCSInfo() {
     <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
       ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td></tr>
-      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Each Potential upgrade</td><td>–</td><td>100</td><td>100</td><td>–</td></tr><tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
+      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Each star of the equipped memory</td><td>–</td><td>200</td><td>200</td><td>–</td></tr><tr><td>Equipped memory is one of the character's signature memories</td><td>–</td><td>500</td><td>500</td><td>–</td></tr><tr><td>Each Potential upgrade</td><td>–</td><td>100</td><td>100</td><td>–</td></tr><tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
     </tbody></table>
     <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E). SSS takes a fully built UR: 6★ with every star awakened, a full UR set, a UR pet, a UR memory, max bond and several skins. From grade S a <b>+</b> appears after the character's stars, gold for S, prism for SS and red for SSS.</p>
   </div>` });

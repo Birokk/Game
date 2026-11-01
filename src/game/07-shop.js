@@ -7,7 +7,9 @@ const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
 const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency']];
 /* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
-const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium']], PREM_PRICE = 720, PREM_LIMIT = 1;
+const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium'], ['memories', 'Memories']], PREM_PRICE = 720, PREM_LIMIT = 1;
+const MEMX_PRICE = 300;   // Exchange → Memories: any UR memory for 300 Corals, once per memory per account (S.memEx = [ids])
+const memExUsed = id => (S.memEx || []).includes(id);
 let exSub = 'corals';
 /* Premium exchange: once a month for EACH UR character (S.premEx.ids = characters exchanged this month) */
 function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), ids: [] }; if (!Array.isArray(S.premEx.ids)) S.premEx.ids = []; return S.premEx; }
@@ -58,6 +60,12 @@ function renderShop() {
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
   } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
     <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}</div>`;
+  else if (shopTab === 'exchange' && exSub === 'memories') { const urs = (S.memories || []).filter(m => +m.rarity === 5).sort((a, b) => memExUsed(a.id) - memExUsed(b.id) || a.name.localeCompare(b.name));
+    body = `<div class="mall-limit"><b>Limit: 1 per memory per account</b><span>${urs.filter(m => memExUsed(m.id)).length} / ${urs.length} UR memories exchanged</span></div><p class="tiny">Trade ${MEMX_PRICE} Corals for a copy (0★) of any UR memory. Each memory can be exchanged once.</p>
+      ${urs.length ? `<div class="mall-mems">${urs.map(m => { const used = memExUsed(m.id), art = artFrom(m.img), ok = !used && W.starlight >= MEMX_PRICE;
+        return `<div class="mall-mem r5"><span class="mall-mem-art mem-fr mst0">${art ? `<img src="${art}" alt="">` : icon('memory')}</span>${rtag(5)}<span class="mall-skin-nm"><b>${esc(m.name)}</b><small>Owned ×${S.owned[m.id] || 0}</small></span>
+          ${used ? '<button class="mall-buy" disabled>Exchanged</button>' : `<button class="mall-buy ${ok ? 'ok' : ''}" data-memx="${esc(m.id)}">${curIcon('starlight')}${fmt(MEMX_PRICE)}</button>`}</div>`; }).join('')}</div>`
+        : '<p class="mall-empty">No UR memories in the game yet.</p>'}`; }
   else if (shopTab === 'exchange' && exSub === 'premium') { const chars = S.pool.filter(e => e.type === 'character' && +e.rarity === 5 && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
     const usedN = chars.filter(e => premUsed(e.id)).length;
     body = `<div class="mall-limit"><b>Limit: ${PREM_LIMIT} per character per month</b><span>${usedN ? `${usedN} character${usedN === 1 ? '' : 's'} exchanged this month · ` : ''}resets on the 1st (${nextMonthIn()})</span></div><p class="tiny">Trade ${PREM_PRICE} Corals for one more copy of a UR character you own: it adds a star, up to ${MAX_STARS}.</p>
@@ -86,6 +94,19 @@ function renderShop() {
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
+  shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
+}
+function confirmMemEx(id) {
+  const m = memOf(id); if (!m || +m.rarity !== 5) return;
+  if (memExUsed(id)) { toast(`You already exchanged for ${m.name}. Each memory can be exchanged once.`); return; }
+  if (S.wallet.starlight < MEMX_PRICE) { toast(`You need ${MEMX_PRICE} Corals. You have ${fmt(S.wallet.starlight)}.`); return; }
+  openModal({ title: 'Memory exchange', ic: 'memory', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${MEMX_PRICE} Corals</b> on a copy of <b>${esc(m.name)}</b>? You can do this once for each memory.</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="mxNo">Cancel</button><button class="btn gold" id="mxYes">Exchange · ${curIcon('starlight')}${MEMX_PRICE}</button></div></div>`,
+    onMount: () => { $('#mxNo').onclick = closeModal; $('#mxYes').onclick = () => {
+      closeModal(); const isNew = !S.owned[id]; S.wallet.starlight -= MEMX_PRICE; S.memEx = [...(S.memEx || []), id]; S.owned[id] = (S.owned[id] || 0) + 1;
+      persist(); renderMenu(); refreshCharacters(); renderShop();
+      showPull([{ kind: 'entry', id, rarity: 5, isNew, starUp: 0, maxed: !isNew }], 1, 'memories', { preview: true, exchange: true, direct: true }); }; } });
 }
 function confirmPrem(id) {
   const e = findEntry(id); if (!e || !owns(id) || +e.rarity !== 5) return;

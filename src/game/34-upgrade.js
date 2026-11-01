@@ -35,12 +35,15 @@ function openUpgradePop({ title, target, from, to, need = 1, cands, stars, onFus
 const whoName = cid => cid ? esc((findEntry(cid) || {}).name || '') : '';
 
 /* Memory Stars tab: every memory copy; fuse one chosen copy into the one you tapped */
-const memCellPic = (m, st) => `<span class="mem-fr mst${st} inv-mem">${artFrom(m.img) ? `<img class="wide" src="${artFrom(m.img)}" alt="">` : icon('memory')}</span>`;
+/* a memory's square icon: its art cropped to fill the card (framing set in admin → Memories, m.iconPos {x, y, z}), inside the star frame */
+const memIconPos = m => ({ x: 50, y: 30, z: 1, ...((m && m.iconPos) || {}) });
+const memIconStyle = m => { const p = memIconPos(m); return `object-position:${p.x}% ${p.y}%;transform:scale(${p.z});transform-origin:${p.x}% ${p.y}%`; };
+const memCellPic = (m, st) => `<span class="mem-fr mst${st} mem-sq">${artFrom(m.img) ? `<img src="${artFrom(m.img)}" alt="" style="${memIconStyle(m)}">` : icon('memory')}</span>`;
 function renderMemStarFuse(root, tabs) {
   const all = (S.memories || []).filter(m => owns(m.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).flatMap(m => memCopies(m.id).map((cp, i) => ({ ...cp, i, m })));
   root.innerHTML = `<div class="fu">${tabs}
     <p class="tiny">Tap the copy you want to upgrade, then choose another copy of the same memory to fuse into it: +1★ (0★ base, up to ${MEM_MAXST}★). Copies a character holds can be upgraded but are never used up. Hold a memory to view it.</p>
-    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: cp.m.rarity, pic: memCellPic(cp.m, cp.st), under: `${memStarRow(cp.st)}${cp.who ? ` <span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.st >= MEM_MAXST ? 'maxed' : '', attrs: `data-msup="${esc(cp.m.id)}|${cp.i}" data-memview="${esc(cp.m.id)}|${cp.st}"` })).join('')}</div>`
+    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: cp.m.rarity, pic: memCellPic(cp.m, cp.st), under: `${memStarRow(cp.st)}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.st >= MEM_MAXST ? 'maxed' : '', attrs: `data-msup="${esc(cp.m.id)}|${cp.i}" data-memview="${esc(cp.m.id)}|${cp.st}"` })).join('')}</div>`
       : '<div class="cs-pill">You don\'t have any memories yet. Pull them on the Memory banner.</div>'}</div>`;
   bindFuseTabs(root);
   root.querySelectorAll('[data-msup]').forEach(b => b.onclick = () => { const [id, i] = b.dataset.msup.split('|'); upMemCopy(id, +i); });
@@ -63,7 +66,7 @@ function renderPetFuse(root, tabs) {
   const all = S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).flatMap(p => petCopies(p.id).map((cp, i) => ({ ...cp, i, p })));
   root.innerHTML = `<div class="fu">${tabs}
     <p class="tiny">Tap the pet copy you want to upgrade, then choose another copy of the same pet to fuse into it: +1★ (up to ${MAX_STARS}★). Pets with a character can be upgraded but are never used up.</p>
-    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: cp.p.rarity, pic: `${petCellPic(cp.p)}<span class="inv-pst">${cp.st}★</span>`, under: `${starRow(cp.st, false)}${cp.who ? ` <span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.st >= MAX_STARS ? 'maxed' : '', attrs: `data-ptup="${esc(cp.p.id)}|${cp.i}"` })).join('')}</div>`
+    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: cp.p.rarity, pic: `${petCellPic(cp.p)}<span class="inv-pst">${cp.st}★</span>`, under: `${starRow(cp.st, false)}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.st >= MAX_STARS ? 'maxed' : '', attrs: `data-ptup="${esc(cp.p.id)}|${cp.i}"` })).join('')}</div>`
       : '<div class="cs-pill">You don\'t have any pets yet. Hatch eggs in the Hatchery.</div>'}</div>`;
   bindFuseTabs(root);
   root.querySelectorAll('[data-ptup]').forEach(b => b.onclick = () => { const [id, i] = b.dataset.ptup.split('|'); upPetCopy(id, +i); });
@@ -92,7 +95,7 @@ function renderStarUp(root, tabs) {
   const all = S.clothes.filter(x => hasClothStars(x) && owns(x.id)).sort((a, b) => a.name.localeCompare(b.name)).flatMap(x => clothCopies(x.id).map((cp, i) => ({ ...cp, i, x })));
   root.innerHTML = `<div class="fu">${tabs}
     <p class="tiny">UR clothes have up to ${CLOTH_MAXST} stars (1★ base). Tap the copy you want to upgrade, then choose another spare copy of the <b>same piece at the same stars</b>: two 1★ make a 2★, two 2★ make a 3★. Worn copies can be upgraded but are never used up.</p>
-    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: 5, pic: `<img src="${clothImg(cp.x)}" alt="">`, under: `${clothStarRow(cp.star, 'sm')}${cp.who ? ` <span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.star >= CLOTH_MAXST ? 'maxed' : '', attrs: `data-clup="${esc(cp.x.id)}|${cp.i}" title="${esc(cp.x.name)}"` })).join('')}</div>
+    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: 5, pic: `<img src="${clothImg(cp.x)}" alt="">`, under: `${clothStarRow(cp.star, 'sm')}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.star >= CLOTH_MAXST ? 'maxed' : '', attrs: `data-clup="${esc(cp.x.id)}|${cp.i}" title="${esc(cp.x.name)}"` })).join('')}</div>
       <div class="row" style="justify-content:center"><button class="btn ghost" id="mstAll" ${S.clothes.some(x => hasClothStars(x) && (spareAt(x.id, 1) >= 2 || spareAt(x.id, 2) >= 2)) ? '' : 'disabled'}>Merge everything possible</button></div>`
       : '<div class="cs-pill">You don\'t own any UR clothes yet.</div>'}</div>`;
   bindFuseTabs(root);
