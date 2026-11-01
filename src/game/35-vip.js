@@ -64,36 +64,48 @@ function claimVipLevel(lv) {
 }
 let vipView = null;   // the level shown in the VIP window (arrows browse 1–12)
 function openVip() { vipView = Math.max(1, vipLv()); openModal({ title: 'VIP', ic: 'crown', kind: 'vip', body: '<div id="vipRoot"></div>', onMount: () => renderVip() }); }
-/* the VIP crest: a faceted crystal gem with a pearl in a metal frame in the level's grade colour, wings from VIP 4 (bigger
-   from VIP 8), a star from VIP 6 and a crown from VIP 10, on a ribbon that reads "VIP n"; S / SS / SSS levels glow */
-const VIP_PAL = { 0: ['#eef0f6', '#a9afbf', '#5d6373'], f: ['#e8eaf0', '#9aa1b2', '#4e5464'], e: ['#e6eef2', '#8fa3b0', '#465a69'],
-  d: ['#d2f7e4', '#4fbf8c', '#1f5c43'], c: ['#d8eeff', '#4f9fe6', '#1d4a80'], b: ['#e6e0ff', '#8a76ee', '#3a2b92'],
-  a: ['#fcdcff', '#d566e6', '#742282'], s: ['#fff4c8', '#f2bd45', '#94600f'], ss: ['#ffd6f5', '#b98bff', '#2fb8a8'], sss: ['#ffd8c8', '#ff3048', '#64000f'] };
+/* the VIP crest: a scallop shell in the level's grade metal holding a glowing pearl (the game's ocean theme). Higher levels
+   add more: a sunburst of light behind it (VIP 4+), small pearls along the rim (VIP 7+), a crown (VIP 10+); S / SS / SSS glow. */
+const VIP_PAL = { 0: ['#f4f5fa', '#b8bdcb', '#6b7181'], f: ['#eef0f5', '#a7adbd', '#5a6070'], e: ['#ebf2f5', '#9cb0bc', '#4f6372'],
+  d: ['#dcfbea', '#5cc796', '#22654a'], c: ['#e0f1ff', '#5aa7ea', '#1f4f88'], b: ['#ece6ff', '#9481f0', '#3d2e98'],
+  a: ['#fde3ff', '#d86fe8', '#7a2588'], s: ['#fff6d2', '#f0bf4c', '#9a6512'], ss: ['#ffe0f7', '#c296ff', '#3ab9aa'], sss: ['#ffe1d4', '#ff4256', '#6e0613'] };
 let vipCN = 0;
 function vipEmblem(lv) {
-  const k = lv ? vipGrade(lv).toLowerCase() : '0', P = VIP_PAL[k], id = 'vc' + (++vipCN);
-  const wing = big => `<path d="M50 54C30 40 12 44 4 58c9-2 15-1 20 2-9 2-15 7-17 15 8-4 15-5 21-3-6 4-9 10-9 17 8-6 16-9 25-9z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" ${big ? 'transform="translate(-6 -6) scale(1.12)"' : ''}/>
-    <path d="M46 58c-10-3-20-2-28 4M44 66c-9 0-16 2-22 7M44 74c-7 2-12 6-15 11" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.1" stroke-linecap="round"/>`;
-  const wings = lv >= 4 ? `<g>${wing(lv >= 8)}</g><g transform="translate(160 0) scale(-1 1)">${wing(lv >= 8)}</g>` : '';
-  const crown = lv >= 10 ? `<path d="M60 22l6-14 7 9 7-12 7 12 7-9 6 14z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="80" cy="5" r="3" fill="url(#${id}p)"/><circle cx="66" cy="8" r="2.2" fill="url(#${id}p)"/><circle cx="94" cy="8" r="2.2" fill="url(#${id}p)"/>`
-    : lv >= 6 ? `<path d="M80 4l3.4 8.6 9.1.7-7 5.9 2.2 8.9-7.7-4.9-7.7 4.9 2.2-8.9-7-5.9 9.1-.7z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/>` : '';
-  const oct = (r, cx = 80, cy = 66) => { const pts = []; for (let i = 0; i < 8; i++) { const t = Math.PI / 8 + i * Math.PI / 4; pts.push(`${(cx + Math.cos(t) * r).toFixed(1)} ${(cy + Math.sin(t) * r * 1.02).toFixed(1)}`); } return 'M' + pts.join('L') + 'Z'; };
-  const facets = Array.from({ length: 8 }, (_, i) => { const t = Math.PI / 8 + i * Math.PI / 4; return `M80 66L${(80 + Math.cos(t) * 30).toFixed(1)} ${(66 + Math.sin(t) * 30.6).toFixed(1)}`; }).join('');
+  const k = lv ? vipGrade(lv).toLowerCase() : '0', P = VIP_PAL[k], id = 'vc' + (++vipCN), HX = 80, HY = 120, R = 66, N = 9, A0 = -152, SPAN = 124;
+  const xy = (deg, r, cx = HX, cy = HY) => [cx + Math.cos(deg * Math.PI / 180) * r, cy + Math.sin(deg * Math.PI / 180) * r];
+  const pt = (deg, r) => xy(deg, r).map(v => v.toFixed(1)).join(' ');
+  const angs = Array.from({ length: N + 1 }, (_, i) => A0 + i * (SPAN / N));
+  const scal = angs.slice(0, -1).map((a0, i) => `Q${pt((a0 + angs[i + 1]) / 2, R * 1.13)} ${pt(angs[i + 1], R)}`).join('');
+  const shell = `M${HX} ${HY}L${pt(angs[0], R)}${scal}Z`;
+  const ribs = angs.slice(0, -1).map((a0, i) => { const a1 = angs[i + 1], am = (a0 + a1) / 2;
+    return `<path d="M${HX} ${HY}L${pt(a0, R)}Q${pt(am, R * 1.13)} ${pt(a1, R)}Z" fill="url(#${id}s)"/>${i % 2 ? `<path d="M${HX} ${HY}L${pt(a0, R)}Q${pt(am, R * 1.13)} ${pt(a1, R)}Z" fill="${P[2]}" opacity=".18"/>` : ''}
+      <path d="M${HX} ${HY}L${pt(am, R * 1.06)}" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>`; }).join('');
+  const grooves = angs.slice(1, -1).map(a => `<path d="M${HX} ${HY}L${pt(a, R)}"/>`).join('');
+  const C = [80, 82];
+  const rays = lv >= 4 ? `<g class="vc-rays">${Array.from({ length: 12 }, (_, i) => { const a = i * 30, L = lv >= 8 ? 78 : 70, w = 7;
+    const [x1, y1] = xy(a - w, 18, ...C), [x2, y2] = xy(a, L, ...C), [x3, y3] = xy(a + w, 18, ...C);
+    return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}L${x3.toFixed(1)} ${y3.toFixed(1)}Z" fill="url(#${id}r)"/>`; }).join('')}</g>` : '';
+  const rimPearls = lv >= 7 ? angs.slice(0, -1).map((a0, i) => { const [x, y] = xy((a0 + angs[i + 1]) / 2, R * 1.05); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="url(#${id}p)" stroke="#fff" stroke-width=".7"/>`; }).join('') : '';
+  const crown = lv >= 10 ? `<g transform="translate(0 -8)"><path d="M63 50l4-14 8.5 8.5L80 30l4.5 14.5L93 36l4 14z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="62" y="48.5" width="36" height="6" rx="2" fill="url(#${id}m)" stroke="#fff" stroke-width="1.2"/><circle cx="80" cy="28" r="3.4" fill="url(#${id}p)"/><circle cx="67" cy="34" r="2.6" fill="url(#${id}p)"/><circle cx="93" cy="34" r="2.6" fill="url(#${id}p)"/></g>` : '';
   return `<span class="vip-crest v-${k}"><svg viewBox="0 0 160 150" aria-label="VIP ${lv}">
-    <defs><linearGradient id="${id}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P[0]}"/><stop offset=".5" stop-color="${P[1]}"/><stop offset="1" stop-color="${P[2]}"/></linearGradient>
-      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="${P[0]}"/><stop offset="1" stop-color="${P[1]}"/></linearGradient>
-      <radialGradient id="${id}p" cx="36%" cy="30%" r="72%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#f6efff"/><stop offset="1" stop-color="#b9a6e6"/></radialGradient></defs>
-    ${wings}${crown}
-    <path d="${oct(46)}" fill="url(#${id}m)" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>
-    <path d="${oct(38)}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
-    <path d="${oct(31)}" fill="url(#${id}g)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
-    <path d="${facets}" stroke="rgba(255,255,255,.6)" stroke-width="1"/>
-    <path d="M80 66L${(80 + Math.cos(Math.PI * 1.125) * 30).toFixed(1)} ${(66 + Math.sin(Math.PI * 1.125) * 30.6).toFixed(1)}L${(80 + Math.cos(Math.PI * 1.375) * 30).toFixed(1)} ${(66 + Math.sin(Math.PI * 1.375) * 30.6).toFixed(1)}Z" fill="rgba(255,255,255,.45)"/>
-    <circle cx="80" cy="66" r="13" fill="url(#${id}p)" stroke="#fff" stroke-width="1.6"/><circle cx="76" cy="62" r="3.4" fill="#fff" opacity=".9"/>
-    <path d="M118 30l1.6 3.8 3.8 1.6-3.8 1.6-1.6 3.8-1.6-3.8-3.8-1.6 3.8-1.6z" fill="#fff" class="vc-tw"/>
-    <path d="M30 108h100l-8 9 8 9H30l8-9z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="M42 106h76v22H42z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.6"/>
-    <text x="80" y="122.5" text-anchor="middle">VIP ${lv}</text></svg></span>`;
+    <defs><radialGradient id="${id}s" gradientUnits="userSpaceOnUse" cx="${HX}" cy="${HY}" r="${R * 1.15}"><stop offset="0" stop-color="${P[2]}"/><stop offset=".45" stop-color="${P[1]}"/><stop offset=".85" stop-color="${P[0]}"/><stop offset="1" stop-color="#fff"/></radialGradient>
+      <linearGradient id="${id}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P[0]}"/><stop offset=".5" stop-color="${P[1]}"/><stop offset="1" stop-color="${P[2]}"/></linearGradient>
+      <linearGradient id="${id}r" gradientUnits="userSpaceOnUse" x1="${C[0]}" y1="${C[1]}" x2="${C[0]}" y2="${C[1] - 78}"><stop offset="0" stop-color="${P[1]}" stop-opacity=".85"/><stop offset="1" stop-color="${P[0]}" stop-opacity="0"/></linearGradient>
+      <radialGradient id="${id}p" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#f7f0ff"/><stop offset="1" stop-color="#b6a3e4"/></radialGradient>
+      <radialGradient id="${id}g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".55" stop-color="${P[0]}" stop-opacity=".6"/><stop offset="1" stop-color="${P[1]}" stop-opacity="0"/></radialGradient></defs>
+    ${rays}${crown}
+    <path d="${shell}" fill="none" stroke="${P[2]}" stroke-width="7" stroke-linejoin="round" opacity=".55"/>
+    ${ribs}
+    <g stroke="${P[2]}" stroke-width="1.2" fill="none" opacity=".55">${grooves}</g>
+    <path d="${shell}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>
+    ${rimPearls}
+    <path d="M64 118q16 9 32 0l-3 13q-13 6-26 0z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M70 124h20" stroke="rgba(255,255,255,.6)" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="80" cy="102" r="26" fill="url(#${id}g)"/>
+    <circle cx="80" cy="102" r="14.5" fill="url(#${id}p)" stroke="#fff" stroke-width="1.8"/>
+    <ellipse cx="75" cy="96.5" rx="5" ry="3.4" fill="#fff" opacity=".95" transform="rotate(-30 75 96.5)"/>
+    <path d="M122 44l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8z" fill="#fff" class="vc-tw"/>
+    <path d="M36 74l1.3 3 3 1.3-3 1.3-1.3 3-1.3-3-3-1.3 3-1.3z" fill="#fff" class="vc-tw t2"/></svg></span>`;
 }
 function renderVip() {
   const root = $('#vipRoot'); if (!root) return;
@@ -106,7 +118,7 @@ function renderVip() {
     <div class="vipx-left">
       <span class="vipx-rank">${VIP_RANKS[v]}</span>
       ${vipEmblem(v)}
-      <span class="vipx-lvl">${v === my ? 'Your level' : v < my ? 'Reached' : 'Not reached yet'}</span>
+      <span class="vipx-lvl"><b>VIP ${v}</b> · ${v === my ? 'Your level' : v < my ? 'Reached' : 'Not reached yet'}</span>
       <div class="vipx-bar"><span class="vipx-bic">${curIcon('vip')}</span><div class="vipx-track"><i style="width:${v <= my ? 100 : Math.min(100, xp / need * 100)}%"></i></div><b>${fmt(Math.min(xp, need))} / ${fmt(need)}</b></div>
       <div class="vipx-daily"><span class="vipx-pill">Daily Reward</span>
         <div class="vipx-items">${Object.entries(d).map(([k, n]) => bpItem(k, n)).join('')}</div>

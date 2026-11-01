@@ -513,14 +513,17 @@ function doubleArtOut() {
 }
 function fakeArtIn() {
   const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
-  // the SSR sphere vanishes and, instead of the SSR burst, the wallpaper emerges; the sphere comes back as UR (fakeTransform)
-  pullEl.classList.add('sph-gone');
-  pullEl.insertAdjacentHTML('beforeend', '<div class="sph-vanish"></div>');
-  pullLater(550, () => { if (pullEl) pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`); });
+  // exactly the normal SSR burst (same flash, particles and shockwave), but where the "SSR" text would appear the wallpaper
+  // slides in instead; the sphere comes back as UR over it (fakeTransform)
+  pullEl.classList.add('burst', 'fk-burst');
+  pullEl.insertAdjacentHTML('beforeend', '<div class="sph-flash"></div>');
+  st.fx.burst(150, 760, 4);
+  if (st.sfx) st.sfx.shock();
+  pullLater(250, () => { if (pullEl) pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`); });
 }
 function fakeTransform() {
   const st = pullState; if (!st || !pullEl) return;
-  pullEl.classList.remove('sph-gone'); pullEl.classList.add('fakeout', 'sph-return');
+  pullEl.classList.remove('burst', 'fk-burst'); pullEl.querySelectorAll('.sph-flash').forEach(x => x.remove()); pullEl.classList.add('fakeout', 'sph-return');
   pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');   // no ray burst: lightning, flash and the quake carry it
   $('#sph').classList.add('crack');
   sphereTier(5);
@@ -624,19 +627,6 @@ function startSphereFx(root) {
         fg.strokeStyle = rgba(col(w.c, t * 2), .75 * fade); fg.lineWidth = tier >= 5 ? 2.4 : 1.8; fg.beginPath(); w.tr.forEach(([px, py], k) => k ? fg.lineTo(px, py) : fg.moveTo(px, py)); fg.stroke();
         fg.fillStyle = rgba('#ffffff', .9 * fade); fg.beginPath(); fg.arc(x, y, tier >= 5 ? 2.2 : 1.6, 0, 7); fg.fill();
       }
-      // twinkling four-point stars popping around the sphere
-      const TW = root._twk || (root._twk = []);
-      if (TW.length < 4 + tier * 3 && Math.random() < .12 + tier * .04 + pp) { const a = Math.random() * 7, d = b.r * (1.1 + Math.random() * 1.6); TW.push({ dx: Math.cos(a) * d, dy: Math.sin(a) * d, life: .7 + Math.random() * .5, max: 0, s: b.r * (.12 + Math.random() * .16 + (tier >= 5 ? .06 : 0)), c: Math.floor(Math.random() * 3) }); TW[TW.length - 1].max = TW[TW.length - 1].life; }
-      fg.save(); fg.globalCompositeOperation = 'lighter';
-      for (let i = TW.length - 1; i >= 0; i--) {
-        const w = TW[i]; w.life -= dt; if (w.life <= 0) { TW.splice(i, 1); continue; }
-        const q = 1 - w.life / w.max, a = Math.sin(Math.PI * q) * b.o, s = w.s * (.4 + .6 * Math.sin(Math.PI * q)), x = b.x + w.dx, y = b.y + w.dy;
-        fg.strokeStyle = rgba(col(w.c, t), a); fg.lineWidth = 1.6; fg.shadowColor = col(w.c, t); fg.shadowBlur = 10;
-        fg.beginPath(); fg.moveTo(x - s, y); fg.lineTo(x + s, y); fg.moveTo(x, y - s); fg.lineTo(x, y + s); fg.stroke();
-        fg.lineWidth = 1; fg.beginPath(); fg.moveTo(x - s * .45, y - s * .45); fg.lineTo(x + s * .45, y + s * .45); fg.moveTo(x + s * .45, y - s * .45); fg.lineTo(x - s * .45, y + s * .45); fg.stroke();
-        fg.fillStyle = rgba('#ffffff', a); fg.beginPath(); fg.arc(x, y, 1.8, 0, 7); fg.fill();
-      }
-      fg.shadowBlur = 0; fg.restore();
       // bright flares shooting out of the sphere (SSR and up)
       if (tier >= 4) { const FL = root._fl || (root._fl = []);
         if (Math.random() < (tier >= 5 ? .35 : .18) + pp) { const a = Math.random() * 7; FL.push({ a, d: b.r * .9, v: b.r * (2.4 + Math.random() * 2), life: .45, max: .45, c: Math.floor(Math.random() * 3) }); }
