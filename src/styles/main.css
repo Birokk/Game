@@ -3047,9 +3047,29 @@ button.pt-slot:hover{border-color:#fff}
 .inv-acts .btn.ghost:hover{background:rgba(30,20,60,.15)}
 .inv-acts .btn.ghost .ic{color:#5a3fa8}
 
-/* profile viewer: a wide window; the namecard on top, the showcase under it at the standard 196 px card size (so the window stays landscape) */
-.modal-back[data-kind=profile] .pf-show{grid-template-columns:repeat(4,196px);justify-content:center;gap:18px}
-@media (max-width:900px){.modal-back[data-kind=profile] .pf-show{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+/* profile window: medium, squarer shape; the window wears the crystal palette of the Summon button; on the namecard the
+   avatar comes first and the info (level, name, title, stats) starts under it */
+.modal-back[data-kind=profile] .modal{width:min(860px,100%);background:var(--cry-grad);border:1.5px solid var(--cry-edge);box-shadow:0 0 30px var(--cry-glow),0 24px 60px rgba(10,6,40,.45);color:var(--cry-ink)}
+.modal-back[data-kind=profile] .modal::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(120% 60% at 20% 0%,rgba(255,255,255,.5),transparent 60%),radial-gradient(80% 50% at 100% 100%,rgba(148,184,255,.35),transparent 70%)}
+.modal-back[data-kind=profile] .modal>*{position:relative}
+.modal-back[data-kind=profile] .inv-title{background:rgba(255,255,255,.4)}
+.modal-back[data-kind=profile] .inv-title h2{color:var(--cry-ink)}
+.modal-back[data-kind=profile] .inv-badge{background:linear-gradient(#fff,#f1dcff);border-color:#fff;color:var(--cry-ink)}
+.modal-back[data-kind=profile] .inv-x{background:rgba(255,255,255,.55);border-color:#fff;color:var(--cry-ink)}
+.modal-back[data-kind=profile] .ad-head h3,.modal-back[data-kind=profile] .ad-head b,.modal-back[data-kind=profile] .ad-head{color:var(--cry-ink)}
+.modal-back[data-kind=profile] .tiny,.modal-back[data-kind=profile] .ad-head .tiny{color:rgba(43,24,85,.72)}
+.modal-back[data-kind=profile] .pf-slot{color:#fff}
+.modal-back[data-kind=profile] .pf-slot.none{background:rgba(255,255,255,.35);border-color:rgba(43,24,85,.35);color:var(--cry-ink)}
+.modal-back[data-kind=profile] .pf-slot.none *{color:rgba(43,24,85,.7)!important;opacity:1}
+.modal-back[data-kind=profile] .pf-mem.none{border-color:rgba(43,24,85,.35);color:rgba(43,24,85,.6);background:rgba(255,255,255,.25)}
+.modal-back[data-kind=profile] .pf-card{color:#fff;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:16px;border-color:rgba(255,255,255,.7)}
+.modal-back[data-kind=profile] .pf-card::after{background:linear-gradient(180deg,rgba(8,12,30,.15),rgba(8,12,30,.55))}
+.modal-back[data-kind=profile] .pf-me{flex-direction:column;align-items:flex-start;gap:12px}
+.modal-back[data-kind=profile] .pf-stats{grid-template-columns:repeat(5,minmax(0,1fr));width:100%}
+.modal-back[data-kind=profile] .pf-stats div{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.modal-back[data-kind=profile] .pf-stats b{color:#fff}.modal-back[data-kind=profile] .pf-stats span{color:rgba(255,255,255,.85)}
+.modal-back[data-kind=profile] .pf-stats div.tcs{background:var(--cry-grad-h);border-color:var(--cry-edge)}.modal-back[data-kind=profile] .pf-stats div.tcs b,.modal-back[data-kind=profile] .pf-stats div.tcs span{color:var(--cry-ink)}
+@media (max-width:640px){.modal-back[data-kind=profile] .pf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.modal-back[data-kind=profile] .pf-stats .tcs{grid-column:1/-1}}
 .cs-grades>div.cs-urplus.ssr{border-color:rgba(255,170,80,.5);background:linear-gradient(160deg,rgba(255,150,60,.18),rgba(255,200,120,.06))}
 .rtag.r4.plus{box-shadow:0 0 12px rgba(255,160,80,.75)}
 .rtag.r4.plus i,.cs-badge.r4.plus i{text-shadow:0 0 6px #fff,0 0 12px #ff9a3c}
