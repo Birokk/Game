@@ -98,18 +98,6 @@ function fusePet(id) {
   persist(); refreshCharacters(); renderFuse(); if (typeof renderPets === 'function') renderPets();
   toast(`${p.name} is now ${plan.tgt.st + 1}★${plan.tgt.who ? ` (with ${(findEntry(plan.tgt.who) || {}).name})` : ''}.`);
 }
-function renderPetFuse(root, tabs) {
-  const pets = S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => !!petFusePlan(b.id) - !!petFusePlan(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
-  root.innerHTML = `<div class="fu">${tabs}
-    <p class="tiny">Fuse two copies of the same pet: the best copy gets +1★ (up to ${MAX_STARS}★) and the lowest spare copy is used up. Copies with a character can get the star but are never used up.</p>
-    ${pets.length ? `<div class="pf-list">${pets.map(p => { const cps = petCopies(p.id), plan = petFusePlan(p.id);
-      return `<div class="pf-row r${p.rarity}"><span class="pf-pic"><img src="${mediaArt(p) || petWide(p)}" alt=""></span>
-        <div class="pf-info"><b>${esc(p.name)}</b>${rtag(p.rarity)}<div class="pf-copies">${cps.map(c => `<span class="pf-cp ${c.who ? 'with' : ''} ${plan && (c === plan.tgt || c === plan.feed) ? (c === plan.tgt ? 'tgt' : 'feed') : ''}" title="${c.who ? `With ${esc((findEntry(c.who) || {}).name || '')}` : 'Spare'}">${c.st}★${c.who ? ` · ${esc((findEntry(c.who) || {}).name || '')}` : ''}</span>`).join('')}</div></div>
-        ${plan ? `<button class="btn gold sm" data-pfuse="${esc(p.id)}">${icon('fuse')}${plan.tgt.st}★ → ${plan.tgt.st + 1}★</button>` : `<span class="tiny pf-why">${cps.length < 2 ? 'Needs another copy' : cps.every(c => c.st >= MAX_STARS || c.who) ? 'No spare copy' : `Max ${MAX_STARS}★`}</span>`}</div>`; }).join('')}</div>`
-      : '<div class="cs-pill">You don\'t have any pets yet. Hatch eggs in the Hatchery.</div>'}</div>`;
-  bindFuseTabs(root);
-  root.querySelectorAll('[data-pfuse]').forEach(b => b.onclick = () => fusePet(b.dataset.pfuse));
-}
 /* a square picture of a drawn pet (for pets without uploaded art; pet splash arts are 1254×1254) */
 const petWideCache = new Map();
 function petWide(p) {
@@ -210,21 +198,6 @@ function mergeStar(id, k) {
 }
 const clothStarRow = (n, cls = '') => n ? `<span class="cl-stars ${cls}">${Array.from({ length: CLOTH_MAXST }, (_, i) => `<i class="${i < n ? 'on' : ''}">★</i>`).join('')}</span>` : '';
 /* the star-up tab of the fusion window */
-function renderStarUp(root, tabs) {
-  const list = S.clothes.filter(x => hasClothStars(x) && owns(x.id)).sort((a, b) => bestOwnedStar(b.id) - bestOwnedStar(a.id) || a.name.localeCompare(b.name));
-  root.innerHTML = `<div class="fu">${tabs}
-    <p class="tiny">UR clothes have up to ${CLOTH_MAXST} stars. 1★ is the base: merge two spare 1★ copies of the <b>same piece</b> (e.g. two Starlit Regalia Crowns) into a 2★, and two spare 2★ copies of it into a 3★. Different pieces never mix, and worn copies are never used.</p>
-    ${list.length ? `<div class="fu-stars">${list.map(x => { const c = cstarCounts(x.id), s1 = spareAt(x.id, 1), s2 = spareAt(x.id, 2);
-      return `<div class="fu-srow r5"><span class="fu-sic"><img src="${clothImg(x)}" alt=""></span><div class="fu-sinfo"><b>${esc(x.name)}</b><span class="tiny">${[1, 2, 3].map(k => `${k}★ ×${c[k]}`).join(' · ')}</span></div>
-        <button class="btn ghost sm" data-mst="${esc(x.id)}" data-k="1" ${s1 >= 2 ? '' : 'disabled'}>2× ${clothStarRow(1, 'sm')} → ${clothStarRow(2, 'sm')}</button>
-        <button class="btn ghost sm" data-mst="${esc(x.id)}" data-k="2" ${s2 >= 2 ? '' : 'disabled'}>2× ${clothStarRow(2, 'sm')} → ${clothStarRow(3, 'sm')}</button></div>`; }).join('')}</div>
-      <div class="row" style="justify-content:center"><button class="btn gold" id="mstAll" ${list.some(x => spareAt(x.id, 1) >= 2 || spareAt(x.id, 2) >= 2) ? '' : 'disabled'}>Merge everything possible</button></div>`
-      : '<div class="cs-pill">You don\'t own any UR clothes yet.</div>'}
-  </div>`;
-  bindFuseTabs(root);
-  root.querySelectorAll('[data-mst]').forEach(b => b.onclick = () => { const x = clothOf(b.dataset.mst); if (mergeStar(x.id, +b.dataset.k)) { persist(); refreshCharacters(); renderFuse(); toast(`${x.name} is now ${+b.dataset.k + 1}★.`); } });
-  const all = $('#mstAll'); if (all) all.onclick = () => { let n = 0; list.forEach(x => { while (mergeStar(x.id, 1)) n++; while (mergeStar(x.id, 2)) n++; }); persist(); refreshCharacters(); renderFuse(); toast(`${n} merge${n === 1 ? '' : 's'} done.`); };
-}
 /* ---------- auto-equip: highest rarity per slot, preferring the set with the most available pieces ---------- */
 function autoEquip(c) {
   const avail = x => clothFits(x, c) && (S.owned[x.id] || 0) - wearersOf(x.id).filter(id => id !== c.id).length > 0;
@@ -279,18 +252,6 @@ function fuseMemStar(id) {
   persist(); refreshCharacters(); renderFuse();
   toast(`${m.name} is now ${plan.tgt.st + 1}★${plan.tgt.who ? ` (with ${(findEntry(plan.tgt.who) || {}).name})` : ''}.`);
 }
-function renderMemStarFuse(root, tabs) {
-  const mems = (S.memories || []).filter(m => owns(m.id)).sort((a, b) => !!memFusePlan(b.id) - !!memFusePlan(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
-  root.innerHTML = `<div class="fu">${tabs}
-    <p class="tiny">Fuse one copy of a memory into another copy of the same memory: the best copy gets +1★ (0★ base, up to ${MEM_MAXST}★) and the lowest spare copy is used up. A copy someone holds can get the star but is never used up. Hold a memory to view it.</p>
-    ${mems.length ? `<div class="pf-list">${mems.map(m => { const cps = memCopies(m.id), plan = memFusePlan(m.id), art = artFrom(m.img), top = cps[0] ? cps[0].st : 0;
-      return `<div class="pf-row r${m.rarity}"><span class="pf-pic wide mem-fr mst${top}" data-memview="${esc(m.id)}|${top}">${art ? `<img src="${art}" alt="">` : icon('memory')}</span>
-        <div class="pf-info"><b>${esc(m.name)}</b>${rtag(m.rarity)}<div class="pf-copies">${cps.map(c => `<span class="pf-cp ${c.who ? 'with' : ''} ${plan && (c === plan.tgt || c === plan.feed) ? (c === plan.tgt ? 'tgt' : 'feed') : ''}">${c.st}★${c.who ? ` · ${esc((findEntry(c.who) || {}).name || '')}` : ''}</span>`).join('')}</div></div>
-        ${plan ? `<button class="btn gold sm" data-msfuse="${esc(m.id)}">${icon('fuse')}${plan.tgt.st}★ → ${plan.tgt.st + 1}★</button>` : `<span class="tiny pf-why">${cps.length < 2 ? 'Needs another copy' : cps.every(c => c.st >= MEM_MAXST || c.who) ? 'No spare copy' : `Max ${MEM_MAXST}★`}</span>`}</div>`; }).join('')}</div>`
-      : '<div class="cs-pill">You don\'t have any memories yet. Pull them on the Memory banner.</div>'}</div>`;
-  bindFuseTabs(root);
-  root.querySelectorAll('[data-msfuse]').forEach(b => b.onclick = () => fuseMemStar(b.dataset.msfuse));
-}
 /* the see-through picker that opens from the Memory slot */
 function openMemPick(c) {
   const old = document.querySelector('.wdpick'); if (old) old.remove();
@@ -300,8 +261,9 @@ function openMemPick(c) {
     const list = (S.memories || []).filter(m => (!m.char || m.char === c.id) && owns(m.id)).flatMap(m => memCopies(m.id).map(cp => ({ ...cp, m })))
       .sort((a, b) => b.m.rarity - a.m.rarity || a.m.name.localeCompare(b.m.name) || (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || (!!a.who - !!b.who));
     el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">Memory</h2><span class="tiny">${list.length} memor${list.length === 1 ? 'y' : 'ies'} in your inventory · tap one to equip it</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
-      ${list.length ? `<div class="mem-list wdp-mems">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine, art = artFrom(cp.m.img);
-        return `<button class="mem-card mem-fr mst${cp.st} r${cp.m.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-mp="${i}" data-memview="${esc(cp.m.id)}|${cp.st}" ${busy ? 'disabled' : ''}>${art ? `<img src="${art}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(cp.m.rarity)}${memStarRow(cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">Equipped by ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}<span class="mem-nm">${esc(cp.m.name)}</span></button>`; }).join('')}</div>`
+      ${list.length ? `<div class="up-list wdp-cells">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine;
+        return invCell({ r: cp.m.rarity, pic: `${memCellPic(cp.m, cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}`, under: `${memStarRow(cp.st)}${mine ? ' <span class="up-who">Equipped</span>' : busy ? ` <span class="up-who">${whoName(cp.who)}</span>` : ''}`,
+          cls: `${mine ? 'on' : ''} ${busy ? 'busy' : ''}`, attrs: `data-mp="${i}" data-memview="${esc(cp.m.id)}|${cp.st}" ${busy ? 'disabled' : ''} title="${esc(cp.m.name)}${busy ? ` · equipped by ${whoName(cp.who)}` : ''}"` }); }).join('')}</div>`
         : '<div class="cs-pill">You don\'t have any memories yet. Pull them on the Memory banner.</div>'}
       <div class="row" style="justify-content:center;gap:10px">${cur ? '<button class="btn ghost" data-mpoff>Remove memory</button>' : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;
     el.querySelectorAll('[data-wdpx]').forEach(b => b.onclick = () => el.remove());

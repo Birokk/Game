@@ -4,7 +4,7 @@
    2★ SSR orange, 3★ the UR prism colours, animated. Holding any element with data-memview="memId|stars" for a moment
    opens the memory big in the middle of a transparent screen (openMemView); a tap anywhere closes it. */
 const MEM_MAXST = 3;
-const memStarRow = (st, cls = '') => `<span class="mem-st ${cls}" aria-label="${st} of ${MEM_MAXST} stars">${Array.from({ length: MEM_MAXST }, (_, i) => `<i class="${i < st ? 'on' : ''}">★</i>`).join('')}</span>`;
+const memStarRow = (st, cls = '') => `<span class="mem-st ms${st} ${cls}" aria-label="${st} of ${MEM_MAXST} stars">${Array.from({ length: MEM_MAXST }, (_, i) => `<i class="${i < st ? 'on' : ''}">★</i>`).join('')}</span>`;
 function openMemView(id, st) {
   const m = memOf(id); if (!m) return;
   const old = document.querySelector('.memview'); if (old) old.remove();
