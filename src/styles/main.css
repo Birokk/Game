@@ -3429,3 +3429,22 @@ button.pt-slot:hover{border-color:#fff}
 .vipx-items .bp-sq{width:64px}
 .vipx-foot{gap:6px}
 .vipx-dots{order:-1}
+
+/* VIP crest (vipEmblem) */
+.vip-crest{display:block;width:168px;filter:drop-shadow(0 6px 10px rgba(43,24,85,.32))}
+.vip-crest svg{display:block;width:100%;height:auto;overflow:visible}
+.vip-crest text{font-family:var(--display);font-size:15px;fill:#fff;letter-spacing:.06em;paint-order:stroke;stroke:rgba(43,24,85,.55);stroke-width:2.2px}
+.vip-crest .vc-tw{transform-origin:118px 35px;animation:twinkle 2.2s ease-in-out infinite}
+.vip-crest.v-s{filter:drop-shadow(0 0 10px rgba(255,200,80,.6)) drop-shadow(0 6px 10px rgba(43,24,85,.3))}
+.vip-crest.v-ss{filter:drop-shadow(0 0 12px rgba(185,139,255,.7)) drop-shadow(0 0 18px rgba(62,230,208,.35));animation:vcHue 6s linear infinite}
+@keyframes vcHue{0%,100%{filter:drop-shadow(0 0 12px rgba(185,139,255,.7)) drop-shadow(0 0 18px rgba(62,230,208,.35)) hue-rotate(0deg)}50%{filter:drop-shadow(0 0 14px rgba(255,110,199,.7)) drop-shadow(0 0 20px rgba(62,230,208,.45)) hue-rotate(25deg)}}
+.vip-crest.v-sss{animation:vcRed 1.4s ease-in-out infinite alternate}
+@keyframes vcRed{from{filter:drop-shadow(0 0 8px rgba(255,40,70,.7)) drop-shadow(0 6px 10px rgba(43,24,85,.3))}to{filter:drop-shadow(0 0 18px rgba(255,40,70,1)) drop-shadow(0 0 30px rgba(255,90,60,.55))}}
+
+/* Max Win banner + results title */
+.maxwin{position:absolute;left:50%;top:5%;z-index:6;transform:translateX(-50%);display:grid;justify-items:center;gap:6px;pointer-events:none;animation:mwIn .9s cubic-bezier(.2,1.5,.4,1) both}
+.maxwin b{font-family:var(--display);font-weight:400;font-size:clamp(54px,11vw,128px);line-height:1;letter-spacing:.04em;background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 1.6s linear infinite;filter:drop-shadow(0 0 18px rgba(255,255,255,.7)) drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.maxwin small{font-family:var(--display);font-size:16px;letter-spacing:.2em;color:#fff;text-shadow:0 0 10px #ff6ec7,0 0 18px #3ee6d0}
+@keyframes mwIn{0%{opacity:0;transform:translateX(-50%) scale(2.4)}60%{opacity:1}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+.pull.revealing .maxwin{display:none}
+.sum h2.mw{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 2s linear infinite;font-size:44px}

@@ -64,8 +64,37 @@ function claimVipLevel(lv) {
 }
 let vipView = null;   // the level shown in the VIP window (arrows browse 1–12)
 function openVip() { vipView = Math.max(1, vipLv()); openModal({ title: 'VIP', ic: 'crown', kind: 'vip', body: '<div id="vipRoot"></div>', onMount: () => renderVip() }); }
-/* the shield emblem with the level number, its rim in the CS grade colour of that level */
-const vipEmblem = lv => `<span class="vip-emb ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}"><span class="vip-emb-in"><b>${lv}</b></span><i class="vip-pearl l"></i><i class="vip-pearl r"></i><i class="vip-pearl t"></i></span>`;
+/* the VIP crest: a faceted crystal gem with a pearl in a metal frame in the level's grade colour, wings from VIP 4 (bigger
+   from VIP 8), a star from VIP 6 and a crown from VIP 10, on a ribbon that reads "VIP n"; S / SS / SSS levels glow */
+const VIP_PAL = { 0: ['#eef0f6', '#a9afbf', '#5d6373'], f: ['#e8eaf0', '#9aa1b2', '#4e5464'], e: ['#e6eef2', '#8fa3b0', '#465a69'],
+  d: ['#d2f7e4', '#4fbf8c', '#1f5c43'], c: ['#d8eeff', '#4f9fe6', '#1d4a80'], b: ['#e6e0ff', '#8a76ee', '#3a2b92'],
+  a: ['#fcdcff', '#d566e6', '#742282'], s: ['#fff4c8', '#f2bd45', '#94600f'], ss: ['#ffd6f5', '#b98bff', '#2fb8a8'], sss: ['#ffd8c8', '#ff3048', '#64000f'] };
+let vipCN = 0;
+function vipEmblem(lv) {
+  const k = lv ? vipGrade(lv).toLowerCase() : '0', P = VIP_PAL[k], id = 'vc' + (++vipCN);
+  const wing = big => `<path d="M50 54C30 40 12 44 4 58c9-2 15-1 20 2-9 2-15 7-17 15 8-4 15-5 21-3-6 4-9 10-9 17 8-6 16-9 25-9z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round" ${big ? 'transform="translate(-6 -6) scale(1.12)"' : ''}/>
+    <path d="M46 58c-10-3-20-2-28 4M44 66c-9 0-16 2-22 7M44 74c-7 2-12 6-15 11" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.1" stroke-linecap="round"/>`;
+  const wings = lv >= 4 ? `<g>${wing(lv >= 8)}</g><g transform="translate(160 0) scale(-1 1)">${wing(lv >= 8)}</g>` : '';
+  const crown = lv >= 10 ? `<path d="M60 22l6-14 7 9 7-12 7 12 7-9 6 14z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="80" cy="5" r="3" fill="url(#${id}p)"/><circle cx="66" cy="8" r="2.2" fill="url(#${id}p)"/><circle cx="94" cy="8" r="2.2" fill="url(#${id}p)"/>`
+    : lv >= 6 ? `<path d="M80 4l3.4 8.6 9.1.7-7 5.9 2.2 8.9-7.7-4.9-7.7 4.9 2.2-8.9-7-5.9 9.1-.7z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/>` : '';
+  const oct = (r, cx = 80, cy = 66) => { const pts = []; for (let i = 0; i < 8; i++) { const t = Math.PI / 8 + i * Math.PI / 4; pts.push(`${(cx + Math.cos(t) * r).toFixed(1)} ${(cy + Math.sin(t) * r * 1.02).toFixed(1)}`); } return 'M' + pts.join('L') + 'Z'; };
+  const facets = Array.from({ length: 8 }, (_, i) => { const t = Math.PI / 8 + i * Math.PI / 4; return `M80 66L${(80 + Math.cos(t) * 30).toFixed(1)} ${(66 + Math.sin(t) * 30.6).toFixed(1)}`; }).join('');
+  return `<span class="vip-crest v-${k}"><svg viewBox="0 0 160 150" aria-label="VIP ${lv}">
+    <defs><linearGradient id="${id}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P[0]}"/><stop offset=".5" stop-color="${P[1]}"/><stop offset="1" stop-color="${P[2]}"/></linearGradient>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="${P[0]}"/><stop offset="1" stop-color="${P[1]}"/></linearGradient>
+      <radialGradient id="${id}p" cx="36%" cy="30%" r="72%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#f6efff"/><stop offset="1" stop-color="#b9a6e6"/></radialGradient></defs>
+    ${wings}${crown}
+    <path d="${oct(46)}" fill="url(#${id}m)" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="${oct(38)}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
+    <path d="${oct(31)}" fill="url(#${id}g)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="${facets}" stroke="rgba(255,255,255,.6)" stroke-width="1"/>
+    <path d="M80 66L${(80 + Math.cos(Math.PI * 1.125) * 30).toFixed(1)} ${(66 + Math.sin(Math.PI * 1.125) * 30.6).toFixed(1)}L${(80 + Math.cos(Math.PI * 1.375) * 30).toFixed(1)} ${(66 + Math.sin(Math.PI * 1.375) * 30.6).toFixed(1)}Z" fill="rgba(255,255,255,.45)"/>
+    <circle cx="80" cy="66" r="13" fill="url(#${id}p)" stroke="#fff" stroke-width="1.6"/><circle cx="76" cy="62" r="3.4" fill="#fff" opacity=".9"/>
+    <path d="M118 30l1.6 3.8 3.8 1.6-3.8 1.6-1.6 3.8-1.6-3.8-3.8-1.6 3.8-1.6z" fill="#fff" class="vc-tw"/>
+    <path d="M30 108h100l-8 9 8 9H30l8-9z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M42 106h76v22H42z" fill="url(#${id}m)" stroke="#fff" stroke-width="1.6"/>
+    <text x="80" y="122.5" text-anchor="middle">VIP ${lv}</text></svg></span>`;
+}
 function renderVip() {
   const root = $('#vipRoot'); if (!root) return;
   const xp = vipState().xp, my = vipLv(xp), v = Math.min(VIP_MAX, Math.max(1, vipView || 1)), need = VIP_XP[v - 1];
@@ -77,7 +106,7 @@ function renderVip() {
     <div class="vipx-left">
       <span class="vipx-rank">${VIP_RANKS[v]}</span>
       ${vipEmblem(v)}
-      <span class="vipx-lvl">VIP ${v}${v === my ? ' · your level' : v < my ? ' · reached' : ''}</span>
+      <span class="vipx-lvl">${v === my ? 'Your level' : v < my ? 'Reached' : 'Not reached yet'}</span>
       <div class="vipx-bar"><span class="vipx-bic">${curIcon('vip')}</span><div class="vipx-track"><i style="width:${v <= my ? 100 : Math.min(100, xp / need * 100)}%"></i></div><b>${fmt(Math.min(xp, need))} / ${fmt(need)}</b></div>
       <div class="vipx-daily"><span class="vipx-pill">Daily Reward</span>
         <div class="vipx-items">${Object.entries(d).map(([k, n]) => bpItem(k, n)).join('')}</div>

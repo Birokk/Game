@@ -76,11 +76,13 @@ function upgradeSSR(B, g, res) {
   if (item.type === 'character') { out.starlight = (out.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += out.starlight; }
   return { res: out, item };
 }
-function rollOne(bk) {
+/* force: 5 = a UR, 'up' = an SSR that is always upgraded to a UR (Max Win) */
+function rollOne(bk, force) {
   const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
   const r = Math.random(), x = RATE_X(bk), p5 = Math.min(1, rate5(g.pity5) * x);
   let rarity = 3;
-  if (r < p5) rarity = 5; else if (g.pity4 >= 10 || r < p5 + BASE4 * x) rarity = 4;
+  if (force === 5) rarity = 5; else if (force === 'up') rarity = 4;
+  else if (r < p5) rarity = 5; else if (g.pity4 >= 10 || r < p5 + BASE4 * x) rarity = 4;
   if (rarity === 5) { g.pity5 = 0; g.pity4 = 0; } else if (rarity === 4) g.pity4 = 0;
   let item = null, lost = false;
   const B = bannerInfo(bk);
@@ -100,9 +102,9 @@ function rollOne(bk) {
     // Corals for every character pulled; more for copies past max stars
     if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
     // the rare upgrade: an SSR turns into a UR after it is revealed
-    if (rarity === 4 && Math.random() < UPGRADE_CHANCE) { const up = upgradeSSR(B, g, res); if (up) { res = up.res; item = up.item; rarity = 5; } }
+    if (rarity === 4 && (force === 'up' || Math.random() < UPGRADE_CHANCE)) { const up = upgradeSSR(B, g, res); if (up) { res = up.res; item = up.item; rarity = 5; } }
   }
-  res.hard = rarity === 5 && p5 >= 1 && !res.up;   // guaranteed by hard pity: never faked out
+  res.hard = rarity === 5 && p5 >= 1 && !res.up && !force;   // guaranteed by hard pity: never faked out
   S.wallet.dust += DUST_PER_PULL;
   S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
@@ -116,11 +118,14 @@ function doPull(n, bk = curBanner, free = false) {
     if (!canPull(n, bk)) { toast(`You need ${n} ${TK_NAME[TK(bk)].toLowerCase()}${n > 1 ? 's' : ''} or ${cost} pearls for this pull.`); return; }
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
-  const results = Array.from({ length: n }, () => rollOne(bk));
+  // Max Win: 0.1% of ×10 summons hold at least 5 URs (one of them upgraded from an SSR) and play every animation
+  const maxwin = n === 10 && Math.random() < MAXWIN_CHANCE;
+  const plan = maxwin ? (() => { const slots = [...Array(10).keys()].sort(() => Math.random() - .5).slice(0, 5), p = {}; slots.forEach((s, i) => p[s] = i ? 5 : 'up'); return p; })() : {};
+  const results = Array.from({ length: n }, (_, i) => rollOne(bk, plan[i]));
   if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
-  showPull(results, n, bk);
+  showPull(results, n, bk, { maxwin });
   if (S.settings.skipPull) showSummary();
 }
 
@@ -411,7 +416,7 @@ function startPfx(canvas, tier) {
    through orange (SSR) to prism (UR), stopping at the best rarity in the pull, then bursts into the reveals.
    Fakeout: now and then a UR pull stops at orange, a character wallpaper (admin → Summon animation, S.fakeArts) slides in,
    and the sphere transforms into UR. Never when hard pity guaranteed the UR. */
-const FAKEOUT_CHANCE = .3, DOUBLE_CHANCE = .5;
+const FAKEOUT_CHANCE = .3, DOUBLE_CHANCE = .5, MAXWIN_CHANCE = .001;
 function fakeArt() {
   const own = (S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean);
   if (own.length) return rpick(own);
@@ -420,12 +425,14 @@ function fakeArt() {
 function showPull(results, n, bk, opts = {}) {
   closePull(true);
   const best = Math.max(...results.map(r => r.up ? 4 : r.rarity));
-  // secret double: 2 or more URs in one pull, half the time (DOUBLE_CHANCE): after the sphere turns UR, two set wallpapers slide in split on the diagonal
-  const double = best === 5 && opts.double !== false && (opts.double || (results.filter(r => r.rarity === 5 && !r.up).length >= 2 && Math.random() < DOUBLE_CHANCE));
-  const fake = !double && best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
+  // Max Win plays everything: fakeout → double → rainbow
+  const maxwin = !!opts.maxwin && best >= 4;
+  // secret double: 2 or more URs in one pull (any number of URs), half the time (DOUBLE_CHANCE): after the sphere turns UR, two set wallpapers slide in split on the diagonal
+  const double = maxwin || (best === 5 && opts.double !== false && (opts.double || (results.filter(r => r.rarity === 5).length >= 2 && Math.random() < DOUBLE_CHANCE)));
+  const fake = maxwin || (!double && best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE));
   // rainbow: when the pull holds the limited banner's featured UR, half the time the UR sphere turns rainbow (a sure sign)
   const featId = bk === 'limited' && bannerInfo('limited').feat ? bannerInfo('limited').feat.id : null;
-  const rainbow = best === 5 && (opts.rainbow ?? (!!featId && results.some(r => r.rarity === 5 && !r.up && r.id === featId) && Math.random() < RAINBOW_CHANCE));
+  const rainbow = maxwin || best === 5 && (opts.rainbow ?? (!!featId && results.some(r => r.rarity === 5 && !r.up && r.id === featId) && Math.random() < RAINBOW_CHANCE));
   pullEl = document.createElement('div');
   const pbg = MEDIA.get('pull:bg');
   pullEl.className = `pull t3 r3 charging ${pbg ? 'has-bg' : ''}`;
@@ -435,7 +442,7 @@ function showPull(results, n, bk, opts = {}) {
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
-  pullState = { results, n, bk, best, fake, double, rainbow, preview: !!opts.preview, exchange: !!opts.exchange, milestone: !!opts.milestone, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState = { results, n, bk, best, fake, double, rainbow, maxwin, preview: !!opts.preview, exchange: !!opts.exchange, milestone: !!opts.milestone, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = () => pullState && pullState.exchange ? closePull() : showSummary();
@@ -463,12 +470,13 @@ function releaseSphere() {
   const rise = RISE_MS[st.best]; pullEl.style.setProperty('--rise', rise / 1000 + 's');
   if (st.best >= 4) pullLater(rise * .3, () => sphereTier(4));
   let urAt;
-  if (st.fake) { pullLater(rise * .62, fakeArtIn); urAt = rise * .62 + 2000; pullLater(urAt, fakeTransform); }
+  // fakeout: the sphere finishes its rise as an SSR; where the SSR would burst, the wallpaper pops up instead and the sphere turns UR
+  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 2000; pullLater(urAt, fakeTransform); }
   else if (st.best === 5) { urAt = rise * .62; pullLater(urAt, () => sphereTier(5)); }
   let after = st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400);
   // double: the sphere is already UR, then the two wallpapers slide in, hold, and blow out
-  if (st.double) { const inAt = Math.max(urAt + 1100, rise - 600); pullLater(inAt, doubleArtIn); pullLater(inAt + 2800, doubleArtOut); after = inAt + 3500; urAt = inAt + 2800; }
-  if (st.rainbow) { const rbAt = Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + 2400, burstSphere); }
+  if (st.double) { const inAt = st.fake ? urAt + 1300 : Math.max(urAt + 1100, rise - 600); pullLater(inAt, doubleArtIn); pullLater(inAt + 2800, doubleArtOut); after = inAt + 3500; urAt = inAt + 2800; }
+  if (st.rainbow) { const rbAt = st.double ? urAt + 800 : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); if (st.maxwin) pullLater(rbAt + 500, maxWinBanner); pullLater(rbAt + (st.maxwin ? 3200 : 2400), burstSphere); }
   else pullLater(after, burstSphere);
 }
 /* the rarer the pull, the slower the sphere rises (blue, SSR, UR) */
@@ -502,6 +510,12 @@ function doubleArtOut() {
   pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');
   pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake');
   if (st.fx) st.fx.burst(140, 760, 5);
+}
+/* Max Win: a big rainbow "MAX WIN" over the rainbow sphere */
+function maxWinBanner() {
+  if (!pullState || !pullEl) return;
+  pullEl.insertAdjacentHTML('beforeend', '<div class="maxwin"><b>MAX WIN</b><small>5+ UR guaranteed</small></div>');
+  if (pullState.fx) pullState.fx.burst(240, 1000, 5);
 }
 function fakeArtIn() {
   const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
@@ -703,7 +717,7 @@ function showSummary() {
   $('#pullSkip').hidden = true;
   const one = st.results.length === 1;
   $('#pullStage').innerHTML = `<div class="sum">
-    <h2>Summon results</h2>
+    <h2 class="${st.maxwin ? 'mw' : ''}">${st.maxwin ? 'MAX WIN!' : 'Summon results'}</h2>
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r), e = r.kind === 'entry' && findEntry(r.id), mem = e && e.type === 'memory' && memOf(e.id);
       const pic = mem ? `<span class="scard-mem">${memCellPic(mem, 0)}</span>` : v.card ? `<img src="${v.card}" alt="" class="${e && baseArt(e) ? '' : 'chibi'}" ${e && baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`;
       return `<div class="scard r${r.rarity}" style="--i:${i}">
