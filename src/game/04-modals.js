@@ -19,7 +19,6 @@ function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; refresh
 
 const PLACEHOLDERS = {
   friends: ['Friends', 'friends', 'Friend list, invites, and meeting up with friends in the plaza.'],
-  ranking: ['Ranking', 'trophy', 'Leaderboards for collection size, event points and more.'],
   shop:    ['Shop', 'shop', 'Pearl packs, skin bundles and the monthly pass.'],
   team:    ['Team', 'team', 'Pick up to four characters to bring into events.']
 };
@@ -55,7 +54,7 @@ function claimMail(ids) {
   ids.forEach(id => { const m = allMail().find(x => x.id === id); if (!m || S.mailClaimed.includes(id)) return; S.mailClaimed.push(id);
     if (m.reward) Object.entries(m.reward).forEach(([k, v]) => { S.wallet[k] = (S.wallet[k] || 0) + v; got[k] = (got[k] || 0) + v; }); });
   persist(); renderMail(); renderMenu(); refreshSummon();
-  if (Object.keys(got).length) toast(`Claimed ${Object.entries(got).map(([k, v]) => `${fmt(v)} ${k === 'coins' ? 'gold' : k}`).join(' and ')}.`);
+  if (Object.keys(got).length) showRewards('Mail rewards', got, `${ids.filter(id => S.mailClaimed.includes(id)).length > 1 ? 'Every attachment claimed' : 'Attachment claimed'}`);
 }
 function deleteMail(ids) { S.mailDel = [...new Set([...(S.mailDel || []), ...ids])]; persist(); renderMail(); renderMenu(); }
 function renderMail() {
@@ -121,7 +120,7 @@ function renderSettings() {
   else if (setTab === 'account') {
     const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
     rows = setRow('Account', Backend.on ? btn('setAcct', Backend.user ? 'Sign out' : 'Sign in') : `<span class="sx-val">${acct}</span>`, Backend.on ? acct : '')
-      + setRow('Player name', `<input class="sx-in" id="setName" maxlength="16" value="${esc(S.player.name)}" aria-label="Player name">`, 'Up to 16 characters')
+      + setRow('Player name', `<span class="sx-name">${esc(S.player.name)}</span>${btn('setName', 'Change')}`, nameLeft() ? `Next change in ${nameLeftTxt()} · uses 1 name change ticket` : 'Uses 1 name change ticket · once every 72 hours')
       + setRow('Main character', S.player.mc ? `<button type="button" class="sx-btn" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : '<span class="sx-val">Not chosen yet</span>', S.player.mc ? `${esc(mcEntry(S.player.mc).name)} · once every 72 hours` : '')
       + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
   } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
@@ -132,6 +131,7 @@ function renderSettings() {
       + setRow('Camp wallpaper', `<span class="set-wp">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setCampBg"></label>${MEDIA.get('camp:bg') ? btn('setCampBgDel', 'Default') : ''}`, 'Behind the Base\'s Camp tab (1920×1080 best). Default: black')
       + setRow('Expedition wallpaper', `<span class="set-wp">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpBg"></label>${MEDIA.get('exp:bg') ? btn('setExpBgDel', 'Default') : ''}`, 'Behind the Base\'s Expedition tab (1920×1080 best). Default: black')
       + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
+      + `<div class="sx-row sx-block"><span class="sx-l">Double UR wallpapers<small>Left and right, split on the diagonal after the sphere turns UR when a pull holds 2+ URs</small></span><div class="sx-c">${dblArtsHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
       + setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`));
   setEl.innerHTML = `<div class="setx-top"><div class="inv-title"><span class="inv-badge">${icon('gear')}</span><h2 class="ts">${cur[2]}</h2></div>
@@ -144,7 +144,7 @@ function renderSettings() {
   setEl.querySelectorAll('[data-settab]').forEach(b => b.onclick = () => { setTab = b.dataset.settab; renderSettings(); });
   setEl.querySelectorAll('[data-set]').forEach(sel => sel.onchange = () => { const k = sel.dataset.set; S.settings[k] = k === 'gfx' ? sel.value : sel.value === '1'; persist(); });
   const df = on('setDefault'); if (df) df.onclick = () => { S.settings = { ...S.settings, ...SET_DEFAULTS }; persist(); renderSettings(); toast('Settings set back to default.'); };
-  const nm = on('setName'); if (nm) nm.addEventListener('input', e => { S.player.name = e.target.value.trim() || 'Traveler'; player.name = S.player.name; renderMenu(); persist(); });
+  const nm = on('setName'); if (nm) nm.onclick = () => openRename();
   const rd = on('setRedeem'); if (rd) rd.onclick = openRedeem;
   const tt = on('setTitle'); if (tt) tt.onclick = showTitle;
   const ab = on('setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
@@ -155,7 +155,7 @@ function renderSettings() {
   const cb = on('setCampBg'); if (cb) cb.onchange = async () => { try { if (await mediaSet('camp:bg', await resizeImage(cb.files[0], 1920, 'image/jpeg'))) { renderSettings(); renderFarm(); toast('Camp wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const cd = on('setCampBgDel'); if (cd) cd.onclick = async () => { await mediaDel('camp:bg'); renderSettings(); renderFarm(); toast('Camp wallpaper back to black.'); };
   const xd = on('setExpBgDel'); if (xd) xd.onclick = async () => { await mediaDel('exp:bg'); renderSettings(); renderFarm(); toast('Expedition wallpaper back to black.'); };
-  bindUpArts(renderSettings); bindPullBg(renderSettings);
+  bindUpArts(renderSettings); bindDblArts(renderSettings); bindPullBg(renderSettings);
   document.querySelectorAll('[data-eggup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:egg' + i.dataset.eggup, await resizeImage(i.files[0], 256, 'image/png'))) { renderSettings(); toast('Egg icon updated.'); } } catch (e) { toast(e.message, true); } });
   document.querySelectorAll('[data-iconup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:' + i.dataset.iconup, await resizeImage(i.files[0], 512, 'image/png'))) { renderSettings(); toast('Icon updated.'); } } catch (e) { toast(e.message, true); } });
   document.querySelectorAll('[data-iconreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.iconreset); renderSettings(); toast('Icon back to the default.'); });

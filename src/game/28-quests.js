@@ -31,16 +31,18 @@ function questReward(m, set = 'daily') {
   const w = set === 'weekly', r = [['pearls', w ? 2 : 1], ['coins', 2000], ['exp', 100]];
   if (m === 60) r.push(['wishes', w ? 5 : 1]);
   if (m === 100) r.push(['tickets', w ? 5 : 1]);
+  if (m === 100 && !w) r.push(['vip', VIP_QUEST]);   // 50 VIP EXP a day (35-vip.js)
   return r;
 }
 CUR_SVG.qpt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="qptG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".45" stop-color="#e9a6f0"/><stop offset="1" stop-color="#8fb2ff"/></radialGradient></defs><circle cx="12" cy="12" r="10" fill="url(#qptG)" stroke="#fbe6ff" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#2b1855" stroke-width="1" opacity=".3"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#2b1855" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const Q_NAMES = { coins: 'gold', pearls: 'pearl', exp: 'EXP', tickets: 'Limited ticket', wishes: 'Standard ticket' };
-const qName = (k, n) => (Q_NAMES[k] || k) + (n > 1 && !['coins', 'exp'].includes(k) ? 's' : '');
+const Q_NAMES = { coins: 'gold', pearls: 'pearl', exp: 'EXP', tickets: 'Limited ticket', wishes: 'Standard ticket', vip: 'VIP EXP' };
+const qName = (k, n) => (Q_NAMES[k] || k) + (n > 1 && !['coins', 'exp', 'vip'].includes(k) ? 's' : '');
 
 /* the Monday (local) that starts this week */
 const weekStart = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7);
 /* today's / this week's quest state; a new day or week starts fresh, and every day you play counts as logging in */
 function qState(set = 'daily') {
+  if (set === 'bpd' || set === 'bpw') return bpQState(set);   // Pearl Honor missions (37-honor.js)
   const d = dayKey();
   if (set === 'weekly') {
     const w = dayKey(weekStart());
@@ -55,7 +57,8 @@ const Q_SETS = { daily: { list: QUESTS, title: 'Daily', next: () => { const n = 
   weekly: { list: WQUESTS, title: 'Weekly', next: () => { const m = weekStart(); return new Date(m.getFullYear(), m.getMonth(), m.getDate() + 7); } } };
 function questAdd(id, n = 1) {
   if (!(n > 0)) return;
-  for (const set of Object.keys(Q_SETS)) { const q = Q_SETS[set].list.find(x => x.id === id); if (!q) continue;
+  const sets = { ...Q_SETS, ...BP_SETS };   // the Pearl Honor missions count the same actions
+  for (const set of Object.keys(sets)) { const q = sets[set].list.find(x => x.id === id); if (!q) continue;
     const st = qState(set); st.p[id] = Math.min(q.need, (st.p[id] || 0) + n); }
 }
 const qProg = (q, set = 'daily') => Math.min(q.need, qState(set).p[q.id] || 0);
@@ -80,11 +83,12 @@ function claimQuests(ids = [], ms = [], set = qTab) {
   ids.forEach(id => { const q = Q_SETS[set].list.find(x => x.id === id); if (q && qCan(q, set)) { st.done.push(q.id); pts += q.pts; } });
   ms.forEach(m => { if (!qmCan(m, set)) return; st.ms.push(m); questReward(m, set).forEach(([k, n]) => { got[k] = (got[k] || 0) + n; }); });
   if (!pts && !Object.keys(got).length) return;
-  Object.entries(got).forEach(([k, n]) => { if (k !== 'exp') S.wallet[k] = (S.wallet[k] || 0) + n; });
+  Object.entries(got).forEach(([k, n]) => { if (k !== 'exp' && k !== 'vip') S.wallet[k] = (S.wallet[k] || 0) + n; });
   if (got.exp) gainExp(got.exp);
+  if (got.vip) gainVip(got.vip);
   persist(); renderMenu(); refreshSummon(); renderQuests();
-  const bits = Object.entries(got).map(([k, n]) => `${fmt(n)} ${qName(k, n)}`);
-  toast([pts ? `+${pts} points` : '', bits.length ? 'Claimed ' + bits.join(', ') : ''].filter(Boolean).join(' · ') + '.');
+  if (Object.keys(got).length) showRewards(`${Q_SETS[set].title} quest rewards`, got, `${ms.filter(m => st.ms.includes(m)).length ? `Points rewards claimed` : ''}${pts ? ` · +${pts} points` : ''}`.replace(/^ · /, ''));
+  else toast(`+${pts} points from ${ids.length} quest${ids.length === 1 ? '' : 's'}.`);
 }
 const Q_GO = { characters: () => openCharacters(), raids: () => openRaids(), summon: () => openSummon('limited'), farm: () => openFarm() };
 function qLeft(set = qTab) { const s = Math.max(0, Q_SETS[set].next() - new Date()) / 1000, d = Math.floor(s / 86400);
@@ -130,8 +134,8 @@ function renderQuests() {
       <span class="dq-refresh">${icon('clock')}Refresh time: <b id="dqLeft">${qLeft()}</b></span>
     </div></div>`;
   $('#dqList').scrollLeft = keep;
-  root.querySelectorAll('[data-qc]').forEach(b => b.onclick = () => claimQuests([b.dataset.qc]));
-  root.querySelectorAll('[data-qm]').forEach(b => b.onclick = () => { if (qmCan(+b.dataset.qm, set)) claimQuests([], [+b.dataset.qm]); });
+  root.querySelectorAll('[data-qc]').forEach(b => b.onclick = () => claimQuests(L.filter(q => qCan(q, set)).map(q => q.id)));
+  root.querySelectorAll('[data-qm]').forEach(b => b.onclick = () => { if (qmCan(+b.dataset.qm, set)) claimQuests([], QUEST_MS); });
   root.querySelectorAll('[data-qtab]').forEach(b => b.onclick = () => { qTab = b.dataset.qtab; renderQuests(); });
   root.querySelectorAll('[data-qgo]').forEach(b => b.onclick = () => { const f = Q_GO[b.dataset.qgo]; closeModal(); if (f) f(); });
   const all = $('#dqAll'); if (all) all.onclick = () => claimQuests(readyQ, QUEST_MS);

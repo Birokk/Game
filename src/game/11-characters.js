@@ -102,6 +102,7 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
+      ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb r${Math.min(rk, 4)}" data-csrank="${esc(c.id)}"><span class="cs-rankn">#${rk}</span><span><b>Top ${rk <= 3 ? 3 : 10} in the ranking</b><small>Character CS ranking for ${esc(c.name)}</small></span></button>` : ''; })()}
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
@@ -186,7 +187,7 @@ function renderCharacters() {
   const keepList = U.querySelector('.cs-list') ? U.querySelector('.cs-list').scrollTop : 0;
   U.innerHTML = `
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
-    <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
+    <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${st6(e)} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
         <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}</button>`).join('')}</nav>
     <div class="cs-side cs-ui">
@@ -201,6 +202,7 @@ function renderCharacters() {
       <p class="desc"><b>Skins</b> lists every outfit: scroll through them to see each one full screen. Outfits you don't own are shown in black and white. The eye button hides the menu so you can look at the art.</p></div>` });
   csEl.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { csId = b.dataset.cs; csSkin = null; renderCharacters(); });
   csEl.classList.toggle('bw', !owns(shown.id));
+  csEl.querySelectorAll('[data-csrank]').forEach(b => b.onclick = () => openRanking('char', b.dataset.csrank));
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; csSkin = null; renderCharacters(); });
   if (csTab === 'skins') initSkinCar(c);
   bindCSInfo(csEl);

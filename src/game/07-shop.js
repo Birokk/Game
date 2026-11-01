@@ -14,7 +14,8 @@ let exSub = 'corals';
 /* Premium exchange: once a month for EACH UR character (S.premEx.ids = characters exchanged this month) */
 function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), ids: [] }; if (!Array.isArray(S.premEx.ids)) S.premEx.ids = []; return S.premEx; }
 const premUsed = id => premEx().ids.includes(id);
-const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
+const TOPUP = [[5, '0.99'], [30, '4.99'], [100, '14.99'], [225, '29.99'], [400, '49.99'], [850, '99.99']];
+const TOPUP_FREE = true;   // testing: Top Up packs are free (no real payments yet)
 let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
 const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
@@ -53,13 +54,13 @@ function renderShop() {
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
-    body = `<p class="tiny">Pearl packs. Real payments aren't connected yet, so these can't be bought for now.</p>
-      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
+    body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
+      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
-    body = `<p class="tiny">Spend pearls on summon tickets and marriage rings.</p>
-      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
+    body = `<p class="tiny">Spend pearls on summon tickets, marriage rings and name change tickets.</p>
+      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}${item('pn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_PEARLS, 'pearls', '', 4)}</div>`;
   } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
-    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}</div>`;
+    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}${item('sn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_CORALS, 'starlight', '', 4)}</div>`;
   else if (shopTab === 'exchange' && exSub === 'memories') { const urs = (S.memories || []).filter(m => +m.rarity === 5).sort((a, b) => memExUsed(a.id) - memExUsed(b.id) || a.name.localeCompare(b.name));
     body = `<div class="mall-limit"><b>Limit: 1 per memory per account</b><span>${urs.filter(m => memExUsed(m.id)).length} / ${urs.length} UR memories exchanged</span></div><p class="tiny">Trade ${MEMX_PRICE} Corals for a copy (0★) of any UR memory. Each memory can be exchanged once.</p>
       ${urs.length ? `<div class="mall-mems">${urs.map(m => { const used = memExUsed(m.id), art = artFrom(m.img), ok = !used && W.starlight >= MEMX_PRICE;
@@ -92,6 +93,7 @@ function renderShop() {
   shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
+  shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const [n, usd] = TOPUP[+b.dataset.topup]; S.wallet.pearls += n; const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop(); showRewards('Top Up', { pearls: n, vip: vx }, 'Free while testing'); });
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
   shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
@@ -126,6 +128,8 @@ function buyShop(id) {
   if (id.startsWith('st-')) { const k = id.slice(3); if (!pay('starlight', SHOP_TICKET)) return; W[k]++; msg = `Bought 1 ${TK_NAME[k].toLowerCase()}.`; }
   else if (id.startsWith('dg-')) { openBuyGifts(id.slice(3), 'dust'); return; }   // pick how many
   else if (id.startsWith('pt-')) { const k = id.slice(3); if (W.pearls < TICKET_PEARLS) { toast(`A ticket costs ${TICKET_PEARLS} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= TICKET_PEARLS; W[k]++; msg = `Bought 1 ${TK_NAME[k].toLowerCase()}.`; }
+  else if (id === 'pn-name') { if (W.pearls < NAMETK_PEARLS) { toast(`A name change ticket costs ${NAMETK_PEARLS} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= NAMETK_PEARLS; W.nametk = (W.nametk || 0) + 1; msg = 'Bought 1 name change ticket.'; }
+  else if (id === 'sn-name') { if (!pay('starlight', NAMETK_CORALS)) return; W.nametk = (W.nametk || 0) + 1; msg = 'Bought 1 name change ticket.'; }
   else if (id === 'pr-ring') { if (W.pearls < RING_PRICE) { toast(`A ring costs ${RING_PRICE} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= RING_PRICE; W.rings++; msg = 'Bought 1 marriage ring.'; }
   else if (id.startsWith('mo-')) { const bk = id.slice(3), m = monthly(); if (m[bk] >= MONTHLY_LIMIT) return; if (!pay('dust', MONTHLY_PRICE)) return; m[bk]++; W[TK(bk)]++; msg = `Bought 1 monthly ${TK_NAME[TK(bk)].toLowerCase()}.`; }
   persist(); renderMenu(); refreshSummon(); renderShop(); toast(msg);

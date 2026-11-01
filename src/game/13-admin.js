@@ -704,7 +704,7 @@ function renderWalletTab() {
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
     <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button><button class="btn ghost sm" id="wSpin">Reset daily spin</button></div>
     <div><h3>Bond &amp; marriage</h3><p class="tiny">Test helpers. Rings are also editable in the wallet above.</p></div>
-    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wPass">Memberships: end both</button><button class="btn ghost sm" id="wCamp">Camp: bring everyone back</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
+    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wPass">Memberships: end both</button><button class="btn ghost sm" id="wCamp">Camp: bring everyone back</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn ghost sm" id="wVip">${curIcon('vip')}+1,000 VIP EXP</button><button class="btn ghost sm" id="wVipDay">VIP: claim again today</button><button class="btn ghost sm" id="wVipReset">Reset VIP</button><button class="btn ghost sm" id="wNameTk">${curIcon('nametk')}+1 name change ticket</button><button class="btn ghost sm" id="wNameCd">Clear name change cooldown</button><button class="btn ghost sm" id="wBpXp">Honor: +1 level</button><button class="btn ghost sm" id="wBpWk">Honor: reset weekly EXP limit</button><button class="btn ghost sm" id="wBpReset">Honor: reset season progress</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -728,6 +728,14 @@ function renderWalletTab() {
   $('#wBond').onclick = () => { S.pool.filter(e => e.type === 'character' && owns(e.id)).forEach(e => S.bond[e.id] = { ...bondOf(e.id), xp: BOND_XP[BOND_MAX] }); persist(); toast('Every owned character is at bond level 10.'); };
   $('#wFarmDone').onclick = () => { FARM_DEFS.forEach(d => { const f = farmOf(d.id); if (f.up) f.up.ends = Date.now() - 1; }); farmTick(); persist(); renderMenu(); toast('Farm upgrades finished.'); };
   $('#wFarmFill').onclick = () => { FARM_DEFS.forEach(d => { const f = farmOf(d.id); f.acc = farmCap(d.id); f.t = Date.now(); }); persist(); renderMenu(); toast('Farm storage filled.'); };
+  $('#wBpXp').onclick = () => { bpGain(BP_LV_XP, false); persist(); renderMenu(); toast(`Pearl Honor level ${bpLv()}.`); };
+  $('#wBpWk').onclick = () => { bpState().wk.xp = 0; persist(); toast('Weekly Honor EXP limit reset.'); };
+  $('#wBpReset').onclick = () => { S.bp = null; S.bpq = null; S.bpwq = null; S.unlocks = (S.unlocks || []).filter(x => x !== 'bp-crown'); bpState(); persist(); renderMenu(); toast('Pearl Honor reset: level 1, free track, missions cleared.'); };
+  $('#wNameTk').onclick = () => { S.wallet.nametk = (S.wallet.nametk || 0) + 1; persist(); renderMenu(); toast(`Name change tickets: ${S.wallet.nametk}.`); };
+  $('#wNameCd').onclick = () => { S.player.nameAt = 0; persist(); toast('Name change cooldown cleared.'); };
+  $('#wVip').onclick = () => { gainVip(1000); persist(); renderMenu(); toast(`+1,000 VIP EXP. VIP ${vipLv()} (${fmt(vipState().xp)} VIP EXP).`); };
+  $('#wVipDay').onclick = () => { vipState().day = ''; persist(); renderMenu(); toast('The VIP daily reward can be claimed again.'); };
+  $('#wVipReset').onclick = () => { S.vip = { xp: 0, day: '' }; persist(); renderMenu(); toast('VIP reset to 0.'); };
   $('#wExp').onclick = () => { gainExp(1000); renderMenu(); toast(`+1,000 EXP. Level ${playerLv().lv}.`); };
   $('#wLvReset').onclick = () => { S.player.xp = 0; S.lvClaimed = []; persist(); renderMenu(); toast('Level reset to 1.'); };
   $('#wScratch').onclick = () => { S.scratch = { day: dayKey(), n: 0, card: null }; persist(); if (evEl) renderEvents(); toast(`Scratch cards reset: ${SCRATCH_DAILY} cards available again today.`); };
@@ -753,6 +761,8 @@ function previewPull(kind) {
   const coin = () => ({ kind: 'coins', amount: 500, rarity: 3 }), frag = () => ({ kind: 'frag', frag: 'ssr', rarity: 3 });
   if (kind === 'rainbow') { const f = bannerInfo('limited').feat; const u = f ? { kind: 'entry', id: f.id, rarity: 5, isNew: true, starUp: 0, pearls: 0 } : ent(5); closeModal(); closeSettings(); return showPull([u], 1, 'limited', { preview: true, fake: false, rainbow: true }); }
   if (kind === 'upgrade') { const u = ent(5), d = ent(4); if (u.kind === 'entry' && d.kind === 'entry') u.up = { id: d.id, name: findEntry(d.id).name }; closeModal(); closeSettings(); return showPull([u], 1, 'limited', { preview: true, fake: false }); }
+  if (kind === 'maxwin') { const res = [coin(), ent(5), ent(5), frag(), ent(5), coin(), ent(5), ent(4), ent(5), coin()]; const d = ent(4), u = res[1]; if (u.kind === 'entry' && d.kind === 'entry') u.up = { id: d.id, name: findEntry(d.id).name }; closeModal(); closeSettings(); return showPull(res, res.length, 'limited', { preview: true, maxwin: true }); }
+  if (kind === 'double') { const res = [coin(), ent(5), coin(), frag(), ent(4), coin(), ent(5), coin(), coin(), frag()]; closeModal(); closeSettings(); return showPull(res, res.length, 'limited', { preview: true, double: true, rainbow: false }); }
   const res = kind === 'blue' ? [coin()] : kind === 'ssr' ? [ent(4)] : kind === 'ten' ? [coin(), ent(4), frag(), coin(), coin(), ent(5), coin(), frag(), coin(), ent(4)] : [ent(5)];
   closeModal(); showPull(res, res.length, 'limited', { preview: true, fake: kind === 'fake' });
 }
@@ -761,13 +771,15 @@ function renderPullFxTab() {
   const list = (S.fakeArts || []).filter(k => MEDIA.get(k));
   p.innerHTML = `<div class="stack">
     <div><h3>Pull animation</h3><p class="tiny">Players pull the screen down to release a sphere. It rises and turns from blue (gold and fragments) to orange (SSR) to prism (UR), stopping at the best result of the pull. In ${Math.round(FAKEOUT_CHANCE * 100)}% of UR pulls (never on a hard-pity UR) the sphere stops at orange, one of the fakeout wallpapers below slides in, and the sphere transforms into UR.</p></div>
-    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button><button class="btn gold sm" data-pv="upgrade">Preview: SSR → UR upgrade</button><button class="btn gold sm" data-pv="rainbow">Preview: rainbow sphere</button></div>
+    <div class="row"><button class="btn ghost sm" data-pv="blue">Preview: blue</button><button class="btn ghost sm" data-pv="ssr">Preview: SSR</button><button class="btn ghost sm" data-pv="ur">Preview: UR</button><button class="btn gold sm" data-pv="fake">Preview: fakeout</button><button class="btn ghost sm" data-pv="ten">Preview: ×10</button><button class="btn gold sm" data-pv="upgrade">Preview: SSR → UR upgrade</button><button class="btn gold sm" data-pv="rainbow">Preview: rainbow sphere</button><button class="btn ghost sm" data-pv="double">Preview: double UR</button><button class="btn ghost sm" data-pv="maxwin">Preview: Max Win</button></div>
     <div><h3>Summon background</h3><p class="tiny">Your art behind the whole summon animation instead of the black background (1920×1080 works best). Also in Settings → Admin.</p></div>
     ${pullBgHTML()}
     <div><h3>Fakeout wallpapers</h3><p class="tiny">One is picked at random for each fakeout. Wide character art works best (1920×1080; it covers the screen). Without any, the limited banner's featured character is used.</p></div>
     <div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-fkdel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No fakeout wallpapers yet.</span>'}</div>
     <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="fkUp" multiple></label></div>
     <div><h3>SSR → UR upgrade wallpapers</h3><p class="tiny">${Math.round(UPGRADE_CHANCE * 100)}% of SSR pulls turn into a UR after they are revealed (50/50 on featured banners, the featured UR when guaranteed). One of these slides in during the upgrade; without any, a fakeout wallpaper is used. Also editable in Settings → Admin.</p></div>
+    <div><h3>Double UR wallpapers</h3><p class="tiny">When one pull holds 2 or more URs, after the sphere turns UR these two slide in split on the diagonal: one on the left, one on the right. Without an upload, that side shows the pulled URs' own art. 1920×1080 works best.</p></div>
+    ${dblArtsHTML()}
     ${upArtsHTML()}
   </div>`;
   p.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => previewPull(b.dataset.pv));
@@ -775,10 +787,26 @@ function renderPullFxTab() {
     try { for (const f of ev.target.files) { const k = `fake:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.fakeArts = [...(S.fakeArts || []), k]; } persist(); renderPullFxTab(); toast('Fakeout wallpapers added.'); }
     catch (e) { toast(e.message, true); }
   };
-  bindUpArts(renderPullFxTab); bindPullBg(renderPullFxTab);
+  bindUpArts(renderPullFxTab); bindDblArts(renderPullFxTab); bindPullBg(renderPullFxTab);
   p.querySelectorAll('[data-fkdel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.fkdel); S.fakeArts = (S.fakeArts || []).filter(k => k !== b.dataset.fkdel); persist(); renderPullFxTab(); });
 }
 
+/* double UR wallpapers: a set left (media key dbl:left) and right (dbl:right) one, split on the diagonal when a pull holds 2+ URs */
+function dblArtsHTML() {
+  const side = (k, l) => `<div class="dbl-slot"><span class="lbl-sm">${l}</span><span class="dbl-pic ${k}">${MEDIA.get('dbl:' + k) ? `<img src="${MEDIA.get('dbl:' + k)}" alt="">` : '<i>Pulled UR art</i>'}</span>
+    <span class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('dbl:' + k) ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-dbladd="${k}"></label>${MEDIA.get('dbl:' + k) ? `<button type="button" class="btn ghost sm" data-dbldel="${k}">Remove</button>` : ''}</span></div>`;
+  return `<div class="dbl-slots">${side('left', 'Left wallpaper')}${side('right', 'Right wallpaper')}</div>
+    <div class="row"><button type="button" class="btn ghost sm" data-pvdbl>Preview: double UR</button></div>`;
+}
+function bindDblArts(rerender) {
+  document.querySelectorAll('[data-dbladd]').forEach(inp => inp.onchange = async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    try { if (await mediaSet('dbl:' + inp.dataset.dbladd, await resizeImage(f, 1920, 'image/jpeg'))) { persist(); rerender(); toast(`${inp.dataset.dbladd === 'left' ? 'Left' : 'Right'} double UR wallpaper set.`); } }
+    catch (e) { toast(e.message, true); }
+  });
+  document.querySelectorAll('[data-dbldel]').forEach(b => b.onclick = async () => { await mediaDel('dbl:' + b.dataset.dbldel); persist(); rerender(); });
+  document.querySelectorAll('[data-pvdbl]').forEach(b => b.onclick = () => { if (typeof closeSettings === 'function') closeSettings(); previewPull('double'); });
+}
 /* SSR → UR upgrade wallpapers (S.upArts, media keys upg:*), shared by admin → Summon animation and Settings → Admin */
 function upArtsHTML() {
   const list = (S.upArts || []).filter(k => MEDIA.get(k));

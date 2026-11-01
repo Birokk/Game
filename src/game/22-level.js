@@ -30,12 +30,28 @@ function lvReward(lv) {
 }
 const lvClaimed = lv => (S.lvClaimed || []).includes(lv);
 const lvReady = () => { const L = playerLv().lv; for (let i = 1; i <= L; i++) if (!lvClaimed(i)) return true; return false; };
+/* shared "You got" window for claimed rewards: got = {currencyKey: amount} */
+const REW_NAMES = { coins: ['gold', 'gold'], pearls: ['pearl', 'pearls'], tickets: ['Limited ticket', 'Limited tickets'], wishes: ['Standard ticket', 'Standard tickets'], bottles: ['stamina bottle', 'stamina bottles'], exp: ['EXP', 'EXP'], starlight: ['Coral', 'Corals'], dust: ['Seaweed', 'Seaweeds'], rings: ['ring', 'rings'], memtk: ['UR memory ticket', 'UR memory tickets'], vip: ['VIP EXP', 'VIP EXP'], nametk: ['name change ticket', 'name change tickets'] };
+const REW_R = { tickets: 5, pearls: 5, starlight: 5, rings: 5, wishes: 4, bottles: 4, coins: 3, exp: 3, dust: 3, vip: 5, memtk: 5, nametk: 4 };
+function showRewards(title, got, sub = '') {
+  const items = Object.entries(got).filter(([, n]) => n > 0); if (!items.length) return;
+  const old = document.querySelector('.rewpop'); if (old) old.remove();
+  const el = document.createElement('div'); el.className = 'rdrop rewpop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', title);
+  el.innerHTML = `<div class="rdrop-box"><h2 class="ts">${esc(title)}</h2>${sub ? `<p class="tiny">${esc(sub)}</p>` : ''}
+    <div class="rew-grid">${items.map(([k, n], i) => `<div class="rew-it" style="--i:${i}"><span class="inv-cell r${REW_R[k] || 4}"><span class="inv-pic">${curIcon(k)}</span></span><b>${fmt(n)}</b><small>${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}</small></div>`).join('')}</div>
+    <div class="row" style="justify-content:center"><button class="btn gold" data-rewok>Great!</button></div></div>`;
+  const close = () => el.remove();
+  el.addEventListener('click', e => { if (e.target === el) close(); });
+  el.querySelector('[data-rewok]').onclick = close;
+  document.body.appendChild(el);
+}
 function claimLevels(list) {
   const got = {};
   list.forEach(lv => { if (lvClaimed(lv) || lv > playerLv().lv) return; (S.lvClaimed = S.lvClaimed || []).push(lv); lvReward(lv).forEach(([k, n]) => { S.wallet[k] = (S.wallet[k] || 0) + n; got[k] = (got[k] || 0) + n; }); });
   if (!Object.keys(got).length) return;
+  const n = list.filter(lv => lvClaimed(lv)).length;
   persist(); renderMenu(); refreshSummon(); renderLevel();
-  toast('Claimed ' + Object.entries(got).map(([k, n]) => `${fmt(n)} ${({ coins: 'gold', pearls: 'pearls', tickets: 'Limited tickets', wishes: 'Standard tickets', bottles: 'stamina bottles' })[k] || k}`).join(', ') + '.');
+  showRewards('Level rewards', got, `${n} level reward${n === 1 ? '' : 's'} claimed`);
 }
 function openLevel() { openModal({ title: 'Level rewards', ic: 'level', wide: true, kind: 'level', body: '<div id="lvRoot"></div>', onMount: () => { renderLevel(true); } }); }
 function renderLevel(scrollToNext) {
@@ -55,10 +71,10 @@ function renderLevel(scrollToNext) {
         ${P.need ? `<div class="lv-bar"><i style="width:${P.xp / P.need * 100}%"></i></div><span class="tiny">${fmt(P.xp)} / ${fmt(P.need)} EXP to level ${P.lv + 1}</span>` : '<span class="tiny">Max level reached.</span>'}
       </div>
       <div class="lv-ways"><span class="lbl-sm">How to earn EXP</span>${EXP_WAYS.map(([k, l, per]) => `<div><span>${l}</span>${expTag(EXP[k])}<small>${per}</small></div>`).join('')}<div><span>Farm Inn</span>${expTag(farmDef('inn').day)}<small>per day at Lv 7</small></div></div>
-      ${ready.length ? `<button class="btn gold" id="lvAll">Claim all (${ready.length})</button>` : ''}
     </aside>
-    <div class="lv-list" id="lvList">${rows}</div></div>`;
-  root.querySelectorAll('[data-lvclaim]').forEach(b => b.onclick = () => claimLevels([+b.dataset.lvclaim]));
+    <div class="lv-right"><div class="lv-bar-top"><span class="tiny">${ready.length ? `${ready.length} reward${ready.length === 1 ? '' : 's'} ready` : 'Level up to unlock more rewards'}</span><button class="btn gold" id="lvAll" ${ready.length ? '' : 'disabled'}>${icon('gift')}Claim all${ready.length ? ` (${ready.length})` : ''}</button></div>
+    <div class="lv-list" id="lvList">${rows}</div></div></div>`;
+  root.querySelectorAll('[data-lvclaim]').forEach(b => b.onclick = () => claimLevels(ready));   // any Claim takes every ready level
   const all = $('#lvAll'); if (all) all.onclick = () => claimLevels(ready);
   $('#lvList').scrollTop = keep;
   if (scrollToNext) { const t = root.querySelector('.lv-row.can') || root.querySelector(`[data-lvrow="${P.lv}"]`), list = $('#lvList'); if (t && list) list.scrollTop = t.offsetTop - list.offsetTop - 8; }

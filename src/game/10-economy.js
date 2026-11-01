@@ -30,7 +30,7 @@ function openBuyTickets(bk = 'limited') {
 /* stamina: details; +60 from a recovery bottle or for 1 pearl */
 const STAMINA_REFILLS = [1, 1, 2, 2, 3, 3];   // pearl cost of each daily refill
 const refillsUsed = () => S.stamRefill && S.stamRefill.day === dayKey() ? S.stamRefill.n : 0;
-function addStamina() { const n = giveStamina(BOTTLE_STAMINA); persist(); renderMenu(); openStamina(); toast(`+${n} stamina.${n < BOTTLE_STAMINA ? ` Stamina is capped at ${STAMINA_CAP}.` : ''}`); }
+function addStamina() { const n = giveStamina(BOTTLE_STAMINA); persist(); renderMenu(); openStamina(); toast(`+${n} stamina.`); }
 const BOTTLE_STAMINA = 60;
 function openStamina() {
   const v = stamina(), left = stamMs() - (Date.now() - S.stamina.t);
@@ -75,7 +75,7 @@ function spinSlices() {
 }
 function openSpin() {
   const SL = spinSlices();
-  const conic = SPIN.map((s, i) => `${s.jackpot ? '#e8b04a' : i % 2 ? '#2a2f6a' : '#3d2a6e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
+  const conic = SPIN.map((s, i) => `${s.jackpot ? '#f2b8ee' : i % 2 ? '#2c2560' : '#4a2f7e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
   openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
       <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">

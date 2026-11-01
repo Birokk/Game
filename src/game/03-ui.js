@@ -38,7 +38,7 @@ const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<i
 function renderMenu() {
   passDaily();   // a membership's daily reward goes to Mail once a day
   $('#pname').textContent = S.player.name;
-  $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>`;
+  $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>` + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Standard tickets: 1 pull on the permanent banner']].map(([k, l]) =>
@@ -48,6 +48,7 @@ function renderMenu() {
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
   $('#evDot').hidden = !loginReady();
   $('#qDot').hidden = !questReady();
+  $('#bpDot').hidden = !bpReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
@@ -71,10 +72,10 @@ const passOn = id => ((S.member || {})[id] || 0) > Date.now();
 const stamMax = () => Math.max(STAMINA_BASE, ...Object.keys(PASS_STAM).filter(passOn).map(k => PASS_STAM[k][0]));
 const stamMs = () => Math.min(STAMINA_BASE_MS, ...Object.keys(PASS_STAM).filter(passOn).map(k => PASS_STAM[k][1]));
 const stamEvery = () => { const m = stamMs() / 6e4; return `${Math.round(m * 10) / 10} minute${m === 1 ? '' : 's'}`; };
-const STAMINA_CAP = 999;   // bottles, refills and the farm can go past the max, but never past 999
+const STAMINA_CAP = 999;   // bottles, refills and the farm add their full amount while stamina is below 999 (so it can end above 999); at 999 or more nothing more can be added
 /* add stamina from any source, up to the 999 cap; returns how much was actually added */
 function giveStamina(n) {
-  stamina(); const add = Math.max(0, Math.min(n, STAMINA_CAP - S.stamina.v));
+  stamina(); const add = S.stamina.v >= STAMINA_CAP ? 0 : Math.max(0, n);
   S.stamina.v += add; if (S.stamina.v >= stamMax()) S.stamina.t = Date.now(); return add;
 }
 function stamina() {
