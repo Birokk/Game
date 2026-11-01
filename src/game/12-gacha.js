@@ -420,9 +420,9 @@ function fakeArt() {
 function showPull(results, n, bk, opts = {}) {
   closePull(true);
   const best = Math.max(...results.map(r => r.up ? 4 : r.rarity));
-  // secret double: 2 or more URs in one pull always play the fakeout with two wallpapers split on the diagonal
+  // secret double: 2 or more URs in one pull: after the sphere turns UR, two set wallpapers slide in split on the diagonal
   const double = best === 5 && opts.double !== false && (opts.double || results.filter(r => r.rarity === 5 && !r.up).length >= 2);
-  const fake = double || (best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE));
+  const fake = !double && best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
   // rainbow: when the pull holds the limited banner's featured UR, half the time the UR sphere turns rainbow (a sure sign)
   const featId = bk === 'limited' && bannerInfo('limited').feat ? bannerInfo('limited').feat.id : null;
   const rainbow = best === 5 && (opts.rainbow ?? (!!featId && results.some(r => r.rarity === 5 && !r.up && r.id === featId) && Math.random() < RAINBOW_CHANCE));
@@ -465,8 +465,11 @@ function releaseSphere() {
   let urAt;
   if (st.fake) { pullLater(rise * .62, fakeArtIn); urAt = rise * .62 + 2000; pullLater(urAt, fakeTransform); }
   else if (st.best === 5) { urAt = rise * .62; pullLater(urAt, () => sphereTier(5)); }
+  let after = st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400);
+  // double: the sphere is already UR, then the two wallpapers slide in, hold, and blow out
+  if (st.double) { const inAt = Math.max(urAt + 1100, rise - 600); pullLater(inAt, doubleArtIn); pullLater(inAt + 2800, doubleArtOut); after = inAt + 3500; urAt = inAt + 2800; }
   if (st.rainbow) { const rbAt = Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + 2400, burstSphere); }
-  else pullLater(st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400), burstSphere);
+  else pullLater(after, burstSphere);
 }
 /* the rarer the pull, the slower the sphere rises (blue, SSR, UR) */
 const RISE_MS = { 3: 2300, 4: 3800, 5: 5400 }, RAINBOW_CHANCE = .5;
@@ -479,25 +482,28 @@ function rainbowSphere() {
   sphereTier(6);
   st.fx.burst(200, 900, 5);
 }
-/* two different wallpapers for the double: its own admin list (S.dblArts, admin → Summon animation → Double UR
-   wallpapers), then the pulled URs' own art, then the fakeout wallpapers */
+/* the double's wallpapers are set in admin: left (media key dbl:left) and right (dbl:right); a missing side uses the
+   pulled URs' own art (first UR on the left, second on the right), then the fakeout wallpaper */
 function doubleArts(results) {
-  const mix = a => a.sort(() => Math.random() - .5);
-  const pool = mix((S.dblArts || []).map(k => MEDIA.get(k)).filter(Boolean));
-  results.filter(r => r.rarity === 5 && r.kind === 'entry').forEach(r => { const e = findEntry(r.id), a = e && baseArt(e); if (a && !pool.includes(a)) pool.push(a); });
-  mix((S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean)).forEach(a => { if (!pool.includes(a)) pool.push(a); });
-  const one = fakeArt(); if (one && !pool.length) pool.push(one);
-  return pool.length ? [pool[0], pool[1] || pool[0]] : [];
+  const urs = results.filter(r => r.rarity === 5 && r.kind === 'entry' && !r.up).map(r => { const e = findEntry(r.id); return e && baseArt(e); }).filter(Boolean);
+  const left = MEDIA.get('dbl:left') || urs[0] || fakeArt(), right = MEDIA.get('dbl:right') || urs[1] || urs[0] || fakeArt();
+  return left || right ? [left || right, right || left] : [];
 }
 function doubleArtIn() {
   const st = pullState; if (!st || !pullEl) return;
   const [a, b] = doubleArts(st.results); if (!a) return;
   pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art dbl"><div class="fk-half a"><img src="${a}" alt=""></div><div class="fk-half b"><img src="${b}" alt=""></div>
     <svg class="fk-split" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="81" y1="-2" x2="19" y2="102"/></svg><i class="fk-streak"></i></div>`);
-  if (st.fx) st.fx.burst(60, 500, 5);
+  if (st.fx) st.fx.burst(80, 560, 5);
+}
+function doubleArtOut() {
+  const st = pullState; if (!st || !pullEl) return;
+  const a = pullEl.querySelector('.fk-art.dbl'); if (a) a.classList.add('out');
+  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');
+  pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake');
+  if (st.fx) st.fx.burst(140, 760, 5);
 }
 function fakeArtIn() {
-  if (pullState && pullState.double) return doubleArtIn();
   const st = pullState, art = fakeArt(); if (!st || !pullEl || !art) return;
   pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art"><img src="${art}" alt=""><i class="fk-streak"></i></div>`);
 }
@@ -514,7 +520,7 @@ function burstSphere() {
   const st = pullState; if (!st || !pullEl) return;
   st.phase = 'burst';
   pullEl.classList.add('burst');
-  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''} ${st.double ? 'dbl' : ''}">${RNAME[st.best]}${st.double ? '<small>×' + st.results.filter(r => r.rarity === 5 && !r.up).length + '</small>' : ''}</div>` : ''}`);
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''}>${RNAME[st.best]}</div>` : ''}`);
   st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
   if (st.sfx) st.sfx.shock();
   pullLater(st.best >= 4 ? 1500 : 700, advancePull);

@@ -775,7 +775,7 @@ function renderPullFxTab() {
     <div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-fkdel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No fakeout wallpapers yet.</span>'}</div>
     <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="fkUp" multiple></label></div>
     <div><h3>SSR → UR upgrade wallpapers</h3><p class="tiny">${Math.round(UPGRADE_CHANCE * 100)}% of SSR pulls turn into a UR after they are revealed (50/50 on featured banners, the featured UR when guaranteed). One of these slides in during the upgrade; without any, a fakeout wallpaper is used. Also editable in Settings → Admin.</p></div>
-    <div><h3>Double UR wallpapers</h3><p class="tiny">When one pull holds 2 or more URs, two of these slide in split on the diagonal (instead of the single fakeout wallpaper). 1920×1080 works best.</p></div>
+    <div><h3>Double UR wallpapers</h3><p class="tiny">When one pull holds 2 or more URs, after the sphere turns UR these two slide in split on the diagonal: one on the left, one on the right. Without an upload, that side shows the pulled URs' own art. 1920×1080 works best.</p></div>
     ${dblArtsHTML()}
     ${upArtsHTML()}
   </div>`;
@@ -788,18 +788,20 @@ function renderPullFxTab() {
   p.querySelectorAll('[data-fkdel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.fkdel); S.fakeArts = (S.fakeArts || []).filter(k => k !== b.dataset.fkdel); persist(); renderPullFxTab(); });
 }
 
-/* double UR wallpapers (S.dblArts, media keys dbl:*): two of them split on the diagonal when a pull holds 2+ URs */
+/* double UR wallpapers: a set left (media key dbl:left) and right (dbl:right) one, split on the diagonal when a pull holds 2+ URs */
 function dblArtsHTML() {
-  const list = (S.dblArts || []).filter(k => MEDIA.get(k));
-  return `<div class="ld-thumbs">${list.map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-dbldel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No double UR wallpapers yet (the pulled URs\' own art is used).</span>'}</div>
-    <div class="row"><label class="btn mint sm">${icon('upload')}Add double UR wallpapers<input type="file" accept="image/*" class="sr" data-dbladd multiple></label><button type="button" class="btn ghost sm" data-pvdbl>Preview: double UR</button></div>`;
+  const side = (k, l) => `<div class="dbl-slot"><span class="lbl-sm">${l}</span><span class="dbl-pic ${k}">${MEDIA.get('dbl:' + k) ? `<img src="${MEDIA.get('dbl:' + k)}" alt="">` : '<i>Pulled UR art</i>'}</span>
+    <span class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('dbl:' + k) ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-dbladd="${k}"></label>${MEDIA.get('dbl:' + k) ? `<button type="button" class="btn ghost sm" data-dbldel="${k}">Remove</button>` : ''}</span></div>`;
+  return `<div class="dbl-slots">${side('left', 'Left wallpaper')}${side('right', 'Right wallpaper')}</div>
+    <div class="row"><button type="button" class="btn ghost sm" data-pvdbl>Preview: double UR</button></div>`;
 }
 function bindDblArts(rerender) {
   document.querySelectorAll('[data-dbladd]').forEach(inp => inp.onchange = async ev => {
-    try { for (const f of ev.target.files) { const k = `dbl:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.dblArts = [...(S.dblArts || []), k]; } persist(); rerender(); toast('Double UR wallpapers added.'); }
+    const f = ev.target.files[0]; if (!f) return;
+    try { if (await mediaSet('dbl:' + inp.dataset.dbladd, await resizeImage(f, 1920, 'image/jpeg'))) { persist(); rerender(); toast(`${inp.dataset.dbladd === 'left' ? 'Left' : 'Right'} double UR wallpaper set.`); } }
     catch (e) { toast(e.message, true); }
   });
-  document.querySelectorAll('[data-dbldel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.dbldel); S.dblArts = (S.dblArts || []).filter(k => k !== b.dataset.dbldel); persist(); rerender(); });
+  document.querySelectorAll('[data-dbldel]').forEach(b => b.onclick = async () => { await mediaDel('dbl:' + b.dataset.dbldel); persist(); rerender(); });
   document.querySelectorAll('[data-pvdbl]').forEach(b => b.onclick = () => { if (typeof closeSettings === 'function') closeSettings(); previewPull('double'); });
 }
 /* SSR → UR upgrade wallpapers (S.upArts, media keys upg:*), shared by admin → Summon animation and Settings → Admin */

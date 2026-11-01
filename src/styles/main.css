@@ -3355,4 +3355,11 @@ button.pt-slot:hover{border-color:#fff}
 @keyframes fkSplit{to{clip-path:inset(0 0 0 0)}}
 .fk-art.dbl::after{background:radial-gradient(ellipse 30% 40% at 50% 47%,rgba(0,0,0,.4),transparent 70%),linear-gradient(0deg,rgba(5,8,22,.5),transparent 35%)}
 .fk-art.dbl .fk-streak{transform:skewX(-16deg)}
-.stamp.dbl small{font-size:.42em;margin-left:.08em;vertical-align:super}
+.dbl-slots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dbl-slot{display:grid;gap:6px;justify-items:start}
+.dbl-pic{display:grid;place-items:center;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0b0b12;border:1.5px dashed rgba(255,255,255,.25)}
+.dbl-pic img{width:100%;height:100%;object-fit:cover}
+.dbl-pic i{font-family:var(--read);font-style:normal;font-size:12px;color:rgba(255,255,255,.5)}
+.dbl-pic.left{clip-path:polygon(0 0,100% 0,62% 100%,0 100%)}
+.dbl-pic.right{clip-path:polygon(38% 0,100% 0,100% 100%,0 100%)}
+.fk-art.dbl.out{animation:fkOut .7s ease-in forwards}
