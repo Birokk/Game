@@ -90,7 +90,7 @@ function renderMail() {
 /* settings: full screen over a blurred, see-through view of the game; round tabs on top, one row per setting */
 ICONS.audio = '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.5"/>';
 ICONS.user = '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>';
-const SET_TABS = [['graphics', 'image', 'Graphics'], ['audio', 'audio', 'Audio'], ['game', 'sparkle', 'Game'], ['account', 'user', 'Account'], ['admin', 'wrench', 'Admin']];
+const SET_TABS = [['graphics', 'image', 'Graphics'], ['audio', 'audio', 'Audio'], ['game', 'sparkle', 'Game'], ['account', 'user', 'Account']];   // admin-only art & icons live in admin → Art & icons
 const SET_DEFAULTS = { names: true, music: true, sfx: true, gfx: 'high', skipPull: false };
 let setEl = null, setTab = 'graphics';
 const setRow = (label, ctl, sub = '') => `<div class="sx-row"><span class="sx-l">${label}${sub ? `<small>${sub}</small>` : ''}</span><span class="sx-c">${ctl}</span></div>`;
@@ -99,7 +99,7 @@ const setOnOff = key => setSel(key, S.settings[key] ? '1' : '0', [['1', 'On'], [
 function openSettings(tab) {
   closeModal();
   setTab = SET_TABS.some(t => t[0] === tab) ? tab : setTab;
-  if (setTab === 'admin' && !canAdmin()) setTab = 'graphics';
+  if (setTab === 'admin') setTab = 'graphics';
   if (!setEl) { setEl = document.createElement('div'); setEl.className = 'setx'; setEl.setAttribute('role', 'dialog'); setEl.setAttribute('aria-label', 'Settings'); document.body.appendChild(setEl); }
   renderSettings();
 }
@@ -116,24 +116,15 @@ function renderSettings() {
   else if (setTab === 'game') rows = setRow('Main screen wallpaper', `<button type="button" class="sx-btn" data-open="wallpaper">${esc(wallpaperInfo() ? wpName(wallpaperInfo()) : 'Pearl Tide')}</button>`)
     + setRow('Skip summon animation', setOnOff('skipPull'), 'Jump straight to the results')
     + setRow('Redeem code', btn('setRedeem', `${icon('gift')}Redeem`))
-    + setRow('Title screen', btn('setTitle', `${icon('back')}Go to title screen`));
+    + setRow('Title screen', btn('setTitle', `${icon('back')}Go to title screen`))
+    + (canAdmin() ? setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`), 'Art, icons, wallpapers and every other admin setting') : '');
   else if (setTab === 'account') {
     const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
     rows = setRow('Account', Backend.on ? btn('setAcct', Backend.user ? 'Sign out' : 'Sign in') : `<span class="sx-val">${acct}</span>`, Backend.on ? acct : '')
       + setRow('Player name', `<span class="sx-name">${esc(S.player.name)}</span>${btn('setName', 'Change')}`, nameLeft() ? `Next change in ${nameLeftTxt()} · uses 1 name change ticket` : 'Uses 1 name change ticket · once every 72 hours')
       + setRow('Main character', S.player.mc ? `<button type="button" class="sx-btn" id="setMC" ${mcSwitchLeft() ? 'disabled' : ''}>${mcSwitchLeft() ? `Switch in ${fmtDur(mcSwitchLeft())}` : 'Switch'}</button>` : '<span class="sx-val">Not chosen yet</span>', S.player.mc ? `${esc(mcEntry(S.player.mc).name)} · once every 72 hours` : '')
       + setRow('UID', `<span class="sx-val">${esc(String(S.profile.uid || '—'))}</span>`);
-  } else rows = setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
-      + ['ssr', 'ur'].map(r => setRow(`${r.toUpperCase()} egg icon`, `<span class="set-exp">${eggHTML(r, 'sm')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-eggup="${r}"></label>${customIcon('egg' + r) ? `<button type="button" class="sx-btn" data-eggreset="${r}">Default</button>` : ''}`, 'The full egg in the hatchery, inventory and hatch animation')).join('')
-      + `<div class="sx-row sx-block"><span class="sx-l">Top Up icons<small>The picture of each pearl pack in the shop's Top Up tab (shown as is, no frame)</small></span><div class="sx-c"><div class="tu-ad">${TOPUP.map(([n], i) => `<div class="tu-slot"><span class="tu-pic">${topupIcon(i)}</span><small>${fmt(n)}</small><label class="sx-btn tu-btn">${icon('upload')}<input type="file" accept="image/*" class="sr" data-tuup="${i}"></label>${MEDIA.get('topup:' + i) ? `<button type="button" class="link" data-tureset="${i}">Default</button>` : ''}</div>`).join('')}</div></div></div>`
-      + PASSES.map(p => setRow(`${p.name} card`, `<span class="set-exp pass-set">${curIcon(p.icon)}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="${p.icon}"></label>${customIcon(p.icon) ? `<button type="button" class="sx-btn" data-iconreset="${p.icon}">Default</button>` : ''}`, `The membership card in the shop's Hot Picks (${p.price} pearls)`)).join('')
-      + setRow('UR memory ticket icon', `<span class="set-exp">${curIcon('memtk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="memtk"></label>${customIcon('memtk') ? '<button type="button" class="sx-btn" data-iconreset="memtk">Default</button>' : ''}`, 'From the Prism Membership; used from the Bag for a random UR memory')
-      + setRow('Camp wallpaper', `<span class="set-wp">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setCampBg"></label>${MEDIA.get('camp:bg') ? btn('setCampBgDel', 'Default') : ''}`, 'Behind the Base\'s Camp tab (1920×1080 best). Default: black')
-      + setRow('Expedition wallpaper', `<span class="set-wp">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpBg"></label>${MEDIA.get('exp:bg') ? btn('setExpBgDel', 'Default') : ''}`, 'Behind the Base\'s Expedition tab (1920×1080 best). Default: black')
-      + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
-      + `<div class="sx-row sx-block"><span class="sx-l">Double UR wallpapers<small>Left and right, split on the diagonal after the sphere turns UR when a pull holds 2+ URs</small></span><div class="sx-c">${dblArtsHTML()}</div></div>`
-      + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
-      + setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`));
+  }
   setEl.innerHTML = `<div class="setx-top"><div class="inv-title"><span class="inv-badge">${icon('gear')}</span><h2 class="ts">${cur[2]}</h2></div>
       <nav class="inv-tabs">${tabs.map(([k, ic, l]) => `<button class="${k === setTab ? 'on' : ''}" data-settab="${k}" title="${l}" aria-label="${l}">${icon(ic)}</button>`).join('')}</nav>
       <button class="inv-x" id="setClose" aria-label="Close">${icon('close')}</button></div>
@@ -150,19 +141,6 @@ function renderSettings() {
   const ab = on('setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
   const mb = on('setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
   const ad = on('setAdmin'); if (ad) ad.onclick = () => { closeSettings(); openAdmin(); };
-  const eu = on('setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { renderSettings(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
-  const xb = on('setExpBg'); if (xb) xb.onchange = async () => { try { if (await mediaSet('exp:bg', await resizeImage(xb.files[0], 1920, 'image/jpeg'))) { renderSettings(); renderFarm(); toast('Expedition wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
-  const cb = on('setCampBg'); if (cb) cb.onchange = async () => { try { if (await mediaSet('camp:bg', await resizeImage(cb.files[0], 1920, 'image/jpeg'))) { renderSettings(); renderFarm(); toast('Camp wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
-  const cd = on('setCampBgDel'); if (cd) cd.onclick = async () => { await mediaDel('camp:bg'); renderSettings(); renderFarm(); toast('Camp wallpaper back to black.'); };
-  const xd = on('setExpBgDel'); if (xd) xd.onclick = async () => { await mediaDel('exp:bg'); renderSettings(); renderFarm(); toast('Expedition wallpaper back to black.'); };
-  bindUpArts(renderSettings); bindDblArts(renderSettings); bindPullBg(renderSettings);
-  document.querySelectorAll('[data-eggup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:egg' + i.dataset.eggup, await resizeImage(i.files[0], 256, 'image/png'))) { renderSettings(); toast('Egg icon updated.'); } } catch (e) { toast(e.message, true); } });
-  document.querySelectorAll('[data-iconup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:' + i.dataset.iconup, await resizeImage(i.files[0], 512, 'image/png'))) { renderSettings(); toast('Icon updated.'); } } catch (e) { toast(e.message, true); } });
-  document.querySelectorAll('[data-iconreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.iconreset); renderSettings(); toast('Icon back to the default.'); });
-  document.querySelectorAll('[data-eggreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:egg' + b.dataset.eggreset); renderSettings(); toast('Egg icon back to the default.'); });
-  document.querySelectorAll('[data-tuup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('topup:' + i.dataset.tuup, await resizeImage(i.files[0], 512, 'image/png'))) { renderSettings(); toast('Top Up icon updated.'); } } catch (e) { toast(e.message, true); } });
-  document.querySelectorAll('[data-tureset]').forEach(b => b.onclick = async () => { await mediaDel('topup:' + b.dataset.tureset); renderSettings(); toast('Top Up icon back to the default.'); });
-  const er = on('setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); renderSettings(); toast('EXP icon back to the default.'); };
 }
 
 /* wallpaper picker */
@@ -206,3 +184,35 @@ document.addEventListener('click', e => {
   const { title, body } = INFO[b.dataset.info]();
   openModal({ title, ic: 'info', kind: 'info', body: `<div class="stack info-body">${body}</div>` });
 }, true);
+
+/* admin-only art & icons (formerly Settings → Admin), shown in admin → Art & icons (renderArtTab, 13-admin.js) */
+function adminArtRows() {
+  const btn = (id, label, cls = '') => `<button type="button" class="sx-btn ${cls}" id="${id}">${label}</button>`;
+  return setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? btn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward')
+      + ['ssr', 'ur'].map(r => setRow(`${r.toUpperCase()} egg icon`, `<span class="set-exp">${eggHTML(r, 'sm')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-eggup="${r}"></label>${customIcon('egg' + r) ? `<button type="button" class="sx-btn" data-eggreset="${r}">Default</button>` : ''}`, 'The full egg in the hatchery, inventory and hatch animation')).join('')
+      + `<div class="sx-row sx-block"><span class="sx-l">Top Up icons<small>The picture of each pearl pack in the shop's Top Up tab (shown as is, no frame)</small></span><div class="sx-c"><div class="tu-ad">${TOPUP.map(([n], i) => `<div class="tu-slot"><span class="tu-pic">${topupIcon(i)}</span><small>${fmt(n)}</small><label class="sx-btn tu-btn">${icon('upload')}<input type="file" accept="image/*" class="sr" data-tuup="${i}"></label>${MEDIA.get('topup:' + i) ? `<button type="button" class="link" data-tureset="${i}">Default</button>` : ''}</div>`).join('')}</div></div></div>`
+      + PASSES.map(p => setRow(`${p.name} card`, `<span class="set-exp pass-set">${curIcon(p.icon)}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="${p.icon}"></label>${customIcon(p.icon) ? `<button type="button" class="sx-btn" data-iconreset="${p.icon}">Default</button>` : ''}`, `The membership card in the shop's Hot Picks (${p.price} pearls)`)).join('')
+      + setRow('UR memory ticket icon', `<span class="set-exp">${curIcon('memtk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="memtk"></label>${customIcon('memtk') ? '<button type="button" class="sx-btn" data-iconreset="memtk">Default</button>' : ''}`, 'From the Prism Membership; used from the Bag for a random UR memory')
+      + setRow('Camp wallpaper', `<span class="set-wp">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setCampBg"></label>${MEDIA.get('camp:bg') ? btn('setCampBgDel', 'Default') : ''}`, 'Behind the Base\'s Camp tab (1920×1080 best). Default: black')
+      + setRow('Expedition wallpaper', `<span class="set-wp">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpBg"></label>${MEDIA.get('exp:bg') ? btn('setExpBgDel', 'Default') : ''}`, 'Behind the Base\'s Expedition tab (1920×1080 best). Default: black')
+      + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
+      + `<div class="sx-row sx-block"><span class="sx-l">Double UR wallpapers<small>Left and right, split on the diagonal after the sphere turns UR when a pull holds 2+ URs</small></span><div class="sx-c">${dblArtsHTML()}</div></div>`
+      + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
+    + setRow('Name change ticket icon', `<span class="set-exp">${curIcon('nametk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="nametk"></label>${customIcon('nametk') ? '<button type="button" class="sx-btn" data-iconreset="nametk">Default</button>' : ''}`, 'The ticket used to change a player name (shop, Bag, rewards)');
+}
+function bindAdminArt(root, rerender) {
+  const on = id => root.querySelector('#' + id);
+  const eu = on('setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { rerender(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
+  const xb = on('setExpBg'); if (xb) xb.onchange = async () => { try { if (await mediaSet('exp:bg', await resizeImage(xb.files[0], 1920, 'image/jpeg'))) { rerender(); renderFarm(); toast('Expedition wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const cb = on('setCampBg'); if (cb) cb.onchange = async () => { try { if (await mediaSet('camp:bg', await resizeImage(cb.files[0], 1920, 'image/jpeg'))) { rerender(); renderFarm(); toast('Camp wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const cd = on('setCampBgDel'); if (cd) cd.onclick = async () => { await mediaDel('camp:bg'); rerender(); renderFarm(); toast('Camp wallpaper back to black.'); };
+  const xd = on('setExpBgDel'); if (xd) xd.onclick = async () => { await mediaDel('exp:bg'); rerender(); renderFarm(); toast('Expedition wallpaper back to black.'); };
+  bindUpArts(rerender); bindDblArts(rerender); bindPullBg(rerender);
+  document.querySelectorAll('[data-eggup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:egg' + i.dataset.eggup, await resizeImage(i.files[0], 256, 'image/png'))) { rerender(); toast('Egg icon updated.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-iconup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:' + i.dataset.iconup, await resizeImage(i.files[0], 512, 'image/png'))) { rerender(); toast('Icon updated.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-iconreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.iconreset); rerender(); toast('Icon back to the default.'); });
+  document.querySelectorAll('[data-eggreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:egg' + b.dataset.eggreset); rerender(); toast('Egg icon back to the default.'); });
+  document.querySelectorAll('[data-tuup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('topup:' + i.dataset.tuup, await resizeImage(i.files[0], 512, 'image/png'))) { rerender(); toast('Top Up icon updated.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-tureset]').forEach(b => b.onclick = async () => { await mediaDel('topup:' + b.dataset.tureset); rerender(); toast('Top Up icon back to the default.'); });
+  const er = on('setExpReset'); if (er) er.onclick = async () => { await mediaDel('icon:exp'); rerender(); toast('EXP icon back to the default.'); };
+}

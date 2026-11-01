@@ -102,7 +102,7 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
-      ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb rk-row ${rk <= 3 ? 'top top' + rk : 'top10'}" data-csrank="${esc(c.id)}" aria-label="Open the ranking"><span class="rk-n"><i><b>${rk}</b></i></span><b class="cs-rankt">#${rk} Server CS Ranking</b></button>` : ''; })()}
+      ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb rk-row ${rk <= 3 ? 'top top' + rk : 'top10'}" data-csrank="${esc(c.id)}" aria-label="Open the ranking"><span class="rk-n"><i><b>${rk}</b></i></span><b class="cs-rankt">#${rk} ${esc(c.name)} Server CS Ranking</b></button>` : ''; })()}
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`

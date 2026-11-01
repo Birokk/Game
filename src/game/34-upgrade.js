@@ -4,7 +4,7 @@
    can use (only spare ones: copies with a character are never used up). Pick them, then Fuse. */
 const invCell = ({ r, pic, under = '', cls = '', attrs = '', rt = true }) => `<button type="button" class="inv-cell r${r} ${cls}" ${attrs}><span class="inv-pic">${pic}${rt ? `<span class="inv-rt">${ctag(r)}</span>` : ''}</span><b>${under || '&nbsp;'}</b></button>`;
 function openUpgradePop({ title, target, from, to, need = 1, cands, stars, onFuse, note }) {
-  const max = Math.max(1, Math.min(need, cands.length || 1));   // up to `need` copies; each one adds a star
+  const max = Math.max(1, need);   // always `need` slots (memories 3, pets 6, capped by the stars left); fill as many as you have copies for
   const old = document.querySelector('.upop'); if (old) old.remove();
   const el = document.createElement('div'); el.className = 'rdrop upop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', title);
   let sel = [];

@@ -126,7 +126,13 @@ function doPull(n, bk = curBanner, free = false) {
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk, { maxwin });
-  if (S.settings.skipPull) showSummary();
+  // remember the best ×10 pulls so they can be replayed: Max Wins, upgrades, and pulls with 2+ URs (with or without the double animation)
+  const st0 = pullState;
+  if (n === 10 && st0 && (maxwin || results.some(r => r.up) || results.filter(r => r.rarity === 5).length >= 2)) {
+    S.gacha.replays = [{ t: Date.now(), bk, results: JSON.parse(JSON.stringify(results)), fake: st0.fake, double: st0.double, rainbow: st0.rainbow, maxwin }, ...(S.gacha.replays || [])].slice(0, 30);
+    persist();
+  }
+  if (S.settings.skipPull && !maxwin) skipPull();   // a Max Win always plays its animation; Skip still shows URs and upgrades
 }
 
 /* summon screen: full screen, banner tabs on the left, character lineup, pull buttons along the bottom */
@@ -237,10 +243,21 @@ function openRates(bk, histOpen) {
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
     <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicate characters give ${STARLIGHT_MAX[5]} Corals (UR) or ${STARLIGHT_MAX[4]} (SSR) instead of a star. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
+    ${replaysHTML()}
     <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
       <div class="hist">${hist.length ? hist.map(h => `<div class="r${h.rarity}"><span>${h.rarity >= 4 ? rtag(h.rarity) : '<span class="cost">' + curIcon('coins') + '</span>'} ${esc(h.name)}</span><time>${t(h)}</time></div>`).join('') : '<p class="tiny">No pulls yet.</p>'}</div>
     </details>
-  </div>` });
+  </div>`, onMount: bindReplays });
+}
+/* best ×10 pulls (S.gacha.replays, newest first): Max Wins, upgrades, 2+ URs; Replay plays the exact same animation again */
+function replayTags(x) { const urs = x.results.filter(r => r.rarity === 5).length, up = x.results.filter(r => r.up).length; return [x.maxwin ? '<span class="rp-tag mw">MAX WIN</span>' : '', urs >= 2 ? `<span class="rp-tag ur">UR ×${urs}</span>` : '', x.double ? '<span class="rp-tag dbl">Double</span>' : '', up ? `<span class="rp-tag up">Upgrade${up > 1 ? ' ×' + up : ''}</span>` : '', x.rainbow ? '<span class="rp-tag rb">Rainbow</span>' : ''].join(''); }
+function replaysHTML() {
+  const L = S.gacha.replays || [], t = x => new Date(x.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return `<details class="rp" open><summary>Best pulls · replay (${L.length})</summary>${L.length ? `<div class="rp-list">${L.map((x, i) => `<div class="rp-row ${x.maxwin ? 'mw' : ''}"><span class="rp-tags">${replayTags(x)}</span><span class="rp-meta">${esc(bannerName(x.bk))} · ${t(x)}</span><button class="btn gold sm" data-replay="${i}">${icon('sparkle')}Replay</button></div>`).join('')}</div>` : '<p class="tiny">Your ×10 pulls with 2 or more URs, an SSR → UR upgrade or a Max Win are saved here so you can watch them again.</p>'}</details>`;
+}
+function bindReplays(root) {
+  (root || document).querySelectorAll('[data-replay]').forEach(b => b.onclick = () => { const x = (S.gacha.replays || [])[+b.dataset.replay]; if (!x) return; closeModal(); if (typeof closeSummon === 'function' && false) closeSummon();
+    showPull(JSON.parse(JSON.stringify(x.results)), 10, x.bk, { preview: true, replay: x.t, fake: !!x.fake, double: !!x.double, rainbow: !!x.rainbow, maxwin: !!x.maxwin }); });
 }
 
 /* pull animation */
@@ -442,10 +459,11 @@ function showPull(results, n, bk, opts = {}) {
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
-  pullState = { results, n, bk, best, fake, double, rainbow, maxwin, preview: !!opts.preview, exchange: !!opts.exchange, milestone: !!opts.milestone, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState = { results, n, bk, best, fake, double, rainbow, maxwin, replay: opts.replay || null, preview: !!opts.preview, exchange: !!opts.exchange, milestone: !!opts.milestone, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
-  $('#pullSkip').onclick = () => pullState && pullState.exchange ? closePull() : showSummary();
+  $('#pullSkip').onclick = () => skipPull();
+  if (pullState.maxwin) $('#pullSkip').hidden = true;   // no skipping a Max Win's animation (it comes back for the reveals)
   // tap anywhere to release (Enter / Space / ↓ also work)
   pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
@@ -666,10 +684,23 @@ function tapPull() {
   const st = pullState; if (!st || st.phase !== 'reveal' || performance.now() < st.readyAt) return;
   advancePull();
 }
+/* Skip: jump past everything except the URs still to come (upgrades included, with their animation); pressing it again
+   while those play goes straight to the results */
+function skipPull() {
+  const st = pullState; if (!st) return;
+  if (st.exchange) return closePull();
+  if (st.phase === 'summary') return;
+  const cur = st.phase === 'reveal' ? st.i : -1, rest = st.order.slice(cur + 1).filter(i => st.results[i].rarity >= 5);
+  if (st.skipping || !rest.length) return showSummary();
+  st.skipping = true; st.order = [...st.order.slice(0, cur + 1), ...rest];
+  if (pullEl) pullEl.classList.add('skipping');
+  advancePull();
+}
 function advancePull() {
   const st = pullState; if (!st || st.phase === 'summary') return;
   pullClear(st);
   st.i++; st.phase = 'reveal';
+  if (st.maxwin && $('#pullSkip')) $('#pullSkip').hidden = false;
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return st.exchange ? closePull() : showSummary();
@@ -749,7 +780,7 @@ function showSummary() {
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
       <button class="btn ghost" id="pullDone">${st.exchange || st.milestone ? 'Done' : st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    ${st.milestone ? `<p class="tiny" style="color:rgba(255,255,255,.65)">Milestone reward: ${(MILES[st.bk] || MILES.standard).n} pulls on ${(MILES[st.bk] || MILES.standard).where}.</p>` : st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
+    ${st.replay ? `<p class="tiny" style="color:rgba(255,255,255,.65)">Replay of your pull from ${new Date(st.replay).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}: nothing was spent or added.</p>` : st.milestone ? `<p class="tiny" style="color:rgba(255,255,255,.65)">Milestone reward: ${(MILES[st.bk] || MILES.standard).n} pulls on ${(MILES[st.bk] || MILES.standard).where}.</p>` : st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
   const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();

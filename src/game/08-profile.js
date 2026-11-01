@@ -46,7 +46,7 @@ function avatarHTML(size, entry = avatarEntry(), frame = frameOf().id) {
 function cardBG(id) {
   if (id && id.startsWith('char:') && wpOk(id.slice(5))) { const w = wpParse(id.slice(5)); return { cls: 'nc-char', img: wpSrc(w), art: wpHasArt(w) }; }
   const c = CARDS.find(k => k.id === id && unlocked(k)) || CARDS[0];
-  return { cls: 'nc-' + c.id };
+  return { cls: c.cls || 'nc-' + c.id };
 }
 const cardLayer = bg => `<span class="nc ${bg.cls}">${bg.img ? `<img src="${bg.img}" alt="" class="${bg.art ? '' : 'chibi'}">` : ''}</span>`;
 

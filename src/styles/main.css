@@ -3546,3 +3546,90 @@ button.pt-slot:hover{border-color:#fff}
 /* currency "+" exactly centred */
 .cur .plus{padding:0;line-height:0;flex:none}
 .cur .plus .ic{display:block;width:14px;height:14px;margin:0}
+
+/* ---------- ranking: VIP-coloured names, titles, weekly rewards ---------- */
+.rk-nm{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.rk-nm>small{font-size:11px;opacity:.7}
+.rk-nm .ttl{font-size:11px;padding:1px 9px}
+.vipn{font-family:var(--display);font-weight:400;font-size:17px;white-space:nowrap}
+.vipn.vn-0{color:#fff}.vipn.vn-f{color:#d6dae6}.vipn.vn-e{color:#c4d3de}
+.vipn.vn-d{color:#7ef0b5}.vipn.vn-c{color:#8cc8ff}.vipn.vn-b{color:#b6a6ff}.vipn.vn-a{color:#f29cff}
+.vipn.vn-s{background:linear-gradient(90deg,#ffe08a,#ffc94a,#fff3c4,#e8a42a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(255,200,80,.5))}
+.vipn.vn-ss{background:linear-gradient(90deg,#c58bff,#ff8ad6,#5ff2dd,#c58bff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 3s linear infinite;filter:drop-shadow(0 0 6px rgba(197,139,255,.55))}
+.vipn.vn-sss{color:#ff5d6c;text-shadow:0 0 6px #ff2a45,0 0 12px rgba(255,120,60,.7)}
+.rk-rew{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--read);font-size:13px;color:rgba(233,236,255,.85)}
+.rk-rew>.ic{width:16px;height:16px;color:#f5afe8}
+.rk-rewlist{display:grid;gap:8px}.rk-rewlist>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rk-rewlist .lbl-sm{min-width:110px}
+/* ranking titles: gold / silver / bronze */
+.ttl.t-rk1{background:linear-gradient(110deg,#5a3a00,#b8780f 30%,#ffe08a 50%,#b8780f 70%,#5a3a00);background-size:250% 100%;animation:shimmer 3s linear infinite;border:1px solid #fff0b8;color:#fff8dc;text-shadow:0 1px 2px rgba(60,30,0,.9);box-shadow:0 0 14px rgba(255,200,80,.55)}
+.ttl.t-rk2{background:linear-gradient(110deg,#3c4458,#9aa4bd 30%,#ffffff 50%,#9aa4bd 70%,#3c4458);background-size:250% 100%;animation:shimmer 3.4s linear infinite;border:1px solid #fff;color:#fff;text-shadow:0 1px 2px rgba(20,24,40,.9);box-shadow:0 0 12px rgba(210,222,255,.45)}
+.ttl.t-rk3{background:linear-gradient(110deg,#4a1f08,#a85a2c 30%,#ffd2b0 50%,#a85a2c 70%,#4a1f08);background-size:250% 100%;animation:shimmer 3.8s linear infinite;border:1px solid #ffd9bf;color:#fff3ea;text-shadow:0 1px 2px rgba(50,15,0,.9);box-shadow:0 0 12px rgba(230,150,100,.45)}
+/* ranking namecards: black into the place's metal, with a motif per ranking */
+.nc-rk{background:linear-gradient(120deg,#000 0%,#0b0812 28%,var(--rkm1) 62%,var(--rkm2) 84%,var(--rkm1) 100%)}
+.nc-rkp1{--rkm1:#8a5a0c;--rkm2:#ffd76b}.nc-rkp2{--rkm1:#5c6680;--rkm2:#eef2ff}.nc-rkp3{--rkm1:#7a3a16;--rkm2:#f0b48a}
+.nc-rk::before{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.55}
+.nc-rkb-total::before{background:repeating-conic-gradient(from 200deg at 92% 10%,rgba(255,255,255,.35) 0 4deg,transparent 4deg 14deg)}
+.nc-rkb-char::before{background:radial-gradient(circle at 20% 30%,#fff 1px,transparent 1.6px) 0 0/46px 46px,radial-gradient(circle at 70% 70%,#fff 1px,transparent 1.5px) 0 0/31px 31px,radial-gradient(ellipse at 80% 40%,rgba(255,255,255,.4),transparent 55%)}
+.nc-rkb-ach::before{background:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 2px,transparent 2px 22px)}
+.nc-rkb-vip::before{background:linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25% 75%,rgba(255,255,255,.18) 75%) 0 0/28px 28px,linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25% 75%,rgba(255,255,255,.18) 75%) 14px 14px/28px 28px}
+.nc-rk::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.35) 48%,transparent 60%);background-size:260% 100%;animation:mfBeam 5s ease-in-out infinite}
+
+/* Top Up bonus tags */
+.tu-bonus{font-family:var(--display);font-size:11px;letter-spacing:.03em;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.1);color:#d9c4ff}
+.tu-bonus.first{background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 0 10px var(--cry-glow)}
+.tu-bonus.none{opacity:.5}
+/* Fusion: tabs on a scrollable bar on the left, content on the right */
+.modal-back[data-kind=fuse] .fu{max-width:1240px;grid-template-columns:210px minmax(0,1fr);align-items:start;column-gap:18px}
+.modal-back[data-kind=fuse] .fu>*{grid-column:2}
+.modal-back[data-kind=fuse] .fu>.tabs{grid-column:1;grid-row:1/span 20;display:flex;flex-direction:column;flex-wrap:nowrap;gap:8px;overflow-y:auto;max-height:calc(100dvh - 140px);padding:4px 6px 4px 2px;position:sticky;top:0}
+.modal-back[data-kind=fuse] .fu>.tabs .tab{justify-content:flex-start;width:100%;text-align:left;white-space:nowrap}
+@media (max-width:720px){.modal-back[data-kind=fuse] .fu{grid-template-columns:1fr}.modal-back[data-kind=fuse] .fu>*,.modal-back[data-kind=fuse] .fu>.tabs{grid-column:1;grid-row:auto}.modal-back[data-kind=fuse] .fu>.tabs{flex-direction:row;overflow-x:auto;max-height:none;position:static}}
+/* Pearl Honor missions in the Quests design */
+.bp-dq{min-height:0}
+.bp-dq .dq-tab.on{background:var(--cry-grad);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 14px var(--cry-glow)}
+.bp-cap{flex:1;display:grid;gap:6px;min-width:0}
+.bp-dq .dq-bar{height:12px}
+.bp-dq .dq-bar i{background:var(--cry-grad-h);box-shadow:0 0 10px var(--cry-glow)}
+.bp-dq .dq-pt .cic{width:18px;height:18px}
+.bp-dq .dq-bar{position:relative;top:auto;left:auto;right:auto}
+.bp-dq{height:min(calc(100dvh - 330px),620px)}
+.ad-art{padding:0}
+.bp{grid-template-columns:minmax(0,1fr)}
+.bp-dq{height:auto;min-width:0}
+.bp-dq .dq-list{flex:none;min-height:400px}
+/* upgrade popup: up to 6 slots wrap in rows instead of scrolling */
+.upop .up-slots{flex-wrap:wrap;justify-content:center;overflow:visible;max-width:340px}
+.upop .up-slots .up-slot{width:72px;height:72px}
+
+/* CS grade on character cards: the grade badge only, no round pill behind it */
+.cs-tag{background:none;border:0;padding:0;gap:0}
+/* best pulls (replays) in the rates / history window */
+.rp-list{display:grid;gap:8px;margin-top:10px}
+.rp-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
+.rp-row.mw{border-color:rgba(255,255,255,.5);background:linear-gradient(90deg,rgba(255,77,109,.15),rgba(255,240,77,.1),rgba(77,210,255,.15))}
+.rp-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.rp-meta{font-family:var(--read);font-size:12px;color:rgba(233,236,255,.65);white-space:nowrap}
+.rp-tag{font-family:var(--display);font-size:11px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.12)}
+.rp-tag.ur{background:var(--ur);color:#fff}
+.rp-tag.up{background:linear-gradient(90deg,#ff8a2a,#a855f7);color:#fff}
+.rp-tag.dbl{background:linear-gradient(90deg,#ff6ec7,#3ee6d0);color:#1a0f2e}
+.rp-tag.rb{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff);color:#1a0f2e}
+.rp-tag.mw{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;animation:shimmer 2s linear infinite;color:#1a0f2e}
+
+/* raids v2: gear raids + Golden Vault stages */
+.raid-pill2{margin-top:14px}
+.raid-setnm{font-family:var(--read);font-size:12px;color:rgba(233,236,255,.65);white-space:nowrap;align-self:center;margin-left:auto;padding-left:10px}
+.evp-bg.none.raid-none.gold-none{background:radial-gradient(ellipse at 70% 30%,rgba(255,200,90,.35),transparent 55%),radial-gradient(ellipse at 20% 90%,rgba(180,110,20,.35),transparent 60%),linear-gradient(160deg,#120b02,#2a1a05 50%,#0c0702)!important}
+.gv-stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:8px}
+.gv-st{position:relative;display:grid;justify-items:center;gap:6px;padding:12px 6px 10px;border-radius:16px;color:#fff;background:linear-gradient(180deg,rgba(70,48,10,.75),rgba(25,16,4,.85));border:1.5px solid rgba(255,214,120,.35);box-shadow:inset 0 1px 0 rgba(255,240,200,.15)}
+.gv-st b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1;color:#ffe08a;text-shadow:0 0 10px rgba(255,200,80,.6)}
+.gv-gold{display:inline-flex;align-items:center;gap:4px;font-family:var(--display);font-size:14px}.gv-gold .cic{width:18px;height:18px}
+.gv-st small{display:inline-flex;align-items:center;gap:4px;font-family:var(--read);font-size:11px;color:rgba(255,240,210,.75)}.gv-st small .cic,.gv-st small .ic{width:13px;height:13px}
+.gv-st.on{border-color:transparent;background:linear-gradient(180deg,rgba(90,62,12,.9),rgba(30,20,4,.95)) padding-box,var(--cry-grad) border-box;box-shadow:0 0 16px var(--cry-glow)}
+.gv-st.locked{filter:grayscale(.7) brightness(.7);cursor:not-allowed}
+.raid-home{display:inline-flex;align-items:center;gap:6px;margin-left:10px}.raid-home select{width:auto;padding:4px 8px}
+.raid-adbg{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}.raid-adbgit{display:grid;gap:6px;justify-items:start}
+@media (max-width:720px){.gv-stages{grid-template-columns:repeat(3,minmax(0,1fr))}.raid-setnm{display:none}}
+.raid-row{grid-template-columns:64px minmax(0,1fr) auto!important}
+/* character screen "view the art": hide the whole UI layer, the panel's fade-in animation included */
+.cs.viewing .cs-ui,.cs.viewing .cs-panel{opacity:0!important;visibility:hidden;animation:none!important;pointer-events:none}
