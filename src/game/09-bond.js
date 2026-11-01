@@ -93,7 +93,6 @@ function marry(id) {
 
 /* ---------- badges: faceted crystal crests; top tiers get wings and a glow ---------- */
 const BADGES = [
-  { id: 'owned', name: 'Collected', desc: 'Own this character', metal: 'bronze', gem: '#2fbf71', emblem: 'star', ok: e => owns(e.id) },
   { id: 'star3', name: 'Rising Star', desc: 'Raise this character to 3 stars', metal: 'silver', gem: '#3a7bff', emblem: 'star', ok: e => owns(e.id) && starsOf(e.id) >= 3 },
   { id: 'star6', name: 'Max Stars', desc: `Raise this character to ${MAX_STARS} stars`, metal: 'gold', gem: '#9b4dff', emblem: 'star', wings: true, glow: 'gold', ok: e => owns(e.id) && starsOf(e.id) >= MAX_STARS },
   { id: 'bond5', name: 'Close Bond', desc: 'Reach bond level 5', metal: 'rose', gem: '#ff3d6a', emblem: 'heart', ok: e => bondLv(e.id) >= 5 },
