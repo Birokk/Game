@@ -10,7 +10,7 @@ const cardHTML = e => {
 /* character cards in the collection: same look as the skin cards (rarity top left, name and stars at the bottom) */
 const charCardHTML = e => {
   const own = owns(e.id);
-  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}${own ? `<span class="col-cs">${csTag(e, 'sm')}</span>` : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'} ${st6(e)}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}${own ? `<span class="col-cs">${csTag(e, 'sm')}</span>` : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
 };
 /* skin cards in the collection: the same 3:4 portrait card (with the skin's card framing) */
 const skinColCard = e => {

@@ -19,7 +19,6 @@ function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; refresh
 
 const PLACEHOLDERS = {
   friends: ['Friends', 'friends', 'Friend list, invites, and meeting up with friends in the plaza.'],
-  ranking: ['Ranking', 'trophy', 'Leaderboards for collection size, event points and more.'],
   shop:    ['Shop', 'shop', 'Pearl packs, skin bundles and the monthly pass.'],
   team:    ['Team', 'team', 'Pick up to four characters to bring into events.']
 };

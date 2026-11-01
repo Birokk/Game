@@ -186,7 +186,7 @@ function renderCharacters() {
   const keepList = U.querySelector('.cs-list') ? U.querySelector('.cs-list').scrollTop : 0;
   U.innerHTML = `
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
-    <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
+    <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${st6(e)} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
         <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}</button>`).join('')}</nav>
     <div class="cs-side cs-ui">
