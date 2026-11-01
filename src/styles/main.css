@@ -1536,7 +1536,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .pf-mode-view .pf-slot{cursor:pointer}
 .modal-back[data-kind=spin] .modal{width:min(600px,100%)}
 .modal-back[data-kind=login] .modal{width:min(700px,100%)}
-.modal-back[data-kind=profile] .modal{width:min(1240px,100%)}
+.modal-back[data-kind=profile] .modal{width:min(1080px,100%)}
 
 /* home wallpaper rotation: transparent arrows that show after one tap on the screen; crossfade between pictures */
 .wp-arrow{position:fixed;top:50%;z-index:6;width:64px;height:96px;margin-top:-48px;display:grid;place-items:center;background:none;border:0;color:#fff;opacity:0;pointer-events:none;transition:opacity .35s,transform .2s;filter:drop-shadow(0 2px 10px rgba(0,0,0,.65))}
@@ -3047,15 +3047,9 @@ button.pt-slot:hover{border-color:#fff}
 .inv-acts .btn.ghost:hover{background:rgba(30,20,60,.15)}
 .inv-acts .btn.ghost .ic{color:#5a3fa8}
 
-/* profile viewer: landscape layout (card on the left, showcase on the right) */
-@media (min-width:900px){
-  .pf-mode-view{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:18px;align-items:start}
-  .pf-mode-view .pf-card{flex-direction:column;align-items:flex-start;justify-content:flex-start;min-height:0;height:100%;padding:22px}
-  .pf-mode-view .pf-card::after{background:linear-gradient(180deg,rgba(8,12,30,.35),rgba(8,12,30,.65))}
-  .pf-mode-view .pf-me{flex-direction:column;align-items:flex-start;gap:12px}
-  .pf-mode-view .pf-stats{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
-  .pf-mode-view .pf-stats .tcs{grid-column:1/-1}
-}
+/* profile viewer: a wide window; the namecard on top, the showcase under it at the standard 196 px card size (so the window stays landscape) */
+.modal-back[data-kind=profile] .pf-show{grid-template-columns:repeat(4,196px);justify-content:center;gap:18px}
+@media (max-width:900px){.modal-back[data-kind=profile] .pf-show{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
 .cs-grades>div.cs-urplus.ssr{border-color:rgba(255,170,80,.5);background:linear-gradient(160deg,rgba(255,150,60,.18),rgba(255,200,120,.06))}
 .rtag.r4.plus{box-shadow:0 0 12px rgba(255,160,80,.75)}
 .rtag.r4.plus i,.cs-badge.r4.plus i{text-shadow:0 0 6px #fff,0 0 12px #ff9a3c}
