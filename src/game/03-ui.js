@@ -48,6 +48,7 @@ function renderMenu() {
   $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
   $('#evDot').hidden = !loginReady();
   $('#qDot').hidden = !questReady();
+  $('#bpDot').hidden = !bpReady();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();

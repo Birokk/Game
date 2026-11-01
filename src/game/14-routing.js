@@ -20,6 +20,7 @@ document.addEventListener('click', e => {
   else if (k === 'level') openLevel();
   else if (k === 'vip') openVip();
   else if (k === 'ranking') openRanking();
+  else if (k === 'honor') openHonor();
   else if (k === 'spin') openSpin();
   else if (k === 'ach') openAch();
   else if (k === 'quests') openQuests();

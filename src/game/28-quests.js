@@ -42,6 +42,7 @@ const qName = (k, n) => (Q_NAMES[k] || k) + (n > 1 && !['coins', 'exp', 'vip'].i
 const weekStart = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7);
 /* today's / this week's quest state; a new day or week starts fresh, and every day you play counts as logging in */
 function qState(set = 'daily') {
+  if (set === 'bpd' || set === 'bpw') return bpQState(set);   // Pearl Honor missions (37-honor.js)
   const d = dayKey();
   if (set === 'weekly') {
     const w = dayKey(weekStart());
@@ -56,7 +57,8 @@ const Q_SETS = { daily: { list: QUESTS, title: 'Daily', next: () => { const n = 
   weekly: { list: WQUESTS, title: 'Weekly', next: () => { const m = weekStart(); return new Date(m.getFullYear(), m.getMonth(), m.getDate() + 7); } } };
 function questAdd(id, n = 1) {
   if (!(n > 0)) return;
-  for (const set of Object.keys(Q_SETS)) { const q = Q_SETS[set].list.find(x => x.id === id); if (!q) continue;
+  const sets = { ...Q_SETS, ...BP_SETS };   // the Pearl Honor missions count the same actions
+  for (const set of Object.keys(sets)) { const q = sets[set].list.find(x => x.id === id); if (!q) continue;
     const st = qState(set); st.p[id] = Math.min(q.need, (st.p[id] || 0) + n); }
 }
 const qProg = (q, set = 'daily') => Math.min(q.need, qState(set).p[q.id] || 0);
