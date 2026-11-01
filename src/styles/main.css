@@ -3496,3 +3496,7 @@ button.pt-slot:hover{border-color:#fff}
 .rn-cd{display:flex;align-items:center;gap:8px;margin:0;padding:8px 12px;border-radius:12px;background:rgba(245,175,232,.12);border:1px solid rgba(245,175,232,.35);font-family:var(--read);font-size:13px}.rn-cd .ic{width:16px;height:16px}
 .btn .cic{width:18px;height:18px;vertical-align:-4px}
 .sx-name{font-family:var(--display);font-size:15px;margin-right:10px}
+
+/* after the rise the sphere keeps creeping upward slowly (individual `translate`, so it never fights the scale / burst transforms) */
+.pull.drift .sph{translate:0 -10vh;transition:top var(--rise,3.4s) cubic-bezier(.4,.05,.3,1),transform .45s cubic-bezier(.2,1.5,.4,1),--c1 1s,--c2 1s,--c3 1s,translate 16s linear}
+.pull.drift.burst .sph{transition:transform .45s ease-in,opacity .45s ease-in,translate 16s linear}

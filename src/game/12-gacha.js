@@ -469,6 +469,8 @@ function releaseSphere() {
   $('#sph').style.setProperty('--drag', '0px');
   const rise = RISE_MS[st.fake ? 4 : st.best]; pullEl.style.setProperty('--rise', rise / 1000 + 's');   // a fakeout rises at SSR speed
   if (st.best >= 4) pullLater(rise * .3, () => sphereTier(4));
+  // once the rise is done the sphere keeps drifting up very slowly until it bursts
+  pullLater(rise, () => { if (pullEl) pullEl.classList.add('drift'); });
   let urAt;
   // fakeout: the sphere finishes its rise as an SSR; where the SSR would burst, the wallpaper pops up instead and the sphere turns UR
   const slow = st.maxwin ? 1.35 : 1;   // Max Win takes its time between the steps
