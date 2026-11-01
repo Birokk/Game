@@ -46,7 +46,7 @@ function renderShop() {
     const list = shopSkins();
     body = `<p class="tiny">Every outfit costs ${SKIN_PRICE} pearls. Wedding (MR) outfits can't be bought; marry the character to unlock them.</p>
       <div class="mall-skins">${list.map(x => { const par = findEntry(x.parent), own = owns(x.id);
-        return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="">${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
+        return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
     body = `<p class="tiny">Pearl packs. Real payments aren't connected yet, so these can't be bought for now.</p>

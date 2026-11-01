@@ -3,7 +3,7 @@
    ========================================================= */
 /* pets' splash arts are square (1254×1254), everything else 1728×968 */
 const adArtSize = () => ($('#adType') || {}).value === 'pet' ? PET_SIZE : SPLASH_SIZE;
-let adminCard = { x: 50, y: 30, z: 1 };
+let adminCard = { x: 50, y: 30, z: 1 }, adminCards = {}, adminCardK = 'base';   // card framing per art: base / art3 / art6
 let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null }, adminIcon = null;
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
 function openAdmin(tab) {
@@ -67,7 +67,8 @@ function renderPoolTab() {
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
           <p class="tiny">Characters and skins: every upload is cropped to exactly 1728×968 (16:9), keeping the upper middle. <b>Pets: 1254×1254 (square)</b>, including their 3★ / 6★ arts. Without art, a placeholder is shown.</p>
-          <div class="asc-slots" id="adCardWrap"><div class="lbl-sm">Card framing</div><p class="tiny">How the art sits in the Collection and profile showcase cards.</p>
+          <div class="asc-slots" id="adCardWrap"><div class="lbl-sm">Card framing</div><p class="tiny">How the art sits in every 3:4 card: Collection, profile showcase, the Skins carousel and the outfit shop. Characters can frame each splash art on its own.</p>
+            <div class="row" id="adCardKs" style="gap:6px"></div>
             <div class="row" style="gap:12px;align-items:center"><span class="ad-card"><img id="adCardImg" alt=""></span>
               <div class="stack ad-card-sl" style="gap:6px;flex:1"><label>Left / right <input type="range" min="0" max="100" step="1" id="adCpX"></label><label>Up / down <input type="range" min="0" max="100" step="1" id="adCpY"></label><label>Zoom <input type="range" min="100" max="250" step="5" id="adCpZ"></label><button type="button" class="link" id="adCpReset" style="justify-self:start">Reset framing</button></div></div></div>
           <div class="asc-slots"><div class="lbl-sm">Icon</div><p class="tiny">Square picture used in the character menu, avatars and small portraits. Without one, it is cut from the art.</p>
@@ -111,9 +112,9 @@ function renderPoolTab() {
     catch (e) { toast(e.message); }
   });
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
-  const cpSet = () => { adminCard = { x: +$('#adCpX').value, y: +$('#adCpY').value, z: +$('#adCpZ').value / 100 }; adminPreview(); };
+  const cpSet = () => { adminCard = { x: +$('#adCpX').value, y: +$('#adCpY').value, z: +$('#adCpZ').value / 100 }; adminCards[adminCardK] = { ...adminCard }; adminPreview(); };
   ['#adCpX', '#adCpY', '#adCpZ'].forEach(id => $(id).oninput = cpSet);
-  $('#adCpReset').onclick = () => { adminCard = { x: 50, y: 30, z: 1 }; adminPreview(); };
+  $('#adCpReset').onclick = () => { adminCard = { x: 50, y: 30, z: 1 }; adminCards[adminCardK] = { ...adminCard }; adminPreview(); };
   document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', adArtSize()); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
@@ -138,7 +139,7 @@ function fillAdminForm(entry) {
   adminArt = entry ? artFrom(entry.art) : null;
   adminAsc = { art3: entry ? artFrom(entry.art3) : null, art6: entry ? artFrom(entry.art6) : null };
   adminIcon = entry ? artFrom(entry.icon) : null;
-  adminCard = { ...cardPos(entry) };
+  adminCards = { base: { ...cardPos(entry, 'base') }, art3: { ...cardPos(entry, 'art3') }, art6: { ...cardPos(entry, 'art6') } }; adminCardK = 'base'; adminCard = { ...adminCards.base };
   const lk = entry ? { ...blankLook(), ...entry.look } : blankLook();
   $('#adType').value = entry ? entry.type : 'character';
   $('#adName').value = entry ? entry.name : '';
@@ -193,7 +194,12 @@ function adminPreview() {
   $('#adParentWrap').hidden = $('#adType').value !== 'skin';
   const isChar = $('#adType').value === 'character';
   $('#adAscWrap').hidden = !isChar && $('#adType').value !== 'pet';
-  const cw = $('#adCardWrap'); if (cw) { cw.hidden = !isChar; const ci = $('#adCardImg'); ci.src = adminArt || chibiSplash(readLook()); ci.style.cssText = adminArt ? cardImgStyle({ cardPos: adminCard }) : ''; $('#adCpX').value = adminCard.x; $('#adCpY').value = adminCard.y; $('#adCpZ').value = Math.round(adminCard.z * 100); }   // characters and pets have 3★ / 6★ arts
+  const cw = $('#adCardWrap'); if (cw) { cw.hidden = !isChar && $('#adType').value !== 'skin';
+    const ks = isChar ? ['base', 'art3', 'art6'].filter(k => k === 'base' || adminAsc[k]) : ['base']; if (!ks.includes(adminCardK)) { adminCardK = 'base'; adminCard = { ...(adminCards.base || adminCard) }; }
+    $('#adCardKs').innerHTML = ks.length > 1 ? ks.map(k => `<button type="button" class="chip ${k === adminCardK ? 'on' : ''}" data-cpk="${k}">${k === 'base' ? 'Base art' : k === 'art3' ? '3★ art' : '6★ art'}</button>`).join('') : '';
+    $('#adCardKs').querySelectorAll('[data-cpk]').forEach(b => b.onclick = () => { adminCardK = b.dataset.cpk; adminCard = { ...(adminCards[adminCardK] || adminCards.base || { x: 50, y: 30, z: 1 }) }; adminPreview(); });
+    const cart = adminCardK === 'base' ? adminArt : adminAsc[adminCardK];
+    const ci = $('#adCardImg'); ci.src = cart || chibiSplash(readLook()); ci.style.cssText = cart ? cardImgStyle({ cardPos: adminCard }) : ''; $('#adCpX').value = adminCard.x; $('#adCpY').value = adminCard.y; $('#adCpZ').value = Math.round(adminCard.z * 100); }   // characters and pets have 3★ / 6★ arts
   $('#adP_icon').src = adminIcon || adminArt || chibiSplash(readLook()); $('#adP_icon').classList.toggle('cut', !adminIcon); $('#adS_icon').textContent = adminIcon ? 'Uploaded' : 'Cut from the art'; $('#adIconX').hidden = !adminIcon;
   ['art3', 'art6'].forEach(k => { $('#adP_' + k).src = adminAsc[k] || adminArt || chibiSplash(readLook()); $('#adP_' + k).style.opacity = adminAsc[k] ? 1 : .35; $('#adS_' + k).textContent = adminAsc[k] ? 'Uploaded' : 'Uses the base art'; document.querySelector(`[data-ascx="${k}"]`).hidden = !adminAsc[k]; });
   const ed = adminEditId && findEntry(adminEditId), sk = $('#adSkins');
@@ -234,7 +240,12 @@ async function saveAdmin(ev) {
   const key = 'art:' + entry.id;
   if (adminArt && adminArt !== MEDIA.get(key)) { await mediaSet(key, adminArt); entry.art = 'idb:' + key; }
   else if (!adminArt && entry.art) { await mediaDel(key); entry.art = null; }
-  entry.cardPos = adminCard.x === 50 && adminCard.y === 30 && adminCard.z === 1 ? null : { ...adminCard };
+  adminCards[adminCardK] = { ...adminCard };
+  const cpv = (p, def) => !p || (p.x === def.x && p.y === def.y && p.z === def.z) ? null : { ...p };
+  entry.cardPos = cpv(adminCards.base, { x: 50, y: 30, z: 1 });
+  const bp = entry.cardPos || { x: 50, y: 30, z: 1 };   // star arts: saved only when they differ from the base framing
+  entry.cardPos3 = entry.type === 'character' && adminAsc.art3 ? cpv(adminCards.art3, bp) : null;
+  entry.cardPos6 = entry.type === 'character' && adminAsc.art6 ? cpv(adminCards.art6, bp) : null;
   const fk = 'face:' + entry.id;
   if (adminIcon) { if (adminIcon !== MEDIA.get(fk)) await mediaSet(fk, adminIcon); entry.icon = 'idb:' + fk; }
   else if (entry.icon) { await mediaDel(fk); entry.icon = null; }

@@ -60,7 +60,7 @@ function renderProfile() {
   const root = $('#pfRoot'); if (!root) return;
   const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character' && !mcOff(e.id));
   P.showcase = P.showcase.map(id => id && findEntry(id) && owns(id) ? id : null);
-  const urs = chars.filter(e => e.rarity === 5).length, best = Math.max(0, ...chars.map(e => starsOf(e.id)));
+  const urs = chars.filter(e => e.rarity === 5).length;
   const lockTag = o => unlocked(o) ? '' : `<span class="pf-lock">${icon('lock')}${esc(UNLOCK[o.need][1])}</span>`;
   const opt = (on, locked, inner, data, label) => `<button class="pf-opt ${on ? 'on' : ''} ${locked ? 'locked' : ''}" ${locked ? 'disabled' : data}>${inner}<span class="pf-ol">${label}</span></button>`;
   let opts;
@@ -97,7 +97,6 @@ function renderProfile() {
         <div><b>${ownedOf('pet').length}/${S.pool.filter(e => e.type === 'pet').length}</b><span>Pets</span></div>
         <div><b>${S.ach.length}/${ACH.length}</b><span>Achievements</span></div>
         <div><b>${urs}</b><span>URs owned</span></div>
-        <div><b>${best}★</b><span>Best stars</span></div>
       </div>
     </div>
     <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="row" style="gap:8px;align-items:center"><span class="tiny">Show off up to 4 characters you own · grades</span>${csInfoBtn()}</span></div>

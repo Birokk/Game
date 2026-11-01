@@ -181,6 +181,10 @@ const baseArt = e => e ? artFrom(e.art) : null;
 const baseSplash = e => baseArt(e) || chibiSplash(e.look || S.player.look);
 const baseCard = e => baseArt(e) || portrait(e.look || S.player.look, e.rarity);
 
-/* how a character's art sits in the Collection / profile showcase cards (admin → Game pool → Card framing): entry.cardPos = { x, y, z } */
-const cardPos = e => ({ x: 50, y: 30, z: 1, ...((e && e.cardPos) || {}) });
-const cardImgStyle = e => { const p = cardPos(e); return `object-position:${p.x}% ${p.y}%;transform:scale(${p.z});transform-origin:${p.x}% ${p.y}%`; };
+/* how an art sits in the 3:4 portrait cards (Collection, profile showcase, Skins carousel, outfit shop; admin → Game pool → Card framing).
+   One framing per art: entry.cardPos (base art; also skins), entry.cardPos3 / cardPos6 (the 3★ / 6★ splash arts, falling back to the base one).
+   By default a character uses the framing of the art it currently shows (artKey). */
+const CP_KEY = { base: 'cardPos', art3: 'cardPos3', art6: 'cardPos6' };
+const cardKind = e => e && (e.type === 'character' || e.type === 'pet') && e.id ? artKey(e) : 'base';
+const cardPos = (e, k = cardKind(e)) => ({ x: 50, y: 30, z: 1, ...((e && (e[CP_KEY[k]] || e.cardPos)) || {}) });
+const cardImgStyle = (e, k) => { const p = cardPos(e, k); return `object-position:${p.x}% ${p.y}%;transform:scale(${p.z});transform-origin:${p.x}% ${p.y}%`; };

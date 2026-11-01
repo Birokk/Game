@@ -9,7 +9,7 @@ const PASSES = [
   { id: 'p1', icon: 'pass1', name: 'Lantern Membership', price: 30, col: '#ffb35a',
     daily: { tickets: 1, pearls: 3 }, once: { pearls: 5, eggur: 1 }, spins: 2 },
   { id: 'p2', icon: 'pass2', name: 'Prism Membership', price: 60, col: '#d58bff',
-    daily: { tickets: 2, pearls: 6 }, once: { pearls: 10, eggur: 2, memtk: 1 }, spins: 4 }
+    daily: { tickets: 2, pearls: 6 }, once: { pearls: 10, eggur: 2, memtk: 1 }, spins: 2 }
 ];
 const passDef = id => PASSES.find(p => p.id === id);
 const passLeft = id => Math.max(0, ((S.member || {})[id] || 0) - Date.now());

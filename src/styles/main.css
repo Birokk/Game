@@ -979,7 +979,7 @@ textarea.input{height:auto;min-height:78px;padding:10px 12px;resize:vertical;fon
 .pf-me{position:relative;z-index:1;display:flex;align-items:center;gap:22px;min-width:0}
 .pf-who{display:grid;gap:6px;min-width:0}
 .pf-who b{font-family:var(--display);font-weight:400;font-size:34px;line-height:1}
-.pf-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,auto);gap:8px}
+.pf-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,auto);gap:8px}
 .pf-stats div{display:grid;justify-items:center;gap:2px;padding:8px 12px;border-radius:12px;background:rgba(8,12,30,.6);border:1px solid var(--edge-soft)}
 .pf-stats b{font-family:var(--display);font-weight:400;font-size:22px;line-height:1}
 .pf-stats span{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
@@ -1384,7 +1384,7 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .ach.got{opacity:.7}
 .ach .bar i{background:var(--gold)}
 .ach .btn .cost .cic{width:15px;height:15px}
-@media (max-width:820px){.pf-stats{grid-template-columns:repeat(3,auto)}}
+@media (max-width:820px){.pf-stats{grid-template-columns:repeat(2,auto)}}
 
 /* shop */
 .shop-bal{display:flex;gap:8px;flex-wrap:wrap}
@@ -1452,8 +1452,8 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .wd-prev img{width:90%;height:90%;object-fit:contain}
 .wd-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:12px;background:rgba(255,255,255,.04);border-left:3px solid var(--rc);margin-top:6px}
 .wd-row .rtag{font-size:9px;padding:1px 5px;vertical-align:1px}
-.sk-car{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px calc(50% - 78px) 14px;scrollbar-width:thin;-webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
-.skc{position:relative;flex:none;width:156px;aspect-ratio:2/3;border-radius:14px;overflow:hidden;scroll-snap-align:center;border:2px solid rgba(255,255,255,.18);background:var(--ink-2);text-align:center;transition:transform .25s,border-color .25s,opacity .25s;opacity:.65;transform:scale(.9)}
+.sk-car{display:flex;flex:none;align-items:flex-start;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px calc(50% - 98px) 14px;scrollbar-width:thin;-webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.skc{position:relative;flex:none;width:196px;aspect-ratio:3/4;border-radius:18px;overflow:hidden;scroll-snap-align:center;border:2px solid rgba(255,255,255,.18);background:var(--ink-2);text-align:center;transition:transform .25s,border-color .25s,opacity .25s;opacity:.65;transform:scale(.9)}
 .skc.sel{opacity:1;transform:scale(1);border-color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .skc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%}
 .skc img.chibi{object-fit:cover;object-position:50% 40%}
@@ -2770,3 +2770,22 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .pass-ok{font:400 17px var(--display);color:var(--gold)}
 .pass-set{width:64px!important}
 .pass-set .cic,.pass-set img{width:100%;height:100%;object-fit:contain}
+
+/* crystal palette for the main action buttons (from the owner's reference art: pale pink, rose, lavender, ice blue; deep indigo text).
+   Replaces the old yellow on: gold buttons, Summon buttons, shop Buy, event wish button, quest Claim / checks / tabs */
+:root{--cry-grad:linear-gradient(180deg,#ffe4f6 0%,#f5afe8 34%,#c8a2ff 68%,#94b8ff 100%);--cry-grad-h:linear-gradient(90deg,#f7b3e9,#c9a3ff 55%,#97b9ff);--cry-ink:#2b1855;--cry-glow:rgba(190,150,255,.5);--cry-edge:#fbe6ff}
+.btn.gold,.summon,.summon2,.sx-pull.gold,.mb2-go,.dq-btn.claim,.dq-tab.on,.dq-node.got .dq-dot,.dq-check{background:var(--cry-grad);color:var(--cry-ink)}
+.btn.gold{box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 6px 20px var(--cry-glow)}
+.summon,.summon2{box-shadow:inset 0 2px 0 rgba(255,255,255,.75),inset 0 -4px 0 rgba(70,40,140,.22),0 12px 36px var(--cry-glow)}
+.summon2 .so{background:radial-gradient(circle at 35% 30%,#fff,#f5b8ec 45%,#9c86ff);color:var(--cry-ink)}
+.mall-go,.mall-buy.ok,.sx-btn.gold{background:var(--cry-grad-h);color:var(--cry-ink);box-shadow:0 0 16px var(--cry-glow)}
+.mb2-go{box-shadow:inset 0 2px 0 rgba(255,255,255,.6),inset 0 -3px 0 rgba(60,30,120,.2),0 0 22px var(--cry-glow)}
+.mb2-chev{color:#5a3fa8}
+.dq-btn.claim{box-shadow:0 0 18px var(--cry-glow)}
+.dq-tab.on{border-color:var(--cry-edge);box-shadow:0 0 14px var(--cry-glow)}
+.dq-node.got .dq-dot{border-color:var(--cry-edge);box-shadow:0 0 14px var(--cry-glow)}
+.dq-node.can .dq-dot{border-color:#e2b6ff;color:#f0c8ff;box-shadow:0 0 0 4px rgba(200,150,255,.2),0 0 18px var(--cry-glow)}
+.dq-card.can .dq-face{border-color:rgba(205,165,255,.6);box-shadow:0 0 22px rgba(190,150,255,.2)}
+.dq-check{box-shadow:0 0 22px var(--cry-glow),0 0 0 6px rgba(200,160,255,.16)}
+.dq-pts>.cic{filter:drop-shadow(0 0 10px var(--cry-glow))}
+#adCardKs .chip{cursor:pointer}#adCardKs .chip.on{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge)}

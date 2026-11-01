@@ -59,8 +59,8 @@ const SPIN = [
   { give: 'coins', n: 2000, w: 25 }, { give: 'pearls', n: 1, w: 20 }, { give: 'bottles', n: 1, w: 15, name: 'Stamina bottle' }, { give: 'pearls', n: 3, w: 12 },
   { give: 'coins', n: 5000, w: 10 }, { give: 'wishes', n: 1, w: 12, name: 'Standard ticket' }, { give: 'pearls', n: 5, w: 5 }, { give: 'rings', n: 1, w: 1, name: 'Marriage ring', jackpot: true }
 ];
-/* one free spin a day; memberships give 2 (Lantern) or 4 (Prism) a day. S.spin {last: day of the last spin, n: spins that day} */
-const spinsPerDay = () => passOn('p2') ? 4 : passOn('p1') ? 2 : 1;
+/* one free spin a day; either membership gives 2 a day. S.spin {last: day of the last spin, n: spins that day} */
+const spinsPerDay = () => passOn('p1') || passOn('p2') ? 2 : 1;
 const spinsUsed = () => S.spin.last === dayKey() ? (S.spin.n || 1) : 0;
 const spinsLeft = () => Math.max(0, spinsPerDay() - spinsUsed());
 const spinReady = () => spinsLeft() > 0;

@@ -19,17 +19,17 @@ function openCharacters(id) {
    Cards: the default (base art), the 3★ / 6★ splash arts if uploaded, then every skin. Card ids: entry id, or "<charId>@art3". */
 function outfitCards(c) {
   const eq = equippedOf(c), pick = artKey(c), base = artFrom(c.art);
-  const cards = [{ id: c.id, kind: 'base', name: 'Default', rarity: c.rarity, art: base, card: base || portrait(c.look || S.player.look, c.rarity), own: owns(c.id), on: !eq && pick === 'base' }];
+  const cards = [{ id: c.id, kind: 'base', name: 'Default', rarity: c.rarity, art: base, card: base || portrait(c.look || S.player.look, c.rarity), own: owns(c.id), on: !eq && pick === 'base', fr: cardImgStyle(c, 'base') }];
   for (const a of ASC.slice(1)) {
     const art = artFrom(c[a.k]); if (!art) continue;
-    cards.push({ id: `${c.id}@${a.k}`, kind: a.k, stars: a.stars, name: `${a.label} art`, rarity: c.rarity, art, card: art, own: ascOpen(c, a), on: !eq && pick === a.k });
+    cards.push({ id: `${c.id}@${a.k}`, kind: a.k, stars: a.stars, name: `${a.label} art`, rarity: c.rarity, art, card: art, own: ascOpen(c, a), on: !eq && pick === a.k, fr: cardImgStyle(c, a.k) });
   }
-  for (const k of skinsOf(c.id)) cards.push({ id: k.id, kind: 'skin', entry: k, name: k.name.replace(c.name + ' · ', ''), rarity: k.rarity, art: mediaArt(k), card: getArt(k), own: owns(k.id), on: eq === k });
+  for (const k of skinsOf(c.id)) cards.push({ id: k.id, kind: 'skin', entry: k, name: k.name.replace(c.name + ' · ', ''), rarity: k.rarity, art: mediaArt(k), card: getArt(k), own: owns(k.id), on: eq === k, fr: cardImgStyle(k, 'base') });
   return cards;
 }
 const startCardId = c => { const eq = equippedOf(c), k = artKey(c); return eq ? eq.id : k === 'base' ? c.id : `${c.id}@${k}`; };
 function skinCard(o) {
-  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}"><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">${'★'.repeat(o.stars === 6 ? 2 : 1)}${o.stars}</span>` : rtag(o.rarity)}</button>`;
+  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}" ${o.art && o.fr ? `style="${o.fr}"` : ''}><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">${'★'.repeat(o.stars === 6 ? 2 : 1)}${o.stars}</span>` : rtag(o.rarity)}</button>`;
 }
 function selectSkin(c, id) {
   const o = outfitCards(c).find(x => x.id === id); if (!o || !csEl) return;

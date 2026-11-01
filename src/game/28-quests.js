@@ -33,7 +33,7 @@ function questReward(m, set = 'daily') {
   if (m === 100) r.push(['tickets', w ? 5 : 1]);
   return r;
 }
-CUR_SVG.qpt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="qptG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff4c4"/><stop offset=".55" stop-color="#ffcf4f"/><stop offset="1" stop-color="#d99a1c"/></radialGradient></defs><circle cx="12" cy="12" r="10" fill="url(#qptG)" stroke="#fff1c2" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#4a2a00" stroke-width="1" opacity=".3"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#4a2a00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+CUR_SVG.qpt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="qptG" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".45" stop-color="#e9a6f0"/><stop offset="1" stop-color="#8fb2ff"/></radialGradient></defs><circle cx="12" cy="12" r="10" fill="url(#qptG)" stroke="#fbe6ff" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#2b1855" stroke-width="1" opacity=".3"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#2b1855" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const Q_NAMES = { coins: 'gold', pearls: 'pearl', exp: 'EXP', tickets: 'Limited ticket', wishes: 'Standard ticket' };
 const qName = (k, n) => (Q_NAMES[k] || k) + (n > 1 && !['coins', 'exp'].includes(k) ? 's' : '');
 
