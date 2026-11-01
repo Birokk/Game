@@ -3343,8 +3343,8 @@ button.pt-slot:hover{border-color:#fff}
 .fk-art.dbl{background:#000;animation:none}
 .fk-half{position:absolute;inset:0;overflow:hidden}
 .fk-half img{width:100%;height:100%;object-fit:cover;display:block}
-.fk-half.a{clip-path:polygon(0 0,64% 0,36% 100%,0 100%);animation:fkHalfA .8s cubic-bezier(.2,.9,.25,1) both}
-.fk-half.b{clip-path:polygon(64% 0,100% 0,100% 100%,36% 100%);animation:fkHalfB .8s .18s cubic-bezier(.2,.9,.25,1) both}
+.fk-half.a{clip-path:polygon(0 0,81% 0,19% 100%,0 100%);animation:fkHalfA .8s cubic-bezier(.2,.9,.25,1) both}
+.fk-half.b{clip-path:polygon(81% 0,100% 0,100% 100%,19% 100%);animation:fkHalfB .8s .18s cubic-bezier(.2,.9,.25,1) both}
 .fk-half.a img{object-position:30% 30%;animation:fkDrift 3s ease-out both}
 .fk-half.b img{object-position:70% 30%;animation:fkDrift 3s .18s ease-out both}
 @keyframes fkHalfA{0%{transform:translate(-60%,-30%);opacity:0}100%{transform:none;opacity:1}}

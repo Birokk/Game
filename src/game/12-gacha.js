@@ -479,10 +479,13 @@ function rainbowSphere() {
   sphereTier(6);
   st.fx.burst(200, 900, 5);
 }
-/* two different wallpapers for the double: the admin's fakeout wallpapers first, then the pulled URs' own art */
+/* two different wallpapers for the double: its own admin list (S.dblArts, admin → Summon animation → Double UR
+   wallpapers), then the pulled URs' own art, then the fakeout wallpapers */
 function doubleArts(results) {
-  const pool = (S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean).sort(() => Math.random() - .5);
+  const mix = a => a.sort(() => Math.random() - .5);
+  const pool = mix((S.dblArts || []).map(k => MEDIA.get(k)).filter(Boolean));
   results.filter(r => r.rarity === 5 && r.kind === 'entry').forEach(r => { const e = findEntry(r.id), a = e && baseArt(e); if (a && !pool.includes(a)) pool.push(a); });
+  mix((S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean)).forEach(a => { if (!pool.includes(a)) pool.push(a); });
   const one = fakeArt(); if (one && !pool.length) pool.push(one);
   return pool.length ? [pool[0], pool[1] || pool[0]] : [];
 }
@@ -490,7 +493,7 @@ function doubleArtIn() {
   const st = pullState; if (!st || !pullEl) return;
   const [a, b] = doubleArts(st.results); if (!a) return;
   pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art dbl"><div class="fk-half a"><img src="${a}" alt=""></div><div class="fk-half b"><img src="${b}" alt=""></div>
-    <svg class="fk-split" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="64" y1="-2" x2="36" y2="102" pathLength="100"/></svg><i class="fk-streak"></i></div>`);
+    <svg class="fk-split" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="81" y1="-2" x2="19" y2="102"/></svg><i class="fk-streak"></i></div>`);
   if (st.fx) st.fx.burst(60, 500, 5);
 }
 function fakeArtIn() {
