@@ -3473,3 +3473,17 @@ button.pt-slot:hover{border-color:#fff}
 @keyframes sphAura{0%,100%{transform:scale(.92);opacity:.65}50%{transform:scale(1.12);opacity:1}}
 .sph.c3 .sph-aura{opacity:.5;animation-duration:2.4s}
 .sph.c6 .sph-aura{background:radial-gradient(circle,transparent 0 33%,rgba(255,255,255,.6) 37%,rgba(255,110,199,.35) 52%,rgba(77,210,255,.25) 63%,transparent 72%)}
+
+/* VIP emblem: a number in a circle, ring in the level's grade colour */
+.vip-num{--vb:#8a8fa0;display:grid;place-items:center;width:128px;height:128px;border-radius:50%;padding:7px;background:var(--vb);background-size:300% 100%;box-shadow:0 8px 20px rgba(43,24,85,.3)}
+.vip-num b{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 50% 30%,#2a2142,#120d1f);font-family:var(--display);font-weight:400;font-size:58px;line-height:1;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),inset 0 -6px 14px rgba(0,0,0,.4);text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.vip-num.v-0{--vb:rgba(255,255,255,.4)}.vip-num.v-f{--vb:#6a7080}.vip-num.v-e{--vb:#7c8b98}
+.vip-num.v-d{--vb:linear-gradient(180deg,#56c093,#2b6a4d)}.vip-num.v-c{--vb:linear-gradient(180deg,#5aa9ef,#275f94)}
+.vip-num.v-b{--vb:linear-gradient(180deg,#8e7cf0,#4a3aa3)}.vip-num.v-a{--vb:linear-gradient(180deg,#e070ee,#8e2f9e)}
+.vip-num.v-s{--vb:linear-gradient(110deg,#b8780f,#ffc94a,#ffe08a,#e8a42a,#ffd76b,#b8780f);animation:gradeWave 4s ease-in-out infinite;box-shadow:0 0 18px rgba(255,200,80,.6)}
+.vip-num.v-s b{color:#ffe7a8}
+.vip-num.v-ss{--vb:linear-gradient(110deg,#a855f7,#ff6ec7,#3ee6d0,#a855f7);animation:gradeWave 4s ease-in-out infinite;box-shadow:0 0 20px rgba(168,85,247,.6),0 0 30px rgba(62,230,208,.3)}
+.vip-num.v-sss{--vb:linear-gradient(115deg,#4a0008,#b3001e,#ff2a3d,#ff7a3d,#ff2a6e,#c4004a,#ff3b30,#4a0008);background-size:400% 100%;animation:gradeWave 3.2s ease-in-out infinite,sssGlow 1.4s ease-in-out infinite alternate}
+.vip-num.v-sss b{text-shadow:0 0 8px #ff2a45,0 0 14px rgba(255,120,60,.7)}
+/* Max Win burst stamp */
+.pull .stamp.mw{font-size:clamp(64px,13vmin,150px);white-space:nowrap;background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(255,255,255,.7)) drop-shadow(0 0 40px rgba(255,110,199,.6))}

@@ -471,12 +471,14 @@ function releaseSphere() {
   if (st.best >= 4) pullLater(rise * .3, () => sphereTier(4));
   let urAt;
   // fakeout: the sphere finishes its rise as an SSR; where the SSR would burst, the wallpaper pops up instead and the sphere turns UR
-  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 2000; pullLater(urAt, fakeTransform); pullLater(urAt + 1300, fakeArtOut); urAt += 500; }
+  const slow = st.maxwin ? 1.35 : 1;   // Max Win takes its time between the steps
+  if (st.fake) { const fIn = rise + 400; pullLater(fIn, fakeArtIn); urAt = fIn + 2000 * slow; pullLater(urAt, fakeTransform); pullLater(urAt + 1300 * slow, fakeArtOut); urAt += 500; }
   else if (st.best === 5) { urAt = rise * .62; pullLater(urAt, () => sphereTier(5)); }
   let after = st.fake ? urAt + 1500 : rise + (st.best === 3 ? 250 : 400);
   // double: the sphere is already UR, then the two wallpapers slide in, hold, and blow out
-  if (st.double) { const inAt = st.fake ? urAt + 1300 : Math.max(urAt + 1100, rise - 600); pullLater(inAt, doubleArtIn); pullLater(inAt + 2800, doubleArtOut); after = inAt + 3500; urAt = inAt + 2800; }
-  if (st.rainbow) { const rbAt = st.double ? urAt + 800 : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + (st.maxwin ? 3200 : 2400), burstSphere); }
+  // the double waits a moment after the sphere turns UR (longer in a Max Win) before its wallpapers slide in
+  if (st.double) { const inAt = st.fake ? urAt + (st.maxwin ? 2600 : 2000) : Math.max(urAt + 1900, rise + 300); const hold = st.maxwin ? 3400 : 2800; pullLater(inAt, doubleArtIn); pullLater(inAt + hold, doubleArtOut); after = inAt + hold + 700; urAt = inAt + hold; }
+  if (st.rainbow) { const rbAt = st.double ? urAt + (st.maxwin ? 1500 : 800) : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + (st.maxwin ? 3200 : 2400), burstSphere); }
   else pullLater(after, burstSphere);
 }
 /* the rarer the pull, the slower the sphere rises (blue, SSR, UR) */
@@ -535,7 +537,7 @@ function burstSphere() {
   const st = pullState; if (!st || !pullEl) return;
   st.phase = 'burst';
   pullEl.classList.add('burst');
-  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''}">${RNAME[st.best]}</div>` : ''}`);
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''} ${st.maxwin ? 'mw' : ''}">${st.maxwin ? 'MAX WIN' : RNAME[st.best]}</div>` : ''}`);
   st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
   if (st.sfx) st.sfx.shock();
   pullLater(st.best >= 4 ? 1500 : 700, advancePull);
