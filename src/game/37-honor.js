@@ -177,16 +177,24 @@ function renderHonor(jump) {
   } else if (bpTab === 'missions') {
     const set = bpMTab, L = BP_SETS[set].list, order = q => qCan(q, set) ? 0 : qDone(q, set) ? 2 : 1;
     const ready = L.filter(q => qCan(q, set)).length, total = L.reduce((t, q) => t + q.xp, 0);
-    body = `<div class="bp-mis">
-      <div class="bp-mtop"><div class="dq-tabs">${Object.entries(BP_SETS).map(([k, x]) => `<button class="dq-tab ${k === set ? 'on' : ''}" data-bpm="${k}">${x.title}${k !== set && x.list.some(q => qCan(q, k)) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div>
-        <span class="tiny">Resets in ${qLeft(set === 'bpd' ? 'daily' : 'weekly')} · ${fmt(total)} Honor EXP in total · weekly limit ${fmt(st.wk.xp)} / ${fmt(BP_WEEK_CAP)}</span>
-        <button class="btn gold sm" id="bpMAll" ${ready ? '' : 'disabled'}>Claim all</button></div>
-      ${bpWeekLeft() <= 0 ? `<p class="bp-capnote">${icon('info')}This week's Honor EXP limit is reached. Missions still finish, but give no more EXP until Monday.</p>` : ''}
-      <div class="bp-mlist">${L.slice().sort((a, b) => order(a) - order(b)).map(q => { const p = qProg(q, set), done = qDone(q, set), can = qCan(q, set);
-        return `<div class="bp-m ${done ? 'got' : can ? 'can' : ''}"><span class="bp-mic">${done ? icon('check') : icon('shell')}</span>
-          <div class="bp-mtx"><b>${esc(q.name)}</b><div class="bp-mbar"><i style="width:${p / q.need * 100}%"></i></div><small>${fmt(p)} / ${fmt(q.need)}</small></div>
-          <span class="bp-mxp">+${fmt(q.xp)}<small>Honor EXP</small></span>
-          ${done ? '<button class="btn ghost sm" disabled>Done</button>' : can ? `<button class="btn gold sm" data-bpmc="1">Claim</button>` : q.go ? `<button class="btn ghost sm" data-bpgo="${q.go}">Go</button>` : '<button class="btn ghost sm" disabled>In progress</button>'}</div>`; }).join('')}</div></div>`;
+    const cards = L.slice().sort((a, b) => order(a) - order(b)).map(q => { const p = qProg(q, set), done = qDone(q, set), can = qCan(q, set);
+      return `<div class="dq-card ${done ? 'got' : can ? 'can' : ''}">
+        <div class="dq-face"><span class="dq-disc">${done ? `<span class="dq-check">${icon('check')}</span>` : icon('shell')}</span>
+          <span class="dq-pt">${curIcon('honor')}+${fmt(q.xp)}</span>
+          <p class="dq-name">${esc(q.name)}</p>
+          <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b></div>
+        ${done ? '<span class="dq-btn done">Fulfilled</span>' : can ? '<button class="dq-btn claim" data-bpmc="1">Claim</button>' : q.go ? `<button class="dq-btn go" data-bpgo="${q.go}">Go</button>` : '<span class="dq-btn">In progress</span>'}
+      </div>`; }).join('');
+    body = `<div class="dq bp-dq">
+      <div class="dq-tabs" role="tablist">${Object.entries(BP_SETS).map(([k, x]) => `<button class="dq-tab ${k === set ? 'on' : ''}" data-bpm="${k}">${x.title}${k !== set && x.list.some(q => qCan(q, k)) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div>
+      <div class="dq-top">
+        <div class="dq-pts">${curIcon('honor')}<div><b>${fmt(st.wk.xp)}</b><small>Honor EXP this week</small></div></div>
+        <div class="bp-cap"><div class="dq-bar"><i style="width:${Math.min(100, st.wk.xp / BP_WEEK_CAP * 100)}%"></i></div><span class="tiny">Weekly limit ${fmt(st.wk.xp)} / ${fmt(BP_WEEK_CAP)}${bpWeekLeft() <= 0 ? ' · reached: missions give no more EXP until Monday' : ` · ${fmt(total)} Honor EXP from these ${set === 'bpd' ? 'daily' : 'weekly'} missions`}</span></div>
+      </div>
+      <div class="dq-list">${cards}</div>
+      <div class="dq-foot">${ready ? '<button class="btn gold" id="bpMAll">Claim all</button>' : '<span class="tiny">Finish missions to earn Honor EXP.</span>'}
+        <span class="dq-refresh">${icon('clock')}Refresh time: <b>${qLeft(set === 'bpd' ? 'daily' : 'weekly')}</b></span></div>
+    </div>`;
   } else {
     const card = o => { const owned = st.tier >= o.tier, upg = st.tier === 1 && o.tier === 2, usd = upg ? (parseFloat(o.usd) - parseFloat(BP_OFFERS[0].usd)).toFixed(2) : o.usd;
       const sample = [1, 2, 5, 10, 40, 80].map(l => bpReward(l, 'paid'));
@@ -215,3 +223,5 @@ function renderHonor(jump) {
   if (tr) { if (jump || keep === null) { const c = tr.querySelector('.bp-col.now'); if (c) tr.scrollLeft = Math.max(0, c.offsetLeft - tr.offsetLeft - 120); } else tr.scrollLeft = keep;
     tr.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { tr.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false }); }
 }
+
+CUR_SVG.honor = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="honG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".5" stop-color="#c8a2ff"/><stop offset="1" stop-color="#94b8ff"/></linearGradient></defs><path d="M8 2h8l-2 7h-4z" fill="#8f7bff"/><circle cx="12" cy="15" r="7" fill="url(#honG)" stroke="#fff" stroke-width="1.3"/><path d="M12 11l1.2 2.5 2.7.4-2 1.9.5 2.7L12 17.3l-2.4 1.2.5-2.7-2-1.9 2.7-.4z" fill="#fff"/></svg>';

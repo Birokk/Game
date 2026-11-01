@@ -3573,3 +3573,30 @@ button.pt-slot:hover{border-color:#fff}
 .nc-rkb-ach::before{background:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 2px,transparent 2px 22px)}
 .nc-rkb-vip::before{background:linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25% 75%,rgba(255,255,255,.18) 75%) 0 0/28px 28px,linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25% 75%,rgba(255,255,255,.18) 75%) 14px 14px/28px 28px}
 .nc-rk::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.35) 48%,transparent 60%);background-size:260% 100%;animation:mfBeam 5s ease-in-out infinite}
+
+/* Top Up bonus tags */
+.tu-bonus{font-family:var(--display);font-size:11px;letter-spacing:.03em;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.1);color:#d9c4ff}
+.tu-bonus.first{background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 0 10px var(--cry-glow)}
+.tu-bonus.none{opacity:.5}
+/* Fusion: tabs on a scrollable bar on the left, content on the right */
+.modal-back[data-kind=fuse] .fu{max-width:1240px;grid-template-columns:210px minmax(0,1fr);align-items:start;column-gap:18px}
+.modal-back[data-kind=fuse] .fu>*{grid-column:2}
+.modal-back[data-kind=fuse] .fu>.tabs{grid-column:1;grid-row:1/span 20;display:flex;flex-direction:column;flex-wrap:nowrap;gap:8px;overflow-y:auto;max-height:calc(100dvh - 140px);padding:4px 6px 4px 2px;position:sticky;top:0}
+.modal-back[data-kind=fuse] .fu>.tabs .tab{justify-content:flex-start;width:100%;text-align:left;white-space:nowrap}
+@media (max-width:720px){.modal-back[data-kind=fuse] .fu{grid-template-columns:1fr}.modal-back[data-kind=fuse] .fu>*,.modal-back[data-kind=fuse] .fu>.tabs{grid-column:1;grid-row:auto}.modal-back[data-kind=fuse] .fu>.tabs{flex-direction:row;overflow-x:auto;max-height:none;position:static}}
+/* Pearl Honor missions in the Quests design */
+.bp-dq{min-height:0}
+.bp-dq .dq-tab.on{background:var(--cry-grad);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 14px var(--cry-glow)}
+.bp-cap{flex:1;display:grid;gap:6px;min-width:0}
+.bp-dq .dq-bar{height:12px}
+.bp-dq .dq-bar i{background:var(--cry-grad-h);box-shadow:0 0 10px var(--cry-glow)}
+.bp-dq .dq-pt .cic{width:18px;height:18px}
+.bp-dq .dq-bar{position:relative;top:auto;left:auto;right:auto}
+.bp-dq{height:min(calc(100dvh - 330px),620px)}
+.ad-art{padding:0}
+.bp{grid-template-columns:minmax(0,1fr)}
+.bp-dq{height:auto;min-width:0}
+.bp-dq .dq-list{flex:none;min-height:400px}
+/* upgrade popup: up to 6 slots wrap in rows instead of scrolling */
+.upop .up-slots{flex-wrap:wrap;justify-content:center;overflow:visible;max-width:340px}
+.upop .up-slots .up-slot{width:72px;height:72px}

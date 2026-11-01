@@ -11,7 +11,7 @@ const expTag = n => `<span class="exp-tag">${curIcon('exp')}+${fmt(n)} EXP</span
 function playerLv() {
   let xp = Math.max(0, S.player.xp || 0), lv = 1;
   while (lv < LV_MAX && xp >= lvNeed(lv)) { xp -= lvNeed(lv); lv++; }
-  return { lv, xp, need: lv < LV_MAX ? lvNeed(lv) : 0 };
+  return { lv, xp, need: lv < LV_MAX ? lvNeed(lv) : 0 };   // past the max, EXP keeps adding up (xp = what's saved for levels added later)
 }
 function gainExp(n) {
   if (!n) return;
@@ -68,7 +68,7 @@ function renderLevel(scrollToNext) {
       <span class="lv-tagline">Player Level</span>
       <div class="lv-medal-card"><span class="lv-cur">Current Level</span>
         <div class="lv-medal"><span class="lv-core">${icon('level')}</span><b>${P.lv}</b></div>
-        ${P.need ? `<div class="lv-bar"><i style="width:${P.xp / P.need * 100}%"></i></div><span class="tiny">${fmt(P.xp)} / ${fmt(P.need)} EXP to level ${P.lv + 1}</span>` : '<span class="tiny">Max level reached.</span>'}
+        ${P.need ? `<div class="lv-bar"><i style="width:${P.xp / P.need * 100}%"></i></div><span class="tiny">${fmt(P.xp)} / ${fmt(P.need)} EXP to level ${P.lv + 1}</span>` : `<span class="tiny">Max level reached · ${fmt(P.xp)} EXP saved for future levels</span>`}
       </div>
       <div class="lv-ways"><span class="lbl-sm">How to earn EXP</span>${EXP_WAYS.map(([k, l, per]) => `<div><span>${l}</span>${expTag(EXP[k])}<small>${per}</small></div>`).join('')}<div><span>Farm Inn</span>${expTag(farmDef('inn').day)}<small>per day at Lv 7</small></div></div>
     </aside>

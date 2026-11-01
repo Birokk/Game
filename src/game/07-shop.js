@@ -14,7 +14,9 @@ let exSub = 'corals';
 /* Premium exchange: once a month for EACH UR character (S.premEx.ids = characters exchanged this month) */
 function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), ids: [] }; if (!Array.isArray(S.premEx.ids)) S.premEx.ids = []; return S.premEx; }
 const premUsed = id => premEx().ids.includes(id);
-const TOPUP = [[5, '0.99'], [30, '4.99'], [100, '14.99'], [225, '29.99'], [400, '49.99'], [850, '99.99']];
+const TOPUP = [[6, '0.99'], [30, '4.99'], [98, '14.99'], [198, '29.99'], [328, '49.99'], [648, '99.99']];
+/* bonus pearls: the first purchase of each pack is doubled, later ones give +10%; the $0.99 pack has no bonus (S.topupFirst = [pack indices bought]) */
+const topupBonus = i => { const [n, usd] = TOPUP[i]; if (usd === '0.99') return { n: 0, first: false }; const first = !(S.topupFirst || []).includes(i); return { n: first ? n : Math.round(n * .1), first }; };
 const TOPUP_FREE = true;   // testing: Top Up packs are free (no real payments yet)
 let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
@@ -54,8 +56,8 @@ function renderShop() {
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
-    body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
-      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
+    body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
+      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b>${(() => { const bo = topupBonus(i); return bo.n ? `<span class="tu-bonus ${bo.first ? 'first' : ''}">${bo.first ? 'First purchase ×2' : '+10% bonus'} · +${fmt(bo.n)}</span>` : '<span class="tu-bonus none">No bonus</span>'; })()}<span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets, marriage rings and name change tickets.</p>
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}${item('pn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_PEARLS, 'pearls', '', 4)}</div>`;
@@ -93,7 +95,10 @@ function renderShop() {
   shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
-  shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const [n, usd] = TOPUP[+b.dataset.topup]; S.wallet.pearls += n; const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop(); showRewards('Top Up', { pearls: n, vip: vx }, 'Free while testing'); });
+  shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const i = +b.dataset.topup, [n, usd] = TOPUP[i], bo = topupBonus(i);
+    S.wallet.pearls += n + bo.n; if (bo.first) S.topupFirst = [...(S.topupFirst || []), i];
+    const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop();
+    showRewards('Top Up', { pearls: n + bo.n, vip: vx }, `${fmt(n)} pearls${bo.n ? ` + ${fmt(bo.n)} bonus (${bo.first ? 'first purchase ×2' : '+10%'})` : ''} · free while testing`); });
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
   shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
