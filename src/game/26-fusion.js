@@ -9,14 +9,15 @@ const FUSE_NEXT = { 3: 4, 4: 5 };
 const spareOf = id => Math.max(0, (S.owned[id] || 0) - wearersOf(id).length);
 let fuseR = 3, fusePot = [];   // the pot: cloth ids in the order they were added
 function openFuse(r) {
-  if (FUSE_NEXT[r] || r === 'star' || r === 'mem') fuseR = r;
+  if (FUSE_NEXT[r] || r === 'star' || r === 'mem' || r === 'pet') fuseR = r;
   fusePot = [];
   openModal({ title: 'Fusion', ic: 'fuse', wide: true, kind: 'fuse', body: '<div id="fuRoot"></div>', onMount: renderFuse });
 }
 function renderFuse() {
   const root = $('#fuRoot'); if (!root) return;
-  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button><button class="tab ${fuseR === 'mem' ? 'on' : ''}" data-fur="mem">${icon('memory')} Memories</button></div>`;
+  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button><button class="tab ${fuseR === 'mem' ? 'on' : ''}" data-fur="mem">${icon('memory')} Memories</button><button class="tab ${fuseR === 'pet' ? 'on' : ''}" data-fur="pet">${icon('paw')} Pets</button></div>`;
   if (fuseR === 'star') return renderStarUp(root, tabs);
+  if (fuseR === 'pet') return renderPetFuse(root, tabs);
   if (fuseR === 'mem') return renderMemFuse(root, tabs);
   const to = FUSE_NEXT[fuseR], inPot = id => fusePot.filter(x => x === id).length;
   const list = S.clothes.filter(x => +x.rarity === fuseR && spareOf(x.id) > 0).sort((a, b) => spareOf(b.id) - spareOf(a.id) || a.name.localeCompare(b.name));
@@ -44,7 +45,7 @@ function renderFuse() {
   $('#fuClear').onclick = () => { fusePot = []; renderFuse(); };
   $('#fuGo').onclick = doFuse;
 }
-function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = b.dataset.fur === 'star' || b.dataset.fur === 'mem' ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); }); }
+function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = ['star', 'mem', 'pet'].includes(b.dataset.fur) ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); }); }
 function doFuse() {
   const to = FUSE_NEXT[fuseR], targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   if (!n || !targets.length) return;
@@ -69,8 +70,45 @@ function showFuseResults(got, spent) {
 }
 
 /* pets with characters */
-const petEqOf = cid => { const id = (S.petEq || {})[cid], p = id && findEntry(id); return p && p.type === 'pet' && owns(p.id) ? p : null; };
-const petOwner = pid => Object.keys(S.petEq || {}).find(cid => S.petEq[cid] === pid && owns(cid)) || null;
+/* every pet copy is separate (like clothes): S.petEq[charId] = petId and S.petEqSt[charId] = the stars of the copy it holds.
+   petCopies(id) lists the copies (highest stars first) with who holds each; a holder whose copy is gone is sent away. */
+const petEqStar = cid => ((S.petEqSt || {})[cid]) || 0;
+function petCopies(id) {
+  const out = petCopiesSt(id).slice().sort((a, b) => b - a).map(st => ({ id, st, who: null }));
+  const holders = Object.keys(S.petEq || {}).filter(cid => S.petEq[cid] === id && owns(cid));
+  holders.sort((a, b) => petEqStar(b) - petEqStar(a)).forEach(cid => {
+    const c = out.find(x => !x.who && x.st === petEqStar(cid)) || out.find(x => !x.who);
+    if (c) { c.who = cid; if (c.st !== petEqStar(cid)) { S.petEqSt = S.petEqSt || {}; S.petEqSt[cid] = c.st; } } else { delete S.petEq[cid]; }
+  });
+  return out;
+}
+const petEqOf = cid => { const id = (S.petEq || {})[cid], p = id && findEntry(id); return p && p.type === 'pet' && owns(p.id) && petCopies(p.id).some(x => x.who === cid) ? p : null; };
+/* fuse two copies of the same pet: the best copy below max stars gets +1★, the lowest spare copy is used up */
+function petFusePlan(id) {
+  const cps = petCopies(id), tgt = cps.filter(c => c.st < MAX_STARS).sort((a, b) => b.st - a.st || !!b.who - !!a.who)[0];
+  const feed = tgt && cps.filter(c => c !== tgt && !c.who).sort((a, b) => a.st - b.st)[0];
+  return tgt && feed ? { tgt, feed } : null;
+}
+function fusePet(id) {
+  const p = findEntry(id), plan = petFusePlan(id); if (!p || !plan) return;
+  const arr = petCopiesSt(id); arr.splice(arr.indexOf(plan.tgt.st), 1); arr.splice(arr.indexOf(plan.feed.st), 1); arr.push(plan.tgt.st + 1);
+  S.owned[id] -= 1; S.petSt[id] = arr;
+  if (plan.tgt.who) { S.petEqSt = S.petEqSt || {}; S.petEqSt[plan.tgt.who] = plan.tgt.st + 1; }
+  persist(); refreshCharacters(); renderFuse(); if (typeof renderPets === 'function') renderPets();
+  toast(`${p.name} is now ${plan.tgt.st + 1}★${plan.tgt.who ? ` (with ${(findEntry(plan.tgt.who) || {}).name})` : ''}.`);
+}
+function renderPetFuse(root, tabs) {
+  const pets = S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => !!petFusePlan(b.id) - !!petFusePlan(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+  root.innerHTML = `<div class="fu">${tabs}
+    <p class="tiny">Fuse two copies of the same pet: the best copy gets +1★ (up to ${MAX_STARS}★) and the lowest spare copy is used up. Copies with a character can get the star but are never used up.</p>
+    ${pets.length ? `<div class="pf-list">${pets.map(p => { const cps = petCopies(p.id), plan = petFusePlan(p.id);
+      return `<div class="pf-row r${p.rarity}"><span class="pf-pic"><img src="${mediaArt(p) || petWide(p)}" alt=""></span>
+        <div class="pf-info"><b>${esc(p.name)}</b>${rtag(p.rarity)}<div class="pf-copies">${cps.map(c => `<span class="pf-cp ${c.who ? 'with' : ''} ${plan && (c === plan.tgt || c === plan.feed) ? (c === plan.tgt ? 'tgt' : 'feed') : ''}" title="${c.who ? `With ${esc((findEntry(c.who) || {}).name || '')}` : 'Spare'}">${c.st}★${c.who ? ` · ${esc((findEntry(c.who) || {}).name || '')}` : ''}</span>`).join('')}</div></div>
+        ${plan ? `<button class="btn gold sm" data-pfuse="${esc(p.id)}">${icon('fuse')}${plan.tgt.st}★ → ${plan.tgt.st + 1}★</button>` : `<span class="tiny pf-why">${cps.length < 2 ? 'Needs another copy' : cps.every(c => c.st >= MAX_STARS || c.who) ? 'No spare copy' : `Max ${MAX_STARS}★`}</span>`}</div>`; }).join('')}</div>`
+      : '<div class="cs-pill">You don\'t have any pets yet. Hatch eggs in the Hatchery.</div>'}</div>`;
+  bindFuseTabs(root);
+  root.querySelectorAll('[data-pfuse]').forEach(b => b.onclick = () => fusePet(b.dataset.pfuse));
+}
 /* a square picture of a drawn pet (for pets without uploaded art; pet splash arts are 1254×1254) */
 const petWideCache = new Map();
 function petWide(p) {
@@ -85,9 +123,9 @@ function petWide(p) {
   drawPet(g, 200, 372, p.look || {}, { s: 5.4 });
   const url = c.toDataURL('image/png'); petWideCache.set(key, url); return url;
 }
-function petCard(p, cls = '') {
+function petCard(p, st = 0, noStars) {
   const art = mediaArt(p);
-  return `<span class="pt-art"><img src="${art || petWide(p)}" alt=""></span>${rtag(p.rarity)}<span class="pt-nm"><b>${esc(p.name)}</b>${hasStars(p) ? `<span class="pt-st">${starRow(starsOf(p.id), false, p)}</span>` : ''}</span>`;
+  return `<span class="pt-art"><img src="${art || petWide(p)}" alt=""></span>${rtag(p.rarity)}<span class="pt-nm"><b>${esc(p.name)}</b>${noStars ? '' : `<span class="pt-st">${starRow(st, false)}</span>`}</span>`;
 }
 /* splash art picker for a pet, like the character's Skins carousel: base, then the 3★ / 6★ arts (locked until those stars) */
 function petArtPicker(p) {
@@ -97,27 +135,42 @@ function petArtPicker(p) {
     return `<button class="pt-artc ${cur === a.k ? 'on' : ''} ${open ? '' : 'bw'}" data-ptart="${a.k}" data-ptid="${esc(p.id)}" ${open ? '' : `data-lock="${a.stars}"`}><img src="${src}" alt=""><span>${a.k === 'base' ? 'Base' : a.label}</span>${cur === a.k ? `<span class="skc-on">${icon('check')}</span>` : ''}${open ? '' : `<span class="skc-lock">${icon('lock')}</span>`}</button>`; }).join('')}</div>`;
 }
 function petTabHTML(c) {
-  const eq = petEqOf(c.id), pets = S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => b.rarity - a.rarity || starsOf(b.id) - starsOf(a.id) || a.name.localeCompare(b.name));
+  const eq = petEqOf(c.id), n = S.pool.filter(e => e.type === 'pet' && owns(e.id)).reduce((t, p) => t + (S.owned[p.id] || 0), 0);
   return `<div class="lbl-sm">Pet · ${eq ? '1' : '0'}/1 with ${esc(c.name)}</div>
-    <div class="pt-slot ${eq ? 'full r' + eq.rarity : ''}">${eq ? petCard(eq) : `<span class="mem-empty">${icon('paw')}<span class="tiny">No pet yet</span></span>`}</div>
+    <button class="pt-slot ${eq ? 'full r' + eq.rarity : ''}" id="petSlot" aria-label="Choose a pet">${eq ? petCard(eq, petEqStar(c.id)) : `<span class="mem-empty">${icon('paw')}<span class="tiny">Tap to choose a pet</span></span>`}</button>
     ${eq ? petArtPicker(eq) : ''}
-    <div class="lbl-sm">Your pets · ${pets.length}</div>
-    ${pets.length ? `<div class="pt-list">${pets.map(p => { const who = petOwner(p.id), here = who === c.id, busy = who && !here;
-      return `<button class="pt-card r${p.rarity} ${here ? 'on' : ''} ${busy ? 'busy' : ''}" data-pet="${esc(p.id)}">${petCard(p)}${here ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">With ${esc((findEntry(who) || {}).name || '')}</span>` : ''}</button>`; }).join('')}</div>`
-      : `<div class="cs-pill">You don't have any pets yet. <button class="link" data-open="pets">Hatch eggs in the Hatchery</button></div>`}
-    ${eq ? '<button class="btn ghost sm" id="petOff">Send the pet away</button>' : ''}
-    <p class="tiny">Each character can have one pet with them, and a pet stays with one character at a time. Tap a pet to bring it along, tap it again to send it away.</p>`;
+    <div class="row" style="gap:8px">${eq ? '<button class="btn ghost sm" id="petOff">Send the pet away</button>' : ''}<button class="btn ghost sm" id="petFuse">${icon('fuse')}Fuse pets</button></div>
+    <p class="tiny">${n ? `You have ${n} pet${n === 1 ? '' : 's'}. ` : ''}Tap the slot to pick one. Each copy can be with one character at a time; fuse two copies of the same pet for a star.</p>`;
+}
+/* see-through picker: every owned pet copy as its own card; copies with someone else can't be picked */
+function openPetPick(c) {
+  const old = document.querySelector('.wdpick'); if (old) old.remove();
+  const el = document.createElement('div'); el.className = 'rdrop wdpick'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Pets');
+  const render = () => {
+    const list = S.pool.filter(e => e.type === 'pet' && owns(e.id)).flatMap(p => petCopies(p.id).map(cp => ({ ...cp, p })))
+      .sort((a, b) => (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || !!a.who - !!b.who || b.p.rarity - a.p.rarity || b.st - a.st || a.p.name.localeCompare(b.p.name));
+    el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">Pet</h2><span class="tiny">${list.length} pet${list.length === 1 ? '' : 's'} · tap one to bring it along</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
+      ${list.length ? `<div class="pt-list wdp-pets">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine;
+        return `<button class="pt-card r${cp.p.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-pp="${i}" ${busy ? 'disabled' : ''}>${petCard(cp.p, cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</button>`; }).join('')}</div>`
+        : '<div class="cs-pill">You don\'t have any pets yet. Hatch eggs in the Hatchery.</div>'}
+      <div class="row" style="justify-content:center;gap:10px">${petEqOf(c.id) ? '<button class="btn ghost" data-ppoff>Send the pet away</button>' : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;
+    el.querySelectorAll('[data-wdpx]').forEach(b => b.onclick = () => el.remove());
+    const off = el.querySelector('[data-ppoff]'); if (off) off.onclick = () => { delete S.petEq[c.id]; persist(); renderCharacters(); render(); };
+    el.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => {
+      const cp = list[+b.dataset.pp]; if (!cp || (cp.who && cp.who !== c.id)) return;
+      S.petEq = S.petEq || {}; S.petEqSt = S.petEqSt || {};
+      if (cp.who === c.id) { delete S.petEq[c.id]; toast(`${cp.p.name} went back to the Hatchery.`); }
+      else { S.petEq[c.id] = cp.p.id; S.petEqSt[c.id] = cp.st; toast(`${cp.p.name} (${cp.st}★) is now with ${c.name}.`); }
+      persist(); renderCharacters(); render();
+    });
+  };
+  render();
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
 }
 function bindPetTab(c) {
-  csEl.querySelectorAll('[data-pet]').forEach(b => b.onclick = () => {
-    const p = findEntry(b.dataset.pet); if (!p || !owns(p.id)) return;
-    S.petEq = S.petEq || {};
-    const who = petOwner(p.id);
-    if (who === c.id) { delete S.petEq[c.id]; toast(`${p.name} went back to the Hatchery.`); }
-    else if (who) { toast(`${p.name} is with ${(findEntry(who) || {}).name}. Send it away from them first.`); return; }
-    else { S.petEq[c.id] = p.id; toast(`${p.name} is now with ${c.name}.`); }
-    persist(); renderCharacters();
-  });
+  const sl = $('#petSlot'); if (sl) sl.onclick = () => openPetPick(c);
+  const pf = $('#petFuse'); if (pf) pf.onclick = () => openFuse('pet');
   csEl.querySelectorAll('[data-ptart]').forEach(b => b.onclick = () => {
     const p = findEntry(b.dataset.ptid); if (!p) return;
     if (b.dataset.lock) { toast(`This splash art unlocks at ${b.dataset.lock} stars. ${p.name} has ${starsOf(p.id)}.`); return; }

@@ -1,6 +1,6 @@
 /* ---------- inventory (home "Bag"): full-screen grid of everything the player holds, with a detail panel ---------- */
 const INV_CAP = 999;   // per category; the All tab has no cap
-const INV_TABS = [['all', 'grid', 'All'], ['summon', 'sparkle', 'Summon'], ['use', 'gift', 'Consumables'], ['pets', 'heart', 'Pets'], ['wardrobe', 'hanger', 'Wardrobe'], ['memory', 'memory', 'Memories'], ['items', 'bag', 'Items']];
+const INV_TABS = [['all', 'grid', 'All'], ['summon', 'sparkle', 'Summon'], ['use', 'gift', 'Consumables'], ['pets', 'heart', 'Eggs'], ['petlist', 'paw', 'Pets'], ['wardrobe', 'hanger', 'Wardrobe'], ['memory', 'memory', 'Memories'], ['items', 'bag', 'Items']];
 const INV_SORTS = [['rarity', 'Rarity'], ['amount', 'Amount'], ['name', 'Name']];
 let invEl = null, invTab = 'all', invSel = null, invSort = 'rarity', invDesc = true;
 const goTo = fn => () => { closeInventory(); fn(); };
@@ -19,6 +19,8 @@ function invItems() {
   cur('frag-ssr', 'fragssr', 'pets', 'SSR egg fragment', P.frags.ssr, 4, 'Material', `${EGG.ssr.frag} fragments combine into an SSR egg in the Hatchery.`, 'A warm shard of shell. Something inside it is still humming.', ['Hatchery', goTo(openPets)]);
   cur('frag-ur', 'fragur', 'pets', 'UR egg fragment', P.frags.ur, 5, 'Material', `${EGG.ur.frag} fragments combine into a UR egg in the Hatchery.`, 'It shimmers in three colours at once. Pets from these eggs are rare.', ['Hatchery', goTo(openPets)]);
   ['ssr', 'ur'].forEach(r => list.push({ id: 'egg-' + r, cat: 'pets', name: EGG[r].name, n: P.eggs.filter(x => x === r).length, r: EGG[r].r, tag: 'Egg', use: `Put it in an incubator to hatch a random ${r.toUpperCase()} pet (${fmtLeft(EGG[r].mins * 6e4)}).`, lore: 'Keep it warm. It rocks a little when you talk to it.', pic: eggHTML(r), act: ['Hatchery', goTo(openPets)] }));
+  S.pool.filter(e => e.type === 'pet' && owns(e.id)).forEach(p => petCopies(p.id).forEach((cp, i) => list.push({ id: `${p.id}#${i}`, cat: 'petlist', single: true, pst: cp.st, name: p.name, n: 1, r: p.rarity, worn: cp.who ? (findEntry(cp.who) || {}).name || '' : '', tag: `Pet · ${cp.st}★`,
+    use: `Bring it along from a character's Pet tab. Fuse two copies of ${esc(p.name)} for +1★ (up to ${MAX_STARS}★).`, lore: p.desc || '', pic: `<img src="${mediaArt(p) || petWide(p)}" alt="">`, act: ['Fuse pets', goTo(() => openFuse('pet'))] })));
   (S.clothes || []).filter(x => owns(x.id)).forEach(x => { const slot = (WARD_SLOTS.find(s => s[0] === x.slot) || [, 'Clothing'])[1], img = clothImg(x);
     clothCopies(x.id).forEach((cp, i) => list.push({ id: `${x.id}#${i}`, cat: 'wardrobe', single: true, st: cp.star, name: x.name, n: 1, r: x.rarity, worn: cp.who ? (findEntry(cp.who) || {}).name || '' : '', tag: `Wardrobe · ${slot}`, use: `Wear it from ${x.char ? `${esc((findEntry(x.char) || {}).name || 'its character')}'s` : 'any character’s'} Wardrobe tab (${slot} slot).`, lore: '', pic: img ? `<img src="${img}" alt="">` : icon('hanger'), act: ['Characters', goTo(() => openCharacters(cp.who || x.char))] })); });
   (S.memories || []).filter(x => owns(x.id)).forEach(x => { const img = artFrom(x.img);
@@ -49,14 +51,14 @@ function renderInventory() {
     <div class="inv-main">
       <section class="inv-left">
         <span class="inv-count">${invTab === 'all' ? `Items ${list.length}` : `${INV_TABS.find(t => t[0] === invTab)[2]} ${list.length}/${INV_CAP}`}</span>
-        <div class="inv-grid">${list.length ? list.map(x => `<button class="inv-cell r${x.r} ${x.id === invSel ? 'on' : ''}" data-inv="${esc(x.id)}" aria-label="${esc(x.name)}, ${fmt(x.n)}"><span class="inv-pic">${x.pic}${x.cat === 'wardrobe' || x.cat === 'memory' ? `<span class="inv-rt">${ctag(x.r)}</span>` : ''}</span><b>${x.single ? `${x.st ? clothStarRow(x.st, 'sm') : ''}${x.worn ? (x.cat === 'memory' ? ' Equipped' : ' Worn') : ''}` || '&nbsp;' : fmt(x.n)}</b></button>`).join('')
+        <div class="inv-grid">${list.length ? list.map(x => `<button class="inv-cell r${x.r} ${x.id === invSel ? 'on' : ''}" data-inv="${esc(x.id)}" aria-label="${esc(x.name)}, ${fmt(x.n)}"><span class="inv-pic">${x.pic}${x.cat === 'wardrobe' || x.cat === 'memory' || x.cat === 'petlist' ? `<span class="inv-rt">${ctag(x.r)}</span>` : ''}${x.cat === 'petlist' ? `<span class="inv-pst">${x.pst}★</span>` : ''}</span><b>${x.single ? `${x.st ? clothStarRow(x.st, 'sm') : ''}${x.cat === 'petlist' ? `${starRow(x.pst, false)}` : ''}${x.worn ? (x.cat === 'memory' ? ' Equipped' : x.cat === 'petlist' ? ' With' : ' Worn') : ''}` || '&nbsp;' : fmt(x.n)}</b></button>`).join('')
           : `<p class="inv-empty">${icon('bag')}Nothing here yet.</p>`}</div>
         <div class="inv-bar"><label class="inv-sort"><select id="invSort" aria-label="Sort by">${INV_SORTS.map(([k, l]) => `<option value="${k}" ${invSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
           <button class="inv-dir ${invDesc ? '' : 'asc'}" id="invDir" aria-label="${invDesc ? 'Highest first' : 'Lowest first'}" title="${invDesc ? 'Highest first' : 'Lowest first'}">${icon('up')}</button></div>
       </section>
       <aside class="inv-detail">${it ? `<div class="inv-dh"><span class="inv-badge sm">${icon(INV_TABS.find(t => t[0] === it.cat)[1])}</span><span>${esc(INV_TABS.find(t => t[0] === it.cat)[2])}</span></div>
-        <div class="inv-hero r${it.r}"><span class="inv-medal"><span class="inv-pic">${it.pic}</span></span><div><b class="ts">${esc(it.name)}</b>${rtag(it.r)}${it.single ? (it.st ? clothStarRow(it.st, 'slot') : '') : `<span class="inv-n">×${fmt(it.n)}</span>`}</div></div>
-        <div class="inv-body"><span class="inv-tag r${it.r}">${esc(it.tag)}</span><p class="inv-use">${it.use}${it.worn ? ` <b>${it.cat === 'memory' ? 'Equipped' : 'Worn'} by ${esc(it.worn)}.</b>` : ''}</p>${it.lore ? `<p class="inv-lore">${esc(it.lore)}</p>` : ''}
+        <div class="inv-hero r${it.r}"><span class="inv-medal"><span class="inv-pic">${it.pic}</span></span><div><b class="ts">${esc(it.name)}</b>${rtag(it.r)}${it.single ? (it.st ? clothStarRow(it.st, 'slot') : it.cat === 'petlist' ? starRow(it.pst, false) : '') : `<span class="inv-n">×${fmt(it.n)}</span>`}</div></div>
+        <div class="inv-body"><span class="inv-tag r${it.r}">${esc(it.tag)}</span><p class="inv-use">${it.use}${it.worn ? ` <b>${it.cat === 'memory' ? 'Equipped by' : it.cat === 'petlist' ? 'With' : 'Worn by'} ${esc(it.worn)}.</b>` : ''}</p>${it.lore ? `<p class="inv-lore">${esc(it.lore)}</p>` : ''}
           ${it.act ? `<button class="btn gold" id="invAct">${esc(it.act[0])}</button>` : ''}</div>` : '<p class="inv-empty">Pick an item to see what it does.</p>'}</aside>
     </div>`;
   const g = invEl.querySelector('.inv-grid'); if (g) g.scrollTop = top;

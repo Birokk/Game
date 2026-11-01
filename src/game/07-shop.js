@@ -9,7 +9,9 @@ const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit 
 /* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
 const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium']], PREM_PRICE = 720, PREM_LIMIT = 1;
 let exSub = 'corals';
-function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), n: 0 }; return S.premEx; }
+/* Premium exchange: once a month for EACH UR character (S.premEx.ids = characters exchanged this month) */
+function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), ids: [] }; if (!Array.isArray(S.premEx.ids)) S.premEx.ids = []; return S.premEx; }
+const premUsed = id => premEx().ids.includes(id);
 const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
 let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
@@ -56,11 +58,12 @@ function renderShop() {
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
   } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
     <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}</div>`;
-  else if (shopTab === 'exchange' && exSub === 'premium') { const pe = premEx(), left = PREM_LIMIT - pe.n, chars = S.pool.filter(e => e.type === 'character' && +e.rarity === 5 && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
-    body = `<div class="mall-limit ${left > 0 ? '' : 'used'}"><b>Limit: ${PREM_LIMIT} per month</b><span>${left > 0 ? `${left} / ${PREM_LIMIT} left this month` : `Used this month · resets on the 1st (${nextMonthIn()})`}</span></div><p class="tiny">Trade ${PREM_PRICE} Corals for one more copy of a UR character you own: it adds a star, up to ${MAX_STARS}.</p>
-      ${chars.length ? `<div class="mall-skins">${chars.map(e => { const st = starsOf(e.id), max = st >= MAX_STARS, ok = left > 0 && !max && W.starlight >= PREM_PRICE;
+  else if (shopTab === 'exchange' && exSub === 'premium') { const chars = S.pool.filter(e => e.type === 'character' && +e.rarity === 5 && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
+    const usedN = chars.filter(e => premUsed(e.id)).length;
+    body = `<div class="mall-limit"><b>Limit: ${PREM_LIMIT} per character per month</b><span>${usedN ? `${usedN} character${usedN === 1 ? '' : 's'} exchanged this month · ` : ''}resets on the 1st (${nextMonthIn()})</span></div><p class="tiny">Trade ${PREM_PRICE} Corals for one more copy of a UR character you own: it adds a star, up to ${MAX_STARS}.</p>
+      ${chars.length ? `<div class="mall-skins">${chars.map(e => { const st = starsOf(e.id), max = st >= MAX_STARS, used = premUsed(e.id), ok = !used && !max && W.starlight >= PREM_PRICE;
         return `<div class="mall-skin r${e.rarity}"><img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${rtag(e.rarity)}<span class="mall-skin-nm"><b>${esc(e.name)}</b><small>${starRow(st, -1, e)}</small></span>
-          ${max ? '<button class="mall-buy" disabled>Max stars</button>' : left <= 0 ? '<button class="mall-buy" disabled>Sold out</button>' : `<button class="mall-buy ${ok ? 'ok' : ''}" data-prem="${esc(e.id)}">${curIcon('starlight')}${fmt(PREM_PRICE)}</button>`}</div>`; }).join('')}</div>`
+          ${max ? '<button class="mall-buy" disabled>Max stars</button>' : used ? '<button class="mall-buy" disabled>1/1 this month</button>' : `<button class="mall-buy ${ok ? 'ok' : ''}" data-prem="${esc(e.id)}">${curIcon('starlight')}${fmt(PREM_PRICE)}</button>`}</div>`; }).join('')}</div>`
         : '<p class="mall-empty">You don\'t own any UR characters yet.</p>'}`; }
   else body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Seaweeds, whatever you get.</p>
     <h3 class="mall-h">Monthly pulls</h3><p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
@@ -86,14 +89,14 @@ function renderShop() {
 }
 function confirmPrem(id) {
   const e = findEntry(id); if (!e || !owns(id) || +e.rarity !== 5) return;
-  const pe = premEx(); if (pe.n >= PREM_LIMIT) { toast('You already used the Premium exchange this month.'); return; }
+  if (premUsed(id)) { toast(`You already exchanged for ${e.name} this month. Every character can be exchanged once a month.`); return; }
   if (starsOf(id) >= MAX_STARS) { toast(`${e.name} is already at max stars.`); return; }
   if (S.wallet.starlight < PREM_PRICE) { toast(`You need ${PREM_PRICE} Corals. You have ${fmt(S.wallet.starlight)}.`); return; }
   openModal({ title: 'Premium exchange', ic: 'shop', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
-    <p class="desc">Spend <b>${PREM_PRICE} Corals</b> on a copy of <b>${esc(e.name)}</b>? It will go from ${starsOf(id)}★ to ${starsOf(id) + 1}★. You can do this once a month.</p>
+    <p class="desc">Spend <b>${PREM_PRICE} Corals</b> on a copy of <b>${esc(e.name)}</b>? It will go from ${starsOf(id)}★ to ${starsOf(id) + 1}★. You can do this once a month for each character.</p>
     <div class="row" style="justify-content:center"><button class="btn ghost" id="prNo">Cancel</button><button class="btn gold" id="prYes">Exchange · ${curIcon('starlight')}${PREM_PRICE}</button></div></div>`,
     onMount: () => { $('#prNo').onclick = closeModal; $('#prYes').onclick = () => {
-      closeModal(); S.wallet.starlight -= PREM_PRICE; premEx().n++; grantEntry(e); persist(); renderMenu(); refreshCharacters(); renderShop();
+      closeModal(); S.wallet.starlight -= PREM_PRICE; premEx().ids.push(id); grantEntry(e); persist(); renderMenu(); refreshCharacters(); renderShop();
       toast(`${e.name} is now ${starsOf(id)}★.`); }; } });
 }
 function buyShop(id) {

@@ -187,7 +187,7 @@ const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
 const COST = { 1: 3, 10: 30 };
 const HARD_PITY = 50, BASE5 = 0.02, BASE4 = 0.051, COIN_DROP = 500;
 const MAX_STARS = 6;
-const starsOf = id => { const e = findEntry(id); return e && !hasStars(e) ? 0 : Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1)); };
+const starsOf = id => { const e = findEntry(id); if (e && e.type === 'pet') return Math.max(0, ...petCopiesSt(id)); return e && !hasStars(e) ? 0 : Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1)); };
 const hasStars = e => !!e && e.type !== 'skin' && e.type !== 'memory';
 /* breakthrough: each owned star can be awakened into a glowing star in the character's rarity color */
 const btOf = id => (S.bt[id] || []).filter(i => i < starsOf(id));

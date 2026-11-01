@@ -35,7 +35,7 @@ function csBaseParts(c) {
   const set = worn.length === WARD_SLOTS.length && worn[0].set && worn.every(x => x.set === worn[0].set) ? worn[0] : null;
   if (set) out.push({ label: 'Full clothing set', pts: +set.rarity === 5 && wornE.every(([, st]) => st >= 3) ? CS_SET_UR3 : csP('set', +set.rarity) });
   const pet = petEqOf(c.id);
-  if (pet) { out.push({ label: `Pet: ${pet.name}`, pts: csP('pet', +pet.rarity) }); const ps = starsOf(pet.id); if (ps) out.push({ label: `Pet stars (${ps})`, pts: ps * csP('petStar', +pet.rarity) }); }
+  if (pet) { out.push({ label: `Pet: ${pet.name}`, pts: csP('pet', +pet.rarity) }); const ps = petEqStar(c.id); if (ps) out.push({ label: `Pet stars (${ps})`, pts: ps * csP('petStar', +pet.rarity) }); }
   const mems = memEqOf(c.id).filter(Boolean).map(memOf).filter(Boolean);
   if (mems.length) out.push({ label: `Memory: ${mems[0].name}`, pts: mems.reduce((t, x) => t + csP('mem', +x.rarity), 0) });
   const bl = bondLv(c.id);

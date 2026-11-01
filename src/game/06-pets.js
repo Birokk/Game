@@ -42,8 +42,22 @@ function buySkin(id) {
   showSkinGet(e);
 }
 /* duplicates never give pearls: they add stars up to 6; past that, summons give Corals for characters (maxed = the copy added nothing) */
+/* pets are separate copies, never stacked: S.petSt[petId] = [stars of each copy], S.owned[petId] = number of copies.
+   A duplicate pet is just another 0★ copy; stars come from fusing two copies of the same pet (Fusion → Pets, fusePet). */
+function petCopiesSt(id) {
+  S.petSt = S.petSt || {};
+  const a = S.petSt[id] || [], n = S.owned[id] || 0;
+  while (a.length < n) a.push(0);
+  if (a.length > n) { a.sort((x, y) => y - x); a.length = n; }
+  S.petSt[id] = a; return a;
+}
+// old saves: duplicates were stars (stars = copies − 1) → one copy that keeps those stars
+if (!S.petSt) { S.petSt = {}; S.pool.filter(e => e.type === 'pet').forEach(e => { const n = S.owned[e.id] || 0; if (n) { S.petSt[e.id] = [Math.min(MAX_STARS, n - 1)]; S.owned[e.id] = 1; } });
+  S.petEqSt = {}; Object.entries(S.petEq || {}).forEach(([cid, pid]) => { S.petEqSt[cid] = (S.petSt[pid] || [0])[0]; }); }
 function grantEntry(item) {
-  const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
+  const prev = S.owned[item.id] || 0;
+  if (item.type === 'pet') { petCopiesSt(item.id); S.owned[item.id] = prev + 1; S.petSt[item.id].push(0); return { isNew: !prev, starUp: 0, pearls: 0, maxed: false, copy: !!prev }; }
+  S.owned[item.id] = prev + 1;
   const starUp = hasStars(item) && prev && prev - 1 < MAX_STARS ? prev : 0, maxed = !!prev && !starUp;
   return { isNew: !prev, starUp, pearls: 0, maxed };
 }
@@ -71,9 +85,15 @@ function renderPets() {
   const root = $('#petRoot'); if (!root) return;
   syncIncubators();
   const P = S.pets, pets = S.pool.filter(e => e.type === 'pet').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
-  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${pets.filter(e => owns(e.id)).length}/${pets.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  const copies = pets.filter(e => owns(e.id)).flatMap(p => petCopies(p.id).map(cp => ({ ...cp, p })));
+  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${copies.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
   if (petTab === 'mine') {
-    root.innerHTML = `<div class="stack">${tabs}${pets.length ? `<div class="cards">${pets.map(cardHTML).join('')}</div>` : '<div class="empty">No pets yet. Add some in the admin panel.</div>'}</div>`;
+    const missing = pets.filter(e => !owns(e.id));
+    root.innerHTML = `<div class="stack">${tabs}
+      <div class="row" style="justify-content:space-between;align-items:center"><span class="tiny">Every pet is its own copy. Fuse two copies of the same pet for +1★ (up to ${MAX_STARS}★).</span><button class="btn gold sm" id="ptFuse">${icon('fuse')}Fuse pets</button></div>
+      ${copies.length ? `<div class="pt-list">${copies.sort((a, b) => b.p.rarity - a.p.rarity || a.p.name.localeCompare(b.p.name) || b.st - a.st).map(cp => `<div class="pt-card r${cp.p.rarity} ${cp.who ? 'busy' : ''}">${petCard(cp.p, cp.st)}${cp.who ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</div>`).join('')}</div>` : '<div class="cs-pill">No pets yet. Hatch eggs in the Hatchery.</div>'}
+      ${missing.length ? `<span class="lbl-sm">Not found yet · ${missing.length}</span><div class="pt-list">${missing.map(p => `<div class="pt-card r${p.rarity} bw">${petCard(p, 0, true)}</div>`).join('')}</div>` : ''}</div>`;
+    const pf = $('#ptFuse'); if (pf) pf.onclick = () => openFuse('pet');
   } else {
     const free = P.inc.indexOf(null);
     root.innerHTML = `<div class="stack">${tabs}
@@ -136,7 +156,7 @@ function showHatch(r, item, res) {
   el.innerHTML = `<div class="hatch-ground"></div><div class="hatch-beams">${beams}</div><div class="hatch-sparks">${sparks}</div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
     <div class="hatch-pet"><img src="${mediaArt(item) || petCut(item)}" alt="${esc(item.name)}"></div>
     <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
-      ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · already owned</span></div>`}</div>
+      ${res.isNew ? '<span class="rv-badge">New pet</span>' : `<div class="rv-up"><span>Another copy · you have ${S.owned[item.id] || 0}. Fuse two copies in Fusion → Pets for a star.</span></div>`}</div>
     <div class="rv-hint">Tap to continue</div>`;
   document.body.appendChild(el);
   setTimeout(() => el.onclick = () => el.remove(), 1600);

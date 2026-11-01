@@ -2789,3 +2789,53 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .dq-check{box-shadow:0 0 22px var(--cry-glow),0 0 0 6px rgba(200,160,255,.16)}
 .dq-pts>.cic{filter:drop-shadow(0 0 10px var(--cry-glow))}
 #adCardKs .chip{cursor:pointer}#adCardKs .chip.on{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge)}
+.raid-ward{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:rgba(10,10,16,.7);border:1px solid rgba(255,255,255,.15);font:400 13px var(--display)}
+.raid-ward .ic{width:16px;height:16px}
+.raid-ward.full{border-color:#ff8a9a;color:#ffb3bf}
+
+/* scratch card as a wide lottery ticket (24-scratch.js): play area + perforated stub, 4:3 cells */
+.scr{grid-template-columns:minmax(0,min(560px,calc((100vh - 330px) * 1.45))) minmax(240px,300px)}
+.scr-card.ticket{grid-template-columns:1fr 74px;gap:0;padding:0;overflow:hidden;border-radius:18px;min-width:300px;
+  background:linear-gradient(115deg,#3a1f5e,#1c1530 45%,#2a1640 75%,#3b1f4a);border:2px solid rgba(255,216,120,.6)}
+.scr-card.ticket::before{content:"";position:absolute;inset:6px;border:1px dashed rgba(255,216,120,.25);border-radius:13px;pointer-events:none}
+.scr-main{display:grid;gap:8px;padding:12px 14px 12px 16px;min-width:0}
+.scr-card.ticket .scr-head span{display:flex;align-items:center;gap:6px;color:#ffe9a8}
+.scr-card.ticket .scr-head span .scr-ic{width:12px;height:12px}
+.scr-card.ticket .scr-grid{gap:5px;padding:5px}
+.scr-card.ticket .scr-cell{aspect-ratio:4/3;border-radius:8px}
+.scr-card.ticket .scr-cell .scr-ic{width:auto;height:66%}
+.scr-stub{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;padding:16px 6px 14px;border-left:2px dashed rgba(255,216,120,.55);
+  background:linear-gradient(180deg,rgba(255,216,120,.16),rgba(255,140,200,.1));color:#ffe9a8;font-family:var(--display)}
+.scr-stub::before,.scr-stub::after{content:"";position:absolute;left:-11px;width:20px;height:20px;border-radius:50%;background:#0b0b14}
+.scr-stub::before{top:-11px}.scr-stub::after{bottom:-11px}
+.scr-stub-t{writing-mode:vertical-rl;transform:rotate(180deg);font-size:20px;letter-spacing:.3em;background:linear-gradient(180deg,#fff2b0,#ffb3e6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.scr-stub-ic .scr-ic{width:30px;height:30px;color:#fff}
+.scr-stub-no{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;opacity:.75;letter-spacing:.08em}
+.scr-stub-p{display:flex;align-items:center;gap:3px;font-size:14px}
+.scr-stub-p .cic{width:14px;height:14px}
+.scr-stub-b{width:40px;height:14px;background:repeating-linear-gradient(90deg,rgba(255,233,168,.75) 0 2px,transparent 2px 4px,rgba(255,233,168,.75) 4px 5px,transparent 5px 8px)}
+.scr-card.ticket.won{border-color:#ffd84a}
+.scr-row{grid-template-columns:1fr auto 66px}
+.scr-row.lose{grid-template-columns:1fr auto 66px}
+@media (max-width:820px){.scr{grid-template-columns:1fr}.scr-card.ticket{grid-template-columns:1fr 56px;min-width:0}.scr-stub-t{font-size:16px}}
+
+/* pets as copies (06-pets / 26-fusion): slot is a button, picker, fusion rows, inventory stars */
+button.pt-slot{cursor:pointer;padding:0;color:inherit;font:inherit}
+button.pt-slot:hover{border-color:#fff}
+.pt-card.bw img{filter:grayscale(1) brightness(.6)}
+.wdp-pets{width:100%;max-height:60vh;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.pf-list{display:grid;gap:8px;max-height:56vh;overflow-y:auto;padding-right:4px}
+.pf-row{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:12px;padding:8px 12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid color-mix(in srgb,var(--rc,#8aa) 45%,transparent)}
+.pf-pic{width:64px;height:64px;border-radius:12px;overflow:hidden;background:#111}
+.pf-pic img{width:100%;height:100%;object-fit:cover}
+.pf-info{display:grid;gap:4px;min-width:0}
+.pf-info>b{font:400 17px var(--display)}
+.pf-info .rtag{justify-self:start;font-size:10px;padding:1px 6px}
+.pf-copies{display:flex;flex-wrap:wrap;gap:5px}
+.pf-cp{padding:2px 9px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);font:400 12px var(--display);color:#ffd36b}
+.pf-cp.with{border-color:#7ef3d4;color:#bff7ea}
+.pf-cp.tgt{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge)}
+.pf-cp.feed{opacity:.55;text-decoration:line-through}
+.pf-why{white-space:nowrap}
+.inv-pst{position:absolute;left:4px;top:4px;z-index:2;padding:0 6px;border-radius:6px;background:rgba(0,0,0,.6);font:400 11px var(--display);color:#ffd36b}
+.pt-card .pt-nm{flex-direction:column;align-items:flex-start;gap:1px;padding-top:20px}.pt-card .pt-nm b{max-width:100%}.pt-card .pt-st .stars6{transform:scale(.9);transform-origin:left center}

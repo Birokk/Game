@@ -52,7 +52,19 @@ function rollRaidPiece() {
   const x = Math.random(), r = x < RAID_RATES[5] ? 5 : x < RAID_RATES[5] + RAID_RATES[4] ? 4 : 3;
   const list = raidPieces(r); return list.length ? rpick(list) : null;
 }
+/* the wardrobe holds at most INV_CAP (999) pieces: a clear only runs when every possible drop (2 per clear) fits */
+const wardCount = () => (S.clothes || []).reduce((t, x) => t + (S.owned[x.id] || 0), 0);
+const wardFree = () => Math.max(0, INV_CAP - wardCount());
+function wardFullMsg(times) {
+  const need = 2 * times;
+  openModal({ title: 'Wardrobe full', ic: 'hanger', small: true, body: `<div class="stack" style="text-align:center">
+    <p class="desc">Your wardrobe holds <b>${fmt(wardCount())} / ${INV_CAP}</b> pieces. A clear can drop up to 2 pieces, so clearing ×${times} needs ${need} free spaces${wardFree() ? ` (you have ${wardFree()})` : ''}.</p>
+    <p class="tiny">Fuse spare clothes (3 → 1) or merge UR stars to make space, then come back.</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" data-close>Close</button><button class="btn gold" id="wfFuse">${icon('fuse')}Fuse clothes</button></div></div>`,
+    onMount: b => { b.querySelector('[data-close]').onclick = closeModal; $('#wfFuse').onclick = () => openFuse(3); } });
+}
 function clearRaid(times) {
+  if (wardFree() < 2 * times) { wardFullMsg(times); return; }
   const cost = RAID_STAMINA * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
   spendStamina(cost); questAdd('raid', times);
@@ -103,7 +115,7 @@ function renderRaids() {
       <div class="raid-drops"><span class="lbl-sm">Possible drops</span>
         ${[5, 4, 3].map(r => `<div class="raid-row r${r}"><span class="raid-rate">${ctag(r)}</span><div class="raid-pieces">${raidPieces(r).map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('')}</div></div>`).join('')}
       </div>
-      <div class="raid-go"><button class="btn gold" data-clear="1">Clear ×1 ${curIcon('stamina')}${RAID_STAMINA}</button><button class="btn mint" data-clear="5">Clear ×5 ${curIcon('stamina')}${RAID_STAMINA * 5}</button><button class="btn ghost" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
+      <div class="raid-go"><button class="btn gold" data-clear="1">Clear ×1 ${curIcon('stamina')}${RAID_STAMINA}</button><button class="btn mint" data-clear="5">Clear ×5 ${curIcon('stamina')}${RAID_STAMINA * 5}</button><button class="btn ghost" id="raidFuse">${icon('fuse')}Fuse clothes</button><span class="raid-ward ${wardFree() < 2 ? 'full' : ''}">${icon('hanger')}Wardrobe ${fmt(wardCount())} / ${INV_CAP}${wardFree() < 2 ? ' · full' : ''}</span></div>
     </section>`;
   raidEl.querySelector('#raidClose').onclick = closeRaids;
   raidEl.querySelector('#raidPlus').onclick = openStamina;

@@ -61,19 +61,25 @@ function scratchBoard() {
   const cells = c ? c.cells.map(i => `<span class="scr-cell ${c.done && i === c.win ? 'hit' : ''}">${scrIcon(SCR_KEYS[i])}</span>`).join('')
     : Array.from({ length: 9 }, () => `<span class="scr-cell">${scrIcon('moon', 'ghost')}</span>`).join('');
   const odds = x => { const v = x / 1e4; return v >= 1 ? `${Math.round(v * 100) / 100}%` : `${+v.toPrecision(2)}%`; };
+  const no = String((S.scratch && S.scratch.n) || 0).padStart(2, '0'), day = dayKey().slice(5).replace('-', '');
+  // a wide lottery ticket: the play area on the left, a perforated stub on the right
   return `<div class="scr">
-    <div class="scr-card ${c ? '' : 'empty'} ${c && c.done ? (c.prize ? 'won' : 'lost') : ''}">
-      <div class="scr-head"><b>Lucky Scratch</b><span>Match 3 to win</span></div>
-      <div class="scr-wrap"><div class="scr-grid">${cells}</div>${open ? '<canvas class="scr-foil" id="scrFoil" aria-label="Scratch the foil to reveal the icons"></canvas>' : ''}
-        ${!c ? `<div class="scr-msg">Buy a card to play</div>` : c.done ? `<div class="scr-res">${c.prize ? `${curIcon('pearls')}<b>+${c.prize}</b>` : '<b>No match</b>'}</div>` : ''}</div>
-      <div class="scr-foot">${open ? 'Scratch the silver foil' : c && c.done ? (c.prize ? `You won ${c.prize} pearl${c.prize === 1 ? '' : 's'}!` : 'Better luck next card') : `${SCRATCH_PRICE} pearls per card`}</div>
+    <div class="scr-card ticket ${c ? '' : 'empty'} ${c && c.done ? (c.prize ? 'won' : 'lost') : ''}">
+      <div class="scr-main">
+        <div class="scr-head"><b>Lucky Scratch</b><span>${scrIcon('star')}Match 3 to win${scrIcon('star')}</span></div>
+        <div class="scr-wrap"><div class="scr-grid">${cells}</div>${open ? '<canvas class="scr-foil" id="scrFoil" aria-label="Scratch the foil to reveal the icons"></canvas>' : ''}
+          ${!c ? `<div class="scr-msg">Buy a card to play</div>` : c.done ? `<div class="scr-res">${c.prize ? `${curIcon('pearls')}<b>+${c.prize}</b>` : '<b>No match</b>'}</div>` : ''}</div>
+        <div class="scr-foot">${open ? 'Scratch the silver foil' : c && c.done ? (c.prize ? `You won ${c.prize} pearl${c.prize === 1 ? '' : 's'}!` : 'Better luck next card') : `${SCRATCH_PRICE} pearls per card`}</div>
+      </div>
+      <div class="scr-stub"><span class="scr-stub-t">LUCKY</span><span class="scr-stub-ic">${scrIcon('seven')}</span><span class="scr-stub-no">No. ${day}-${no}</span><span class="scr-stub-p">${curIcon('pearls')}${SCRATCH_PRICE}</span><span class="scr-stub-b" aria-hidden="true"></span></div>
     </div>
     <div class="scr-side">
       ${open ? `<button class="btn gold" id="scrReveal">${icon('eye')}Reveal all</button>`
         : `<button class="btn gold" id="scrBuy" ${left > 0 && S.wallet.pearls >= SCRATCH_PRICE ? '' : 'disabled'}>Buy a card · ${costHTML(SCRATCH_PRICE)}</button>`}
       <span class="scr-left">${left} of ${SCRATCH_DAILY} cards left today</span>
-      <div class="scr-table"><span class="lbl-sm" style="display:flex;justify-content:space-between;align-items:center">Three of a kind wins ${infoBtn('scratch', 'Prizes and odds')}</span>
-        ${SCRATCH_PRIZES.map(x => `<div class="scr-row ${x.p >= 30 ? 'big' : ''}"><span class="scr-trio">${scrIcon(x.ic)}<i>×3</i></span><b>${curIcon('pearls')}${x.p}</b></div>`).join('')}
+      <div class="scr-table"><span class="lbl-sm" style="display:flex;justify-content:space-between;align-items:center">Three of a kind wins<span>Chance</span></span>
+        ${SCRATCH_PRIZES.map(x => `<div class="scr-row ${x.p >= 30 ? 'big' : ''}"><span class="scr-trio">${scrIcon(x.ic)}<i>×3</i></span><b>${curIcon('pearls')}${x.p}</b><small>${odds(x.w)}</small></div>`).join('')}
+        <div class="scr-row lose"><span>No match</span><b>0</b><small>${odds(SCRATCH_LOSE_W)}</small></div>
       </div>
     </div></div>`;
 }
