@@ -1,9 +1,10 @@
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let wdSlot = 'hat', memSlot = 0;
-let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
+let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false, csShown = '';
 const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
 function openCharacters(id) {
+  csShown = '';
   const list = charList();
   if (!list.length) { toast("You don't own any characters yet. Summon on a banner to get your first one."); return; }
   csId = id && owns(id) ? id : csId && owns(csId) ? csId : list[0].id;
@@ -170,9 +171,17 @@ function renderCharacters() {
       <div class="cs-card"><div class="lbl-sm" style="margin-bottom:6px">Profile</div><p>${esc(c.desc || 'No description yet.')}</p></div>
       <div class="row"><button class="btn ghost sm" data-open="admin">${icon('edit')}Edit in admin</button></div>`;
   }
-  csEl.innerHTML = `<div class="cs-bg"><div class="cs-rays"></div></div>
+  // the art layer stays put between renders (no flicker); only a new picture replaces it, and it never animates.
+  // the UI layer is rebuilt, and the tab's panel fades in when the tab or character changes
+  let L = csEl.querySelector('.cs-layer'), U = csEl.querySelector('.cs-uil');
+  if (!L || !U) { csEl.innerHTML = '<div class="cs-layer"></div><div class="cs-uil"></div>'; L = csEl.querySelector('.cs-layer'); U = csEl.querySelector('.cs-uil'); }
+  const artK = `${shown.id}|${art || ''}`;
+  if (L.dataset.k !== artK) { L.dataset.k = artK; L.innerHTML = `<div class="cs-bg"><div class="cs-rays"></div></div>
     ${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="cs-art ${art ? '' : 'chibi'}" src="${getSplash(shown)}" alt="${esc(shown.name)}">
-    <div class="cs-shade"></div>
+    <div class="cs-shade"></div>`; }
+  const enter = csShown !== `${c.id}|${csTab}`; csShown = `${c.id}|${csTab}`;
+  const keepList = U.querySelector('.cs-list') ? U.querySelector('.cs-list').scrollTop : 0;
+  U.innerHTML = `
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
         <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
@@ -180,7 +189,8 @@ function renderCharacters() {
     <div class="cs-side cs-ui">
       <button class="rbtn" id="csViewBtn" aria-label="View the art without the menu">${icon('eye')}</button>
     </div>
-    <section class="cs-panel cs-ui">${head}${body}</section>`;
+    <section class="cs-panel cs-ui ${enter ? 'enter' : ''}">${head}${body}</section>`;
+  U.querySelector('.cs-list').scrollTop = keepList;
   $('#csBack').onclick = closeCharacters;
   $('#csHelp').onclick = () => openModal({ title: 'Characters', ic: 'chars', body: `<div class="stack">
       <p class="desc">Pick a character on the left. <b>Home</b> shows stars and outfits, <b>Bond</b> is where you give gifts and, at bond level 10, propose with a ring, and <b>Character Info</b> has their profile. Badges under the name show what you've achieved with each character.</p>
