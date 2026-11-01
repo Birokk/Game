@@ -5,6 +5,8 @@
    (spinsPerDay in 10-economy.js). State: S.member[passId] = end time, S.memberDay[passId] = last day delivered.
    The card pictures (icon slots pass1 / pass2) and the UR memory ticket icon (memtk) are editable in Settings → Admin. */
 const PASS_DAYS = 30, PASS_MS = PASS_DAYS * 864e5;
+const PASS_MAX_DAYS = 180;   // a membership can be stacked up to 180 days; a purchase that would go past that is refused
+const passCanBuy = id => passLeft(id) + PASS_MS <= PASS_MAX_DAYS * 864e5 + 6e4;
 const PASSES = [
   { id: 'p1', icon: 'pass1', name: 'Lantern Membership', price: 30, col: '#ffb35a',
     daily: { tickets: 1, pearls: 3 }, once: { pearls: 5, eggur: 1 }, spins: 2 },
@@ -46,8 +48,10 @@ function passDaily() {
     persist();
   }
 }
+function passMaxMsg(p) { toast(`${p.name} can be stacked up to ${PASS_MAX_DAYS} days. You have ${passDaysLeft(p.id)} days, so another ${PASS_DAYS} would go past the limit.`); }
 function confirmPass(id) {
   const p = passDef(id); if (!p) return;
+  if (!passCanBuy(id)) return passMaxMsg(p);
   const on = passOn(id);
   openModal({ title: on ? `Extend ${p.name}?` : `Buy ${p.name}?`, ic: 'shop', small: true, body: `<div class="stack" style="text-align:center">
     <span class="pass-card big">${curIcon(p.icon)}</span>
@@ -58,6 +62,7 @@ function confirmPass(id) {
 }
 function buyPass(id) {
   const p = passDef(id); if (!p) return;
+  if (!passCanBuy(id)) return passMaxMsg(p);
   if (S.wallet.pearls < p.price) { toast(`${p.name} costs ${p.price} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   S.wallet.pearls -= p.price;
   S.member = { ...(S.member || {}), [id]: Math.max(Date.now(), (S.member || {})[id] || 0) + PASS_MS };
@@ -76,7 +81,8 @@ function passShopHTML() {
       <span class="pass-card">${curIcon(p.icon)}</span>
       <div class="pass-head"><h3>${esc(p.name)}</h3><span class="pass-state">${on ? `Active · ${passDaysLeft(p.id)} day${passDaysLeft(p.id) === 1 ? '' : 's'} left` : `${PASS_DAYS} days`}</span></div>
       <ul class="pass-perks">${passPerks(p).map(([k, t]) => `<li><span class="pass-pi">${k === 'wheel' ? icon('wheel') : passPic(k)}</span>${esc(t)}</li>`).join('')}</ul>
-      <button class="mall-go pass-buy ${S.wallet.pearls >= p.price ? '' : 'poor'}" data-pass="${p.id}">${on ? 'Extend' : 'Buy'} · ${curIcon('pearls')}<b>${p.price}</b></button>
+      ${passCanBuy(p.id) ? `<button class="mall-go pass-buy ${S.wallet.pearls >= p.price ? '' : 'poor'}" data-pass="${p.id}">${on ? 'Extend' : 'Buy'} · ${curIcon('pearls')}<b>${p.price}</b></button>` : `<button class="mall-go pass-buy owned" disabled>Max ${PASS_MAX_DAYS} days reached</button>`}
+      <span class="tiny pass-cap">Stack up to ${PASS_MAX_DAYS} days${on ? ` · ${passDaysLeft(p.id)} / ${PASS_MAX_DAYS} now` : ''}</span>
     </div>`; }).join('')}</div>`;
 }
 /* use a UR memory ticket: a random UR memory with the summon reveal */

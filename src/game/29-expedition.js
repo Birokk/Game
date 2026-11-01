@@ -38,7 +38,7 @@ let fmView = 'base', exPick = null;
 
 function sendExpedition(areaId, charId) {
   const c = findEntry(charId); if (!c || !owns(charId) || expOf(areaId)) return;
-  if (expAway(charId)) { toast(`${c.name} is already on an expedition.`); return; }
+  if (busyWhere(charId)) { toast(`${c.name} is busy at the ${busyWhere(charId)}.`); return; }
   S.expd = { ...(S.expd || {}), [areaId]: { char: charId, start: Date.now(), ends: Date.now() + EXP_MS } };
   exPick = null; persist(); renderFarm();
   toast(`${c.name} set off for the ${expArea(areaId).name}. Back in 12 hours.`);
@@ -107,8 +107,8 @@ function expPanel(a) {
   if (!e) {
     const list = expChars();
     body = list.length ? `<span class="lbl-sm">Choose a character</span>
-      <div class="ex-pick">${list.map(x => { const busy = expAway(x.id);
-        return `<button class="ex-pc r${x.rarity} ${exPick === x.id ? 'on' : ''}" data-expick="${esc(x.id)}" ${busy ? 'disabled' : ''} title="${esc(x.name)}${busy ? ` · away at the ${esc(busy.name)}` : ''}"><span class="ex-av r${x.rarity}">${thumbImg(x)}</span><small>${esc(x.name)}</small>${busy ? '<em>Away</em>' : ''}</button>`; }).join('')}</div>
+      <div class="ex-pick">${list.map(x => { const busy = busyWhere(x.id);
+        return `<button class="ex-pc r${x.rarity} ${exPick === x.id ? 'on' : ''}" data-expick="${esc(x.id)}" ${busy ? 'disabled' : ''} title="${esc(x.name)}${busy ? ` · away at the ${esc(busy)}` : ''}"><span class="ex-av r${x.rarity}">${thumbImg(x)}</span><small>${esc(x.name)}</small>${busy ? '<em>Away</em>' : ''}</button>`; }).join('')}</div>
       <p class="tiny">UR characters bring back more gold and roll better pearls and tickets.</p>
       <button class="btn mint" id="exGo" ${exPick ? '' : 'disabled'}>${icon('map')}Send · 12 hours</button>`
       : '<p class="tiny">You don\'t own any characters yet. Summon one first.</p>';
