@@ -102,6 +102,7 @@ function renderCharacters() {
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
+      ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb r${Math.min(rk, 4)}" data-csrank="${esc(c.id)}"><span class="cs-rankn">#${rk}</span><span><b>Top ${rk <= 3 ? 3 : 10} in the ranking</b><small>Character CS ranking for ${esc(c.name)}</small></span></button>` : ''; })()}
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
@@ -201,6 +202,7 @@ function renderCharacters() {
       <p class="desc"><b>Skins</b> lists every outfit: scroll through them to see each one full screen. Outfits you don't own are shown in black and white. The eye button hides the menu so you can look at the art.</p></div>` });
   csEl.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { csId = b.dataset.cs; csSkin = null; renderCharacters(); });
   csEl.classList.toggle('bw', !owns(shown.id));
+  csEl.querySelectorAll('[data-csrank]').forEach(b => b.onclick = () => openRanking('char', b.dataset.csrank));
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; csSkin = null; renderCharacters(); });
   if (csTab === 'skins') initSkinCar(c);
   bindCSInfo(csEl);

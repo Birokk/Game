@@ -3500,3 +3500,44 @@ button.pt-slot:hover{border-color:#fff}
 /* after the rise the sphere keeps creeping upward slowly (individual `translate`, so it never fights the scale / burst transforms) */
 .pull.drift .sph{translate:0 -10vh;transition:top var(--rise,3.4s) cubic-bezier(.4,.05,.3,1),transform .45s cubic-bezier(.2,1.5,.4,1),--c1 1s,--c2 1s,--c3 1s,translate 16s linear}
 .pull.drift.burst .sph{transition:transform .45s ease-in,opacity .45s ease-in,translate 16s linear}
+
+/* ---------- Ranking v2: character picker, top 10 cards, gold / silver / bronze top 3 with prestigious medals ---------- */
+.rk{grid-template-rows:auto auto auto minmax(0,1fr) auto}
+.rk-sub{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:thin}
+.rk-chip{flex:none;position:relative;display:flex;align-items:center;gap:8px;padding:5px 14px 5px 5px;border-radius:999px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.14);color:#fff}
+.rk-chip b{font-family:var(--display);font-weight:400;font-size:13px;white-space:nowrap}
+.rk-chip .rk-chip-img,.rk-chip img{width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 15%;border:1.5px solid rgba(255,255,255,.4)}
+.rk-chip-ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1)}.rk-chip-ic .ic{width:16px;height:16px}
+.rk-chip.on{background:var(--cry-grad);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 12px var(--cry-glow)}
+.rk-chip:not(.own):not(.on):not([data-rkc=best]){opacity:.7}
+.rk-chip small{font-family:var(--display);font-size:11px;padding:1px 6px;border-radius:99px;background:linear-gradient(180deg,#ffe28f,#d99a2a);color:#3a2400}
+/* top 10: tinted cards; top 3: see-through gold / silver / bronze */
+.rk-row.top10{background:linear-gradient(90deg,rgba(200,162,255,.16),rgba(148,184,255,.07));border-color:rgba(200,162,255,.35)}
+.rk-row.top1{background:linear-gradient(90deg,rgba(255,206,92,.30),rgba(255,206,92,.08) 60%,rgba(255,236,170,.14));border:1.5px solid rgba(255,214,110,.75);box-shadow:0 0 20px rgba(255,200,80,.25),inset 0 1px 0 rgba(255,240,200,.35)}
+.rk-row.top2{background:linear-gradient(90deg,rgba(214,224,245,.28),rgba(214,224,245,.07) 60%,rgba(240,244,255,.12));border:1.5px solid rgba(225,232,250,.7);box-shadow:0 0 18px rgba(210,222,255,.18),inset 0 1px 0 rgba(255,255,255,.3)}
+.rk-row.top3{background:linear-gradient(90deg,rgba(214,140,90,.30),rgba(214,140,90,.08) 60%,rgba(240,190,150,.12));border:1.5px solid rgba(230,160,110,.7);box-shadow:0 0 18px rgba(220,140,90,.2),inset 0 1px 0 rgba(255,220,190,.3)}
+.rk-row.me.top1,.rk-row.me.top2,.rk-row.me.top3,.rk-row.me.top10{outline:2px solid var(--cry-edge);outline-offset:2px}
+/* medals: number on a faceted disc with a metal ring, light rays behind and a little crown / laurel on top 3 */
+.rk-row .rk-n i{position:relative;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:50%;font-style:normal;--m1:#efe6ff;--m2:#b79cf0;--m3:#5b3fa6;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.85),transparent 45%),linear-gradient(160deg,var(--m1),var(--m2) 55%,var(--m3));
+  box-shadow:0 0 0 2px rgba(255,255,255,.75),0 0 0 4px var(--m3),0 3px 10px rgba(0,0,0,.4);border:0;animation:none}
+.rk-row .rk-n i b{position:relative;z-index:1;font-family:var(--display);font-weight:400;font-size:18px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.rk-row.top .rk-n i{width:46px;height:46px}
+.rk-row.top .rk-n i::before{content:"";position:absolute;inset:-14px;z-index:-1;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--m1) 70%,transparent) 0 6deg,transparent 6deg 20deg);-webkit-mask:radial-gradient(circle,transparent 42%,#000 46%,transparent 72%);mask:radial-gradient(circle,transparent 42%,#000 46%,transparent 72%);animation:spin 14s linear infinite}
+.rk-row.top .rk-n i::after{content:"♛";position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:16px;line-height:1;color:var(--m1);text-shadow:0 0 6px var(--m2),0 1px 1px rgba(0,0,0,.5)}
+.rk-row.top .rk-n i b{font-size:21px}
+.rk-row.top1 .rk-n i{--m1:#fff3c4;--m2:#f2bd45;--m3:#9a6512;box-shadow:0 0 0 2px #fff8dc,0 0 0 4px #b37a17,0 0 18px rgba(255,200,80,.7),0 3px 10px rgba(0,0,0,.4)}
+.rk-row.top2 .rk-n i{--m1:#ffffff;--m2:#c4cde2;--m3:#6c7690;box-shadow:0 0 0 2px #fff,0 0 0 4px #8790aa,0 0 14px rgba(220,230,255,.6),0 3px 10px rgba(0,0,0,.4)}
+.rk-row.top3 .rk-n i{--m1:#ffe2cc;--m2:#d58d5c;--m3:#7d3f1a;box-shadow:0 0 0 2px #ffe8d6,0 0 0 4px #94512a,0 0 14px rgba(230,150,100,.55),0 3px 10px rgba(0,0,0,.4)}
+.rk-row.top1 .rk-n i b{color:#5a3a00;text-shadow:0 1px 0 rgba(255,250,220,.7)}
+.rk-row.top2 .rk-n i b{color:#3a4258;text-shadow:0 1px 0 rgba(255,255,255,.8)}
+.rk-row.top3 .rk-n i b{color:#4a1f08;text-shadow:0 1px 0 rgba(255,230,210,.6)}
+.rk-row .rk-n{overflow:visible}
+.rk-list{padding-top:16px}
+/* character home: your place in that character's ranking */
+.cs-rankb{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;margin-bottom:10px;border-radius:16px;text-align:left;color:#fff;background:linear-gradient(90deg,rgba(200,162,255,.22),rgba(148,184,255,.08));border:1.5px solid rgba(200,162,255,.5)}
+.cs-rankb.r1{background:linear-gradient(90deg,rgba(255,206,92,.32),rgba(255,206,92,.06));border-color:rgba(255,214,110,.8)}
+.cs-rankb.r2{background:linear-gradient(90deg,rgba(214,224,245,.3),rgba(214,224,245,.06));border-color:rgba(225,232,250,.75)}
+.cs-rankb.r3{background:linear-gradient(90deg,rgba(214,140,90,.32),rgba(214,140,90,.06));border-color:rgba(230,160,110,.75)}
+.cs-rankn{font-family:var(--display);font-size:26px;line-height:1;min-width:52px;text-align:center}
+.cs-rankb>span:last-child{display:grid;gap:2px}.cs-rankb b{font-family:var(--display);font-weight:400;font-size:15px}.cs-rankb small{font-family:var(--read);font-size:12px;opacity:.75}
