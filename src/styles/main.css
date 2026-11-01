@@ -2856,11 +2856,11 @@ button.pt-slot:hover{border-color:#fff}
 /* Potential (32-potential.js): gems above the stars, the plan board */
 .stars6>span{position:relative}
 .pot-ic{display:none}
-.cs-traits .pot-ic,.stars-big .pot-ic{display:block;position:absolute;left:50%;bottom:100%;width:1.35em;height:1.35em;transform:translate(-50%,-2px);opacity:.42;filter:grayscale(.4);pointer-events:auto}
-.cs-traits .pot-ic.done,.stars-big .pot-ic.done{opacity:1;filter:drop-shadow(0 0 5px rgba(200,162,255,.9));animation:potBob 2.6s ease-in-out infinite}
+.cs-traits .pot-ic,.stars-big .pot-ic{display:block;position:absolute;left:58%;bottom:78%;width:.9em;height:.9em;transform:translateX(-50%) rotate(22deg);opacity:.42;filter:grayscale(.4);pointer-events:auto}
+.cs-traits .pot-ic.done,.stars-big .pot-ic.done{opacity:1;filter:drop-shadow(0 0 3px rgba(200,162,255,.8))}
 .pot-ic .pot-svg{width:100%;height:100%;display:block}
 @keyframes potBob{50%{transform:translate(-50%,-5px)}}
-.cs-traits:has(.pot-ic) .stars6,.stars-big:has(.pot-ic) .stars6{padding-top:1.45em}
+.cs-traits:has(.pot-ic) .stars6,.stars-big:has(.pot-ic) .stars6{padding-top:.75em}
 .pot{display:grid;gap:10px}
 .pot-head{display:flex;align-items:center;gap:10px}
 .pot-head b{display:block;font:400 20px var(--display)}
@@ -2873,8 +2873,7 @@ button.pt-slot:hover{border-color:#fff}
 .pot-pg.on{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 12px var(--cry-glow)}
 .pot-pg.locked{opacity:.5}
 .pot-pg.done:not(.on){border-color:#c8a2ff;color:#e6d6ff}
-.pot-board{position:relative;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
-  background:radial-gradient(circle at 50% 48%,rgba(200,162,255,.28),transparent 45%),repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 10px,transparent 10px 20px),linear-gradient(160deg,#2a1d4f,#151230 60%,#24183f);border:1px solid rgba(200,162,255,.35)}
+.pot-board{position:relative;aspect-ratio:4/3;background:none;border:0;overflow:visible}
 .pot-lines{position:absolute;inset:0;width:100%;height:100%}
 .pot-lines line{stroke:rgba(255,255,255,.18);stroke-width:1.4;vector-effect:non-scaling-stroke;stroke-linecap:round}
 .pot-lines line.on{stroke:#f5afe8;stroke-width:3;filter:drop-shadow(0 0 3px #c8a2ff)}
@@ -2893,7 +2892,7 @@ button.pt-slot:hover{border-color:#fff}
 .pot-lbl small{font-size:10px;color:#f5afe8}
 .pot-next{position:absolute;top:-12px;right:-14px;padding:1px 6px;border-radius:6px;background:var(--cry-grad-h);color:var(--cry-ink);font:400 10px var(--display);transform:rotate(8deg)}
 .pot-board.shut .pot-node{opacity:.35}
-.pot-shut{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;background:rgba(8,6,20,.55);font:400 15px var(--display)}
+.pot-shut{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;background:none;text-shadow:0 2px 8px #000;font:400 15px var(--display)}
 .pot-shut .ic{width:30px;height:30px}
 .pot-foot{display:flex;justify-content:center}
 .pot-ok{background:var(--cry-grad-h);color:var(--cry-ink)}
