@@ -411,7 +411,7 @@ function startPfx(canvas, tier) {
    through orange (SSR) to prism (UR), stopping at the best rarity in the pull, then bursts into the reveals.
    Fakeout: now and then a UR pull stops at orange, a character wallpaper (admin → Summon animation, S.fakeArts) slides in,
    and the sphere transforms into UR. Never when hard pity guaranteed the UR. */
-const FAKEOUT_CHANCE = .3;
+const FAKEOUT_CHANCE = .3, DOUBLE_CHANCE = .5;
 function fakeArt() {
   const own = (S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean);
   if (own.length) return rpick(own);
@@ -420,8 +420,8 @@ function fakeArt() {
 function showPull(results, n, bk, opts = {}) {
   closePull(true);
   const best = Math.max(...results.map(r => r.up ? 4 : r.rarity));
-  // secret double: 2 or more URs in one pull: after the sphere turns UR, two set wallpapers slide in split on the diagonal
-  const double = best === 5 && opts.double !== false && (opts.double || results.filter(r => r.rarity === 5 && !r.up).length >= 2);
+  // secret double: 2 or more URs in one pull, half the time (DOUBLE_CHANCE): after the sphere turns UR, two set wallpapers slide in split on the diagonal
+  const double = best === 5 && opts.double !== false && (opts.double || (results.filter(r => r.rarity === 5 && !r.up).length >= 2 && Math.random() < DOUBLE_CHANCE));
   const fake = !double && best === 5 && !results.some(r => r.rarity === 5 && !r.up && r.hard) && (opts.fake ?? Math.random() < FAKEOUT_CHANCE);
   // rainbow: when the pull holds the limited banner's featured UR, half the time the UR sphere turns rainbow (a sure sign)
   const featId = bk === 'limited' && bannerInfo('limited').feat ? bannerInfo('limited').feat.id : null;
@@ -493,7 +493,7 @@ function doubleArtIn() {
   const st = pullState; if (!st || !pullEl) return;
   const [a, b] = doubleArts(st.results); if (!a) return;
   pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art dbl"><div class="fk-half a"><img src="${a}" alt=""></div><div class="fk-half b"><img src="${b}" alt=""></div>
-    <svg class="fk-split" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="81" y1="-2" x2="19" y2="102"/></svg><i class="fk-streak"></i></div>`);
+    <svg class="fk-split" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="82.24" y1="-2" x2="17.76" y2="102"/></svg><i class="fk-streak"></i></div>`);
   if (st.fx) st.fx.burst(80, 560, 5);
 }
 function doubleArtOut() {
@@ -520,7 +520,7 @@ function burstSphere() {
   const st = pullState; if (!st || !pullEl) return;
   st.phase = 'burst';
   pullEl.classList.add('burst');
-  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''}>${RNAME[st.best]}</div>` : ''}`);
+  pullEl.insertAdjacentHTML('beforeend', `<div class="sph-flash"></div>${st.best >= 4 ? `<div class="stamp now ${st.best === 5 ? 'up' : ''} ${st.rainbow ? 'rb' : ''}">${RNAME[st.best]}</div>` : ''}`);
   st.fx.burst(st.best === 5 ? 260 : st.best === 4 ? 150 : 60, st.best === 5 ? 1000 : st.best === 4 ? 760 : 460, st.best);
   if (st.sfx) st.sfx.shock();
   pullLater(st.best >= 4 ? 1500 : 700, advancePull);
