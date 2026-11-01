@@ -3026,3 +3026,23 @@ button.pt-slot:hover{border-color:#fff}
 .rew-it b{font:400 20px var(--display)}
 .rew-it small{font-family:var(--read);font-size:12px;color:rgba(255,255,255,.7);text-align:center}
 @keyframes rdIn{from{opacity:0;transform:translateY(14px) scale(.8)}}
+
+/* chips that toggle (signature memories, card framing): a clear selected state */
+.chip[data-sigmem],.chip[data-cpk]{cursor:pointer}
+.chip.on{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 10px var(--cry-glow)}
+.chip[data-sigmem].on::after{content:"✓";font-weight:900;margin-left:2px}
+/* summon results: 3:4 cards framed like every other card */
+.scard img{aspect-ratio:3/4;object-fit:cover}
+.scard img.chibi{object-fit:cover;object-position:50% 40%}
+.scard .coinbox{aspect-ratio:3/4}
+.scard-mem{position:relative;display:block;aspect-ratio:3/4}
+.scard-mem .mem-sq{border-radius:0}
+/* inventory detail: several actions */
+.inv-acts{display:grid;gap:8px}
+.inv-acts .btn.ghost{justify-content:center}
+.upop{z-index:72}
+.up-box .up-grid,.up-box .up-row{width:100%}
+.up-box .up-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));align-self:stretch}
+.inv-acts .btn.ghost{background:rgba(30,20,60,.08);color:#2b1855;border:1px solid rgba(43,24,85,.25)}
+.inv-acts .btn.ghost:hover{background:rgba(30,20,60,.15)}
+.inv-acts .btn.ghost .ic{color:#5a3fa8}

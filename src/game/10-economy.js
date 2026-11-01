@@ -30,7 +30,7 @@ function openBuyTickets(bk = 'limited') {
 /* stamina: details; +60 from a recovery bottle or for 1 pearl */
 const STAMINA_REFILLS = [1, 1, 2, 2, 3, 3];   // pearl cost of each daily refill
 const refillsUsed = () => S.stamRefill && S.stamRefill.day === dayKey() ? S.stamRefill.n : 0;
-function addStamina() { const n = giveStamina(BOTTLE_STAMINA); persist(); renderMenu(); openStamina(); toast(`+${n} stamina.${n < BOTTLE_STAMINA ? ` Stamina is capped at ${STAMINA_CAP}.` : ''}`); }
+function addStamina() { const n = giveStamina(BOTTLE_STAMINA); persist(); renderMenu(); openStamina(); toast(`+${n} stamina.`); }
 const BOTTLE_STAMINA = 60;
 function openStamina() {
   const v = stamina(), left = stamMs() - (Date.now() - S.stamina.t);

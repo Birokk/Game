@@ -4,6 +4,7 @@
    can use (only spare ones: copies with a character are never used up). Pick them, then Fuse. */
 const invCell = ({ r, pic, under = '', cls = '', attrs = '', rt = true }) => `<button type="button" class="inv-cell r${r} ${cls}" ${attrs}><span class="inv-pic">${pic}${rt ? `<span class="inv-rt">${ctag(r)}</span>` : ''}</span><b>${under || '&nbsp;'}</b></button>`;
 function openUpgradePop({ title, target, from, to, need = 1, cands, stars, onFuse, note }) {
+  const max = Math.max(1, Math.min(need, cands.length || 1));   // up to `need` copies; each one adds a star
   const old = document.querySelector('.upop'); if (old) old.remove();
   const el = document.createElement('div'); el.className = 'rdrop upop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', title);
   let sel = [];
@@ -13,20 +14,20 @@ function openUpgradePop({ title, target, from, to, need = 1, cands, stars, onFus
       <div class="up-row">
         <div class="up-col">${invCell({ ...target, under: stars(from), cls: 'up-big', attrs: 'tabindex="-1"' })}<small>Upgrade</small></div>
         <span class="up-sign">+</span>
-        <div class="up-col"><div class="up-slots">${Array.from({ length: need }, (_, i) => { const c = sel[i] && cands.find(x => x.key === sel[i]);
-          return `<span class="up-slot ${c ? 'full r' + c.r : ''}">${c ? c.pic : '<i>+</i>'}</span>`; }).join('')}</div><small>Add ${need} cop${need === 1 ? 'y' : 'ies'}</small></div>
+        <div class="up-col"><div class="up-slots">${Array.from({ length: max }, (_, i) => { const c = sel[i] && cands.find(x => x.key === sel[i]);
+          return `<span class="up-slot ${c ? 'full r' + c.r : ''}">${c ? c.pic : '<i>+</i>'}</span>`; }).join('')}</div><small>${max > 1 ? `Add up to ${max} copies` : 'Add 1 copy'}</small></div>
         <span class="up-sign arrow">${icon('back')}</span>
-        <div class="up-col up-res">${stars(to)}<small>${from}★ → ${to}★</small></div>
+        <div class="up-col up-res">${stars(from + Math.max(1, sel.length) * (to - from))}<small>${from}★ → ${from + Math.max(1, sel.length) * (to - from)}★</small></div>
       </div>
-      <span class="lbl-sm">Choose ${need} cop${need === 1 ? 'y' : 'ies'} to use · ${sel.length} / ${need}</span>
+      <span class="lbl-sm">Choose ${max > 1 ? `up to ${max} copies` : '1 copy'} to use · ${sel.length} / ${max}</span>
       ${cands.length ? `<div class="up-grid">${cands.map(c => invCell({ ...c, cls: sel.includes(c.key) ? 'on' : '', attrs: `data-upk="${esc(c.key)}" ${c.attrs || ''}` })).join('')}</div>`
         : '<div class="cs-pill">No spare copy you can use for this upgrade.</div>'}
       ${note ? `<p class="tiny">${note}</p>` : ''}
-      <div class="row" style="justify-content:center;gap:10px"><button class="btn ghost" data-upx>Cancel</button><button class="btn gold" id="upGo" ${sel.length === need ? '' : 'disabled'}>${icon('fuse')}Fuse</button></div></div>`;
+      <div class="row" style="justify-content:center;gap:10px"><button class="btn ghost" data-upx>Cancel</button><button class="btn gold" id="upGo" ${sel.length ? '' : 'disabled'}>${icon('fuse')}Fuse${sel.length > 1 ? ` ×${sel.length}` : ''}</button></div></div>`;
     el.querySelectorAll('[data-upx]').forEach(b => b.onclick = () => el.remove());
     el.querySelectorAll('[data-upk]').forEach(b => b.onclick = () => { const k = b.dataset.upk, i = sel.indexOf(k);
-      if (i >= 0) sel.splice(i, 1); else if (sel.length < need) sel.push(k); else if (need === 1) sel = [k]; render(); });
-    const go = el.querySelector('#upGo'); if (go) go.onclick = () => { if (sel.length !== need) return; el.remove(); onFuse(sel); };
+      if (i >= 0) sel.splice(i, 1); else if (sel.length < max) sel.push(k); else if (max === 1) sel = [k]; render(); });
+    const go = el.querySelector('#upGo'); if (go) go.onclick = () => { if (!sel.length) return; el.remove(); onFuse(sel); };
   };
   render();
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
@@ -52,12 +53,12 @@ function upMemCopy(id, i) {
   const m = memOf(id), cps = memCopies(id), tgt = cps[i]; if (!m || !tgt) return;
   if (tgt.st >= MEM_MAXST) { toast(`This copy of ${m.name} is already at ${MEM_MAXST}★.`); return; }
   const cands = cps.map((c, j) => ({ ...c, j })).filter(c => c.j !== i && !c.who).map(c => ({ key: String(c.j), r: m.rarity, pic: memCellPic(m, c.st), under: memStarRow(c.st) }));
-  openUpgradePop({ title: 'Memory stars', target: { r: m.rarity, pic: memCellPic(m, tgt.st), name: m.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: 1, cands,
-    stars: st => memStarRow(st, 'big'), note: 'The copy you use is gone after fusing, whatever its stars.',
-    onFuse: ([k]) => { const feed = memCopies(id)[+k], t = memCopies(id)[i]; if (!feed || !t || feed.who) return;
-      const arr = memCopiesSt(id); arr.splice(arr.indexOf(t.st), 1); arr.splice(arr.indexOf(feed.st), 1); arr.push(t.st + 1); S.owned[id] -= 1; S.memSt[id] = arr;
-      if (t.who) { S.memEqSt = S.memEqSt || {}; S.memEqSt[t.who] = t.st + 1; }
-      persist(); refreshCharacters(); renderFuse(); toast(`${m.name} is now ${t.st + 1}★${t.who ? ` (with ${(findEntry(t.who) || {}).name})` : ''}.`); } });
+  openUpgradePop({ title: 'Memory stars', target: { r: m.rarity, pic: memCellPic(m, tgt.st), name: m.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: Math.min(3, MEM_MAXST - tgt.st), cands,
+    stars: st => memStarRow(st, 'big'), note: 'Each copy you add gives +1★ and is gone after fusing, whatever its stars.',
+    onFuse: keys => { const cps2 = memCopies(id), t = cps2[i], feeds = keys.map(k => cps2[+k]).filter(f => f && !f.who); if (!t || !feeds.length) return;
+      const arr = memCopiesSt(id), to = t.st + feeds.length; arr.splice(arr.indexOf(t.st), 1); feeds.forEach(f => arr.splice(arr.indexOf(f.st), 1)); arr.push(to); S.owned[id] -= feeds.length; S.memSt[id] = arr;
+      if (t.who) { S.memEqSt = S.memEqSt || {}; S.memEqSt[t.who] = to; }
+      persist(); refreshCharacters(); renderFuse(); if (typeof renderInventory === 'function') renderInventory(); toast(`${m.name} is now ${to}★${t.who ? ` (with ${(findEntry(t.who) || {}).name})` : ''}.`); } });
 }
 
 /* Pets tab: every pet copy; fuse a chosen copy into the one you tapped */
@@ -75,12 +76,12 @@ function upPetCopy(id, i) {
   const p = findEntry(id), cps = petCopies(id), tgt = cps[i]; if (!p || !tgt) return;
   if (tgt.st >= MAX_STARS) { toast(`This ${p.name} is already at ${MAX_STARS}★.`); return; }
   const cands = cps.map((c, j) => ({ ...c, j })).filter(c => c.j !== i && !c.who).map(c => ({ key: String(c.j), r: p.rarity, pic: `${petCellPic(p)}<span class="inv-pst">${c.st}★</span>`, under: starRow(c.st, false) }));
-  openUpgradePop({ title: 'Pet stars', target: { r: p.rarity, pic: petCellPic(p), name: p.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: 1, cands,
-    stars: st => starRow(st, false), note: 'The copy you use is gone after fusing, whatever its stars.',
-    onFuse: ([k]) => { const feed = petCopies(id)[+k], t = petCopies(id)[i]; if (!feed || !t || feed.who) return;
-      const arr = petCopiesSt(id); arr.splice(arr.indexOf(t.st), 1); arr.splice(arr.indexOf(feed.st), 1); arr.push(t.st + 1); S.owned[id] -= 1; S.petSt[id] = arr;
-      if (t.who) { S.petEqSt = S.petEqSt || {}; S.petEqSt[t.who] = t.st + 1; }
-      persist(); refreshCharacters(); renderFuse(); if (typeof renderPets === 'function') renderPets(); toast(`${p.name} is now ${t.st + 1}★${t.who ? ` (with ${(findEntry(t.who) || {}).name})` : ''}.`); } });
+  openUpgradePop({ title: 'Pet stars', target: { r: p.rarity, pic: petCellPic(p), name: p.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: Math.min(6, MAX_STARS - tgt.st), cands,
+    stars: st => starRow(st, false), note: 'Each copy you add gives +1★ and is gone after fusing, whatever its stars.',
+    onFuse: keys => { const cps2 = petCopies(id), t = cps2[i], feeds = keys.map(k => cps2[+k]).filter(f => f && !f.who); if (!t || !feeds.length) return;
+      const arr = petCopiesSt(id), to = t.st + feeds.length; arr.splice(arr.indexOf(t.st), 1); feeds.forEach(f => arr.splice(arr.indexOf(f.st), 1)); arr.push(to); S.owned[id] -= feeds.length; S.petSt[id] = arr;
+      if (t.who) { S.petEqSt = S.petEqSt || {}; S.petEqSt[t.who] = to; }
+      persist(); refreshCharacters(); renderFuse(); if (typeof renderPets === 'function') renderPets(); if (typeof renderInventory === 'function') renderInventory(); toast(`${p.name} is now ${to}★${t.who ? ` (with ${(findEntry(t.who) || {}).name})` : ''}.`); } });
 }
 
 /* UR Stars tab (clothes): every UR copy; a copy merges with another spare copy of the same piece at the same star */
@@ -109,5 +110,5 @@ function upClothCopy(id, i) {
   openUpgradePop({ title: 'Clothing stars', target: { r: 5, pic: `<img src="${clothImg(x)}" alt="">`, name: x.name + (tgt.who ? ` · worn by ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.star, to: tgt.star + 1, need: 1, cands,
     stars: st => clothStarRow(st, 'slot'), note: `Needs another spare ${x.name} at ${tgt.star}★.`,
     onFuse: () => { const t = clothCopies(id)[i]; if (!t || !mergeClothCopy(id, tgt.star, t)) { toast('That merge is no longer possible.'); return; }
-      persist(); refreshCharacters(); renderFuse(); toast(`${x.name} is now ${tgt.star + 1}★${t.who ? ` (worn by ${(findEntry(t.who) || {}).name})` : ''}.`); } });
+      persist(); refreshCharacters(); renderFuse(); if (typeof renderInventory === 'function') renderInventory(); toast(`${x.name} is now ${tgt.star + 1}★${t.who ? ` (worn by ${(findEntry(t.who) || {}).name})` : ''}.`); } });
 }

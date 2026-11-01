@@ -174,7 +174,7 @@ function renderSummon() {
       <button class="sx-rb ts" id="sxHist"><span class="c">${icon('clock')}</span>History</button>
       <button class="sx-rb ts" data-open="shop"><span class="c">${icon('shop')}</span>Shop</button>
     </div>
-    ${bk === 'standard' ? milestoneBtn() : ''}
+    ${MILES[bk] ? milestoneBtn(bk) : ''}
     <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
     <div class="sx-br">
       ${freeReady(bk) ? `<button class="sx-pull free" id="sxFree">Free daily pull<span class="dot-n"></span></button>` : ''}
@@ -188,28 +188,31 @@ function renderSummon() {
   const fr = $('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
   $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
   $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
-  const ms = $('#sxMile'); if (ms) ms.onclick = confirmMilestone;
+  const ms = $('#sxMile'); if (ms) ms.onclick = () => confirmMilestone(ms.dataset.mbk);
   $('#sxHist').onclick = () => openRates(bk, true);
 }
 /* permanent banner milestone: after the first 100 pulls on it, one free random permanent UR (once) */
-const MILESTONE_PULLS = 100;
-const mileN = () => Math.min(MILESTONE_PULLS, S.gacha.standard.total || 0), mileDone = () => !!S.gacha.standard.mile;
-function milestoneBtn() {
-  const n = mileN(), ready = n >= MILESTONE_PULLS && !mileDone();
-  return `<button class="sx-mile ${ready ? 'ready' : ''} ${mileDone() ? 'done' : ''}" id="sxMile" style="--p:${n / MILESTONE_PULLS * 360}deg" aria-label="Milestone: ${n} of ${MILESTONE_PULLS} pulls"><span class="sx-mile-in">${mileDone() ? icon('check') : `<b>${n}</b><small>/${MILESTONE_PULLS}</small>`}</span><span class="sx-mile-lb">${mileDone() ? 'Claimed' : ready ? 'Claim UR' : 'Milestone'}</span></button>`;
+/* one-time milestones: 100 pulls on the permanent banner → a random permanent UR; 50 pulls on the Memory Wish → a random UR memory */
+const MILES = { standard: { n: 100, what: 'UR', where: 'the permanent banner', pool: () => standardURs() }, memories: { n: 50, what: 'UR memory', where: 'the Memory Wish', pool: () => (S.memories || []).filter(m => +m.rarity === 5).map(m => memEntry(m.id)).filter(Boolean) } };
+const MILESTONE_PULLS = MILES.standard.n;
+const mileN = (bk = 'standard') => Math.min(MILES[bk].n, (S.gacha[bk] || {}).total || 0), mileDone = (bk = 'standard') => !!(S.gacha[bk] || {}).mile;
+function milestoneBtn(bk = 'standard') {
+  const M = MILES[bk], n = mileN(bk), done = mileDone(bk), ready = n >= M.n && !done;
+  return `<button class="sx-mile ${ready ? 'ready' : ''} ${done ? 'done' : ''}" id="sxMile" data-mbk="${bk}" style="--p:${n / M.n * 360}deg" aria-label="Milestone: ${n} of ${M.n} pulls"><span class="sx-mile-in">${done ? icon('check') : `<b>${n}</b><small>/${M.n}</small>`}</span><span class="sx-mile-lb">${done ? 'Claimed' : ready ? `Claim ${bk === 'memories' ? 'UR' : 'UR'}` : 'Milestone'}</span></button>`;
 }
-function confirmMilestone() {
-  if (mileDone()) { toast('You already claimed the 100-pull milestone.'); return; }
-  const n = mileN();
-  if (n < MILESTONE_PULLS) { toast(`Pull ${MILESTONE_PULLS - n} more time${MILESTONE_PULLS - n === 1 ? '' : 's'} on this banner to claim a free random UR.`); return; }
-  const urs = standardURs(); if (!urs.length) { toast('There are no permanent URs yet.'); return; }
-  openModal({ title: 'Milestone reward', ic: 'sparkle', small: true, body: `<div class="stack" style="justify-content:center;justify-items:center;text-align:center"><p class="desc">You reached ${MILESTONE_PULLS} pulls on the permanent banner. Claim a free random UR from it?</p>
+function confirmMilestone(bk = 'standard') {
+  const M = MILES[bk];
+  if (mileDone(bk)) { toast(`You already claimed the ${M.n}-pull milestone.`); return; }
+  const n = mileN(bk);
+  if (n < M.n) { toast(`Pull ${M.n - n} more time${M.n - n === 1 ? '' : 's'} on this banner to claim a free random ${M.what}.`); return; }
+  const urs = M.pool(); if (!urs.length) { toast(`There are no ${M.what}s for this milestone yet.`); return; }
+  openModal({ title: 'Milestone reward', ic: 'sparkle', small: true, body: `<div class="stack" style="justify-content:center;justify-items:center;text-align:center"><p class="desc">You reached ${M.n} pulls on ${M.where}. Claim a free random ${M.what}?</p>
     <div class="row" style="justify-content:center"><button class="btn ghost" id="msNo">Later</button><button class="btn gold" id="msYes">${icon('sparkle')}Claim</button></div></div>`,
     onMount: () => { $('#msNo').onclick = closeModal; $('#msYes').onclick = () => {
       closeModal(); const item = rpick(urs), res = { kind: 'entry', id: item.id, rarity: 5, lost: false, hard: true, ...grantEntry(item) };
       if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += res.starlight; }
-      S.gacha.standard.mile = true; S.gacha.history.unshift({ name: item.name, rarity: 5, banner: 'standard', t: Date.now() });
-      persist(); renderMenu(); refreshSummon(); showPull([res], 1, 'standard', { preview: true, milestone: true, fake: false, rainbow: false });
+      S.gacha[bk].mile = true; S.gacha.history.unshift({ name: item.name, rarity: 5, banner: bk, t: Date.now() });
+      persist(); renderMenu(); refreshSummon(); showPull([res], 1, bk, { preview: true, milestone: true, fake: false, rainbow: false, direct: bk === 'memories' });
     }; } });
 }
 /* rates, pity and history for one banner */
@@ -660,16 +663,18 @@ function showSummary() {
   const one = st.results.length === 1;
   $('#pullStage').innerHTML = `<div class="sum">
     <h2>Summon results</h2>
-    <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r); return `<div class="scard r${r.rarity}" style="--i:${i}">
-      ${v.card ? `<img src="${v.card}" alt="">` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
+    <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r), e = r.kind === 'entry' && findEntry(r.id), mem = e && e.type === 'memory' && memOf(e.id);
+      const pic = mem ? `<span class="scard-mem">${memCellPic(mem, 0)}</span>` : v.card ? `<img src="${v.card}" alt="" class="${e && baseArt(e) ? '' : 'chibi'}" ${e && baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`;
+      return `<div class="scard r${r.rarity}" style="--i:${i}">
+      ${pic}
       ${r.isNew ? '<span class="new">NEW</span>' : ''}${r.up ? '<span class="new upg">UPGRADED</span>' : ''}
-      <div class="foot"><span class="st">${r.kind === 'entry' ? rtag(r.rarity) : ctag(3)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
+      <div class="foot"><span class="st">${r.kind === 'entry' ? (e && e.type === 'character' ? charRtag(e) : rtag(r.rarity)) : ctag(3)}</span><span class="nm">${esc(v.name)}</span>${r.starUp ? `<span class="dp">${starRow(r.starUp, r.starUp - 1)}</span>` : r.maxed ? `<span class="dp">${r.starlight ? `+${r.starlight} Corals` : 'Already owned'}</span>` : ''}</div></div>`; }).join('')}</div>
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
       <button class="btn ghost" id="pullDone">${st.exchange || st.milestone ? 'Done' : st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    ${st.milestone ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Milestone reward: 100 pulls on the permanent banner.</p>' : st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
+    ${st.milestone ? `<p class="tiny" style="color:rgba(255,255,255,.65)">Milestone reward: ${(MILES[st.bk] || MILES.standard).n} pulls on ${(MILES[st.bk] || MILES.standard).where}.</p>` : st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
   const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();

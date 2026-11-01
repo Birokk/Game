@@ -71,10 +71,10 @@ const passOn = id => ((S.member || {})[id] || 0) > Date.now();
 const stamMax = () => Math.max(STAMINA_BASE, ...Object.keys(PASS_STAM).filter(passOn).map(k => PASS_STAM[k][0]));
 const stamMs = () => Math.min(STAMINA_BASE_MS, ...Object.keys(PASS_STAM).filter(passOn).map(k => PASS_STAM[k][1]));
 const stamEvery = () => { const m = stamMs() / 6e4; return `${Math.round(m * 10) / 10} minute${m === 1 ? '' : 's'}`; };
-const STAMINA_CAP = 999;   // bottles, refills and the farm can go past the max, but never past 999
+const STAMINA_CAP = 999;   // bottles, refills and the farm add their full amount while stamina is below 999 (so it can end above 999); at 999 or more nothing more can be added
 /* add stamina from any source, up to the 999 cap; returns how much was actually added */
 function giveStamina(n) {
-  stamina(); const add = Math.max(0, Math.min(n, STAMINA_CAP - S.stamina.v));
+  stamina(); const add = S.stamina.v >= STAMINA_CAP ? 0 : Math.max(0, n);
   S.stamina.v += add; if (S.stamina.v >= stamMax()) S.stamina.t = Date.now(); return add;
 }
 function stamina() {
