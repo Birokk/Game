@@ -1,11 +1,12 @@
 /* buy summon tickets (pulls) with pearls */
 const TICKET_PEARLS = 3;
 function openBuyTickets(bk = 'limited') {
+  if (bk === 'memories') bk = 'standard';   // the memory banner uses Standard tickets
   if (bk !== 'standard') bk = 'limited';   // Limited tickets also pay for the Weekly and Outfit banners
   let n = 1; const k = TK(bk);
   openModal({ title: 'Buy pulls', ic: 'sparkle', body: `<div class="stack">
     <div class="tabs" style="margin:0">${['limited', 'standard'].map(b => `<button class="tab ${b === bk ? 'on' : ''}" data-btk="${b}">${curIcon(TK(b))}${TK_NAME[TK(b)]}s</button>`).join('')}</div>
-    <p class="desc">${TK_NAME[k]}s are one pull each on the ${bk === 'standard' ? 'permanent banner' : 'Limited, Weekly and Outfit banners'} and cost ${TICKET_PEARLS} pearls.</p>
+    <p class="desc">${TK_NAME[k]}s are one pull each on the ${bk === 'standard' ? 'Permanent and Memory banners' : 'Limited, Weekly and Outfit banners'} and cost ${TICKET_PEARLS} pearls.</p>
     <div class="buy-row">${curIcon(k)}<button class="rbtn glass" id="btMinus" aria-label="One less">−</button><input class="input" id="btN" type="number" min="1" max="999" value="1" aria-label="How many pulls"><button class="rbtn glass" id="btPlus" aria-label="One more">${icon('plus')}</button></div>
     <div class="row" style="justify-content:center">${[1, 10, 50].map(k => `<button class="btn ghost sm" data-bt="${k}">×${k}</button>`).join('')}</div>
     <div class="balance"><span>Total</span><b id="btCost"></b></div>
@@ -32,10 +33,10 @@ const refillsUsed = () => S.stamRefill && S.stamRefill.day === dayKey() ? S.stam
 function addStamina() { const n = giveStamina(BOTTLE_STAMINA); persist(); renderMenu(); openStamina(); toast(`+${n} stamina.${n < BOTTLE_STAMINA ? ` Stamina is capped at ${STAMINA_CAP}.` : ''}`); }
 const BOTTLE_STAMINA = 60;
 function openStamina() {
-  const v = stamina(), left = STAMINA_MS - (Date.now() - S.stamina.t);
+  const v = stamina(), left = stamMs() - (Date.now() - S.stamina.t);
   openModal({ title: 'Stamina', ic: 'bolt', body: `<div class="stack">
-    <div class="balance"><span>${curIcon('stamina')} Stamina</span><b>${v} / ${STAMINA_MAX}</b></div>
-    <p class="tiny">${v >= STAMINA_MAX ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every 6 minutes up to ${STAMINA_MAX}; bottles, refills and the farm can raise it up to ${STAMINA_CAP}. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
+    <div class="balance"><span>${curIcon('stamina')} Stamina</span><b>${v} / ${stamMax()}</b></div>
+    <p class="tiny">${v >= stamMax() ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every ${stamEvery()} up to ${stamMax()}${stamMax() > STAMINA_BASE ? ' (membership)' : ''}; bottles, refills and the farm can raise it up to ${STAMINA_CAP}. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
     <div class="frag-row">${curIcon('bottles')}<div style="display:grid;flex:1"><b>Stamina recovery bottle</b><span class="tiny">Restores ${BOTTLE_STAMINA} stamina · you have ${S.wallet.bottles}</span></div>
       <button class="btn mint sm" id="useBottle" ${S.wallet.bottles ? '' : 'disabled'}>Use</button></div>
     ${(() => { const used = refillsUsed(), cost = STAMINA_REFILLS[used];
@@ -58,7 +59,12 @@ const SPIN = [
   { give: 'coins', n: 2000, w: 25 }, { give: 'pearls', n: 1, w: 20 }, { give: 'bottles', n: 1, w: 15, name: 'Stamina bottle' }, { give: 'pearls', n: 3, w: 12 },
   { give: 'coins', n: 5000, w: 10 }, { give: 'wishes', n: 1, w: 12, name: 'Standard ticket' }, { give: 'pearls', n: 5, w: 5 }, { give: 'rings', n: 1, w: 1, name: 'Marriage ring', jackpot: true }
 ];
-const spinReady = () => S.spin.last !== dayKey();
+/* one free spin a day; either membership gives 2 a day. S.spin {last: day of the last spin, n: spins that day} */
+const spinsPerDay = () => passOn('p1') || passOn('p2') ? 2 : 1;
+const spinsUsed = () => S.spin.last === dayKey() ? (S.spin.n || 1) : 0;
+const spinsLeft = () => Math.max(0, spinsPerDay() - spinsUsed());
+const spinReady = () => spinsLeft() > 0;
+const spinNoteText = () => spinReady() ? (spinsPerDay() > 1 ? `${spinsLeft()} of ${spinsPerDay()} free spins left today (membership).` : 'One free spin every day.') : 'No spins left today. Come back tomorrow.';
 const spinName = s => s.name || `${fmt(s.n)} ${s.give === 'coins' ? 'gold coins' : s.n === 1 ? 'pearl' : 'pearls'}`;
 let spinAngle = 0;
 /* slice size follows the chance: rarer prizes get smaller slices (square-root scale keeps the 1% slice visible) */
@@ -76,23 +82,25 @@ function openSpin() {
         ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
       </div>
       <button class="wheel-hub" id="spinGo" ${spinReady() ? '' : 'disabled'}>${spinReady() ? 'Spin' : 'Done'}</button></div>
-    <div class="tiny" id="spinNote">${spinReady() ? 'One free spin every day.' : 'You already spun today. Come back tomorrow.'}</div>
-    <details style="width:100%"><summary>Chances</summary><div class="spin-odds">${SPIN.map(s => `<span>${curIcon(s.give)}${spinName(s)}</span><b>${s.w}%</b>`).join('')}</div></details>
+    <div class="tiny" id="spinNote">${spinNoteText()}</div>
+    <div class="row" style="justify-content:center;gap:8px"><span class="tiny">Chances</span><button type="button" class="cs-info" id="spinInfo" aria-label="Spin chances">${icon('info')}</button></div>
+    <div class="spin-odds" id="spinOdds" hidden>${SPIN.map(s => `<span>${curIcon(s.give)}${spinName(s)}</span><b>${s.w}%</b>`).join('')}</div>
   </div>`, onMount: () => {
+    $('#spinInfo').onclick = () => { const o = $('#spinOdds'); o.hidden = !o.hidden; };
     $('#spinGo').onclick = () => {
       if (!spinReady()) return;
       let r = Math.random() * SPIN.reduce((a, s) => a + s.w, 0), i = 0;
       while (r >= SPIN[i].w) { r -= SPIN[i].w; i++; }
       const s = SPIN[i];
       // the reward is granted right away so closing the window mid-spin loses nothing
-      S.spin.last = dayKey(); S.wallet[s.give] += s.n; gainExp(EXP.spin); persist(); renderMenu();
+      S.spin.n = spinsUsed() + 1; S.spin.last = dayKey(); S.wallet[s.give] += s.n; gainExp(EXP.spin); persist(); renderMenu();
       $('#spinGo').disabled = true; $('#spinGo').textContent = '…';
       spinAngle = spinAngle - (spinAngle % 360) + 360 * 6 + (360 - SL[i].mid) % 360 + (Math.random() - .5) * SL[i].sz * .6;
       const wh = $('#wheel'); wh.style.transform = `rotate(${spinAngle}deg)`;
       wh.addEventListener('transitionend', () => {
         if (!$('#spinNote')) return;
-        $('#spinGo').textContent = 'Done';
-        $('#spinNote').innerHTML = `<span class="spin-win ${s.jackpot ? 'jack' : ''}">${curIcon(s.give)}You won ${spinName(s)}!</span>`;
+        const more = spinReady(); $('#spinGo').textContent = more ? 'Spin' : 'Done'; $('#spinGo').disabled = !more;
+        $('#spinNote').innerHTML = `<span class="spin-win ${s.jackpot ? 'jack' : ''}">${curIcon(s.give)}You won ${spinName(s)}!</span>${more ? `<br>${spinsLeft()} more spin${spinsLeft() > 1 ? 's' : ''} today.` : ''}`;
         if (s.jackpot) { const f = document.createElement('div'); f.className = 'tele-flash jackpot'; document.body.appendChild(f); setTimeout(() => f.remove(), 900); toast('JACKPOT! You won a marriage ring!'); }
       }, { once: true });
     };

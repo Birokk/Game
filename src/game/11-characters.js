@@ -1,9 +1,10 @@
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let wdSlot = 'hat', memSlot = 0;
-let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false;
+let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false, csShown = '';
 const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
 function openCharacters(id) {
+  csShown = '';
   const list = charList();
   if (!list.length) { toast("You don't own any characters yet. Summon on a banner to get your first one."); return; }
   csId = id && owns(id) ? id : csId && owns(csId) ? csId : list[0].id;
@@ -18,17 +19,17 @@ function openCharacters(id) {
    Cards: the default (base art), the 3★ / 6★ splash arts if uploaded, then every skin. Card ids: entry id, or "<charId>@art3". */
 function outfitCards(c) {
   const eq = equippedOf(c), pick = artKey(c), base = artFrom(c.art);
-  const cards = [{ id: c.id, kind: 'base', name: 'Default', rarity: c.rarity, art: base, card: base || portrait(c.look || S.player.look, c.rarity), own: owns(c.id), on: !eq && pick === 'base' }];
+  const cards = [{ id: c.id, kind: 'base', name: 'Default', rarity: c.rarity, art: base, card: base || portrait(c.look || S.player.look, c.rarity), own: owns(c.id), on: !eq && pick === 'base', fr: cardImgStyle(c, 'base') }];
   for (const a of ASC.slice(1)) {
     const art = artFrom(c[a.k]); if (!art) continue;
-    cards.push({ id: `${c.id}@${a.k}`, kind: a.k, stars: a.stars, name: `${a.label} art`, rarity: c.rarity, art, card: art, own: ascOpen(c, a), on: !eq && pick === a.k });
+    cards.push({ id: `${c.id}@${a.k}`, kind: a.k, stars: a.stars, name: `${a.label} art`, rarity: c.rarity, art, card: art, own: ascOpen(c, a), on: !eq && pick === a.k, fr: cardImgStyle(c, a.k) });
   }
-  for (const k of skinsOf(c.id)) cards.push({ id: k.id, kind: 'skin', entry: k, name: k.name.replace(c.name + ' · ', ''), rarity: k.rarity, art: mediaArt(k), card: getArt(k), own: owns(k.id), on: eq === k });
+  for (const k of skinsOf(c.id)) cards.push({ id: k.id, kind: 'skin', entry: k, name: k.name.replace(c.name + ' · ', ''), rarity: k.rarity, art: mediaArt(k), card: getArt(k), own: owns(k.id), on: eq === k, fr: cardImgStyle(k, 'base') });
   return cards;
 }
 const startCardId = c => { const eq = equippedOf(c), k = artKey(c); return eq ? eq.id : k === 'base' ? c.id : `${c.id}@${k}`; };
 function skinCard(o) {
-  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}"><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">${'★'.repeat(o.stars === 6 ? 2 : 1)}${o.stars}</span>` : rtag(o.rarity)}</button>`;
+  return `<button class="skc r${o.rarity} ${o.own ? '' : 'bw'} ${o.kind === 'art3' || o.kind === 'art6' ? 'star-art' : ''}" data-skc="${esc(o.id)}"><img src="${o.card}" alt="" class="${o.art ? '' : 'chibi'}" ${o.art && o.fr ? `style="${o.fr}"` : ''}><span class="skc-nm">${esc(o.name)}</span>${o.on ? `<span class="skc-on">${icon('check')}</span>` : ''}${!o.own ? `<span class="skc-lock">${icon('lock')}</span>` : ''}${o.stars ? `<span class="skc-star">★${o.stars}</span>` : rtag(o.rarity)}</button>`;
 }
 function selectSkin(c, id) {
   const o = outfitCards(c).find(x => x.id === id); if (!o || !csEl) return;
@@ -81,11 +82,11 @@ function renderCharacters() {
   const eq = equippedOf(c), shown = (csTab === 'skins' && csSkin && findEntry(csSkin)) || eq || c, n = S.owned[c.id] || 0, st = starsOf(c.id), skins = skinsOf(c.id);
   const art = mediaArt(shown), shownOwned = owns(shown.id), shownWall = shown === c ? wpIdFor(c, artKey(c)) : shown.id;   // the art on screen as a wallpaper id
   csEl.className = `cs r${c.rarity}`;
-  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['bt', 'sparkle', 'Breakthrough'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
+  const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['pet', 'paw', 'Pet'], ['bt', 'sparkle', 'Breakthrough'], ['pot', 'potential', 'Potential'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
-      ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity}">${RNAME[c.rarity]}</span>` : ''}
+      ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity} ${urPlus(c) ? 'plus' : ''}">${RNAME[c.rarity]}${urPlus(c) ? '<i>+</i>' : ''}</span>` : ''}
     </div>
     <div class="cs-sep"></div>
     <div class="cs-traits">${starRow(st, -1, c)}
@@ -96,16 +97,12 @@ function renderCharacters() {
     <div class="cs-sep"></div>`;
   let body;
   if (csTab === 'home') {
-    const next = c.mc ? 'Your main character. Switch between female and male in Settings, once every 72 hours.' : !n ? 'Pull this character on the banner to unlock it.' : st >= MAX_STARS ? `Max stars. Extra copies from summons give ${STARLIGHT_MAX[c.rarity] || STARLIGHT_MAX[4]} Corals each.` : `The next copy adds star ${st + 1} of ${MAX_STARS}.`;
     body = `<div class="cs-boxes">
         <div class="cs-box"><span class="lbl-sm">Stars</span><b><em>${st}</em>/${MAX_STARS}</b></div>
         <div class="cs-box"><span class="lbl-sm">Skins</span><b>${skins.filter(s => owns(s.id)).length}/${skins.length}</b></div>
         <div class="cs-box"><span class="lbl-sm">Status</span><b style="font-size:20px">${n ? '<em>Owned</em>' : 'Locked'}</b></div>
       </div>
-      <div class="cs-pill">${next}</div>
-      ${artKey(c) !== 'base' && !eq ? `<div class="cs-pill" style="color:#e8ff7a">Showing the ${ASC.find(x => x.k === artKey(c)).label} splash art</div>` : ''}
-      ${eq ? `<div class="cs-pill" style="color:#e8ff7a">Wearing ${esc(eq.name)}</div>` : ''}
-      <div class="cs-card"><p>${esc(c.desc || 'No description yet.')}</p></div>
+      ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
@@ -120,31 +117,35 @@ function renderCharacters() {
     const items = S.clothes.filter(x => x.slot === wdSlot && clothFits(x, c)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
     body = `<div class="lbl-sm">Wardrobe · ${on}/${WARD_SLOTS.length} equipped</div>
       <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
-        return `<button class="wd-slot ${wdSlot === k ? 'on' : ''} ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span></button>`; }).join('')}</div>
-      <div class="lbl-sm">${WARD_NAME[wdSlot]} · ${items.filter(x => owns(x.id)).length}/${items.length} owned</div>
-      ${items.length ? `<div class="wd-list">${items.map(x => { const own = owns(x.id), eqd = W[wdSlot] === x.id, worn = wearersOf(x.id).filter(id => id !== c.id), busy = own && !eqd && worn.length >= (S.owned[x.id] || 0);
-        return `<button class="wd-item r${x.rarity} ${own ? '' : 'bw'} ${eqd ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdi="${esc(x.id)}" ${own ? '' : 'disabled'} ${busy ? `title="Worn by ${esc(worn.map(id => (findEntry(id) || {}).name).join(', '))}"` : ''}>${busy ? `<span class="wd-worn">Worn by ${esc((findEntry(worn[0]) || {}).name || '')}</span>` : ''}${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}${rtag(x.rarity)}${eqd ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="wd-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
-        : `<div class="cs-pill">No ${WARD_NAME[wdSlot].toLowerCase()} items yet. New clothes arrive in a future update.</div>`}
-      ${W[wdSlot] ? `<button class="btn ghost sm" id="wdOff">Take off ${esc(WARD_NAME[wdSlot].toLowerCase())}</button>` : ''}`;
+        return `<button class="wd-slot ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span>${hasClothStars(x) ? clothStarRow(wornStarOf(c.id, k), 'slot') : ''}</button>`; }).join('')}</div>
+      <p class="tiny">Tap a slot to see every piece you own for it.</p>
+      <div class="row" style="gap:8px"><button class="btn mint sm" id="wdAuto">${icon('sparkle')}Auto-equip best</button><button class="btn ghost sm" id="wdNone" ${on ? '' : 'disabled'}>${icon('close')}Unequip all</button><button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button></div>
+      <p class="tiny">Fusion turns 3 spare clothes of one rarity into 1 random piece of the next (R → SSR, SSR → UR).</p>`;
   } else if (csTab === 'memory') {
     const E = memEqOf(c.id), list = S.memories.filter(x => !x.char || x.char === c.id).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
     const memArt = x => artFrom(x.img);
     body = `<div class="lbl-sm">Memories · ${E.filter(Boolean).length}/${MEM_SLOTS} equipped</div>
       <div class="mem-slots">${E.map((id, i) => { const x = id && memOf(id);
-        return `<button class="mem-slot ${memSlot === i ? 'on' : ''} ${x ? 'full r' + x.rarity : ''}" data-memslot="${i}">${x ? `${memArt(x) ? `<img src="${memArt(x)}" alt="">` : ''}${rtag(x.rarity)}<span class="mem-nm">${esc(x.name)}</span>` : `<span class="mem-empty">${icon('plus')}<span class="tiny">Slot ${i + 1}</span></span>`}</button>`; }).join('')}</div>
-      <div class="lbl-sm">All memories · ${list.filter(x => owns(x.id)).length}/${list.length} owned</div>
-      ${list.length ? `<div class="mem-list">${list.map(x => { const own = owns(x.id), at = E.indexOf(x.id);
-        return `<button class="mem-card r${x.rarity} ${own ? '' : 'bw'} ${at >= 0 ? 'on' : ''}" data-memi="${esc(x.id)}" ${own ? '' : 'disabled'} ${x.desc ? `data-tip="${esc(`<b>${esc(x.name)}</b><span>${esc(x.desc)}</span>`)}"` : ''}>${memArt(x) ? `<img src="${memArt(x)}" alt="">` : `<span class="wd-ph">${icon('memory')}</span>`}${rtag(x.rarity)}${at >= 0 ? `<span class="skc-on">${icon('check')}</span>` : ''}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="mem-nm">${esc(x.name)}</span></button>`; }).join('')}</div>`
-        : '<div class="cs-pill">No memories yet. They arrive in a future update.</div>'}
-      ${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}
-      <p class="tiny">Each character can equip one memory: tap one to equip it (tap it again to remove it). Memories have no effect yet.</p>`;
+        const st = x ? (memCopies(x.id), memEqStar(c.id)) : 0;
+        return `<button class="mem-slot ${memSlot === i ? 'on' : ''} ${x ? `full mem-fr mst${st} r${x.rarity}` : ''}" data-memslot="${i}" ${x ? `data-memview="${esc(x.id)}|${st}"` : ''}>${x ? `${memArt(x) ? `<img src="${memArt(x)}" alt="">` : ''}${rtag(x.rarity)}${memStarRow(st)}<span class="mem-nm">${esc(x.name)}</span>` : `<span class="mem-empty">${icon('plus')}<span class="tiny">Slot ${i + 1}</span></span>`}</button>`; }).join('')}</div>
+      <p class="tiny">Tap the slot to see every memory you own · hold it to view the memory.</p>
+      <div class="row" style="gap:8px">${E[0] ? `<button class="btn ghost sm" id="memOff">Remove memory</button>` : ''}<button class="btn ghost sm" id="memStar">${icon('fuse')}Memory stars</button><button class="btn ghost sm" id="memFuse">${icon('fuse')}Exchange memories</button></div>
+      <p class="tiny">Each character can equip one memory. Every copy is separate: two characters can hold the same memory only with two copies. Memories have no effect yet.</p>`;
+  } else if (csTab === 'pet') {
+    body = petTabHTML(c);
+  } else if (csTab === 'pot') {
+    body = potTabHTML(c);
   } else if (csTab === 'bt') {
     const done = btOf(c.id);
     body = `<div class="cs-card"><p>Awaken each star you own to turn it into a glowing ${RNAME[c.rarity]} star. Requirements for each star are coming in a future update; for now each star costs ${BT_PEARLS} pearls. Awakened stars can be switched on and off for free.</p></div>
       <div class="bt-stars r${c.rarity}">${Array.from({ length: MAX_STARS }, (_, i) => {
         const owned = i < st, paid = (S.btPaid[c.id] || []).includes(i), on = done.includes(i);
         return `<button class="bt-star ${on ? 'on' : ''} ${owned ? '' : 'locked'}" data-bt-star="${i}" ${owned ? '' : 'disabled'} data-tip="${esc(`<b>Star ${i + 1}</b><span>${!owned ? `Reach ${i + 1} star${i ? 's' : ''} first.` : paid ? (on ? 'Awakened. Tap to switch off.' : 'Tap to switch on.') : `Requirement: coming soon. Awaken now for ${BT_PEARLS} pearls.`}</span>`)}"><span class="bs">★</span><span class="bl">${!owned ? icon('lock') : paid ? (on ? 'On' : 'Off') : costHTML(BT_PEARLS)}</span></button>`; }).join('')}</div>
-      <div class="cs-pill">${done.length} of ${st} owned stars awakened</div>`;
+      <div class="cs-pill">${done.length} of ${st} owned stars awakened</div>
+      <div class="cs-card sss-box ${isSSS(c) ? 'on' : ''}"><div class="row" style="justify-content:space-between;align-items:center"><b class="sss-h">SSS awakening</b>${isSSS(c) ? gradeTag('SSS') : ''}</div>
+        <p class="tiny">${sssAwakened(c.id) ? (isSSS(c) ? `Awakened: every switched-on Breakthrough star is an SSS star (+${fmt(SSS_CS)} CS each, not counted toward the grade).` : 'Awakened, but sleeping: the SSS stars come back when this character is grade SSS again.') : isSSS(c) ? `Awaken this character for ${SSS_PEARLS} pearls + ${fmt(SSS_GOLD)} gold: every switched-on Breakthrough star becomes a glowing SSS star (+${fmt(SSS_CS)} CS each, not counted toward the grade) while it stays grade SSS.` : 'Reach CS grade SSS to unlock SSS awakening.'}</p>
+        <div class="row" style="justify-content:space-between;align-items:center"><span class="stars6 r${c.rarity}" style="font-size:22px">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${done.includes(i) ? 'on bt' : ''} ${sssActive(c).includes(i) ? 'sss' : ''}">★</span>`).join('')}</span>
+          ${sssAwakened(c.id) ? `<span class="chip ${isSSS(c) ? 'gold' : ''}">${isSSS(c) ? 'SSS awakened' : 'Sleeping'}</span>` : `<button class="btn gold sm" id="sssGo" ${isSSS(c) && done.length ? '' : 'disabled'}>Awaken · ${curIcon('pearls')}${SSS_PEARLS} + ${curIcon('coins')}${fmt(SSS_GOLD)}</button>`}</div></div>`;
   } else if (csTab === 'bond') {
     const bd = bondOf(c.id), lv = bondLv(c.id), full = lv >= BOND_MAX, lo = BOND_XP[lv], hi = BOND_XP[Math.min(BOND_MAX, lv + 1)];
     const wed = c.weddingSkin && findEntry(c.weddingSkin);
@@ -173,9 +174,17 @@ function renderCharacters() {
       <div class="cs-card"><div class="lbl-sm" style="margin-bottom:6px">Profile</div><p>${esc(c.desc || 'No description yet.')}</p></div>
       <div class="row"><button class="btn ghost sm" data-open="admin">${icon('edit')}Edit in admin</button></div>`;
   }
-  csEl.innerHTML = `<div class="cs-bg"><div class="cs-rays"></div></div>
+  // the art layer stays put between renders (no flicker); only a new picture replaces it, and it never animates.
+  // the UI layer is rebuilt, and the tab's panel fades in when the tab or character changes
+  let L = csEl.querySelector('.cs-layer'), U = csEl.querySelector('.cs-uil');
+  if (!L || !U) { csEl.innerHTML = '<div class="cs-layer"></div><div class="cs-uil"></div>'; L = csEl.querySelector('.cs-layer'); U = csEl.querySelector('.cs-uil'); }
+  const artK = `${shown.id}|${art || ''}`;
+  if (L.dataset.k !== artK) { L.dataset.k = artK; L.innerHTML = `<div class="cs-bg"><div class="cs-rays"></div></div>
     ${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="cs-art ${art ? '' : 'chibi'}" src="${getSplash(shown)}" alt="${esc(shown.name)}">
-    <div class="cs-shade"></div>
+    <div class="cs-shade"></div>`; }
+  const enter = csShown !== `${c.id}|${csTab}`; csShown = `${c.id}|${csTab}`;
+  const keepList = U.querySelector('.cs-list') ? U.querySelector('.cs-list').scrollTop : 0;
+  U.innerHTML = `
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
         <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
@@ -183,7 +192,8 @@ function renderCharacters() {
     <div class="cs-side cs-ui">
       <button class="rbtn" id="csViewBtn" aria-label="View the art without the menu">${icon('eye')}</button>
     </div>
-    <section class="cs-panel cs-ui">${head}${body}</section>`;
+    <section class="cs-panel cs-ui ${enter ? 'enter' : ''}">${head}${body}</section>`;
+  U.querySelector('.cs-list').scrollTop = keepList;
   $('#csBack').onclick = closeCharacters;
   $('#csHelp').onclick = () => openModal({ title: 'Characters', ic: 'chars', body: `<div class="stack">
       <p class="desc">Pick a character on the left. <b>Home</b> shows stars and outfits, <b>Bond</b> is where you give gifts and, at bond level 10, propose with a ring, and <b>Character Info</b> has their profile. Badges under the name show what you've achieved with each character.</p>
@@ -193,7 +203,11 @@ function renderCharacters() {
   csEl.classList.toggle('bw', !owns(shown.id));
   csEl.querySelectorAll('[data-cstab]').forEach(b => b.onclick = () => { csTab = b.dataset.cstab; csSkin = null; renderCharacters(); });
   if (csTab === 'skins') initSkinCar(c);
-  csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; renderCharacters(); });
+  bindCSInfo(csEl);
+  const wf = $('#wdFuse'); if (wf) wf.onclick = () => openFuse(3);
+  if (csTab === 'pet') bindPetTab(c);
+  if (csTab === 'pot') bindPotTab(c);
+  csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; openWardPick(c, wdSlot); });
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
     const W = { ...wearOf(c.id) };
@@ -203,24 +217,31 @@ function renderCharacters() {
       const others = wearersOf(x.id).filter(id => id !== c.id);
       if (others.length >= (S.owned[x.id] || 0)) { const who = others.map(id => (findEntry(id) || {}).name).filter(Boolean).join(', '); toast(`${x.name} is worn by ${who}. Take it off ${others.length > 1 ? 'one of them' : 'them'} first.`); return; }
       W[x.slot] = x.id;
+      S.wearSt = S.wearSt || {}; S.wearSt[c.id] = { ...(S.wearSt[c.id] || {}), [x.slot]: hasClothStars(x) ? (bestSpareStar(x.id, c.id) || 1) : 1 };   // wear the best spare copy
     }
     S.wear[c.id] = W; persist(); renderCharacters(); toast(W[x.slot] ? `${c.name} put on ${x.name}.` : `${c.name} took off ${x.name}.`);
   });
-  csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; renderCharacters(); });
+  csEl.querySelectorAll('[data-memslot]').forEach(b => b.onclick = () => { memSlot = +b.dataset.memslot; openMemPick(c); });
   csEl.querySelectorAll('[data-memi]').forEach(b => b.onclick = () => {
     const x = memOf(b.dataset.memi); if (!x || !owns(x.id)) return;
     const E = memEqOf(c.id), at = E.indexOf(x.id);
     if (at >= 0) { E[at] = null; toast(`Removed ${x.name}.`); }
+    else if (memHolder(x.id, c.id)) { toast(`${x.name} is with ${(findEntry(memHolder(x.id, c.id)) || {}).name}. Remove it from them first.`); return; }
     else { E[0] = x.id; memSlot = 0; toast(`${c.name} now holds ${x.name}.`); }
     S.memEq[c.id] = E; persist(); renderCharacters();
   });
+  const mf = $('#memFuse'); if (mf) mf.onclick = () => openFuse('mem');
+  const ms = $('#memStar'); if (ms) ms.onclick = () => openFuse('memst');
   const mo = $('#memOff'); if (mo) mo.onclick = () => { const E = memEqOf(c.id); E[memSlot] = null; S.memEq[c.id] = E; persist(); renderCharacters(); };
-  const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; persist(); renderCharacters(); };
+  const wo = $('#wdOff'); if (wo) wo.onclick = () => { const W = { ...wearOf(c.id) }; delete W[wdSlot]; S.wear[c.id] = W; if ((S.wearSt || {})[c.id]) delete S.wearSt[c.id][wdSlot]; persist(); renderCharacters(); };
+  const wa = $('#wdAuto'); if (wa) wa.onclick = () => autoEquip(c);
+  const wn = $('#wdNone'); if (wn) wn.onclick = () => { S.wear[c.id] = {}; if (S.wearSt) delete S.wearSt[c.id]; persist(); renderCharacters(); toast(`${c.name} took off every piece.`); };
   csEl.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => giveGift(c.id, b.dataset.gift));
   const gg = $('#csGiftGive'); if (gg) gg.onclick = () => openGiveGifts(c.id);
   const gb = $('#csGiftBuy'); if (gb) gb.onclick = () => openBuyGifts(Object.keys(GIFTS).find(k => !S.gifts[k]) || 'sweets', 'coins');
   const pr = $('#csPropose'); if (pr) pr.onclick = () => askMarry(c.id);
   csEl.querySelectorAll('[data-bt-star]').forEach(b => b.onclick = () => toggleStar(c.id, +b.dataset.btStar));
+  const sg = $('#sssGo'); if (sg) sg.onclick = () => sssAwaken(c);
   const bs = $('#csBuySkin'); if (bs) bs.onclick = () => buySkin(shown.id);
   csEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { S.artPick[c.id] = b.dataset.art; persist(); applyWallpaper(); renderMenu(); renderCharacters(); toast(`Now showing ${c.name}'s ${ASC.find(a => a.k === b.dataset.art).label.toLowerCase()} splash art.`); });
   const br = $('#csRing'); if (br) br.onclick = buyRing;

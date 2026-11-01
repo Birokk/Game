@@ -5,11 +5,23 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
-const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['starlight', 'shop', 'Corals Exchange'], ['dust', 'bag', 'Seaweeds Shop']];
+const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency']];
+/* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
+const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium'], ['memories', 'Memories']], PREM_PRICE = 720, PREM_LIMIT = 1;
+const MEMX_PRICE = 300;   // Exchange → Memories: any UR memory for 300 Corals, once per memory per account (S.memEx = [ids])
+const memExUsed = id => (S.memEx || []).includes(id);
+let exSub = 'corals';
+/* Premium exchange: once a month for EACH UR character (S.premEx.ids = characters exchanged this month) */
+function premEx() { if (!S.premEx || S.premEx.key !== monthKey()) S.premEx = { key: monthKey(), ids: [] }; if (!Array.isArray(S.premEx.ids)) S.premEx.ids = []; return S.premEx; }
+const premUsed = id => premEx().ids.includes(id);
 const TOPUP = [[60, '0.99'], [300, '4.99'], [980, '14.99'], [1980, '29.99'], [3280, '49.99'], [6480, '99.99']];
-let shopTab = 'hot', shopEl = null, shopPick = null;
+let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
+/* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
+const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
 function openShop(tab) {
-  closeModal(); if (tab === 'monthly') tab = 'dust';   // monthly pulls live in the Seaweeds shop
+  closeModal();
+  if (tab === 'monthly' || tab === 'dust') { tab = 'exchange'; exSub = 'seaweeds'; }   // monthly pulls live in the Seaweeds exchange
+  else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
   if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
   renderShop();
@@ -23,13 +35,13 @@ function renderShop() {
   const item = (id, ic, name, sub, price, cur, extra = '', r = 4) => `<div class="mall-item ${extra}"><span class="mall-ic r${r}">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
     <button class="mall-buy ${W[cur] >= price && !extra.includes('soldout') ? 'ok' : ''}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   const tab = SHOP_TABS.find(t => t[0] === shopTab);
-  let strip = `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
+  let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
-    const e = shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
-    strip = `<span class="mall-pill on">New outfits</span>`;
+    const e = hotSub === 'skins' && shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
+    strip = [['pass', 'Memberships'], ['skins', 'New outfits']].map(([k, l]) => `<button class="mall-pill ${k === hotSub ? 'on' : ''}" data-hotsub="${k}">${l}</button>`).join('');
     bg = e ? `<img class="mall-art" src="${baseSplash(e)}" alt="">` : '';
-    body = e ? `<div class="mall-hot">
+    body = hotSub === 'pass' ? passShopHTML() : e ? `<div class="mall-hot">
         <div class="mall-hot-name"><h1>${esc(e.name)}</h1><span class="mall-time">${rtag(e.rarity)}${par ? esc(par.name) : 'Outfit'}</span></div>
         <div class="mall-thumbs">${picks.map(x => `<button class="mall-thumb ${x.id === shopPick ? 'on' : ''}" data-pick="${esc(x.id)}"><img src="${baseCard(x)}" alt=""><b>${esc(x.name)}</b></button>`).join('')}</div>
         <div class="mall-price"><span>${curIcon('pearls')}<b>${SKIN_PRICE}</b></span>${owns(e.id) ? '<button class="mall-go owned" disabled>Owned</button>' : `<button class="mall-go" data-skin="${esc(e.id)}">Buy ${icon('up')}</button>`}</div>
@@ -38,16 +50,29 @@ function renderShop() {
     const list = shopSkins();
     body = `<p class="tiny">Every outfit costs ${SKIN_PRICE} pearls. Wedding (MR) outfits can't be bought; marry the character to unlock them.</p>
       <div class="mall-skins">${list.map(x => { const par = findEntry(x.parent), own = owns(x.id);
-        return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="">${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
+        return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup') {
     body = `<p class="tiny">Pearl packs. Real payments aren't connected yet, so these can't be bought for now.</p>
-      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big r${i > 2 ? 5 : 4}">${curIcon('pearls')}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
+      <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b><span class="tiny">${i ? `+${fmt(Math.round(n * .1))} bonus on first purchase` : 'Starter pack'}</span><button class="mall-buy" disabled>$${usd} · Soon</button></div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets and marriage rings.</p>
-      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the permanent banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
-  } else if (shopTab === 'starlight') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
-    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the permanent banner', SHOP_TICKET, 'starlight')}</div>`;
+      <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}</div>`;
+  } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
+    <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}</div>`;
+  else if (shopTab === 'exchange' && exSub === 'memories') { const urs = (S.memories || []).filter(m => +m.rarity === 5).sort((a, b) => memExUsed(a.id) - memExUsed(b.id) || a.name.localeCompare(b.name));
+    body = `<div class="mall-limit"><b>Limit: 1 per memory per account</b><span>${urs.filter(m => memExUsed(m.id)).length} / ${urs.length} UR memories exchanged</span></div><p class="tiny">Trade ${MEMX_PRICE} Corals for a copy (0★) of any UR memory. Each memory can be exchanged once.</p>
+      ${urs.length ? `<div class="mall-mems">${urs.map(m => { const used = memExUsed(m.id), art = artFrom(m.img), ok = !used && W.starlight >= MEMX_PRICE;
+        return `<div class="mall-mem r5"><span class="mall-mem-art mem-fr mst0">${art ? `<img src="${art}" alt="">` : icon('memory')}</span>${rtag(5)}<span class="mall-skin-nm"><b>${esc(m.name)}</b><small>Owned ×${S.owned[m.id] || 0}</small></span>
+          ${used ? '<button class="mall-buy" disabled>Exchanged</button>' : `<button class="mall-buy ${ok ? 'ok' : ''}" data-memx="${esc(m.id)}">${curIcon('starlight')}${fmt(MEMX_PRICE)}</button>`}</div>`; }).join('')}</div>`
+        : '<p class="mall-empty">No UR memories in the game yet.</p>'}`; }
+  else if (shopTab === 'exchange' && exSub === 'premium') { const chars = S.pool.filter(e => e.type === 'character' && +e.rarity === 5 && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
+    const usedN = chars.filter(e => premUsed(e.id)).length;
+    body = `<div class="mall-limit"><b>Limit: ${PREM_LIMIT} per character per month</b><span>${usedN ? `${usedN} character${usedN === 1 ? '' : 's'} exchanged this month · ` : ''}resets on the 1st (${nextMonthIn()})</span></div><p class="tiny">Trade ${PREM_PRICE} Corals for one more copy of a UR character you own: it adds a star, up to ${MAX_STARS}.</p>
+      ${chars.length ? `<div class="mall-skins">${chars.map(e => { const st = starsOf(e.id), max = st >= MAX_STARS, used = premUsed(e.id), ok = !used && !max && W.starlight >= PREM_PRICE;
+        return `<div class="mall-skin r${e.rarity}"><img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${rtag(e.rarity)}<span class="mall-skin-nm"><b>${esc(e.name)}</b><small>${starRow(st, -1, e)}</small></span>
+          ${max ? '<button class="mall-buy" disabled>Max stars</button>' : used ? '<button class="mall-buy" disabled>1/1 this month</button>' : `<button class="mall-buy ${ok ? 'ok' : ''}" data-prem="${esc(e.id)}">${curIcon('starlight')}${fmt(PREM_PRICE)}</button>`}</div>`; }).join('')}</div>`
+        : '<p class="mall-empty">You don\'t own any UR characters yet.</p>'}`; }
   else body = `<p class="tiny">Every pull gives ${DUST_PER_PULL} Seaweeds, whatever you get.</p>
     <h3 class="mall-h">Monthly pulls</h3><p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
     <div class="mall-grid">${['limited', 'standard'].map(bk => { const left = MONTHLY_LIMIT - m[bk];
@@ -58,13 +83,42 @@ function renderShop() {
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
       <div class="inv-cur">${['pearls', 'starlight', 'dust'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(W[k])}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
     <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b></button>`).join('')}</aside>
-    <section class="mall-main ${shopTab === 'hot' ? 'hot' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
+    <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && hotSub === 'pass' ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
     <p class="mall-foot">Please spend responsibly.</p>`;
   $('#shopClose').onclick = closeShop;
   shopEl.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { shopTab = b.dataset.stab; renderShop(); });
   shopEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { shopPick = b.dataset.pick; renderShop(); });
+  shopEl.querySelectorAll('[data-hotsub]').forEach(b => b.onclick = () => { hotSub = b.dataset.hotsub; renderShop(); });
+  shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
+  shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
+  shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
+  shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
+}
+function confirmMemEx(id) {
+  const m = memOf(id); if (!m || +m.rarity !== 5) return;
+  if (memExUsed(id)) { toast(`You already exchanged for ${m.name}. Each memory can be exchanged once.`); return; }
+  if (S.wallet.starlight < MEMX_PRICE) { toast(`You need ${MEMX_PRICE} Corals. You have ${fmt(S.wallet.starlight)}.`); return; }
+  openModal({ title: 'Memory exchange', ic: 'memory', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${MEMX_PRICE} Corals</b> on a copy of <b>${esc(m.name)}</b>? You can do this once for each memory.</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="mxNo">Cancel</button><button class="btn gold" id="mxYes">Exchange · ${curIcon('starlight')}${MEMX_PRICE}</button></div></div>`,
+    onMount: () => { $('#mxNo').onclick = closeModal; $('#mxYes').onclick = () => {
+      closeModal(); const isNew = !S.owned[id]; S.wallet.starlight -= MEMX_PRICE; S.memEx = [...(S.memEx || []), id]; S.owned[id] = (S.owned[id] || 0) + 1;
+      persist(); renderMenu(); refreshCharacters(); renderShop();
+      showPull([{ kind: 'entry', id, rarity: 5, isNew, starUp: 0, maxed: !isNew }], 1, 'memories', { preview: true, exchange: true, direct: true }); }; } });
+}
+function confirmPrem(id) {
+  const e = findEntry(id); if (!e || !owns(id) || +e.rarity !== 5) return;
+  if (premUsed(id)) { toast(`You already exchanged for ${e.name} this month. Every character can be exchanged once a month.`); return; }
+  if (starsOf(id) >= MAX_STARS) { toast(`${e.name} is already at max stars.`); return; }
+  if (S.wallet.starlight < PREM_PRICE) { toast(`You need ${PREM_PRICE} Corals. You have ${fmt(S.wallet.starlight)}.`); return; }
+  openModal({ title: 'Premium exchange', ic: 'shop', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${PREM_PRICE} Corals</b> on a copy of <b>${esc(e.name)}</b>? It will go from ${starsOf(id)}★ to ${starsOf(id) + 1}★. You can do this once a month for each character.</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="prNo">Cancel</button><button class="btn gold" id="prYes">Exchange · ${curIcon('starlight')}${PREM_PRICE}</button></div></div>`,
+    onMount: () => { $('#prNo').onclick = closeModal; $('#prYes').onclick = () => {
+      closeModal(); S.wallet.starlight -= PREM_PRICE; premEx().ids.push(id); grantEntry(e); persist(); renderMenu(); refreshCharacters(); renderShop();
+      toast(`${e.name} is now ${starsOf(id)}★.`); }; } });
 }
 function buyShop(id) {
   const W = S.wallet, pay = (cur, n) => { if (W[cur] < n) { toast(`Not enough ${cur === 'dust' ? 'Seaweeds' : 'Corals'}. You need ${fmt(n)}.`); return false; } W[cur] -= n; return true; };

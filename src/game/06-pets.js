@@ -1,10 +1,19 @@
 /* ---------- pets: egg fragments → eggs → incubators → hatch ---------- */
 const EGG = {
-  ssr: { name: 'SSR egg', r: 4, mins: 30, frag: 10 },
-  ur: { name: 'UR egg', r: 5, mins: 120, frag: 10 }
+  ssr: { name: 'SSR egg', r: 4, mins: 240, frag: 10 },    // 4 hours
+  ur: { name: 'UR egg', r: 5, mins: 1440, frag: 10 }      // 24 hours
 };
-const EGG_STAMINA = 20, INCUBATORS = 3;
-const eggHTML = (r, cls = '') => `<span class="egg ${r} ${cls}"><i></i></span>`;
+const EGG_STAMINA = 20, INCUBATORS = 3, INC_BUY = [15, 30];   // 3 free incubators, 2 more for 15 and 30 pearls (a 6th is shown as "To be updated")
+/* the egg picture: the drawn egg, or the admin's icon (Settings → Admin → SSR / UR egg icon, media keys icon:eggssr / icon:eggur) */
+const eggHTML = (r, cls = '') => { const c = customIcon('egg' + r); return c ? `<span class="egg ${r} ${cls} custom"><img src="${c}" alt=""></span>` : `<span class="egg ${r} ${cls}"><i></i></span>`; };
+const incBought = () => clamp(S.pets.incN || 0, 0, INC_BUY.length);
+function syncIncubators() { const n = INCUBATORS + incBought(); while (S.pets.inc.length < n) S.pets.inc.push(null); }
+function buyIncubator() {
+  const k = incBought(); if (k >= INC_BUY.length) return;
+  const cost = INC_BUY[k];
+  if (S.wallet.pearls < cost) { toast(`This incubator costs ${cost} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
+  S.wallet.pearls -= cost; S.pets.incN = k + 1; syncIncubators(); persist(); renderMenu(); renderPets(); toast(`Incubator ${INCUBATORS + k + 1} unlocked.`);
+}
 const petsOf = r => S.pool.filter(e => e.type === 'pet' && e.rarity === EGG[r].r);
 /* instant hatch: 1 pearl per 2 minutes left, at least 2 */
 const hatchCost = inc => Math.max(2, Math.ceil((inc.ends - Date.now()) / 12e4));
@@ -33,8 +42,22 @@ function buySkin(id) {
   showSkinGet(e);
 }
 /* duplicates never give pearls: they add stars up to 6; past that, summons give Corals for characters (maxed = the copy added nothing) */
+/* pets are separate copies, never stacked: S.petSt[petId] = [stars of each copy], S.owned[petId] = number of copies.
+   A duplicate pet is just another 0★ copy; stars come from fusing two copies of the same pet (Fusion → Pets, fusePet). */
+function petCopiesSt(id) {
+  S.petSt = S.petSt || {};
+  const a = S.petSt[id] || [], n = S.owned[id] || 0;
+  while (a.length < n) a.push(0);
+  if (a.length > n) { a.sort((x, y) => y - x); a.length = n; }
+  S.petSt[id] = a; return a;
+}
+// old saves: duplicates were stars (stars = copies − 1) → one copy that keeps those stars
+if (!S.petSt) { S.petSt = {}; S.pool.filter(e => e.type === 'pet').forEach(e => { const n = S.owned[e.id] || 0; if (n) { S.petSt[e.id] = [Math.min(MAX_STARS, n - 1)]; S.owned[e.id] = 1; } });
+  S.petEqSt = {}; Object.entries(S.petEq || {}).forEach(([cid, pid]) => { S.petEqSt[cid] = (S.petSt[pid] || [0])[0]; }); }
 function grantEntry(item) {
-  const prev = S.owned[item.id] || 0; S.owned[item.id] = prev + 1;
+  const prev = S.owned[item.id] || 0;
+  if (item.type === 'pet') { petCopiesSt(item.id); S.owned[item.id] = prev + 1; S.petSt[item.id].push(0); return { isNew: !prev, starUp: 0, pearls: 0, maxed: false, copy: !!prev }; }
+  S.owned[item.id] = prev + 1;
   const starUp = hasStars(item) && prev && prev - 1 < MAX_STARS ? prev : 0, maxed = !!prev && !starUp;
   return { isNew: !prev, starUp, pearls: 0, maxed };
 }
@@ -60,10 +83,17 @@ function tickPets() {
 }
 function renderPets() {
   const root = $('#petRoot'); if (!root) return;
+  syncIncubators();
   const P = S.pets, pets = S.pool.filter(e => e.type === 'pet').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
-  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${pets.filter(e => owns(e.id)).length}/${pets.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  const copies = pets.filter(e => owns(e.id)).flatMap(p => petCopies(p.id).map(cp => ({ ...cp, p })));
+  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${copies.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
   if (petTab === 'mine') {
-    root.innerHTML = `<div class="stack">${tabs}${pets.length ? `<div class="cards">${pets.map(cardHTML).join('')}</div>` : '<div class="empty">No pets yet. Add some in the admin panel.</div>'}</div>`;
+    const missing = pets.filter(e => !owns(e.id));
+    root.innerHTML = `<div class="stack">${tabs}
+      <div class="row" style="justify-content:space-between;align-items:center"><span class="tiny">Every pet is its own copy. Fuse two copies of the same pet for +1★ (up to ${MAX_STARS}★).</span><button class="btn gold sm" id="ptFuse">${icon('fuse')}Fuse pets</button></div>
+      ${copies.length ? `<div class="pt-list">${copies.sort((a, b) => b.p.rarity - a.p.rarity || a.p.name.localeCompare(b.p.name) || b.st - a.st).map(cp => `<div class="pt-card r${cp.p.rarity} ${cp.who ? 'busy' : ''}">${petCard(cp.p, cp.st)}${cp.who ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</div>`).join('')}</div>` : '<div class="cs-pill">No pets yet. Hatch eggs in the Hatchery.</div>'}
+      ${missing.length ? `<span class="lbl-sm">Not found yet · ${missing.length}</span><div class="pt-list">${missing.map(p => `<div class="pt-card r${p.rarity} bw">${petCard(p, 0, true)}</div>`).join('')}</div>` : ''}</div>`;
+    const pf = $('#ptFuse'); if (pf) pf.onclick = () => openFuse('pet');
   } else {
     const free = P.inc.indexOf(null);
     root.innerHTML = `<div class="stack">${tabs}
@@ -84,7 +114,10 @@ function renderPets() {
           ${ready ? `<button class="btn gold" data-hatch="${i}">${icon('sparkle')}Hatch!</button>`
             : `<span class="bar"><i id="incB${i}" style="width:${100 - left / (inc.ends - inc.start) * 100}%"></i></span><span class="tiny">${icon('clock').replace('class="ic"', 'class="ic" style="width:12px;height:12px;vertical-align:-2px"')} <span id="incT${i}">${fmtLeft(left)}</span> left</span>
               <button class="btn sm ghost" data-now="${i}">Hatch now · <span class="cost">${curIcon('pearls')}<span id="incC${i}">${hatchCost(inc)}</span></span></button>`}</div>`;
-      }).join('')}</div></div>
+      }).join('')}${INC_BUY.map((cost, k) => k < incBought() ? '' : k === incBought()
+          ? `<div class="inc locked buy"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + k + 1}</b><button class="btn gold sm" data-incbuy>Unlock · ${costHTML(cost)}</button></div>`
+          : `<div class="inc locked"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + k + 1}</b><span class="tiny">Unlock incubator ${INCUBATORS + k} first · ${cost} pearls</span></div>`).join('')}
+        <div class="inc locked soon"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + INC_BUY.length + 1}</b><span class="tiny">To be updated</span></div></div></div>
       <p class="tiny">Fragments drop from summons in place of some gold coins. Eggs also appear around the plaza: walk into one to catch it for ${EGG_STAMINA} stamina.</p>
     </div>`;
   }
@@ -107,6 +140,7 @@ function renderPets() {
     S.wallet.pearls -= cost; hatch(i);
   });
   root.querySelectorAll('[data-hatch]').forEach(b => b.onclick = () => hatch(+b.dataset.hatch));
+  const ib = root.querySelector('[data-incbuy]'); if (ib) ib.onclick = buyIncubator;
 }
 function hatch(i) {
   const inc = S.pets.inc[i], list = petsOf(inc.r); if (!list.length) return;
@@ -114,13 +148,15 @@ function hatch(i) {
   S.pets.inc[i] = null; gainExp(EXP.hatch); persist(); renderMenu(); renderPets(); refreshCharacters();
   showHatch(inc.r, item, res);
 }
-/* hatch reveal: the egg wobbles, cracks in a flash, and the pet pops out */
+/* hatch reveal: pitch dark, lights rising from the ground in the rarity colour, the egg wobbles and cracks, the pet appears in the middle */
 function showHatch(r, item, res) {
   const el = document.createElement('div'); el.className = `hatch r${item.rarity}`;
-  el.innerHTML = `<div class="hatch-rays"></div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
-    <div class="hatch-pet"><img src="${getSplash(item)}" alt="${esc(item.name)}"></div>
+  const sparks = Array.from({ length: 42 }, () => `<i style="--x:${(Math.random() * 100).toFixed(1)}%;--d:${(Math.random() * 3).toFixed(2)}s;--t:${(2.4 + Math.random() * 2.4).toFixed(2)}s;--s:${(2 + Math.random() * 4).toFixed(1)}px;--h:${Math.floor(Math.random() * 360)}"></i>`).join('');
+  const beams = Array.from({ length: 7 }, (_, i) => `<b style="--x:${(8 + i * 13 + Math.random() * 6).toFixed(1)}%;--d:${(Math.random() * 3).toFixed(2)}s;--w:${(30 + Math.random() * 50).toFixed(0)}px"></b>`).join('');
+  el.innerHTML = `<div class="hatch-ground"></div><div class="hatch-beams">${beams}</div><div class="hatch-sparks">${sparks}</div>${eggHTML(r, 'big crack')}<div class="hatch-flash"></div>
+    <div class="hatch-pet"><img src="${mediaArt(item) || petCut(item)}" alt="${esc(item.name)}"></div>
     <div class="hatch-info"><div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(PET_KINDS[(item.look || {}).kind] || 'Pet')}</div><div class="rv-name">${esc(item.name)}</div>${rtag(item.rarity, 'xl')}
-      ${res.isNew ? '<span class="rv-badge">New pet</span>' : res.starUp ? `<div class="rv-up">${starRow(res.starUp, res.starUp - 1)}<span>Star ${res.starUp} of ${MAX_STARS}</span></div>` : `<div class="rv-up">${starRow(MAX_STARS)}<span>Max stars · already owned</span></div>`}</div>
+      ${res.isNew ? '<span class="rv-badge">New pet</span>' : `<div class="rv-up"><span>Another copy · you have ${S.owned[item.id] || 0}. Fuse two copies in Fusion → Pets for a star.</span></div>`}</div>
     <div class="rv-hint">Tap to continue</div>`;
   document.body.appendChild(el);
   setTimeout(() => el.onclick = () => el.remove(), 1600);

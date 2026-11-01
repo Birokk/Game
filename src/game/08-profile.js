@@ -6,8 +6,8 @@ const UNLOCK = {
   chars3: [() => ownedChars().length >= 3, 'Own 3 characters'],
   ur: [() => ownedChars().some(e => e.rarity === 5), 'Own a UR character'],
   max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`],
-  mbtitle: [() => (S.unlocks || []).includes('mb-title'), 'Win it from the Mystery Box'],
-  mbcard: [() => (S.unlocks || []).includes('mb-card'), 'Win it from the Mystery Box']
+  mbtitle: [() => (S.unlocks || []).includes('mb-title'), 'Win it from the Mystery Fountain'],
+  mbcard: [() => (S.unlocks || []).includes('mb-card'), 'Win it from the Mystery Fountain']
 };
 const unlocked = o => UNLOCK[o.need][0]();
 const TITLES = [
@@ -17,7 +17,7 @@ const TITLES = [
   { id: 'collector', name: 'Star Collector', cls: 't-violet', need: 'chars3' },
   { id: 'lucky', name: 'Lucky Star', cls: 't-gold', need: 'ur' },
   { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' },
-  { id: 'boxbreaker', name: 'Box Breaker', cls: 't-mbox', need: 'mbtitle' }
+  { id: 'boxbreaker', name: 'Fountain Wisher', cls: 't-mbox', need: 'mbtitle' }
 ];
 const FRAMES = [
   { id: 'simple', name: 'Silver Ring', need: 'always' },
@@ -60,7 +60,7 @@ function renderProfile() {
   const root = $('#pfRoot'); if (!root) return;
   const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character' && !mcOff(e.id));
   P.showcase = P.showcase.map(id => id && findEntry(id) && owns(id) ? id : null);
-  const urs = chars.filter(e => e.rarity === 5).length, best = Math.max(0, ...chars.map(e => starsOf(e.id)));
+  const urs = chars.filter(e => e.rarity === 5).length, totalCS = chars.filter(e => e.type === 'character').reduce((t, e) => t + charScore(e), 0);   // Total CS: every owned character's CS added up
   const lockTag = o => unlocked(o) ? '' : `<span class="pf-lock">${icon('lock')}${esc(UNLOCK[o.need][1])}</span>`;
   const opt = (on, locked, inner, data, label) => `<button class="pf-opt ${on ? 'on' : ''} ${locked ? 'locked' : ''}" ${locked ? 'disabled' : data}>${inner}<span class="pf-ol">${label}</span></button>`;
   let opts;
@@ -97,15 +97,17 @@ function renderProfile() {
         <div><b>${ownedOf('pet').length}/${S.pool.filter(e => e.type === 'pet').length}</b><span>Pets</span></div>
         <div><b>${S.ach.length}/${ACH.length}</b><span>Achievements</span></div>
         <div><b>${urs}</b><span>URs owned</span></div>
-        <div><b>${best}★</b><span>Best stars</span></div>
+        <div class="tcs" title="Total CS: the Character Score of every character you own, added up"><b>${fmt(totalCS)}</b><span>Total CS</span></div>
       </div>
     </div>
-    <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="tiny">Show off up to 4 characters you own</span></div>
-      <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id);
-        return `<button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt=""><span class="pf-bdg">${badgeRow(e, 22, true)}</span><span class="pf-sl">${rtag(e.rarity)}<b>${esc(e.name)}</b>${starsFor(e)}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>`; }).join('')}</div></div>
+    <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="row" style="gap:8px;align-items:center"><span class="tiny">Show off up to 4 characters you own · grades</span>${csInfoBtn()}</span></div>
+      <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id), mid = e && memEqOf(e.id)[0], mm = mid && memOf(mid), mst = mm ? (memCopies(mm.id), memEqStar(e.id)) : 0, mart = mm && artFrom(mm.img);
+        const memPrev = e ? (mm ? `<span class="pf-mem mem-fr mst${mst}" data-memview="${esc(mm.id)}|${mst}" title="${esc(mm.name)} · hold to view">${mart ? `<img src="${mart}" alt="">` : icon('memory')}<span class="pf-mem-tag">${rtag(mm.rarity)}${memStarRow(mst)}</span></span>` : '<span class="pf-mem none"><span class="tiny">No memory</span></span>') : '';
+        return `<div class="pf-col"><button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}><span class="pf-bdg">${badgeRow(e, 22, true)}</span><span class="pf-cs">${csTag(e, 'sm')}</span><span class="pf-sl">${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}<b>${esc(e.name)}</b>${starsFor(e)}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>${memPrev}</div>`; }).join('')}</div></div>
     ${view ? '' : `<div class="tabs" style="margin:0">${[['avatar', 'Avatar'], ['frame', 'Avatar frame'], ['title', 'Title'], ['card', 'Namecard']].map(([k, l]) => `<button class="tab ${pfSlot < 0 && pfTab === k ? 'on' : ''}" data-pft="${k}">${l}</button>`).join('')}</div>
     ${opts}`}
   </div>`;
+  bindCSInfo(root);
   const save = () => { persist(); renderMenu(); renderProfile(); };
   const saveName = () => {
     const v = $('#pfNameIn').value.trim().slice(0, 16);

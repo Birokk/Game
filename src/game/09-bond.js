@@ -29,6 +29,7 @@ function giveGift(id, g) {
     if (S.wallet.coins < GIFTS[g].price) { toast(`${GIFTS[g].name} costs ${fmt(GIFTS[g].price)} gold coins. You have ${fmt(S.wallet.coins)}.`); return; }
     S.wallet.coins -= GIFTS[g].price;   // no gift in the bag: buy one on the spot
   } else S.gifts[g]--;
+  questAdd('gift');
   b.xp = Math.min(BOND_XP[BOND_MAX], b.xp + GIFTS[g].xp); S.bond[id] = b;
   persist(); renderMenu();
   const after = bondLv(id);
@@ -92,19 +93,25 @@ function marry(id) {
 
 /* ---------- badges: faceted crystal crests; top tiers get wings and a glow ---------- */
 const BADGES = [
-  { id: 'owned', name: 'Collected', desc: 'Own this character', metal: 'bronze', gem: '#2fbf71', emblem: 'star', ok: e => owns(e.id) },
   { id: 'star3', name: 'Rising Star', desc: 'Raise this character to 3 stars', metal: 'silver', gem: '#3a7bff', emblem: 'star', ok: e => owns(e.id) && starsOf(e.id) >= 3 },
   { id: 'star6', name: 'Max Stars', desc: `Raise this character to ${MAX_STARS} stars`, metal: 'gold', gem: '#9b4dff', emblem: 'star', wings: true, glow: 'gold', ok: e => owns(e.id) && starsOf(e.id) >= MAX_STARS },
   { id: 'bond5', name: 'Close Bond', desc: 'Reach bond level 5', metal: 'rose', gem: '#ff3d6a', emblem: 'heart', ok: e => bondLv(e.id) >= 5 },
   { id: 'bond10', name: 'Soulbound', desc: `Reach bond level ${BOND_MAX}`, metal: 'gold', gem: '#ff5f9a', emblem: 'heart', wings: true, glow: 'gold', ok: e => bondLv(e.id) >= BOND_MAX },
-  { id: 'married', name: 'Eternal Vow', desc: `Marry this character (bond level ${BOND_MAX} and 1 ring)`, metal: 'prism', gem: '#2a1650', emblem: 'ring', wings: true, glow: 'prism', ok: e => !!bondOf(e.id).married }
+  { id: 'married', name: 'Eternal Vow', desc: `Marry this character (bond level ${BOND_MAX} and 1 ring)`, metal: 'prism', gem: '#2a1650', emblem: 'ring', wings: true, glow: 'prism', ok: e => !!bondOf(e.id).married },
+  { id: 'sig', name: 'Signature Style', desc: 'Wear the character\'s full signature clothing set (UR characters)', metal: 'gold', gem: '#3ee6d0', emblem: 'hanger', wings: true, glow: 'gold', ok: e => sigWorn(e) },
+  { id: 'pot1', name: 'Hidden Potential', desc: 'Complete the first Potential plan', metal: 'crystal', gem: '#c8a2ff', emblem: 'drop', ok: e => e.type === 'character' && owns(e.id) && potDone(e.id, 0) },
+  { id: 'pot4', name: 'Rising Potential', desc: 'Complete 4 Potential plans', metal: 'crystal', gem: '#f5afe8', emblem: 'drop', wings: true, ok: e => e.type === 'character' && owns(e.id) && potDoneN(e.id) >= 4 },
+  { id: 'pot7', name: 'Full Potential', desc: `Complete all ${MAX_STARS + 1} Potential plans`, metal: 'crystal', gem: '#94b8ff', emblem: 'drop', wings: true, glow: 'prism', ok: e => e.type === 'character' && owns(e.id) && potDoneN(e.id) >= MAX_STARS + 1 },
+  { id: 'sss', name: 'SSS Awakened', desc: 'SSS awaken this character and keep it at CS grade SSS', metal: 'sss', gem: '#5a0010', emblem: 'star', wings: true, glow: 'sss', ok: e => e.type === 'character' && sssAwakened(e.id) && isSSS(e) }
 ];
 const METALS = {
   bronze: ['#ffe0bf', '#c9864a', '#6a3510'],
   silver: ['#ffffff', '#c3cfe6', '#4d5d7d'],
   gold: ['#fff6cc', '#f0bd4f', '#7a4e08'],
   rose: ['#ffe6ef', '#f08aa8', '#7a2042'],
-  prism: ['#d9b3ff', '#ff6ec7', '#3ee6d0']
+  prism: ['#d9b3ff', '#ff6ec7', '#3ee6d0'],
+  sss: ['#ffd0b0', '#ff2a45', '#5a0010'],
+  crystal: ['#ffe4f6', '#c8a2ff', '#4a3a8a']
 };
 let badgeN = 0;
 function badgeSVG(b) {
@@ -112,6 +119,10 @@ function badgeSVG(b) {
   const wing = `<path d="M17 25C11 22 5 17 2 9C6 12 9 13 12 13C8 10 6 7 6 2C10 7 14 10 18 13C16 9 16 6 17 3C19 9 21 14 22 20Z" fill="url(#bm${n})" stroke="${ink}" stroke-width="1.1" stroke-linejoin="round"/><path d="M8 11L15 17M10 6L17 14" stroke="rgba(255,255,255,.55)" stroke-width=".8" fill="none"/>`;
   const emblem = b.emblem === 'star'
     ? '<path d="M28 20.5l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#fffbe8" stroke="#1e1426" stroke-width=".9" stroke-linejoin="round"/>'
+    : b.emblem === 'hanger'
+      ? '<path d="M28 21.5a2.3 2.3 0 1 1 2.2 2.9c-1 .3-1.6.9-1.6 1.8v.6M28.6 26.8L20 32.5c-.9.6-.5 1.7.6 1.7h14.8c1.1 0 1.5-1.1.6-1.7z" fill="#fffbe8" stroke="#1e1426" stroke-width=".9" stroke-linejoin="round"/>'
+    : b.emblem === 'drop'
+      ? '<path d="M28 19.5c2.6 3.8 5.4 6.4 5.4 10.2a5.4 5.4 0 0 1-10.8 0c0-3.8 2.8-6.4 5.4-10.2z" fill="#fdf4ff" stroke="#1e1426" stroke-width=".9" stroke-linejoin="round"/><path d="M26.3 28.5q.6-2 1.9-3.6" stroke="#c8a2ff" stroke-width="1.1" fill="none" stroke-linecap="round"/>'
     : b.emblem === 'heart'
       ? '<path d="M28 35C21.5 30.5 20 27 22 24.3C23.8 22 26.6 22.5 28 24.6C29.4 22.5 32.2 22 34 24.3C36 27 34.5 30.5 28 35Z" fill="#fff0f5" stroke="#1e1426" stroke-width=".9"/>'
       : '<circle cx="28" cy="30" r="5.2" fill="none" stroke="#ffe08a" stroke-width="2.4"/><path d="M28 19.5l3.2 3-3.2 3-3.2-3z" fill="#e6f8ff" stroke="#1e1426" stroke-width=".8"/>';
@@ -122,7 +133,7 @@ function badgeSVG(b) {
     <path d="M28 4L50 26Q52 28 50 30L30 50Q28 52 26 50L6 30Q4 28 6 26L26 6Q28 4 28 4Z" fill="url(#bm${n})" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>
     <path d="M28 11L45 28L28 45L11 28Z" fill="url(#bg${n})" stroke="${ink}" stroke-width="1.1" stroke-linejoin="round"/>
     <path d="M28 11L28 28L11 28Z" fill="rgba(255,255,255,.28)"/><path d="M28 28L45 28L28 45Z" fill="rgba(0,0,0,.22)"/><path d="M28 11L45 28L28 28Z" fill="rgba(255,255,255,.1)"/>
-    ${b.metal === 'prism' ? '<path d="M28 11L45 28L28 45L11 28Z" fill="none" stroke="url(#bm' + n + ')" stroke-width="1.6"/>' : ''}
+    ${b.metal === 'sss' ? '<path d="M28 11L45 28L28 45L11 28Z" fill="none" stroke="#ffb27a" stroke-width="1.6"/>' : ''}${b.metal === 'prism' ? '<path d="M28 11L45 28L28 45L11 28Z" fill="none" stroke="url(#bm' + n + ')" stroke-width="1.6"/>' : ''}
     ${emblem}
     <path d="M14 22L24 12" stroke="rgba(255,255,255,.8)" stroke-width="1.6" stroke-linecap="round"/>
     ${b.glow ? '<g class="bdg-spark" fill="#fff"><path d="M46 8l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/><path d="M9 44l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></g>' : ''}</svg>`;

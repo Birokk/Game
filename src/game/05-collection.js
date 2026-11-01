@@ -5,12 +5,17 @@ function openCollection(filter = 'character') {
 }
 const cardHTML = e => {
   const n = S.owned[e.id] || 0;
-  return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starsFor(e) : 'Not owned'}</span><div class="card-foot"><div>${rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]}</div></div></button>`;
+  return `<button class="card r${e.rarity} ${n ? '' : 'locked'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt=""><span class="own">${n ? starsFor(e) : 'Not owned'}</span><div class="card-foot"><div>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}</div><div class="card-name">${esc(e.name)}</div><div class="card-type">${TYPES[e.type]}</div></div></button>`;
 };
 /* character cards in the collection: same look as the skin cards (rarity top left, name and stars at the bottom) */
 const charCardHTML = e => {
   const own = owns(e.id);
-  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}">${rtag(e.rarity)}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}${own ? `<span class="col-cs">${csTag(e, 'sm')}</span>` : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(e.name)}<span class="skc-st">${own ? starRow(starsOf(e.id), -1, e) : 'Not owned'}</span></span></button>`;
+};
+/* skin cards in the collection: the same 3:4 portrait card (with the skin's card framing) */
+const skinColCard = e => {
+  const own = owns(e.id), par = findEntry(e.parent);
+  return `<button class="skc col r${e.rarity} ${own ? '' : 'bw'}" data-card="${esc(e.id)}"><img src="${getArt(e)}" alt="" class="${mediaArt(e) ? '' : 'chibi'}" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}${own ? '' : `<span class="skc-lock">${icon('lock')}</span>`}<span class="skc-nm">${esc(par ? e.name.replace(par.name + ' · ', '') : e.name)}<span class="skc-st">${par ? esc(par.name) : 'Outfit'}</span></span></button>`;
 };
 const FUTURE = { collectible: 'Collectibles' };
 function renderCollection(filter) {
@@ -20,7 +25,7 @@ function renderCollection(filter) {
   const list = inTab(filter).filter(e => !colOwnedOnly || owns(e.id)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   root.innerHTML = `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === filter ? 'on' : ''}" data-tab="${k}">${l}<span>${inTab(k).filter(e => owns(e.id)).length}/${inTab(k).length}</span></button>`).join('')}
       <label class="switch">Owned only<input type="checkbox" id="colOwned" ${colOwnedOnly ? 'checked' : ''}><i></i></label></div>
-    ${list.length ? `<div class="cards ${filter === 'character' ? 'col-chars' : ''}">${list.map(filter === 'character' ? charCardHTML : cardHTML).join('')}</div>` : `<div class="empty">${colOwnedOnly ? 'You don\'t own anything here yet. <button class="link" data-open="summon">Try the banner</button>.' : FUTURE[filter] ? `${FUTURE[filter]} arrive in a future update.` : 'Nothing here yet. Add some in the <button class="link" data-open="admin">admin panel</button>.'}</div>`}`;
+    ${list.length ? `<div class="cards ${filter === 'character' || filter === 'skin' ? 'col-chars' : ''}">${list.map(filter === 'character' ? charCardHTML : filter === 'skin' ? skinColCard : cardHTML).join('')}</div>` : `<div class="empty">${colOwnedOnly ? 'You don\'t own anything here yet. <button class="link" data-open="summon">Try the banner</button>.' : FUTURE[filter] ? `${FUTURE[filter]} arrive in a future update.` : 'Nothing here yet. Add some in the <button class="link" data-open="admin">admin panel</button>.'}</div>`}`;
   root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => renderCollection(b.dataset.tab));
   root.querySelectorAll('[data-card]').forEach(b => b.onclick = () => renderDetail(b.dataset.card, filter));
   $('#colOwned').onchange = e => { colOwnedOnly = e.target.checked; renderCollection(filter); };
@@ -32,12 +37,12 @@ function renderDetail(id, backTo) {
   const wearable = (e.type === 'character' || e.type === 'skin') && n;
   const art = mediaArt(e);
   root.innerHTML = `<button class="btn ghost sm" id="dBack" style="margin-bottom:14px">${icon('back')}Back</button>
-    <div class="dt-hero r${e.rarity} ${n ? '' : 'unowned'}">
+    <div class="dt-hero r${e.rarity} t-${e.type} ${n ? '' : 'unowned'}">
       ${art ? `<img class="cs-blur" src="${art}" alt="">` : ''}<img class="dt-art ${art ? '' : 'chibi'}" src="${getSplash(e)}" alt="${esc(e.name)}"><div class="dt-shade"></div>
       <div class="dt-info">
         <div class="eyebrow ts" style="color:#fff">${TYPES[e.type]}${parent ? ` for ${esc(parent.name)}` : ''}</div>
         <h3>${esc(e.name)}</h3>
-        <div>${rtag(e.rarity, 'lg')}</div>
+        <div class="row" style="gap:10px;align-items:center">${e.type === 'character' ? charRtag(e, 'lg') : rtag(e.rarity, 'lg')}${e.type === 'character' ? csTag(e) : ''}</div>
         <div class="chips"><span class="chip ${n ? 'gold' : ''}">${n ? 'Owned' : 'Not owned'}</span>${e.pullable === false ? '<span class="chip">Not in summons</span>' : ''}</div>
         ${n && hasStars(e) ? `<div class="stars-big">${starsFor(e)}<span class="tiny">${starsOf(e.id) >= MAX_STARS ? `Max stars. More copies from summons give ${e.type === 'character' ? `${STARLIGHT_MAX[e.rarity] || STARLIGHT_MAX[4]} Corals each` : 'nothing extra'}.` : `${starsOf(e.id)} of ${MAX_STARS} stars. The next copy adds a star.`}</span></div>` : ''}
         <p class="desc">${esc(e.desc || 'No description yet.')}</p>

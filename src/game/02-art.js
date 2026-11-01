@@ -135,7 +135,7 @@ function artKey(e) {
   for (let i = ASC.length - 1; i > 0; i--) if (ascOpen(e, ASC[i])) return ASC[i].k;   // default: the highest unlocked
   return 'base';
 }
-const mediaArt = e => { if (!e) return null; const k = e.type === 'character' ? artKey(e) : 'base'; return (k !== 'base' && artFrom(e[k])) || artFrom(e.art); };
+const mediaArt = e => { if (!e) return null; const k = e.type === 'character' || e.type === 'pet' ? artKey(e) : 'base'; return (k !== 'base' && artFrom(e[k])) || artFrom(e.art); };
 /* the main character: chosen once (female or male), fixed preset; every chibi in the plaza is one of these two */
 const MC_LOOK = {
   f: { hair: '#ff9ec4', style: 1, skin: '#ffe0c7', shirt: '#ffffff', pants: '#7a5cff' },
@@ -180,3 +180,11 @@ const getSplash = e => mediaArt(e) || chibiSplash(e.look || S.player.look);
 const baseArt = e => e ? artFrom(e.art) : null;
 const baseSplash = e => baseArt(e) || chibiSplash(e.look || S.player.look);
 const baseCard = e => baseArt(e) || portrait(e.look || S.player.look, e.rarity);
+
+/* how an art sits in the 3:4 portrait cards (Collection, profile showcase, Skins carousel, outfit shop; admin → Game pool → Card framing).
+   One framing per art: entry.cardPos (base art; also skins), entry.cardPos3 / cardPos6 (the 3★ / 6★ splash arts, falling back to the base one).
+   By default a character uses the framing of the art it currently shows (artKey). */
+const CP_KEY = { base: 'cardPos', art3: 'cardPos3', art6: 'cardPos6' };
+const cardKind = e => e && (e.type === 'character' || e.type === 'pet') && e.id ? artKey(e) : 'base';
+const cardPos = (e, k = cardKind(e)) => ({ x: 50, y: 30, z: 1, ...((e && (e[CP_KEY[k]] || e.cardPos)) || {}) });
+const cardImgStyle = (e, k) => { const p = cardPos(e, k); return `object-position:${p.x}% ${p.y}%;transform:scale(${p.z});transform-origin:${p.x}% ${p.y}%`; };

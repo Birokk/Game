@@ -73,7 +73,7 @@ async function mediaDel(k) {
   try { await DB.del(k); } catch (e) {}
 }
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
-const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968];   // every character / skin art is cropped to exactly this size
+const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968], PET_SIZE = [1254, 1254];   // pets' splash arts are square   // every character / skin art is cropped to exactly this size
 /* exact = [w, h]: cover-crop to exactly that size (keeping the middle across and the upper part top to bottom, like the art views) */
 function resizeImage(file, max, type = 'image/webp', exact) {
   return new Promise((res, rej) => {
@@ -170,7 +170,7 @@ const curIcon = k => customIcon(k) ? `<img class="cic" src="${customIcon(k)}" al
 const costHTML = n => `<span class="cost">${curIcon('pearls')}${n}</span>`;
 function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); }); }
 const ICON_SLOTS = [
-  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Standard tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie'], ['exp', 'EXP (shown on EXP rewards)']]],
+  ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Standard tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie'], ['exp', 'EXP (shown on EXP rewards)'], ['qpt', 'Daily quest points'], ['potential', 'Potential gem (above the stars)']]],
   ['Main menu', [['mail', 'Mail'], ['gear', 'Settings'], ['wrench', 'Admin'], ['close', 'Close menu'], ['image', 'Wallpaper'], ['calendar', 'Events'], ['quests', 'Quests'], ['friends', 'Friends'], ['trophy', 'Ranking'], ['shop', 'Shop'], ['bag', 'Bag'], ['team', 'Team'], ['skins', 'Skins'], ['chars', 'Characters'], ['sparkle', 'Summon'], ['door', 'Enter Plaza'], ['gift', 'Daily login'], ['wheel', 'Daily spin'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat'], ['level', 'Level rewards']]],
   ['Character screen', [['home', 'Home'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['wardrobe', 'Wardrobe'], ['memory', 'Memory'], ['lock', 'Locked'], ['bondheart', 'Bond level heart']]],
   ['Plaza', [['map', 'Map'], ['grid', 'Menu button'], ['smile', 'Emotes'], ['send', 'Send chat']]],
@@ -187,11 +187,11 @@ const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
 const COST = { 1: 3, 10: 30 };
 const HARD_PITY = 50, BASE5 = 0.02, BASE4 = 0.051, COIN_DROP = 500;
 const MAX_STARS = 6;
-const starsOf = id => { const e = findEntry(id); return e && e.type === 'skin' ? 0 : Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1)); };
-const hasStars = e => !!e && e.type !== 'skin';
+const starsOf = id => { const e = findEntry(id); if (e && e.type === 'pet') return Math.max(0, ...petCopiesSt(id)); return e && !hasStars(e) ? 0 : Math.max(0, Math.min(MAX_STARS, (S.owned[id] || 0) - 1)); };
+const hasStars = e => !!e && e.type !== 'skin' && e.type !== 'memory';
 /* breakthrough: each owned star can be awakened into a glowing star in the character's rarity color */
 const btOf = id => (S.bt[id] || []).filter(i => i < starsOf(id));
-const starRow = (n, pop = -1, e = null) => { const bt = e ? btOf(e.id) : []; return `<span class="stars6 ${e ? 'r' + e.rarity : ''}" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''} ${bt.includes(i) ? 'bt' : ''}">★</span>`).join('')}</span>`; };
+const starRow = (n, pop = -1, e = null) => { const bt = e ? btOf(e.id) : [], sss = e && e.type === 'character' ? sssActive(e) : []; return `<span class="stars6 ${e ? 'r' + e.rarity : ''}" aria-label="${n} of ${MAX_STARS} stars">${Array.from({ length: MAX_STARS }, (_, i) => `<span class="${i < n ? 'on' : ''} ${i === pop ? 'pop' : ''} ${bt.includes(i) ? 'bt' : ''} ${sss.includes(i) ? 'sss' : ''}">★${e && e.type === 'character' ? potStarIcon(e, i) : ''}</span>`).join('')}${e && e.type === 'character' ? csPlus(e) : ''}</span>`; };   // + after the stars from CS grade S
 const starsFor = e => hasStars(e) ? starRow(starsOf(e.id), -1, e) : '';
 const DUST_PER_PULL = 5, STARLIGHT = { 4: 5, 5: 10 }, STARLIGHT_MAX = { 4: 10, 5: 40 };
 const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_UR = .08;
@@ -215,13 +215,13 @@ function sampleState() {
   return {
     version: 4,
     player: { name: 'Traveler', look: { hair:'#3c4cff', style:2, skin:'#f6c9a4', shirt:'#2f3a66', pants:'#1e2440' } },
-    wallet: { coins: 24580, pearls: 90, tickets: 10, wishes: 10, rings: 0, bottles: 0, dust: 0, starlight: 0 },
+    wallet: { coins: 24580, pearls: 90, tickets: 10, wishes: 10, rings: 0, bottles: 0, dust: 0, starlight: 0, memtk: 0 },
     settings: { names: true, music: true, sfx: true, gfx: 'high', pullFit: false },
     featuredId: 'aria',
     wallpaper: null,
     owned: {},
-    banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, standard: { name: 'Pearl Wish' } },
-    gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
+    banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, memories: { name: 'Memory Wish' }, standard: { name: 'Pearl Wish' } },
+    gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, memories: { pity5: 0, pity4: 0, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
     monthly: { key: null, limited: 0, standard: 0 },
@@ -291,7 +291,7 @@ let S = (() => {
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
         s.pets = { ...fresh.pets, ...(d.pets || {}) }; s.pets.frags = { ...fresh.pets.frags, ...s.pets.frags };
-        if (!Array.isArray(s.pets.inc) || s.pets.inc.length !== 3) s.pets.inc = [null, null, null];
+        if (!Array.isArray(s.pets.inc) || s.pets.inc.length < 3) s.pets.inc = [...(Array.isArray(s.pets.inc) ? s.pets.inc : []), null, null, null].slice(0, Math.max(3, (s.pets.inc || []).length));
         s.version = 4;
         return s;
       }
@@ -326,4 +326,6 @@ const featured = () => S.pool.find(e => e.id === S.featuredId) || S.pool.find(e 
 const MC_IDS = { 'mc-f': 'f', 'mc-m': 'm' };
 const mcOff = id => { const m = MC_IDS[id] || MC_IDS[(findEntry(id) || {}).parent]; return !!m && m !== S.player.mc; };
 const owns = id => (S.owned[id] || 0) > 0 && !mcOff(id);
-const findEntry = id => S.pool.find(e => e.id === id);
+/* pool entries, and memories looked up like entries (type 'memory', art = the memory's art) so banners and reveals can show them */
+const memEntry = id => { const m = (S.memories || []).find(x => x.id === id); return m ? { id: m.id, type: 'memory', name: m.name, rarity: +m.rarity, art: m.img || null, desc: m.desc || '', look: {}, pullable: true, char: m.char || null } : undefined; };
+const findEntry = id => S.pool.find(e => e.id === id) || memEntry(id);

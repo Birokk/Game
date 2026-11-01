@@ -20,6 +20,7 @@ document.addEventListener('click', e => {
   else if (k === 'level') openLevel();
   else if (k === 'spin') openSpin();
   else if (k === 'ach') openAch();
+  else if (k === 'quests') openQuests();
   else if (k === 'redeem') openRedeem();
   else if (k === 'buytickets') openBuyTickets(t.dataset.tkbk);
   else if (k === 'skins') openCollection('skin');

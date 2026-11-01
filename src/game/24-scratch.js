@@ -1,11 +1,11 @@
 /* ---------- scratch cards: a built-in event on the Event page ----------
-   Buy a card for 5 pearls (5 a day), scratch the silver foil, and three of the same icon wins that icon's prize.
+   Buy a card for 5 pearls (10 a day), scratch the silver foil, and three of the same icon wins that icon's prize.
    The prize is decided when the card is bought (weights below, in millionths), then the 3×3 grid is dealt to match:
    a win puts its icon three times and every other icon at most twice; a loss never has three of a kind.
    Odds: about 30% of cards lose; return to player ≈ 96.6% (1 pearl 4.84%, 3 pearls 9%, 5 pearls 14%, 7 pearls 15%, 10 pearls 27%),
    and the big ones are very rare: 30 = 0.12%, 50 = 0.03%, 100 = 0.008%, 300 = 0.0012%.
    State (player save): S.scratch = { day, n (bought today), card: { cells[9], win (icon index or -1), prize, done } } */
-const SCRATCH_PRICE = 5, SCRATCH_DAILY = 5;
+const SCRATCH_PRICE = 5, SCRATCH_DAILY = 10;
 const SCRATCH_PRIZES = [
   { p: 300, ic: 'seven', w: 12 }, { p: 100, ic: 'crown', w: 80 }, { p: 50, ic: 'diamond', w: 300 }, { p: 30, ic: 'star', w: 1200 },
   { p: 10, ic: 'bell', w: 270000 }, { p: 7, ic: 'bag', w: 150000 }, { p: 5, ic: 'clover', w: 140000 }, { p: 3, ic: 'horseshoe', w: 90000 },
@@ -61,24 +61,34 @@ function scratchBoard() {
   const cells = c ? c.cells.map(i => `<span class="scr-cell ${c.done && i === c.win ? 'hit' : ''}">${scrIcon(SCR_KEYS[i])}</span>`).join('')
     : Array.from({ length: 9 }, () => `<span class="scr-cell">${scrIcon('moon', 'ghost')}</span>`).join('');
   const odds = x => { const v = x / 1e4; return v >= 1 ? `${Math.round(v * 100) / 100}%` : `${+v.toPrecision(2)}%`; };
+  const no = String((S.scratch && S.scratch.n) || 0).padStart(2, '0'), day = dayKey().slice(5).replace('-', '');
+  // a wide lottery ticket: the play area on the left, a perforated stub on the right
   return `<div class="scr">
-    <div class="scr-card ${c ? '' : 'empty'} ${c && c.done ? (c.prize ? 'won' : 'lost') : ''}">
-      <div class="scr-head"><b>Lucky Scratch</b><span>Match 3 to win</span></div>
-      <div class="scr-wrap"><div class="scr-grid">${cells}</div>${open ? '<canvas class="scr-foil" id="scrFoil" aria-label="Scratch the foil to reveal the icons"></canvas>' : ''}
-        ${!c ? `<div class="scr-msg">Buy a card to play</div>` : c.done ? `<div class="scr-res">${c.prize ? `${curIcon('pearls')}<b>+${c.prize}</b>` : '<b>No match</b>'}</div>` : ''}</div>
-      <div class="scr-foot">${open ? 'Scratch the silver foil' : c && c.done ? (c.prize ? `You won ${c.prize} pearl${c.prize === 1 ? '' : 's'}!` : 'Better luck next card') : `${SCRATCH_PRICE} pearls per card`}</div>
+    <div class="scr-card ticket ${c ? '' : 'empty'} ${c && c.done ? (c.prize ? 'won' : 'lost') : ''}">
+      <div class="scr-main">
+        <div class="scr-head"><b>Lucky Scratch</b><span>${scrIcon('star')}Match 3 to win${scrIcon('star')}</span></div>
+        <div class="scr-wrap"><div class="scr-grid">${cells}</div>${open ? '<canvas class="scr-foil" id="scrFoil" aria-label="Scratch the foil to reveal the icons"></canvas>' : ''}
+          ${!c ? `<div class="scr-msg">Buy a card to play</div>` : c.done ? `<div class="scr-res">${c.prize ? `${curIcon('pearls')}<b>+${c.prize}</b>` : '<b>No match</b>'}</div>` : ''}</div>
+        <div class="scr-foot">${open ? 'Scratch the silver foil' : c && c.done ? (c.prize ? `You won ${c.prize} pearl${c.prize === 1 ? '' : 's'}!` : 'Better luck next card') : `${SCRATCH_PRICE} pearls per card`}</div>
+      </div>
+      <div class="scr-stub"><span class="scr-stub-t">LUCKY</span><span class="scr-stub-ic">${scrIcon('seven')}</span><span class="scr-stub-no">No. ${day}-${no}</span><span class="scr-stub-p">${curIcon('pearls')}${SCRATCH_PRICE}</span><span class="scr-stub-b" aria-hidden="true"></span></div>
     </div>
     <div class="scr-side">
       ${open ? `<button class="btn gold" id="scrReveal">${icon('eye')}Reveal all</button>`
         : `<button class="btn gold" id="scrBuy" ${left > 0 && S.wallet.pearls >= SCRATCH_PRICE ? '' : 'disabled'}>Buy a card · ${costHTML(SCRATCH_PRICE)}</button>`}
       <span class="scr-left">${left} of ${SCRATCH_DAILY} cards left today</span>
-      <div class="scr-table"><span class="lbl-sm">Three of a kind wins</span>
+      <div class="scr-table"><span class="lbl-sm" style="display:flex;justify-content:space-between;align-items:center">Three of a kind wins<span>Chance</span></span>
         ${SCRATCH_PRIZES.map(x => `<div class="scr-row ${x.p >= 30 ? 'big' : ''}"><span class="scr-trio">${scrIcon(x.ic)}<i>×3</i></span><b>${curIcon('pearls')}${x.p}</b><small>${odds(x.w)}</small></div>`).join('')}
-        <div class="scr-row lose"><span class="scr-trio">No match</span><b>0</b><small>${odds(SCRATCH_LOSE_W)}</small></div>
+        <div class="scr-row lose"><span>No match</span><b>0</b><small>${odds(SCRATCH_LOSE_W)}</small></div>
       </div>
     </div></div>`;
 }
 /* the silver foil: drag to scratch it away; once most of every cell is clear the card is revealed */
+INFO.scratch = () => { const odds = x => { const v = x / 1e4; return v >= 1 ? `${Math.round(v * 100) / 100}%` : `${+v.toPrecision(2)}%`; };
+  return { title: 'Scratch card odds', body: `<p class="desc">A card costs ${SCRATCH_PRICE} pearls, up to ${SCRATCH_DAILY} a day. Three of the same icon wins its prize.</p>
+    <table class="cs-table"><thead><tr><th>Three of</th><th>Prize</th><th>Chance</th></tr></thead><tbody>
+      ${SCRATCH_PRIZES.map(x => `<tr><td><span class="scr-trio">${scrIcon(x.ic)}</span></td><td>${x.p} pearl${x.p === 1 ? '' : 's'}</td><td>${odds(x.w)}</td></tr>`).join('')}
+      <tr><td>No match</td><td>0</td><td>${odds(SCRATCH_LOSE_W)}</td></tr></tbody></table>` }; };
 function bindScratch() {
   const b = $('#scrBuy'); if (b) b.onclick = buyScratch;
   const r = $('#scrReveal'); if (r) r.onclick = finishScratch;
@@ -139,7 +149,7 @@ function openGiveGifts(id, gift) {
     modalEl.querySelectorAll('[data-gg]').forEach(b => b.onclick = () => set(b.dataset.gg));
     $('#ggGo').onclick = () => {
       const before = bondLv(id), b = { ...bondOf(id) };
-      S.gifts[gift] -= n; b.xp = Math.min(BOND_XP[BOND_MAX], b.xp + n * g.xp); S.bond[id] = b;
+      questAdd('gift', n); S.gifts[gift] -= n; b.xp = Math.min(BOND_XP[BOND_MAX], b.xp + n * g.xp); S.bond[id] = b;
       persist(); renderMenu(); closeModal(); refreshCharacters();
       const after = bondLv(id);
       toast(`Gave ${n} ${g.name} to ${c.name}. +${fmt(n * g.xp)} bond${after > before ? `, bond level ${after}!${after === BOND_MAX ? ' You can now propose with a ring.' : ''}` : '.'}`);

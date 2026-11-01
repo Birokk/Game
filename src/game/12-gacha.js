@@ -2,12 +2,15 @@
    GACHA
    ========================================================= */
 function rate5(pity) { return pity >= HARD_PITY ? 1 : BASE5; }
-const BANNER_KEYS = ['limited', 'weekly', 'skins', 'standard'];   // order of the tabs on the summon screen
+const BANNER_KEYS = ['limited', 'weekly', 'skins', 'memories', 'standard'];   // order of the tabs on the summon screen
 let curBanner = 'limited';
 const limitedUR = () => { const f = findEntry(S.featuredId); return f && f.rarity === 5 && f.pullable !== false ? f : null; };
 const standardURs = () => S.pool.filter(e => e.rarity === 5 && e.pullable !== false && e.standard && e.type !== 'pet');
 const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== false && e.type !== 'pet');
-const BANNER_DEFAULT_NAME = { limited: 'Limited Banner', weekly: 'Weekly Spotlight', skins: 'Outfit Wish', standard: 'Pearl Wish' };
+const BANNER_DEFAULT_NAME = { limited: 'Limited Banner', weekly: 'Weekly Spotlight', skins: 'Outfit Wish', memories: 'Memory Wish', standard: 'Pearl Wish' };
+/* memory banner: pulls give memories at double the usual UR / SSR rates, paid with Standard tickets */
+const pullableMems = r => (S.memories || []).filter(m => +m.rarity === r).map(m => memEntry(m.id));
+const RATE_X = bk => bk === 'memories' ? 2 : 1;
 const bannerName = bk => (S.banners[bk] && S.banners[bk].name) || BANNER_DEFAULT_NAME[bk];
 /* weekly banner: a random pullable UR character, the same for every player, changes every Monday 00:00 UTC */
 const WEEK_MS = 7 * 864e5, WEEK_EPOCH = Date.UTC(2024, 0, 1);   // 1 Jan 2024 was a Monday
@@ -39,11 +42,12 @@ function bannerInfo(bk) {
   if (bk === 'limited') { const f = limitedUR(); return { bk, kind: 'feat', word: 'LIMITED', tab: 'Limited', feat: f, lose: std, ur: std, ssr, ends: +new Date((S.banners.limited.end || '2026-11-11') + 'T23:59:00'), title: `${f ? f.name : 'Limited'} Summon` }; }
   if (bk === 'weekly') { const f = weeklyUR(); return { bk, kind: 'feat', word: 'WEEKLY', tab: 'Weekly', feat: f, lose: std, ur: std, ssr, ends: weekEnds(), title: f ? `${f.name} Spotlight` : bannerName('weekly'), note: 'A new random UR every Monday' }; }
   if (bk === 'skins') { const urs = pullableSkins(5), f = skinFeatured(); return { bk, kind: f ? 'feat' : 'pool', word: 'OUTFITS', tab: 'Outfits', feat: f, lose: urs, ur: urs, ssr: pullableSkins(4), ends: skinsEnd(), title: bannerName('skins'), skins: true }; }
+  if (bk === 'memories') { const urs = pullableMems(5); return { bk, kind: 'pool', word: 'MEMORIES', tab: 'Memories', feat: null, lose: urs, ur: urs, ssr: pullableMems(4), ends: null, title: bannerName('memories'), mems: true, note: 'Double UR and SSR rates' }; }
   return { bk, kind: 'pool', word: 'PEARL WISH', tab: 'Permanent', feat: null, lose: std, ur: std, ssr, ends: null, title: bannerName('standard') };
 }
 /* a summon is paid with summon tickets (1 ticket = 1 pull) when you have enough, otherwise with pearls */
 /* each banner has its own ticket: Limited tickets for the limited banner, Standard tickets for the permanent one */
-const TK = bk => bk === 'standard' ? 'wishes' : 'tickets';
+const TK = bk => bk === 'standard' || bk === 'memories' ? 'wishes' : 'tickets';
 const TK_NAME = { tickets: 'Limited ticket', wishes: 'Standard ticket' };
 const payFor = (n, bk = curBanner) => S.wallet[TK(bk)] >= n ? { k: TK(bk), amt: n } : { k: 'pearls', amt: COST[n] };
 const canPull = (n, bk = curBanner) => S.wallet[TK(bk)] >= n || S.wallet.pearls >= COST[n];
@@ -74,9 +78,9 @@ function upgradeSSR(B, g, res) {
 }
 function rollOne(bk) {
   const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
-  const r = Math.random(), p5 = rate5(g.pity5);
+  const r = Math.random(), x = RATE_X(bk), p5 = Math.min(1, rate5(g.pity5) * x);
   let rarity = 3;
-  if (r < p5) rarity = 5; else if (g.pity4 >= 10 || r < p5 + BASE4) rarity = 4;
+  if (r < p5) rarity = 5; else if (g.pity4 >= 10 || r < p5 + BASE4 * x) rarity = 4;
   if (rarity === 5) { g.pity5 = 0; g.pity4 = 0; } else if (rarity === 4) g.pity4 = 0;
   let item = null, lost = false;
   const B = bannerInfo(bk);
@@ -113,6 +117,7 @@ function doPull(n, bk = curBanner, free = false) {
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
   const results = Array.from({ length: n }, () => rollOne(bk));
+  if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk);
@@ -146,22 +151,22 @@ function renderSummon() {
   const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
     return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.kind === 'feat' && !I.skins ? '<br>Summon' : ''}</b>${dotFor(k)}</button>`; };
-  const what = B.skins ? 'outfit' : 'character';
+  const what = B.skins ? 'outfit' : B.mems ? 'memory' : 'character';
   smEl.className = 'sx r5';
   smEl.innerHTML = `<div class="sx-word">${B.word}</div>
     ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
     <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${baseArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${baseSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
     <div class="sx-fade"></div><div class="sx-vig"></div>
     <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
-    <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
+    <div class="sx-cur">${[TK(bk), 'pearls'].map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
     <nav class="sx-tabs" aria-label="Banners">${BANNER_KEYS.map(tab).join('')}</nav>
     <div class="sx-title">
       <h2>${esc(B.title)}</h2>
       ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
       <p>Guaranteed <span class="u">UR</span> ${f && g.guarantee ? `<span class="g">${esc(f.name)}</span>` : what}</p>
       ${f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span>${B.ends ? `<span class="lim-time">${icon('clock')}${B.bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : ''}${B.note ? `<span class="chip">${B.note}</span>` : ''}`
-        : `<span class="chip">${B.ur.length} UR ${what}s · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div>`}`
-      : `<p>${B.skins ? 'No UR outfits on this banner yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : 'banners'}">${icon('wrench')}Set it up in admin</button>`}
+        : `<span class="chip">${B.ur.length} UR ${what === 'memory' ? 'memories' : what + 's'} · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div>`}`
+      : `<p>${B.skins ? 'No UR outfits on this banner yet.' : B.mems ? 'No UR memories yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : B.mems ? 'memories' : 'banners'}">${icon('wrench')}Set it up in admin</button>`}
     </div>
     <div class="sx-rule"></div>
     <div class="sx-bl">
@@ -169,6 +174,7 @@ function renderSummon() {
       <button class="sx-rb ts" id="sxHist"><span class="c">${icon('clock')}</span>History</button>
       <button class="sx-rb ts" data-open="shop"><span class="c">${icon('shop')}</span>Shop</button>
     </div>
+    ${bk === 'standard' ? milestoneBtn() : ''}
     <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
     <div class="sx-br">
       ${freeReady(bk) ? `<button class="sx-pull free" id="sxFree">Free daily pull<span class="dot-n"></span></button>` : ''}
@@ -182,11 +188,33 @@ function renderSummon() {
   const fr = $('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
   $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
   $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
+  const ms = $('#sxMile'); if (ms) ms.onclick = confirmMilestone;
   $('#sxHist').onclick = () => openRates(bk, true);
+}
+/* permanent banner milestone: after the first 100 pulls on it, one free random permanent UR (once) */
+const MILESTONE_PULLS = 100;
+const mileN = () => Math.min(MILESTONE_PULLS, S.gacha.standard.total || 0), mileDone = () => !!S.gacha.standard.mile;
+function milestoneBtn() {
+  const n = mileN(), ready = n >= MILESTONE_PULLS && !mileDone();
+  return `<button class="sx-mile ${ready ? 'ready' : ''} ${mileDone() ? 'done' : ''}" id="sxMile" style="--p:${n / MILESTONE_PULLS * 360}deg" aria-label="Milestone: ${n} of ${MILESTONE_PULLS} pulls"><span class="sx-mile-in">${mileDone() ? icon('check') : `<b>${n}</b><small>/${MILESTONE_PULLS}</small>`}</span><span class="sx-mile-lb">${mileDone() ? 'Claimed' : ready ? 'Claim UR' : 'Milestone'}</span></button>`;
+}
+function confirmMilestone() {
+  if (mileDone()) { toast('You already claimed the 100-pull milestone.'); return; }
+  const n = mileN();
+  if (n < MILESTONE_PULLS) { toast(`Pull ${MILESTONE_PULLS - n} more time${MILESTONE_PULLS - n === 1 ? '' : 's'} on this banner to claim a free random UR.`); return; }
+  const urs = standardURs(); if (!urs.length) { toast('There are no permanent URs yet.'); return; }
+  openModal({ title: 'Milestone reward', ic: 'sparkle', small: true, body: `<div class="stack" style="justify-content:center;justify-items:center;text-align:center"><p class="desc">You reached ${MILESTONE_PULLS} pulls on the permanent banner. Claim a free random UR from it?</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="msNo">Later</button><button class="btn gold" id="msYes">${icon('sparkle')}Claim</button></div></div>`,
+    onMount: () => { $('#msNo').onclick = closeModal; $('#msYes').onclick = () => {
+      closeModal(); const item = rpick(urs), res = { kind: 'entry', id: item.id, rarity: 5, lost: false, hard: true, ...grantEntry(item) };
+      if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += res.starlight; }
+      S.gacha.standard.mile = true; S.gacha.history.unshift({ name: item.name, rarity: 5, banner: 'standard', t: Date.now() });
+      persist(); renderMenu(); refreshSummon(); showPull([res], 1, 'standard', { preview: true, milestone: true, fake: false, rainbow: false });
+    }; } });
 }
 /* rates, pity and history for one banner */
 function openRates(bk, histOpen) {
-  const g = S.gacha[bk], B = bannerInfo(bk), f = B.feat, what = B.skins ? 'outfit' : 'UR';
+  const g = S.gacha[bk], B = bannerInfo(bk), f = B.feat, what = B.skins ? 'outfit' : 'UR', X = RATE_X(bk);
   const t = e => new Date(e.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const hist = S.gacha.history.filter(h => (h.banner || 'limited') === bk);
   openModal({ title: B.title, ic: 'sparkle', wide: true, body: `<div class="stack">
@@ -195,8 +223,8 @@ function openRates(bk, histOpen) {
       <div class="r4"><div class="row" style="justify-content:space-between"><span>SSR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity4} / 10</span></div><div class="bar"><i style="width:${g.pity4 * 10}%"></i></div></div>
     </div>
     <table class="rates">
-      <tr><td>${rtag(5)}</td><td>${BASE5 * 100}% · guaranteed by pull ${HARD_PITY} · ${f ? `50% ${esc(f.name)}, otherwise ${B.skins ? 'another UR outfit' : 'a permanent UR'} and the next UR is guaranteed featured` : `each of the ${B.ur.length} UR ${B.skins ? 'outfits' : 'characters'} is equally likely`}</td></tr>
-      <tr><td>${rtag(4)}</td><td>5.1% · at least one every 10 pulls · ${B.skins ? `one of ${B.ssr.length} SSR outfits` : 'a random SSR'}</td></tr>
+      <tr><td>${rtag(5)}</td><td>${+(BASE5 * X * 100).toFixed(2)}% · guaranteed by pull ${HARD_PITY} · ${f ? `50% ${esc(f.name)}, otherwise ${B.skins ? 'another UR outfit' : 'a permanent UR'} and the next UR is guaranteed featured` : `each of the ${B.ur.length} UR ${B.skins ? 'outfits' : B.mems ? 'memories' : 'characters'} is equally likely`}</td></tr>
+      <tr><td>${rtag(4)}</td><td>${+(BASE4 * X * 100).toFixed(2)}% · at least one every 10 pulls · ${B.skins ? `one of ${B.ssr.length} SSR outfits` : B.mems ? `one of ${B.ssr.length} SSR memories` : 'a random SSR'}</td></tr>
       ${B.bk === 'weekly' ? `<tr><td>${icon('clock')}</td><td>The featured UR is picked at random every Monday (00:00 UTC). Next change in ${shortLeft(B.ends)}.</td></tr>` : ''}
       <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
     </table>
@@ -391,14 +419,16 @@ function showPull(results, n, bk, opts = {}) {
     <div id="pullStage"></div><canvas class="pfx"></canvas><button class="btn ghost sm pull-skip" id="pullSkip">Skip</button>`;
   document.body.appendChild(pullEl);
   const fx = startPfx(pullEl.querySelector('.pfx'), 3); fx.intro = false;
-  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
+  pullState = { results, n, bk, best, fake, rainbow, preview: !!opts.preview, exchange: !!opts.exchange, milestone: !!opts.milestone, i: -1, phase: 'charge', readyAt: 0, order: results.map((r, i) => i), fx, timers: [] };
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
-  $('#pullSkip').onclick = showSummary;
+  $('#pullSkip').onclick = () => pullState && pullState.exchange ? closePull() : showSummary();
   // tap anywhere to release (Enter / Space / ↓ also work)
   pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
   document.addEventListener('keydown', pullState.onKey);
+  // direct: skip the sphere and go straight to the reveal (memory exchange)
+  if (opts.direct) { pullEl.classList.add('direct'); pullClear(pullState); if (pullState.sfx) { pullState.sfx.stop(); pullState.sfx = null; } advancePull(); }
 }
 const pullLater = (ms, fn) => pullState && pullState.timers.push(setTimeout(fn, ms));
 function pullClear(st) { clearTimeout(st.timer); (st.timers || []).forEach(clearTimeout); st.timers = []; if (st.onKey) document.removeEventListener('keydown', st.onKey); st.onKey = null; }
@@ -568,7 +598,7 @@ function advancePull() {
   st.i++; st.phase = 'reveal';
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
-  if (st.i >= st.order.length) return showSummary();
+  if (st.i >= st.order.length) return st.exchange ? closePull() : showSummary();
   const r = st.results[st.order[st.i]], v = resultView(r);
   st.readyAt = performance.now() + (r.kind === 'entry' ? 900 : 450);
   pullEl.classList.add('revealing');
@@ -637,9 +667,9 @@ function showSummary() {
     <div class="sum-got"><span class="lbl-sm">You got</span><div class="sum-items">${sumItems(st).map(([ic, n, l]) => `<span class="sum-item" title="${l}">${ic}<b>${n}</b><small>${l}</small></span>`).join('')}</div></div>
     <div class="row" style="justify-content:center">
       ${st.preview ? '' : `<button class="btn gold" id="pullAgain">Pull ×${st.n} again${payHTML(st.n, st.bk)}</button>`}
-      <button class="btn ghost" id="pullDone">${st.preview ? 'Close preview' : 'Done'}</button>
+      <button class="btn ghost" id="pullDone">${st.exchange || st.milestone ? 'Done' : st.preview ? 'Close preview' : 'Done'}</button>
     </div>
-    ${st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
+    ${st.milestone ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Milestone reward: 100 pulls on the permanent banner.</p>' : st.exchange ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Memory exchange complete.</p>' : st.preview ? '<p class="tiny" style="color:rgba(255,255,255,.65)">Preview only: nothing was spent or added.</p>' : `<p class="tiny" style="color:rgba(255,255,255,.65)">Pearls left: ${fmt(S.wallet.pearls)}</p>`}
   </div>`;
   const again = $('#pullAgain'); if (again) again.onclick = () => doPull(st.n, st.bk);
   $('#pullDone').onclick = () => closePull();

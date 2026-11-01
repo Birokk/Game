@@ -1,12 +1,15 @@
 /* =========================================================
    ADMIN
    ========================================================= */
+/* pets' splash arts are square (1254×1254), everything else 1728×968 */
+const adArtSize = () => ($('#adType') || {}).value === 'pet' ? PET_SIZE : SPLASH_SIZE;
+let adminCard = { x: 50, y: 30, z: 1 }, adminCards = {}, adminCardK = 'base', adminSigMems = [];   // card framing per art: base / art3 / art6
 let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null }, adminIcon = null;
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Farm</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Base</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -63,7 +66,11 @@ function renderPoolTab() {
           <div class="frame"><img id="adPrev" alt="Splash art preview"></div>
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
-          <p class="tiny">Standard size: 1728×972 (16:9). It fills the whole screen; other shapes (like square art) are cropped to fill it, keeping the upper middle. Larger images are scaled down to 1728px wide. Without art, a placeholder chibi is shown.</p>
+          <p class="tiny">Characters and skins: every upload is cropped to exactly 1728×968 (16:9), keeping the upper middle. <b>Pets: 1254×1254 (square)</b>, including their 3★ / 6★ arts. Without art, a placeholder is shown.</p>
+          <div class="asc-slots" id="adCardWrap"><div class="lbl-sm">Card framing</div><p class="tiny">How the art sits in every 3:4 card: Collection, profile showcase, the Skins carousel and the outfit shop. Characters can frame each splash art on its own.</p>
+            <div class="row" id="adCardKs" style="gap:6px"></div>
+            <div class="row" style="gap:12px;align-items:center"><span class="ad-card"><img id="adCardImg" alt=""></span>
+              <div class="stack ad-card-sl" style="gap:6px;flex:1"><label>Left / right <input type="range" min="0" max="100" step="1" id="adCpX"></label><label>Up / down <input type="range" min="0" max="100" step="1" id="adCpY"></label><label>Zoom <input type="range" min="100" max="250" step="5" id="adCpZ"></label><button type="button" class="link" id="adCpReset" style="justify-self:start">Reset framing</button></div></div></div>
           <div class="asc-slots"><div class="lbl-sm">Icon</div><p class="tiny">Square picture used in the character menu, avatars and small portraits. Without one, it is cut from the art.</p>
             <div class="asc-slot"><span class="mini ic-mini"><img id="adP_icon" alt=""></span><div style="display:grid;gap:4px"><b>Icon</b><span class="tiny" id="adS_icon"></span>
               <div class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}Upload<input type="file" accept="image/*" class="sr" id="adIconUp"></label><button type="button" class="link" id="adIconX">Remove</button></div></div></div>
@@ -90,6 +97,8 @@ function renderPoolTab() {
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
+          <div class="field" id="adSigMemWrap"><span>Signature memories (memories that feature this character)</span><div class="row" id="adSigMem" style="gap:6px;flex-wrap:wrap"></div><small class="tiny">Tap to toggle. Equipping one of them gives the character +500 CS.</small></div>
+          <label class="field" id="adSigWrap"><span>Signature clothing set (UR characters)</span><select class="input" id="adSig"></select><small class="tiny">Wearing all 6 pieces of it gives +1,000 CS and the Signature Style badge.</small></label>
           <label class="switch" id="adFeatWrap">Featured UR on the limited banner<input type="checkbox" id="adFeat"><i></i></label>
           <div class="row"><button class="btn mint" type="submit" id="adSave">${icon('plus')}Add to pool</button></div>
         </div>
@@ -100,11 +109,14 @@ function renderPoolTab() {
   $('#adRarity').addEventListener('change', adminPreview);
   $('#adType').addEventListener('change', adminPreview);
   $('#adArt').addEventListener('change', async ev => {
-    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE); adminPreview(); }
+    try { adminArt = await resizeImage(ev.target.files[0], SPLASH_MAX, 'image/webp', adArtSize()); adminPreview(); }
     catch (e) { toast(e.message); }
   });
   $('#adClearArt').onclick = () => { adminArt = null; adminPreview(); };
-  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', SPLASH_SIZE); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
+  const cpSet = () => { adminCard = { x: +$('#adCpX').value, y: +$('#adCpY').value, z: +$('#adCpZ').value / 100 }; adminCards[adminCardK] = { ...adminCard }; adminPreview(); };
+  ['#adCpX', '#adCpY', '#adCpZ'].forEach(id => $(id).oninput = cpSet);
+  $('#adCpReset').onclick = () => { adminCard = { x: 50, y: 30, z: 1 }; adminCards[adminCardK] = { ...adminCard }; adminPreview(); };
+  document.querySelectorAll('[data-asc]').forEach(inp => inp.onchange = async () => { try { adminAsc[inp.dataset.asc] = await resizeImage(inp.files[0], SPLASH_MAX, 'image/webp', adArtSize()); inp.value = ''; adminPreview(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-ascx]').forEach(b => b.onclick = () => { adminAsc[b.dataset.ascx] = null; adminPreview(); });
   $('#adIconUp').onchange = async ev => { try { adminIcon = await resizeImage(ev.target.files[0], 512); ev.target.value = ''; adminPreview(); } catch (e) { toast(e.message); } };
   $('#adIconX').onclick = () => { adminIcon = null; adminPreview(); };
@@ -128,6 +140,7 @@ function fillAdminForm(entry) {
   adminArt = entry ? artFrom(entry.art) : null;
   adminAsc = { art3: entry ? artFrom(entry.art3) : null, art6: entry ? artFrom(entry.art6) : null };
   adminIcon = entry ? artFrom(entry.icon) : null;
+  adminCards = { base: { ...cardPos(entry, 'base') }, art3: { ...cardPos(entry, 'art3') }, art6: { ...cardPos(entry, 'art6') } }; adminCardK = 'base'; adminCard = { ...adminCards.base };
   const lk = entry ? { ...blankLook(), ...entry.look } : blankLook();
   $('#adType').value = entry ? entry.type : 'character';
   $('#adName').value = entry ? entry.name : '';
@@ -137,6 +150,13 @@ function fillAdminForm(entry) {
   const r = entry ? entry.rarity : 4;
   document.querySelectorAll('input[name=adR]').forEach(i => i.checked = +i.value === r);
   $('#adFeat').checked = entry ? S.featuredId === entry.id : false;
+  const sets = {}; (S.clothes || []).forEach(x => { if (x.set && !sets[x.set]) sets[x.set] = x; });
+  $('#adSig').innerHTML = '<option value="">None</option>' + Object.values(sets).sort((a, b) => b.rarity - a.rarity).map(x => `<option value="${esc(x.set)}">${esc(clothSetName(x))} (${CRN[x.rarity] || ''})</option>`).join('');
+  $('#adSig').value = entry && entry.sigSet && sets[entry.sigSet] ? entry.sigSet : '';
+  adminSigMems = [...((entry && entry.sigMems) || [])];
+  const drawSigMem = () => { $('#adSigMem').innerHTML = (S.memories || []).length ? S.memories.slice().sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).map(m => `<button type="button" class="chip ${adminSigMems.includes(m.id) ? 'on' : ''}" data-sigmem="${esc(m.id)}">${rtag(m.rarity)} ${esc(m.name)}</button>`).join('') : '<span class="tiny">No memories yet (admin → Memories).</span>';
+    $('#adSigMem').querySelectorAll('[data-sigmem]').forEach(b => b.onclick = () => { const id = b.dataset.sigmem, i = adminSigMems.indexOf(id); if (i >= 0) adminSigMems.splice(i, 1); else adminSigMems.push(id); drawSigMem(); }); };
+  drawSigMem();
   $('#adPull').checked = entry ? entry.pullable !== false : true;
   $('#adStd').checked = entry ? !!entry.standard : false;
   $('#adTitle').textContent = entry ? `Editing ${entry.name}` : 'Add to the game pool';
@@ -178,7 +198,13 @@ function adminPreview() {
   $('#adUpLbl').textContent = adminArt ? 'Replace splash art' : 'Upload splash art';
   $('#adParentWrap').hidden = $('#adType').value !== 'skin';
   const isChar = $('#adType').value === 'character';
-  $('#adAscWrap').hidden = !isChar;
+  $('#adAscWrap').hidden = !isChar && $('#adType').value !== 'pet';
+  const cw = $('#adCardWrap'); if (cw) { cw.hidden = !isChar && $('#adType').value !== 'skin';
+    const ks = isChar ? ['base', 'art3', 'art6'].filter(k => k === 'base' || adminAsc[k]) : ['base']; if (!ks.includes(adminCardK)) { adminCardK = 'base'; adminCard = { ...(adminCards.base || adminCard) }; }
+    $('#adCardKs').innerHTML = ks.length > 1 ? ks.map(k => `<button type="button" class="chip ${k === adminCardK ? 'on' : ''}" data-cpk="${k}">${k === 'base' ? 'Base art' : k === 'art3' ? '3★ art' : '6★ art'}</button>`).join('') : '';
+    $('#adCardKs').querySelectorAll('[data-cpk]').forEach(b => b.onclick = () => { adminCardK = b.dataset.cpk; adminCard = { ...(adminCards[adminCardK] || adminCards.base || { x: 50, y: 30, z: 1 }) }; adminPreview(); });
+    const cart = adminCardK === 'base' ? adminArt : adminAsc[adminCardK];
+    const ci = $('#adCardImg'); ci.src = cart || chibiSplash(readLook()); ci.style.cssText = cart ? cardImgStyle({ cardPos: adminCard }) : ''; $('#adCpX').value = adminCard.x; $('#adCpY').value = adminCard.y; $('#adCpZ').value = Math.round(adminCard.z * 100); }   // characters and pets have 3★ / 6★ arts
   $('#adP_icon').src = adminIcon || adminArt || chibiSplash(readLook()); $('#adP_icon').classList.toggle('cut', !adminIcon); $('#adS_icon').textContent = adminIcon ? 'Uploaded' : 'Cut from the art'; $('#adIconX').hidden = !adminIcon;
   ['art3', 'art6'].forEach(k => { $('#adP_' + k).src = adminAsc[k] || adminArt || chibiSplash(readLook()); $('#adP_' + k).style.opacity = adminAsc[k] ? 1 : .35; $('#adS_' + k).textContent = adminAsc[k] ? 'Uploaded' : 'Uses the base art'; document.querySelector(`[data-ascx="${k}"]`).hidden = !adminAsc[k]; });
   const ed = adminEditId && findEntry(adminEditId), sk = $('#adSkins');
@@ -195,6 +221,8 @@ function adminPreview() {
   $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
   const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
+  $('#adSigWrap').hidden = r !== 5 || $('#adType').value !== 'character';
+  $('#adSigMemWrap').hidden = $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
@@ -205,7 +233,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;
@@ -218,12 +246,18 @@ async function saveAdmin(ev) {
   const key = 'art:' + entry.id;
   if (adminArt && adminArt !== MEDIA.get(key)) { await mediaSet(key, adminArt); entry.art = 'idb:' + key; }
   else if (!adminArt && entry.art) { await mediaDel(key); entry.art = null; }
+  adminCards[adminCardK] = { ...adminCard };
+  const cpv = (p, def) => !p || (p.x === def.x && p.y === def.y && p.z === def.z) ? null : { ...p };
+  entry.cardPos = cpv(adminCards.base, { x: 50, y: 30, z: 1 });
+  const bp = entry.cardPos || { x: 50, y: 30, z: 1 };   // star arts: saved only when they differ from the base framing
+  entry.cardPos3 = entry.type === 'character' && adminAsc.art3 ? cpv(adminCards.art3, bp) : null;
+  entry.cardPos6 = entry.type === 'character' && adminAsc.art6 ? cpv(adminCards.art6, bp) : null;
   const fk = 'face:' + entry.id;
   if (adminIcon) { if (adminIcon !== MEDIA.get(fk)) await mediaSet(fk, adminIcon); entry.icon = 'idb:' + fk; }
   else if (entry.icon) { await mediaDel(fk); entry.icon = null; }
   for (const k of ['art3', 'art6']) {
     const kk = `${k}:${entry.id}`;
-    if (entry.type === 'character' && adminAsc[k]) { if (adminAsc[k] !== MEDIA.get(kk)) await mediaSet(kk, adminAsc[k]); entry[k] = 'idb:' + kk; }
+    if ((entry.type === 'character' || entry.type === 'pet') && adminAsc[k]) { if (adminAsc[k] !== MEDIA.get(kk)) await mediaSet(kk, adminAsc[k]); entry[k] = 'idb:' + kk; }
     else if (entry[k]) { await mediaDel(kk); entry[k] = null; }
   }
   if (entry.rarity === 5 && $('#adFeat').checked && !entry.mc) S.featuredId = entry.id;
@@ -505,12 +539,20 @@ function renderWardrobeTab() {
       <label class="field"><span>Who can wear it</span><select class="input" id="wdChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
       <div class="row" style="align-items:center"><div class="wd-prev">${wdNewImg ? `<img src="${wdNewImg}" alt="">` : '<span class="tiny">No image</span>'}</div><label class="btn ghost sm">${icon('upload')}${wdNewImg ? 'Replace' : 'Upload'} image<input type="file" accept="image/*" class="sr" id="wdUp"></label></div>
       <div class="row"><button class="btn mint" id="wdAdd">${icon('plus')}Add clothing</button><span class="err" id="wdErr" hidden>Give it a name first.</span></div>
+      <div class="wd-setform stack" style="gap:10px">
+        <div><h3>Add a set</h3><p class="tiny">Makes 6 pieces that belong together (Hat, Top, Pants, Shoes, Accessory, Hand). A character wearing all 6 gets the full-set CS bonus. They start as white line art: upload each piece's design in the list. Sets can also drop in Raids.</p></div>
+        <label class="field"><span>Set name</span><input class="input" id="wsName" maxlength="24" placeholder="e.g. Moonlit Dancer"></label>
+        <div class="field"><span>Rarity</span><div class="seg" id="wsRar">${[3, 4, 5].map(r => `<label class="r${r}"><input type="radio" name="wsR" value="${r}" ${r === 4 ? 'checked' : ''}>${CRN[r]}</label>`).join('')}</div></div>
+        <label class="field"><span>Who can wear it</span><select class="input" id="wsChar"><option value="">Every character</option>${chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)} only</option>`).join('')}</select></label>
+        <label class="switch" style="justify-self:start">Drops in Raids<input type="checkbox" id="wsRaid" checked><i></i></label>
+        <div class="row"><button class="btn mint" id="wsAdd">${icon('plus')}Add set</button><span class="err" id="wsErr" hidden>Give the set a name first.</span></div>
+      </div>
     </section>
     <section class="stack" style="align-content:start">
       <div class="ad-head" style="margin:0"><h3>Clothes <span class="muted" style="font-family:var(--body);font-size:14px">· ${S.clothes.length}</span></h3></div>
       ${WARD_SLOTS.map(([k, l]) => { const list = S.clothes.filter(x => x.slot === k);
         return `<div class="sk-group"><b>${l} · ${list.length}</b>${list.length ? list.map(x => `<div class="wd-row r${x.rarity}"><div class="wd-prev sm">${clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : icon('wardrobe')}</div>
-          <div style="min-width:0;display:grid;gap:2px"><span class="nm">${esc(x.name)} ${rtag(x.rarity)}</span><span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}</span></div>
+          <div style="min-width:0;display:grid;gap:4px"><span class="row" style="gap:6px;align-items:center;flex-wrap:nowrap"><input class="input wd-rename" data-wdname="${esc(x.id)}" maxlength="30" value="${esc(x.name)}" aria-label="Name">${ctag(x.rarity)}</span><span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}${x.set ? ` · ${esc(clothSetName(x))} set${x.raid ? ' · drops in Raids' : ''}` : ''}</span></div>
           <div class="row" style="gap:8px;justify-content:flex-end"><label class="switch" style="padding:4px 8px;gap:8px;font-size:12px">Owned<input type="checkbox" data-wdown="${esc(x.id)}" ${owns(x.id) ? 'checked' : ''}><i></i></label><label class="link">Image<input type="file" accept="image/*" class="sr" data-wdimg="${esc(x.id)}"></label><button class="link" data-wddel="${esc(x.id)}" style="color:${wdDelArm === x.id ? '#ff6b81' : ''}">${wdDelArm === x.id ? 'Tap again to delete' : 'Delete'}</button></div></div>`).join('') : '<p class="tiny">None yet.</p>'}</div>`; }).join('')}
     </section></div>`;
   $('#wdUp').onchange = async ev => { try { wdNewImg = await resizeImage(ev.target.files[0], 512); renderWardrobeTab(); } catch (e) { toast(e.message); } };
@@ -520,6 +562,14 @@ function renderWardrobeTab() {
     if (wdNewImg) { await mediaSet('cloth:' + x.id, wdNewImg); x.img = 'idb:cloth:' + x.id; }
     S.clothes.push(x); wdNewImg = null; persist(); renderWardrobeTab(); toast(`Added ${name}.`);
   };
+  $('#wsAdd').onclick = () => {
+    const name = $('#wsName').value.trim(); if (!name) { $('#wsErr').hidden = false; return; }
+    const rarity = +document.querySelector('input[name=wsR]:checked').value, char = $('#wsChar').value || null, raid = $('#wsRaid').checked;
+    const set = `set-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    WARD_SLOTS.forEach(([slot, label]) => S.clothes.push({ id: `${set}-${slot}`, name: `${name} ${label}`, slot, rarity, char, img: null, set, setName: name, raid }));
+    persist(); renderWardrobeTab(); toast(`Added the ${name} set (6 pieces)${raid ? '. It drops in Raids' : ''}.`);
+  };
+  document.querySelectorAll('[data-wdname]').forEach(i => i.onchange = () => { const x = clothOf(i.dataset.wdname); if (!x) return; x.name = i.value.trim() || x.name; i.value = x.name; persist(); });
   document.querySelectorAll('[data-wdown]').forEach(i => i.onchange = () => { if (i.checked) S.owned[i.dataset.wdown] = 1; else delete S.owned[i.dataset.wdown]; persist(); });
   document.querySelectorAll('[data-wdimg]').forEach(i => i.onchange = async () => { try { const x = clothOf(i.dataset.wdimg); await mediaSet('cloth:' + x.id, await resizeImage(i.files[0], 512)); x.img = 'idb:cloth:' + x.id; persist(); renderWardrobeTab(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-wddel]').forEach(b => b.onclick = async () => {
@@ -553,6 +603,8 @@ function renderMemoriesTab() {
         <div style="min-width:0;display:grid;gap:4px"><input class="input sk-nm" data-memnm="${esc(x.id)}" maxlength="40" value="${esc(x.name)}" aria-label="Memory name">
           <div class="seg sk-rar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="memr-${esc(x.id)}" value="${r}" data-memr="${esc(x.id)}" ${x.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div>
           <span class="tiny">${x.char ? `${esc((findEntry(x.char) || {}).name || 'Removed character')} only` : 'Every character'}</span>
+          <details class="mem-frm"><summary class="tiny">Icon framing (the square card in the inventory and fusion)</summary><div class="row" style="gap:10px;align-items:center"><span class="mem-frm-prev">${artFrom(x.img) ? `<img src="${artFrom(x.img)}" alt="" style="${memIconStyle(x)}" data-memfprev="${esc(x.id)}">` : icon('memory')}</span>
+            <div class="stack ad-card-sl" style="gap:4px;flex:1">${[['x', 'Left / right', 0, 100, 1], ['y', 'Up / down', 0, 100, 1], ['z', 'Zoom', 100, 300, 5]].map(([k, l, mn, mx, stp]) => `<label>${l} <input type="range" min="${mn}" max="${mx}" step="${stp}" value="${k === 'z' ? Math.round(memIconPos(x).z * 100) : memIconPos(x)[k]}" data-memf="${esc(x.id)}" data-k="${k}"></label>`).join('')}<button type="button" class="link" data-memfreset="${esc(x.id)}" style="justify-self:start">Reset framing</button></div></div></details>
           <div class="row" style="gap:8px"><label class="switch" style="padding:4px 8px;gap:8px;font-size:12px">Owned<input type="checkbox" data-memown="${esc(x.id)}" ${owns(x.id) ? 'checked' : ''}><i></i></label><label class="link">Art<input type="file" accept="image/*" class="sr" data-memimg="${esc(x.id)}"></label><button class="link" data-memdel="${esc(x.id)}" style="color:${memDelArm === x.id ? '#ff6b81' : ''}">${memDelArm === x.id ? 'Tap again to delete' : 'Delete'}</button></div></div></div>`).join('') : '<p class="tiny">No memories yet.</p>'}
     </section></div>`;
   $('#memUp').onchange = async ev => { try { memNewImg = await resizeImage(ev.target.files[0], SPLASH_MAX); renderMemoriesTab(); } catch (e) { toast(e.message); } };
@@ -564,6 +616,9 @@ function renderMemoriesTab() {
   };
   document.querySelectorAll('[data-memnm]').forEach(i => i.onchange = () => { memOf(i.dataset.memnm).name = i.value.trim() || 'Memory'; persist(); toast('Memory renamed.'); });
   document.querySelectorAll('[data-memr]').forEach(i => i.onchange = () => { memOf(i.dataset.memr).rarity = +i.value; persist(); renderMemoriesTab(); });
+  document.querySelectorAll('[data-memf]').forEach(i => i.oninput = () => { const x = memOf(i.dataset.memf); const p = { ...memIconPos(x), [i.dataset.k]: i.dataset.k === 'z' ? +i.value / 100 : +i.value }; x.iconPos = p; const im = document.querySelector(`[data-memfprev="${i.dataset.memf}"]`); if (im) im.style.cssText = memIconStyle(x); });
+  document.querySelectorAll('[data-memf]').forEach(i => i.onchange = () => persist());
+  document.querySelectorAll('[data-memfreset]').forEach(b => b.onclick = () => { memOf(b.dataset.memfreset).iconPos = null; persist(); renderMemoriesTab(); });
   document.querySelectorAll('[data-memown]').forEach(i => i.onchange = () => { if (i.checked) S.owned[i.dataset.memown] = 1; else delete S.owned[i.dataset.memown]; persist(); });
   document.querySelectorAll('[data-memimg]').forEach(i => i.onchange = async () => { try { const x = memOf(i.dataset.memimg); await mediaSet('mem:' + x.id, await resizeImage(i.files[0], SPLASH_MAX)); x.img = 'idb:mem:' + x.id; persist(); renderMemoriesTab(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-memdel]').forEach(b => b.onclick = async () => {
@@ -649,7 +704,7 @@ function renderWalletTab() {
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
     <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button><button class="btn ghost sm" id="wSpin">Reset daily spin</button></div>
     <div><h3>Bond &amp; marriage</h3><p class="tiny">Test helpers. Rings are also editable in the wallet above.</p></div>
-    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
+    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wPass">Memberships: end both</button><button class="btn ghost sm" id="wCamp">Camp: bring everyone back</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -664,9 +719,9 @@ function renderWalletTab() {
   $('#wForm').onsubmit = e => e.preventDefault();
   $('#wSave').onclick = () => { CUR_KEYS.forEach(k => { const v = Math.max(0, Math.floor(+$('#w_' + k).value || 0)); S.wallet[k] = v; }); persist(); renderMenu(); refreshSummon(); toast('Wallet saved.'); };
   $('#wAdd').onclick = () => { S.wallet.pearls += 300; persist(); renderMenu(); renderWalletTab(); toast('Added 300 pearls.'); };
-  $('#wStam').onclick = () => toast(spendStamina(60) ? `Spent 60 stamina. ${S.stamina.v}/${STAMINA_MAX} left.` : 'Not enough stamina.');
-  $('#wFill').onclick = () => { S.stamina = { v: STAMINA_MAX, t: Date.now() }; persist(); renderStamina(); toast('Stamina refilled.'); };
-  $('#wSpin').onclick = () => { S.spin.last = null; persist(); renderMenu(); toast('The daily spin is ready again.'); };
+  $('#wStam').onclick = () => toast(spendStamina(60) ? `Spent 60 stamina. ${S.stamina.v}/${stamMax()} left.` : 'Not enough stamina.');
+  $('#wFill').onclick = () => { S.stamina = { v: stamMax(), t: Date.now() }; persist(); renderStamina(); toast('Stamina refilled.'); };
+  $('#wSpin').onclick = () => { S.spin.last = null; S.spin.n = 0; persist(); renderMenu(); toast('The daily spin is ready again.'); };
   $('#wLogin').onclick = () => { S.login.last = null; persist(); renderMenu(); toast('Daily login can be claimed again.'); };
   $('#wRings').onclick = () => { S.wallet.rings += 5; persist(); renderMenu(); renderWalletTab(); toast('Added 5 rings.'); };
   $('#wGifts').onclick = () => { Object.keys(GIFTS).forEach(k => S.gifts[k] += 5); persist(); toast('Added 5 of each gift.'); };
@@ -677,6 +732,9 @@ function renderWalletTab() {
   $('#wLvReset').onclick = () => { S.player.xp = 0; S.lvClaimed = []; persist(); renderMenu(); toast('Level reset to 1.'); };
   $('#wScratch').onclick = () => { S.scratch = { day: dayKey(), n: 0, card: null }; persist(); if (evEl) renderEvents(); toast(`Scratch cards reset: ${SCRATCH_DAILY} cards available again today.`); };
   $('#wFarmReset').onclick = () => { S.farm = {}; persist(); renderMenu(); toast('Farm reset.'); };
+  $('#wCamp').onclick = () => { Object.values(S.camp || {}).forEach(c => { c.ends = Date.now() - 1; }); persist(); renderMenu(); toast('Every camp team is back.'); };
+  $('#wPass').onclick = () => { S.member = {}; S.memberDay = {}; persist(); renderMenu(); renderStamina(); toast('Both memberships ended.'); };
+  $('#wExpd').onclick = () => { Object.values(S.expd || {}).forEach(e => { e.ends = Date.now() - 1; }); persist(); renderMenu(); toast('Every expedition is back.'); };
   $('#wMCcd').onclick = () => { S.player.mcAt = null; persist(); toast('Main character switch cooldown cleared.'); };
   $('#wMC').onclick = () => { S.player.mc = null; S.player.mcAt = null; persist(); toast('Main character choice reset. You will pick again on the next start.'); };
   $('#wBondReset').onclick = () => { S.bond = {}; persist(); toast('Bonds and marriages reset.'); };
