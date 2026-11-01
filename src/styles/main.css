@@ -3546,3 +3546,30 @@ button.pt-slot:hover{border-color:#fff}
 /* currency "+" exactly centred */
 .cur .plus{padding:0;line-height:0;flex:none}
 .cur .plus .ic{display:block;width:14px;height:14px;margin:0}
+
+/* ---------- ranking: VIP-coloured names, titles, weekly rewards ---------- */
+.rk-nm{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.rk-nm>small{font-size:11px;opacity:.7}
+.rk-nm .ttl{font-size:11px;padding:1px 9px}
+.vipn{font-family:var(--display);font-weight:400;font-size:17px;white-space:nowrap}
+.vipn.vn-0{color:#fff}.vipn.vn-f{color:#d6dae6}.vipn.vn-e{color:#c4d3de}
+.vipn.vn-d{color:#7ef0b5}.vipn.vn-c{color:#8cc8ff}.vipn.vn-b{color:#b6a6ff}.vipn.vn-a{color:#f29cff}
+.vipn.vn-s{background:linear-gradient(90deg,#ffe08a,#ffc94a,#fff3c4,#e8a42a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(255,200,80,.5))}
+.vipn.vn-ss{background:linear-gradient(90deg,#c58bff,#ff8ad6,#5ff2dd,#c58bff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 3s linear infinite;filter:drop-shadow(0 0 6px rgba(197,139,255,.55))}
+.vipn.vn-sss{color:#ff5d6c;text-shadow:0 0 6px #ff2a45,0 0 12px rgba(255,120,60,.7)}
+.rk-rew{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--read);font-size:13px;color:rgba(233,236,255,.85)}
+.rk-rew>.ic{width:16px;height:16px;color:#f5afe8}
+.rk-rewlist{display:grid;gap:8px}.rk-rewlist>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rk-rewlist .lbl-sm{min-width:110px}
+/* ranking titles: gold / silver / bronze */
+.ttl.t-rk1{background:linear-gradient(110deg,#5a3a00,#b8780f 30%,#ffe08a 50%,#b8780f 70%,#5a3a00);background-size:250% 100%;animation:shimmer 3s linear infinite;border:1px solid #fff0b8;color:#fff8dc;text-shadow:0 1px 2px rgba(60,30,0,.9);box-shadow:0 0 14px rgba(255,200,80,.55)}
+.ttl.t-rk2{background:linear-gradient(110deg,#3c4458,#9aa4bd 30%,#ffffff 50%,#9aa4bd 70%,#3c4458);background-size:250% 100%;animation:shimmer 3.4s linear infinite;border:1px solid #fff;color:#fff;text-shadow:0 1px 2px rgba(20,24,40,.9);box-shadow:0 0 12px rgba(210,222,255,.45)}
+.ttl.t-rk3{background:linear-gradient(110deg,#4a1f08,#a85a2c 30%,#ffd2b0 50%,#a85a2c 70%,#4a1f08);background-size:250% 100%;animation:shimmer 3.8s linear infinite;border:1px solid #ffd9bf;color:#fff3ea;text-shadow:0 1px 2px rgba(50,15,0,.9);box-shadow:0 0 12px rgba(230,150,100,.45)}
+/* ranking namecards: black into the place's metal, with a motif per ranking */
+.nc-rk{background:linear-gradient(120deg,#000 0%,#0b0812 28%,var(--rkm1) 62%,var(--rkm2) 84%,var(--rkm1) 100%)}
+.nc-rkp1{--rkm1:#8a5a0c;--rkm2:#ffd76b}.nc-rkp2{--rkm1:#5c6680;--rkm2:#eef2ff}.nc-rkp3{--rkm1:#7a3a16;--rkm2:#f0b48a}
+.nc-rk::before{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.55}
+.nc-rkb-total::before{background:repeating-conic-gradient(from 200deg at 92% 10%,rgba(255,255,255,.35) 0 4deg,transparent 4deg 14deg)}
+.nc-rkb-char::before{background:radial-gradient(circle at 20% 30%,#fff 1px,transparent 1.6px) 0 0/46px 46px,radial-gradient(circle at 70% 70%,#fff 1px,transparent 1.5px) 0 0/31px 31px,radial-gradient(ellipse at 80% 40%,rgba(255,255,255,.4),transparent 55%)}
+.nc-rkb-ach::before{background:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 2px,transparent 2px 22px)}
+.nc-rkb-vip::before{background:linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25% 75%,rgba(255,255,255,.18) 75%) 0 0/28px 28px,linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25% 75%,rgba(255,255,255,.18) 75%) 14px 14px/28px 28px}
+.nc-rk::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.35) 48%,transparent 60%);background-size:260% 100%;animation:mfBeam 5s ease-in-out infinite}

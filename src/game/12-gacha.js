@@ -126,7 +126,7 @@ function doPull(n, bk = curBanner, free = false) {
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk, { maxwin });
-  if (S.settings.skipPull) showSummary();
+  if (S.settings.skipPull && !maxwin) showSummary();   // a Max Win always plays its animation
 }
 
 /* summon screen: full screen, banner tabs on the left, character lineup, pull buttons along the bottom */
@@ -446,6 +446,7 @@ function showPull(results, n, bk, opts = {}) {
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = () => pullState && pullState.exchange ? closePull() : showSummary();
+  if (pullState.maxwin) $('#pullSkip').hidden = true;   // no skipping a Max Win's animation (it comes back for the reveals)
   // tap anywhere to release (Enter / Space / ↓ also work)
   pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
@@ -670,6 +671,7 @@ function advancePull() {
   const st = pullState; if (!st || st.phase === 'summary') return;
   pullClear(st);
   st.i++; st.phase = 'reveal';
+  if (st.maxwin && $('#pullSkip')) $('#pullSkip').hidden = false;
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return st.exchange ? closePull() : showSummary();

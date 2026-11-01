@@ -49,6 +49,7 @@ function renderMenu() {
   $('#evDot').hidden = !loginReady();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
+  if (booted && typeof rankSettle === 'function') rankSettle();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
