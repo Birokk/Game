@@ -603,6 +603,7 @@ function fakeArtIn() {
 function fakeTransform() {
   const st = pullState; if (!st || !pullEl) return;
   pullEl.classList.remove('burst', 'fk-burst'); pullEl.querySelectorAll('.sph-flash').forEach(x => x.remove()); pullEl.classList.add('fakeout', 'sph-return');
+  if (st.maxwin) pullEl.classList.remove('drift');   // Max Win: the UR sphere comes back in the middle and stays there (no more creeping up)
   pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash"></div>');   // no ray burst: lightning, flash and the quake carry it
   $('#sph').classList.add('crack');
   sphereTier(5);
