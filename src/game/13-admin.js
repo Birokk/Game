@@ -784,6 +784,8 @@ function renderPullFxTab() {
     <div><h3>SSR → UR upgrade wallpapers</h3><p class="tiny">${Math.round(UPGRADE_CHANCE * 100)}% of SSR pulls turn into a UR after they are revealed (50/50 on featured banners, the featured UR when guaranteed). One of these slides in during the upgrade; without any, a fakeout wallpaper is used. Also editable in Settings → Admin.</p></div>
     <div><h3>Double UR wallpapers</h3><p class="tiny">When one pull holds 2 or more URs, after the sphere turns UR these two slide in split on the diagonal: one on the left, one on the right. Without an upload, that side shows the pulled URs' own art. 1920×1080 works best.</p></div>
     ${dblArtsHTML()}
+    <div><h3>Max Win wallpaper</h3><p class="tiny">At the end of a Max Win, after the rainbow sphere, the sphere turns red like the SSS grade and this wallpaper fades in behind it with red lightning and flames rising from the bottom. Without an upload, a pulled UR's art is used. 1920×1080 works best.</p></div>
+    ${mwBgHTML()}
     ${upArtsHTML()}
   </div>`;
   p.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => previewPull(b.dataset.pv));
@@ -791,7 +793,7 @@ function renderPullFxTab() {
     try { for (const f of ev.target.files) { const k = `fake:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await mediaSet(k, await resizeImage(f, 1920, 'image/jpeg'))) S.fakeArts = [...(S.fakeArts || []), k]; } persist(); renderPullFxTab(); toast('Fakeout wallpapers added.'); }
     catch (e) { toast(e.message, true); }
   };
-  bindUpArts(renderPullFxTab); bindDblArts(renderPullFxTab); bindPullBg(renderPullFxTab);
+  bindUpArts(renderPullFxTab); bindDblArts(renderPullFxTab); bindPullBg(renderPullFxTab); bindMwBg(renderPullFxTab);
   p.querySelectorAll('[data-fkdel]').forEach(b => b.onclick = async () => { await mediaDel(b.dataset.fkdel); S.fakeArts = (S.fakeArts || []).filter(k => k !== b.dataset.fkdel); persist(); renderPullFxTab(); });
 }
 
@@ -831,6 +833,17 @@ function pullBgHTML() {
   const bg = MEDIA.get('pull:bg');
   return `<div class="row" style="gap:12px;align-items:center"><div class="ev-adprev" style="width:200px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">Black (default)</span>'}</div>
     <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} background<input type="file" accept="image/*" class="sr" data-pbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-pbgdel>Use black</button>' : ''}<button type="button" class="btn ghost sm" data-pv="ten">Preview</button></div></div>`;
+}
+/* the Max Win wallpaper (media key mw:bg): fades in behind the red SSS sphere at the end of a Max Win */
+function mwBgHTML() {
+  const bg = MEDIA.get('mw:bg');
+  return `<div class="row" style="gap:12px;align-items:center"><div class="ev-adprev" style="width:200px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">A pulled UR\'s art (default)</span>'}</div>
+    <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-mwbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-mwbgdel>Remove</button>' : ''}<button type="button" class="btn ghost sm" data-pvmw>Preview: Max Win</button></div></div>`;
+}
+function bindMwBg(rerender) {
+  document.querySelectorAll('[data-mwbgup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('mw:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { rerender(); toast('Max Win wallpaper saved.'); } } catch (e) { toast(e.message, true); } });
+  document.querySelectorAll('[data-mwbgdel]').forEach(b => b.onclick = async () => { await mediaDel('mw:bg'); rerender(); });
+  document.querySelectorAll('[data-pvmw]').forEach(b => b.onclick = () => previewPull('maxwin'));
 }
 function bindPullBg(rerender) {
   document.querySelectorAll('[data-pbgup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('pull:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { rerender(); toast('Summon background saved.'); } } catch (e) { toast(e.message, true); } });

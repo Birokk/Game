@@ -496,7 +496,7 @@ function pullClear(st) { clearTimeout(st.timer); (st.timers || []).forEach(clear
 function sphereTier(t) {
   if (!pullEl) return;
   pullEl.classList.remove('t3', 't4', 't5'); pullEl.classList.add('t' + Math.min(t, 5));
-  const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'c6', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
+  const sph = $('#sph'); sph.classList.remove('c3', 'c4', 'c5', 'c6', 'c7', 'pulse'); void sph.offsetWidth; sph.classList.add('c' + t, 'pulse');
   const sf = pullState && pullState.sfx; if (sf) { sf.tier = t; sf.surge(t); }
   if (t >= 5) { pullEl.classList.remove('quake'); void pullEl.offsetWidth; pullEl.classList.add('quake'); }
 }
@@ -518,7 +518,10 @@ function releaseSphere() {
   // double: the sphere is already UR, then the two wallpapers slide in, hold, and blow out
   // the double waits a moment after the sphere turns UR (longer in a Max Win) before its wallpapers slide in
   if (st.double) { const inAt = st.fake ? urAt + (st.maxwin ? 2600 : 2000) : Math.max(urAt + 1900, rise + 300); const hold = st.maxwin ? 3400 : 2800; pullLater(inAt, doubleArtIn); pullLater(inAt + hold, doubleArtOut); after = inAt + hold + 700; urAt = inAt + hold; }
-  if (st.rainbow) { const rbAt = st.double ? urAt + (st.maxwin ? 1500 : 800) : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere); pullLater(rbAt + (st.maxwin ? 3200 : 2400), burstSphere); }
+  if (st.rainbow) { const rbAt = st.double ? urAt + (st.maxwin ? 1500 : 800) : Math.max(urAt + 1500, rise + 200); pullLater(rbAt, rainbowSphere);
+    // Max Win: after the rainbow the sphere turns blood red (the SSS colours) over its own wallpaper, with red lightning from below
+    if (st.maxwin) { const sssAt = rbAt + 3000; pullLater(sssAt, sssSphere); pullLater(sssAt + 4600, burstSphere); }
+    else pullLater(rbAt + 2400, burstSphere); }
   else pullLater(after, burstSphere);
 }
 /* the rarer the pull, the slower the sphere rises (blue, SSR, UR) */
@@ -531,6 +534,25 @@ function rainbowSphere() {
   pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash rb-flash"></div>');
   sphereTier(6);
   st.fx.burst(200, 900, 5);
+}
+/* Max Win's last step: the rainbow sphere turns into a glowing red SSS sphere, the Max Win wallpaper (admin, media key mw:bg;
+   without one a pulled UR's art, then the fakeout wallpaper) fades in behind it, and the background fills with red lightning
+   striking up from the bottom of the screen, flames, embers and sparks in red / orange / pink / gold (tier 7 in startSphereFx) */
+function maxWinArt(results) {
+  const own = MEDIA.get('mw:bg'); if (own) return own;
+  const urs = results.filter(r => r.rarity === 5 && r.kind === 'entry' && findEntry(r.id) && findEntry(r.id).type === 'character').map(r => baseArt(findEntry(r.id))).filter(Boolean);
+  return urs[2] || urs[urs.length - 1] || fakeArt();
+}
+function sssSphere() {
+  const st = pullState; if (!st || !pullEl) return;
+  const art = maxWinArt(st.results);
+  pullEl.querySelectorAll('.rb-screen').forEach(x => x.classList.add('out'));
+  pullEl.classList.add('sss');
+  pullEl.insertAdjacentHTML('afterbegin', `<div class="mw-screen">${art ? `<img src="${art}" alt="">` : ''}<i class="mw-tint"></i><i class="mw-rays"></i><i class="mw-glow"></i></div>`);
+  pullEl.insertAdjacentHTML('beforeend', '<div class="fake-flash mw-flash"></div>');
+  sphereTier(7);
+  st.fx.burst(240, 1000, 5);
+  if (st.sfx) st.sfx.shock();
 }
 /* the double's wallpapers are set in admin: left (media key dbl:left) and right (dbl:right); a missing side uses the
    pulled URs' own art (first UR on the left, second on the right), then the fakeout wallpaper */
@@ -601,16 +623,17 @@ function burstSphere() {
    and soft vertical light streaks in the tier's colours (like an anime power-up); orbiting sparks on tilted rings (the
    far half behind the sphere, the near half in front, so it reads as 3D); lightning that crawls over the sphere at SSR and
    lashes out into the air at UR; sparks pulled in while charging; a shockwave ring when it bursts */
-const SPH_COL = { 6: ['#ff4d6d', '#ffa24d', '#fff04d', '#5dff8a', '#4dd2ff', '#a66bff'], 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
+const SPH_COL = { 7: ['#ff2a3d', '#ff7a3d', '#ff2a6e', '#ffd36b', '#ff4d4d', '#ffb0c8'], 6: ['#ff4d6d', '#ffa24d', '#fff04d', '#5dff8a', '#4dd2ff', '#a66bff'], 3: ['#2f6bff', '#5aa9ff', '#c4e6ff'], 4: ['#ff7417', '#ffaa5c', '#ffe6c2'], 5: ['#a855f7', '#ff6ec7', '#8ff7ea', '#ffd36b'] };
 function startSphereFx(root) {
   const back = root.querySelector('.sph-back'), front = root.querySelector('.sph-front'), sphEl = root.querySelector('#sph');
   const bg = back.getContext('2d'), fg = front.getContext('2d');
   let W = 0, H = 0, dpr = 1, raf = 0, last = performance.now(), nextBolt = 0, flash = 0, shockT = -1, boost = 0;
-  const bolts = [], motes = [], rise = [], streaks = [], t0 = performance.now();
+  const bolts = [], motes = [], rise = [], streaks = [], gbolts = [], flames = [], t0 = performance.now();
+  let nextGround = 0;
   const fit = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; [back, front].forEach(c => { c.width = W * dpr; c.height = H * dpr; }); };
   fit(); addEventListener('resize', fit);
   const api = { tier: 3,
-    surge(t) { const big = t === 5; boost = big ? 1.6 : 1; flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
+    surge(t) { const big = t >= 5; boost = t >= 7 ? 2.4 : big ? 1.6 : 1; flash = t >= 7 ? .8 : big ? .55 : .25; if (big) { for (let i = 0; i < (t >= 7 ? 9 : 5); i++) bolt(true); } if (t >= 7) for (let i = 0; i < 4; i++) groundBolt(); },
     shock() { shockT = 0; flash = .4; boost = 2; },
     stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); } };
   const col = (i, ph = 0) => { const c = SPH_COL[api.tier] || SPH_COL[3], k = api.tier >= 5 ? Math.floor(i + ph) : i; return c[((k % c.length) + c.length) % c.length || 0] || c[0]; };   // always a valid colour
@@ -631,6 +654,14 @@ function startSphereFx(root) {
     const branches = big ? Array.from({ length: 2 }, () => { const p = pts[Math.floor(pts.length * (.3 + Math.random() * .4))], br = [[p[0], p[1]]]; zig(p[0], p[1], p[0] + (Math.random() - .5) * len * .6, p[1] + (Math.random() - .3) * len * .5, len * .25, 4, br); return br; }) : [];
     bolts.push({ pts, branches, life: big ? .32 : .2, max: big ? .32 : .2, w: big ? 3.2 : 1.8, c: col(Math.floor(Math.random() * 4)) });
     if (big) flash = Math.max(flash, .22);
+  }
+  // Max Win (tier 7): red lightning striking up from the bottom of the screen, forking as it climbs
+  function groundBolt() {
+    const sx = Math.random() * W, ex = sx + (Math.random() - .5) * W * .35, ey = H * (.15 + Math.random() * .45);
+    const pts = [[sx, H + 8]], len = Math.hypot(ex - sx, ey - H); zig(sx, H + 8, ex, ey, len * .35, 7, pts);
+    const branches = Array.from({ length: 2 + Math.floor(Math.random() * 3) }, () => { const p = pts[Math.floor(pts.length * (.2 + Math.random() * .6))], br = [[p[0], p[1]]]; zig(p[0], p[1], p[0] + (Math.random() - .5) * len * .5, p[1] - Math.random() * len * .4, len * .2, 5, br); return br; });
+    const c = ['#ff2a3d', '#ff2a3d', '#ff7a3d', '#ff2a6e', '#ffd36b'][Math.floor(Math.random() * 5)];
+    gbolts.push({ pts, branches, life: .42, max: .42, w: 3.6, c }); flash = Math.max(flash, .28);
   }
   function sph() { if (!sphEl.isConnected) return null; const r = sphEl.getBoundingClientRect(); if (!r.width) return null; return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2, o: +getComputedStyle(sphEl).opacity }; }
   function stroke(g, pts, w, c, glow) { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.lineWidth = w; g.strokeStyle = c; g.shadowColor = glow; g.shadowBlur = 18; g.stroke(); }
@@ -658,6 +689,26 @@ function startSphereFx(root) {
       bg.fillStyle = gl; bg.fillRect(m.x - m.r * 5, m.y - m.r * 5, m.r * 10, m.r * 10);
       bg.fillStyle = rgba('#ffffff', a); bg.beginPath(); bg.arc(m.x, m.y, m.r * .55, 0, 7); bg.fill();
     }
+    if (tier >= 7) {
+      // Max Win: flames licking up from the bottom edge, a red glow along the floor, and lightning striking up from below
+      const fl = bg.createLinearGradient(0, H, 0, H * .55); fl.addColorStop(0, `rgba(255,40,60,${.42 + .12 * Math.sin(t * 6)})`); fl.addColorStop(.45, 'rgba(255,90,40,.14)'); fl.addColorStop(1, 'rgba(0,0,0,0)');
+      bg.fillStyle = fl; bg.fillRect(0, H * .55, W, H * .45);
+      if (flames.length < 46 && Math.random() < .9) flames.push({ x: Math.random() * W, y: H + 30, r: 30 + Math.random() * 70, vy: 120 + Math.random() * 160, life: 1 + Math.random() * .8, max: 0, c: Math.floor(Math.random() * 6) });
+      bg.save(); bg.globalCompositeOperation = 'lighter';
+      for (let i = flames.length - 1; i >= 0; i--) { const f = flames[i]; if (!f.max) f.max = f.life; f.life -= dt; f.y -= f.vy * dt; f.x += Math.sin(t * 3 + i) * dt * 30; if (f.life <= 0) { flames.splice(i, 1); continue; }
+        const q = f.life / f.max, r = f.r * (.4 + q * .6), gr = bg.createRadialGradient(f.x, f.y, 0, f.x, f.y, r); gr.addColorStop(0, rgba(col(f.c), .35 * q)); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        bg.fillStyle = gr; bg.fillRect(f.x - r, f.y - r, r * 2, r * 2); }
+      bg.restore();
+      if (now > nextGround) { groundBolt(); if (Math.random() < .35) groundBolt(); nextGround = now + 140 + Math.random() * 380; }
+    }
+    bg.lineCap = 'round'; bg.lineJoin = 'round';
+    for (let i = gbolts.length - 1; i >= 0; i--) {
+      const bo = gbolts[i]; bo.life -= dt; if (bo.life <= 0) { gbolts.splice(i, 1); continue; }
+      bg.globalAlpha = (bo.life / bo.max) * (Math.random() < .3 ? .45 : 1);
+      [bo.pts, ...bo.branches].forEach((pts, j) => { stroke(bg, pts, bo.w * (j ? .5 : 1) * 3, rgba(bo.c, .5), bo.c); stroke(bg, pts, bo.w * (j ? .45 : 1) * .8, '#fff', bo.c); });
+      bg.globalAlpha = 1;
+    }
+    bg.shadowBlur = 0;
     if (shockT >= 0) {   // burst shockwave across the water and the air
       shockT += dt; const q = shockT / .9;
       if (q < 1 && b) { fg.beginPath(); fg.arc(b.x, b.y, 40 + q * Math.max(W, H) * .8, 0, 7); fg.strokeStyle = rgba(col(2), (1 - q) * .8); fg.lineWidth = 10 * (1 - q) + 1; fg.shadowColor = col(1); fg.shadowBlur = 30; fg.stroke(); fg.shadowBlur = 0; }
