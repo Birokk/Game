@@ -7,7 +7,8 @@ const UNLOCK = {
   ur: [() => ownedChars().some(e => e.rarity === 5), 'Own a UR character'],
   max: [() => S.pool.some(e => starsOf(e.id) >= MAX_STARS && owns(e.id)), `Raise a character to ${MAX_STARS} stars`],
   mbtitle: [() => (S.unlocks || []).includes('mb-title'), 'Win it from the Mystery Fountain'],
-  mbcard: [() => (S.unlocks || []).includes('mb-card'), 'Win it from the Mystery Fountain']
+  mbcard: [() => (S.unlocks || []).includes('mb-card'), 'Win it from the Mystery Fountain'],
+  maxwin: [() => (S.unlocks || []).includes('max-win'), 'Hit a Max Win on a ×10 summon']
 };
 const unlocked = o => UNLOCK[o.need][0]();
 const TITLES = [
@@ -17,7 +18,8 @@ const TITLES = [
   { id: 'collector', name: 'Star Collector', cls: 't-violet', need: 'chars3' },
   { id: 'lucky', name: 'Lucky Star', cls: 't-gold', need: 'ur' },
   { id: 'prism', name: 'Prism Ascendant', cls: 't-prism', need: 'max' },
-  { id: 'boxbreaker', name: 'Fountain Wisher', cls: 't-mbox', need: 'mbtitle' }
+  { id: 'boxbreaker', name: 'Fountain Wisher', cls: 't-mbox', need: 'mbtitle' },
+  { id: 'maxwinner', name: 'Max Winner', cls: 't-maxwin', need: 'maxwin' }
 ];
 const FRAMES = [
   { id: 'simple', name: 'Silver Ring', need: 'always' },

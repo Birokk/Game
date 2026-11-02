@@ -3456,7 +3456,7 @@ button.pt-slot:hover{border-color:#fff}
 .pull.sph-return .sph-stage{animation:sphReturn .8s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes sphReturn{0%{opacity:0;transform:scale(.1);filter:brightness(3)}60%{opacity:1;filter:brightness(1.6)}100%{opacity:1;transform:scale(1);filter:none}}
 .pull.revealing .sph-vanish{display:none}
-.sum h2 .sum-mw{display:inline-block;margin-left:14px;padding:2px 14px;border-radius:10px;font-size:.8em;vertical-align:middle;background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 2s linear infinite;border:2px solid rgba(255,255,255,.5);box-shadow:0 0 16px rgba(255,255,255,.25);filter:drop-shadow(0 0 8px rgba(255,110,199,.6))}
+.sum h2 .sum-mw{display:inline-block;margin-left:14px;padding:2px 14px;border-radius:10px;font-size:.8em;vertical-align:middle;background:linear-gradient(90deg,#ff2a3d,#ff7a3d,#ffd0b0,#ff2a6e,#ff2a3d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 2s linear infinite;border:2px solid #ff6a5a;box-shadow:0 0 16px rgba(255,42,61,.6),inset 0 0 10px rgba(255,42,61,.35);filter:drop-shadow(0 0 8px #ff2a45)}
 
 /* sphere glints: twinkling four-point stars on the sphere instead of rings (no planet look) */
 .sph-glint{position:absolute;left:24%;top:22%;width:42%;height:42%;z-index:3;pointer-events:none;animation:sphGlint 2.6s ease-in-out infinite}
@@ -3488,7 +3488,7 @@ button.pt-slot:hover{border-color:#fff}
 .vip-num.v-sss{--vb:linear-gradient(115deg,#4a0008,#b3001e,#ff2a3d,#ff7a3d,#ff2a6e,#c4004a,#ff3b30,#4a0008);background-size:400% 100%;animation:gradeWave 3.2s ease-in-out infinite,sssGlow 1.4s ease-in-out infinite alternate}
 .vip-num.v-sss b{text-shadow:0 0 8px #ff2a45,0 0 14px rgba(255,120,60,.7)}
 /* Max Win burst stamp */
-.pull .stamp.mw{font-size:clamp(64px,13vmin,150px);white-space:nowrap;background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(255,255,255,.7)) drop-shadow(0 0 40px rgba(255,110,199,.6))}
+.pull .stamp.now.mw{font-size:clamp(64px,13vmin,150px);white-space:nowrap;background:linear-gradient(90deg,#ff2a3d,#ff7a3d,#ffd0b0,#ff2a6e,#ff2a3d);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px #ff2a45) drop-shadow(0 0 34px rgba(255,90,60,.85)) drop-shadow(0 0 60px rgba(255,40,140,.5))}
 /* name change window */
 .rn{gap:12px}
 .rn-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
@@ -3606,7 +3606,7 @@ button.pt-slot:hover{border-color:#fff}
 /* best pulls (replays) in the rates / history window */
 .rp-list{display:grid;gap:8px;margin-top:10px}
 .rp-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
-.rp-row.mw{border-color:rgba(255,255,255,.5);background:linear-gradient(90deg,rgba(255,77,109,.15),rgba(255,240,77,.1),rgba(77,210,255,.15))}
+.rp-row.mw{border-color:#ff6a5a;background:linear-gradient(90deg,rgba(255,42,61,.22),rgba(255,122,61,.12),rgba(255,42,110,.2));box-shadow:0 0 14px rgba(255,42,61,.35)}
 .rp-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1}
 .rp-meta{font-family:var(--read);font-size:12px;color:rgba(233,236,255,.65);white-space:nowrap}
 .rp-tag{font-family:var(--display);font-size:11px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.12)}
@@ -3614,7 +3614,7 @@ button.pt-slot:hover{border-color:#fff}
 .rp-tag.up{background:linear-gradient(90deg,#ff8a2a,#a855f7);color:#fff}
 .rp-tag.dbl{background:linear-gradient(90deg,#ff6ec7,#3ee6d0);color:#1a0f2e}
 .rp-tag.rb{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff);color:#1a0f2e}
-.rp-tag.mw{background:linear-gradient(90deg,#ff4d6d,#ffa24d,#fff04d,#5dff8a,#4dd2ff,#a66bff,#ff4d6d);background-size:200% 100%;animation:shimmer 2s linear infinite;color:#1a0f2e}
+.rp-tag.mw{background:linear-gradient(115deg,#4a0008,#b3001e,#ff2a3d,#ff7a3d,#ff2a6e,#c4004a,#ff3b30,#4a0008);background-size:400% 100%;animation:gradeWave 3.2s ease-in-out infinite,sssGlow 1.4s ease-in-out infinite alternate;color:#fff;text-shadow:0 0 6px #ff2a45}
 
 /* raids v2: gear raids + Golden Vault stages */
 .raid-pill2{margin-top:14px}
@@ -3657,3 +3657,13 @@ button.pt-slot:hover{border-color:#fff}
 .sph.c7 .sph-core{background:radial-gradient(circle,rgba(255,240,220,.85) 0 20%,transparent 60%)}
 .sph.c7 .sph-aura{background:radial-gradient(circle,transparent 0 33%,rgba(255,60,70,.75) 37%,rgba(255,110,60,.4) 52%,rgba(255,40,140,.25) 63%,transparent 72%);animation-duration:1s}
 .sph.c7 .sph-glint{animation-duration:1.2s}
+
+/* Max Winner title (Max Win, S.unlocks 'max-win'): the SSS reds with a pulsing red glow, little lightning bolts flashing on
+   both sides */
+.ttl.t-maxwin{position:relative;overflow:visible;padding:2px 22px;background:radial-gradient(circle at 30% 25%,rgba(255,200,150,.5),transparent 45%),linear-gradient(115deg,#4a0008,#b3001e,#ff2a3d,#ff7a3d,#ff2a6e,#c4004a,#ff3b30,#4a0008);background-size:100% 100%,400% 100%;animation:sssWave 3.2s ease-in-out infinite,sssGlow 1.4s ease-in-out infinite alternate;color:#fff;text-shadow:0 0 6px #ff2a45,0 0 12px rgba(255,120,60,.85),0 1px 2px rgba(60,0,0,.9);border:1.5px solid #ffc2a8}
+.ttl.t-maxwin::before,.ttl.t-maxwin::after{content:"";position:absolute;top:50%;width:16px;height:30px;margin-top:-15px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='8 -1 20 26'%3E%3Cpath d='M22 0 L12 11 L19 12 L9 24 L27 9 L19 9 L26 0Z' fill='%23fff' stroke='%23ff2a3d' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 3px #ff2a3d) drop-shadow(0 0 6px #ff7a3d);pointer-events:none;animation:mwBolt 1.7s steps(1) infinite}
+.ttl.t-maxwin::before{left:3px;transform:rotate(-12deg)}
+.ttl.t-maxwin::after{right:3px;transform:scaleX(-1) rotate(-12deg);animation-delay:-.85s}
+@keyframes mwBolt{0%{opacity:1}6%{opacity:.2}10%{opacity:1}16%{opacity:.15}22%{opacity:1}60%{opacity:.85}64%{opacity:.25}68%{opacity:1}100%{opacity:1}}
+.sum .sum-mwt{display:flex;justify-content:center;align-items:center;gap:10px;margin:-4px 0 10px}
+.sum .sum-mwt .tiny{color:#ffc2a8}
