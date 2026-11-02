@@ -197,6 +197,7 @@ function adminArtRows() {
       + setRow('Expedition wallpaper', `<span class="set-wp">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpBg"></label>${MEDIA.get('exp:bg') ? btn('setExpBgDel', 'Default') : ''}`, 'Behind the Base\'s Expedition tab (1920×1080 best). Default: black')
       + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">Double UR wallpapers<small>Left and right, split on the diagonal after the sphere turns UR when a pull holds 2+ URs</small></span><div class="sx-c">${dblArtsHTML()}</div></div>`
+      + `<div class="sx-row sx-block"><span class="sx-l">Max Win wallpaper<small>Behind the red SSS sphere at the end of a Max Win (default: a pulled UR's art)</small></span><div class="sx-c">${mwBgHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
     + setRow('Name change ticket icon', `<span class="set-exp">${curIcon('nametk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="nametk"></label>${customIcon('nametk') ? '<button type="button" class="sx-btn" data-iconreset="nametk">Default</button>' : ''}`, 'The ticket used to change a player name (shop, Bag, rewards)');
 }
@@ -207,7 +208,7 @@ function bindAdminArt(root, rerender) {
   const cb = on('setCampBg'); if (cb) cb.onchange = async () => { try { if (await mediaSet('camp:bg', await resizeImage(cb.files[0], 1920, 'image/jpeg'))) { rerender(); renderFarm(); toast('Camp wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const cd = on('setCampBgDel'); if (cd) cd.onclick = async () => { await mediaDel('camp:bg'); rerender(); renderFarm(); toast('Camp wallpaper back to black.'); };
   const xd = on('setExpBgDel'); if (xd) xd.onclick = async () => { await mediaDel('exp:bg'); rerender(); renderFarm(); toast('Expedition wallpaper back to black.'); };
-  bindUpArts(rerender); bindDblArts(rerender); bindPullBg(rerender);
+  bindUpArts(rerender); bindDblArts(rerender); bindPullBg(rerender); bindMwBg(rerender);
   document.querySelectorAll('[data-eggup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:egg' + i.dataset.eggup, await resizeImage(i.files[0], 256, 'image/png'))) { rerender(); toast('Egg icon updated.'); } } catch (e) { toast(e.message, true); } });
   document.querySelectorAll('[data-iconup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('icon:' + i.dataset.iconup, await resizeImage(i.files[0], 512, 'image/png'))) { rerender(); toast('Icon updated.'); } } catch (e) { toast(e.message, true); } });
   document.querySelectorAll('[data-iconreset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.iconreset); rerender(); toast('Icon back to the default.'); });
