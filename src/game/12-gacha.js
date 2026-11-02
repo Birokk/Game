@@ -463,7 +463,7 @@ function showPull(results, n, bk, opts = {}) {
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = () => skipPull();
-  if (pullState.maxwin || pullState.double) $('#pullSkip').hidden = true;   // no skipping a Max Win's or a double UR's animation (it comes back for the reveals)
+  if (pullState.maxwin) $('#pullSkip').hidden = true;   // no skipping a Max Win's animation (it comes back for the reveals)
   // tap anywhere to release (Enter / Space / ↓ also work)
   pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
@@ -519,8 +519,23 @@ function doubleArts(results) {
   const left = MEDIA.get('dbl:left') || urs[0] || fakeArt(), right = MEDIA.get('dbl:right') || urs[1] || urs[0] || fakeArt();
   return left || right ? [left || right, right || left] : [];
 }
+/* Skip on a double UR: no tap, no rise; the sphere is UR at the top at once and the double plays ~1 s later */
+function jumpToDouble(st) {
+  if (!pullEl) return;
+  pullClear(st); st.phase = 'rise';
+  const hint = $('#sphHint'); if (hint) hint.hidden = true;
+  pullEl.classList.remove('charging', 'dragging'); pullEl.classList.add('rising', 'drift');
+  pullEl.style.setProperty('--rise', '.4s');
+  const sph = $('#sph'); if (sph) sph.style.setProperty('--drag', '0px');
+  sphereTier(5);
+  const inAt = 1000, hold = 2800;
+  pullLater(inAt, doubleArtIn); pullLater(inAt + hold, doubleArtOut);
+  if (st.rainbow) { const rb = inAt + hold + 800; pullLater(rb, rainbowSphere); pullLater(rb + 2400, burstSphere); }
+  else pullLater(inAt + hold + 700, burstSphere);
+}
 function doubleArtIn() {
   const st = pullState; if (!st || !pullEl) return;
+  st.dblStarted = true; if ($('#pullSkip')) $('#pullSkip').hidden = true;   // the double itself always plays
   const [a, b] = doubleArts(st.results); if (!a) return;
   pullEl.insertAdjacentHTML('beforeend', `<div class="fk-art dbl"><div class="fk-half a"><img src="${a}" alt=""></div><div class="fk-half b"><img src="${b}" alt=""></div>
     <svg class="fk-split" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="82.24" y1="-2" x2="17.76" y2="102"/></svg><i class="fk-streak"></i></div>`);
@@ -578,7 +593,7 @@ function startSphereFx(root) {
     surge(t) { const big = t === 5; boost = big ? 1.6 : 1; flash = big ? .55 : .25; if (big) { for (let i = 0; i < 5; i++) bolt(true); } },
     shock() { shockT = 0; flash = .4; boost = 2; },
     stop() { cancelAnimationFrame(raf); removeEventListener('resize', fit); } };
-  const col = (i, ph = 0) => { const c = SPH_COL[api.tier]; return api.tier >= 5 ? c[Math.floor(i + ph) % c.length] : c[i % c.length]; };
+  const col = (i, ph = 0) => { const c = SPH_COL[api.tier] || SPH_COL[3], k = api.tier >= 5 ? Math.floor(i + ph) : i; return c[((k % c.length) + c.length) % c.length || 0] || c[0]; };   // always a valid colour
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
   // jagged lightning path by midpoint displacement, with a few side branches
   function zig(x1, y1, x2, y2, rough, depth, out) {
@@ -690,8 +705,12 @@ function skipPull() {
   const st = pullState; if (!st) return;
   if (st.exchange) return closePull();
   if (st.phase === 'summary') return;
-  // a double UR animation always plays; the skip happens right after it (advancePull picks up st.skipAfter)
-  if (st.double && !['reveal', 'upgrade'].includes(st.phase)) { st.skipAfter = true; return; }
+  // a double UR: Skip jumps to just before the double trigger (UR sphere already up), plays it, then skips to the UR reveals
+  if (st.double && !['reveal', 'upgrade'].includes(st.phase)) {
+    st.skipAfter = true;
+    if (!st.dblStarted && !st.jumped && st.phase !== 'burst') { st.jumped = true; jumpToDouble(st); }
+    return;
+  }
   const cur = st.phase === 'reveal' ? st.i : -1, rest = st.order.slice(cur + 1).filter(i => st.results[i].rarity >= 5);
   if (st.skipping || !rest.length) return showSummary();
   st.skipping = true; st.order = [...st.order.slice(0, cur + 1), ...rest];
