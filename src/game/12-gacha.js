@@ -132,7 +132,7 @@ function doPull(n, bk = curBanner, free = false) {
     S.gacha.replays = [{ t: Date.now(), bk, results: JSON.parse(JSON.stringify(results)), fake: st0.fake, double: st0.double, rainbow: st0.rainbow, maxwin }, ...(S.gacha.replays || [])].slice(0, 30);
     persist();
   }
-  if (S.settings.skipPull && !maxwin) skipPull();   // a Max Win always plays its animation; Skip still shows URs and upgrades
+  if (S.settings.skipPull && !maxwin) skipPull();   // a Max Win always plays its animation; Skip still shows URs and upgrades (and lets a double UR animation play first)
 }
 
 /* summon screen: full screen, banner tabs on the left, character lineup, pull buttons along the bottom */
@@ -463,7 +463,7 @@ function showPull(results, n, bk, opts = {}) {
   pullState.sfx = startSphereFx(pullEl);
   pullEl.addEventListener('click', e => { if (e.target.closest('button')) return; tapPull(); });
   $('#pullSkip').onclick = () => skipPull();
-  if (pullState.maxwin) $('#pullSkip').hidden = true;   // no skipping a Max Win's animation (it comes back for the reveals)
+  if (pullState.maxwin || pullState.double) $('#pullSkip').hidden = true;   // no skipping a Max Win's or a double UR's animation (it comes back for the reveals)
   // tap anywhere to release (Enter / Space / ↓ also work)
   pullEl.addEventListener('pointerdown', e => { if (!pullState || pullState.phase !== 'charge' || e.target.closest('button')) return; e.preventDefault(); releaseSphere(); });
   pullState.onKey = e => { if (pullState && pullState.phase === 'charge' && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); releaseSphere(); } };
@@ -690,6 +690,8 @@ function skipPull() {
   const st = pullState; if (!st) return;
   if (st.exchange) return closePull();
   if (st.phase === 'summary') return;
+  // a double UR animation always plays; the skip happens right after it (advancePull picks up st.skipAfter)
+  if (st.double && !['reveal', 'upgrade'].includes(st.phase)) { st.skipAfter = true; return; }
   const cur = st.phase === 'reveal' ? st.i : -1, rest = st.order.slice(cur + 1).filter(i => st.results[i].rarity >= 5);
   if (st.skipping || !rest.length) return showSummary();
   st.skipping = true; st.order = [...st.order.slice(0, cur + 1), ...rest];
@@ -698,9 +700,10 @@ function skipPull() {
 }
 function advancePull() {
   const st = pullState; if (!st || st.phase === 'summary') return;
+  if (st.skipAfter) { st.skipAfter = false; st.skipping = true; const rest = st.order.filter(i => st.results[i].rarity >= 5); if (!rest.length) return showSummary(); st.order = rest; st.i = -1; }
   pullClear(st);
   st.i++; st.phase = 'reveal';
-  if (st.maxwin && $('#pullSkip')) $('#pullSkip').hidden = false;
+  if ((st.maxwin || st.double) && $('#pullSkip')) $('#pullSkip').hidden = false;
   if (st.fx) st.fx.intro = false;
   if (st.sfx) { st.sfx.stop(); st.sfx = null; }
   if (st.i >= st.order.length) return st.exchange ? closePull() : showSummary();
