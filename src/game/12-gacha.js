@@ -110,6 +110,27 @@ function rollOne(bk, force) {
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
   return res;
 }
+/* Max Win rewards: 5 random UR characters + 5 random UR memories (any banner; characters fill in when there are no UR
+   memories). One of the characters arrives through the SSR → UR upgrade animation. Counts as 10 pulls (pity reset). */
+function maxWinPicks() {
+  const chars = S.pool.filter(e => e.type === 'character' && !e.mc && +e.rarity === 5 && e.pullable !== false);
+  const mems = (S.memories || []).filter(m => +m.rarity === 5).map(m => memEntry(m.id)).filter(Boolean);
+  if (!chars.length) return null;
+  const take = (list, k) => { const out = []; let bag = []; while (out.length < k) { if (!bag.length) bag = list.slice().sort(() => Math.random() - .5); out.push(bag.pop()); } return out; };   // distinct while possible
+  return [...take(chars, 5), ...take(mems.length ? mems : chars, 5)];
+}
+function maxWinResults(bk) {
+  const picks = maxWinPicks(); if (!picks) return null;
+  const g = S.gacha[bk], ssrs = S.pool.filter(e => e.type === 'character' && !e.mc && +e.rarity === 4);
+  const out = picks.map(item => { const res = { kind: 'entry', id: item.id, rarity: 5, lost: false, ...grantEntry(item) };
+    if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[5] || 0; S.wallet.starlight += res.starlight; }
+    return res; });
+  if (ssrs.length) { const s = rpick(ssrs); out[0].up = { id: s.id, name: s.name }; }
+  g.total += 10; g.pity5 = 0; g.pity4 = 0; S.wallet.dust += DUST_PER_PULL * 10;
+  out.forEach(r => S.gacha.history.unshift({ name: findEntry(r.id).name, rarity: 5, banner: bk, t: Date.now() }));
+  if (S.gacha.history.length > 80) S.gacha.history.length = 80;
+  return out.sort(() => Math.random() - .5);
+}
 function doPull(n, bk = curBanner, free = false) {
   const cost = COST[n];
   if (!S.pool.some(e => e.pullable !== false)) { toast('The summon pool is empty. Add entries in the admin panel.'); return; }
@@ -120,8 +141,7 @@ function doPull(n, bk = curBanner, free = false) {
   }
   // Max Win: 0.1% of ×10 summons hold at least 5 URs (one of them upgraded from an SSR) and play every animation
   const maxwin = n === 10 && Math.random() < MAXWIN_CHANCE;
-  const plan = maxwin ? (() => { const slots = [...Array(10).keys()].sort(() => Math.random() - .5).slice(0, 5), p = {}; slots.forEach((s, i) => p[s] = i ? 5 : 'up'); return p; })() : {};
-  const results = Array.from({ length: n }, (_, i) => rollOne(bk, plan[i]));
+  const results = (maxwin && maxWinResults(bk)) || Array.from({ length: n }, () => rollOne(bk));
   if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
