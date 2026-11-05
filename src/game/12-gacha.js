@@ -329,7 +329,7 @@ function renderSummon() {
   const fr = $('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
   $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
   $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
-  const ms = $('#sxMile'); if (ms) ms.onclick = () => confirmMilestone(ms.dataset.mbk);
+  const ms = $('#sxMile'); if (ms) ms.onclick = e => { const b = e.target.closest('[data-mile]'), m = b && +b.dataset.mile; if (m && mileN('standard') >= m && !stdMiles().includes(m)) return claimStdMile(m); confirmMilestone(ms.dataset.mbk); };
   $('#sxHist').onclick = () => openRates(bk, true);
   const pb = $('#sxPts'); if (pb) pb.onclick = () => openShop('points:' + (PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm'));
 }
@@ -378,8 +378,11 @@ const stdReady = () => STD_MILES.find(m => !stdMiles().includes(m) && mileN('sta
 const stdNext = () => STD_MILES.find(m => !stdMiles().includes(m));
 function milestoneBtn(bk = 'standard') {
   if (bk === 'standard') {
-    const n = mileN('standard'), next = stdNext(), done = !next, ready = stdReady(), prev = next ? next - 100 : 600, pct = done ? 1 : Math.max(0, Math.min(1, (n - prev) / 100));
-    return `<button class="sx-mile ${ready ? 'ready' : ''} ${done ? 'done' : ''}" id="sxMile" data-mbk="standard" style="--p:${pct * 360}deg" aria-label="Milestones: ${n} of 600 pulls"><span class="sx-mile-in">${done ? icon('check') : `<b>${n}</b><small>/${ready || next}</small>`}</span><span class="sx-mile-lb">${done ? 'All claimed' : ready ? (STD_SEL.includes(ready) ? 'Claim selector' : 'Claim UR') : 'Milestones'}</span></button>`;
+    // 6 bubbles joined by a grey line that turns yellow as the pulls add up; the next bubble charges a ring around itself
+    const n = mileN('standard'), got = stdMiles(), prog = m => Math.max(0, Math.min(1, (n - (m - 100)) / 100));
+    return `<div class="mst" id="sxMile" data-mbk="standard" role="group" aria-label="Milestones: ${n} of 600 pulls"><span class="mst-t">Milestones · <b>${n}</b> / 600 pulls</span><div class="mst-row">${STD_MILES.map((m, i) => {
+      const sel = STD_SEL.includes(m), claimed = got.includes(m), reached = n >= m, charging = !reached && n >= m - 100, st = claimed ? 'got' : reached ? 'ready' : charging ? 'charge' : '';
+      return `${i ? `<i class="mst-ln"><i style="width:${prog(m) * 100}%"></i></i>` : ''}<button class="mst-b ${st}" data-mile="${m}" style="--p:${(reached ? 1 : prog(m)) * 360}deg" aria-label="${m} pulls: ${sel ? 'UR selector' : 'random UR'}${claimed ? ', claimed' : reached ? ', ready to claim' : ''}"><span class="mst-in">${claimed ? icon('check') : sel ? curIcon('ursel') : '<b>UR</b>'}</span><small>${reached && !claimed ? 'Claim' : m}</small></button>`; }).join('')}</div></div>`;
   }
   const M = MILES[bk], n = mileN(bk), done = mileDone(bk), ready = n >= M.n && !done;
   return `<button class="sx-mile ${ready ? 'ready' : ''} ${done ? 'done' : ''}" id="sxMile" data-mbk="${bk}" style="--p:${n / M.n * 360}deg" aria-label="Milestone: ${n} of ${M.n} pulls"><span class="sx-mile-in">${done ? icon('check') : `<b>${n}</b><small>/${M.n}</small>`}</span><span class="sx-mile-lb">${done ? 'Claimed' : ready ? 'Claim UR' : 'Milestone'}</span></button>`;
