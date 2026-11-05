@@ -47,6 +47,7 @@ function avatarHTML(size, entry = avatarEntry(), frame = frameOf().id) {
 /* namecard background: a design, or the art of an owned character ("char:<id>") */
 function cardBG(id) {
   if (id && id.startsWith('char:') && wpOk(id.slice(5))) { const w = wpParse(id.slice(5)); return { cls: 'nc-char', img: wpSrc(w), art: wpHasArt(w) }; }
+  if (id && /^rk-[a-z]+-[123]$/.test(id)) id = 'rk-' + id.slice(-1);   // old per-board ranking namecards → the one card of that place
   const c = CARDS.find(k => k.id === id && unlocked(k)) || CARDS[0];
   return { cls: c.cls || 'nc-' + c.id };
 }
@@ -82,7 +83,7 @@ function pfOptsHTML(kind) {
   } else {
     const cur = cardBG(P.card);
     opts = `<p class="tiny">Namecard designs, or any art you own (base, 3★ and 6★ splash arts, skins).</p><div class="pf-grid wide">
-      ${CARDS.map(k => opt(cur.cls === 'nc-' + k.id, !unlocked(k), `<span class="pf-nc">${cardLayer({ cls: 'nc-' + k.id })}</span>${lockTag(k)}`, `data-nc="${k.id}"`, `${esc(k.name)}${k.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}
+      ${CARDS.map(k => opt(cur.cls === (k.cls || 'nc-' + k.id), !unlocked(k), `<span class="pf-nc">${cardLayer({ cls: k.cls || 'nc-' + k.id })}</span>${lockTag(k)}`, `data-nc="${k.id}"`, `${esc(k.name)}${k.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}
       ${artChoices().filter(o => o.open).map(o => opt(P.card === 'char:' + o.id && cur.cls === 'nc-char', false, `<span class="pf-nc">${cardLayer(cardBG('char:' + o.id))}</span>`, `data-nc="char:${esc(o.id)}"`, esc(wpName(wpParse(o.id))))).join('')}</div>`;
   }
   return opts;
@@ -92,13 +93,16 @@ function openPfPick(kind, slot) {
   if (kind === 'slot') pfSlot = slot; else { pfTab = kind; pfSlot = -1; }
   const el = document.createElement('div'); el.className = 'rdrop pfpick'; el.setAttribute('role', 'dialog');
   const close = () => { el.remove(); pfSlot = -1; renderProfile(); };
+  let lastK = null;
   const render = () => {
-    const k = pfSlot >= 0 ? 'slot' : pfTab, title = k === 'slot' ? `Showcase slot ${pfSlot + 1}` : PF_PICKS[k];
+    const k = pfSlot >= 0 ? 'slot' : pfTab, ob = el.querySelector('.pfp-body'), keepY = ob && lastK === k ? ob.scrollTop : 0, title = k === 'slot' ? `Showcase slot ${pfSlot + 1}` : PF_PICKS[k];
+    lastK = k;
     el.setAttribute('aria-label', title);
     el.innerHTML = `<div class="rdrop-box wdp-box pfp-box"><div class="wdp-head"><h2 class="ts">${esc(title)}</h2><button class="inv-x" data-pfpx aria-label="Close">${icon('close')}</button></div>
       ${k === 'slot' ? '' : `<div class="tabs pfp-tabs">${Object.entries(PF_PICKS).map(([t, l]) => `<button class="tab ${pfTab === t ? 'on' : ''}" data-pft="${t}">${l}</button>`).join('')}</div>`}
       <div class="pfp-body">${pfOptsHTML(k)}</div>
       <div class="row" style="justify-content:center"><button class="btn gold" data-pfpx>Done</button></div></div>`;
+    el.querySelector('.pfp-body').scrollTop = keepY;   // picking something redraws the popup: stay where you were
     const P = S.profile, save = () => { persist(); renderMenu(); renderProfile(); render(); };
     el.querySelectorAll('[data-pfpx]').forEach(b => b.onclick = close);
     el.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; render(); });

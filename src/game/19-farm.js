@@ -104,12 +104,12 @@ const fmtDur2 = ms => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.fl
 /* label positions in % of a 16:9 stage (the wallpaper covers the screen at 16:9, so labels stay on their buildings);
    the admin can move them (admin → Farm) to match their own wallpaper: S.farmLayout[id] = {x, y} */
 const FARM_POS = { crops: { x: 25, y: 80 }, inn: { x: 52, y: 46 }, market: { x: 79, y: 74 }, pub: { x: 21, y: 47 }, fountain: { x: 50, y: 62 } };
-const farmPos = id => ({ ...(FARM_POS[id] || (String(id).startsWith('c:') ? campPosDef(id) : String(id).startsWith('h:') ? housePosDef(id) : expPosDef(id))), ...((S.farmLayout || {})[id] || {}) });   // 'x:<area>' = Expedition labels
+const farmPos = id => ({ ...(FARM_POS[id] || (String(id).startsWith('c:') ? campPosDef(id) : /^hr?:/.test(String(id)) ? housePosDef(id) : expPosDef(id))), ...((S.farmLayout || {})[id] || {}) });   // 'x:<area>' = Expedition labels
 let fmEl = null, fmSel = null, farmTimer = null;
 function openFarm(sel) {
   farmTick(); closeModal();
   if (!fmEl) { fmEl = document.createElement('div'); fmEl.className = 'fm'; fmEl.setAttribute('role', 'dialog'); fmEl.setAttribute('aria-label', 'Base'); document.body.appendChild(fmEl); }
-  fmView = sel === 'expedition' ? 'exp' : sel === 'camp' ? 'camp' : sel === 'house' ? 'house' : 'base'; fmSel = sel === 'expedition' || sel === 'camp' || sel === 'house' ? null : sel || null; housePick = -1; exPick = null; campPick = [];
+  fmView = sel === 'expedition' ? 'exp' : sel === 'camp' ? 'camp' : sel === 'house' ? 'house' : 'base'; fmSel = sel === 'expedition' || sel === 'camp' || sel === 'house' ? null : sel || null; housePick = -1; houseIn = null; roomSel = -1; exPick = null; campPick = [];
   expBackSeen = EXP_AREAS.filter(a => expDone(a.id)).map(a => a.id).join(); campBackSeen = CAMP_PLACES.filter(p => campDone(p.id)).map(p => p.id).join(); renderFarm();
   clearInterval(farmTimer);
   farmTimer = setInterval(() => { if (!fmEl) return clearInterval(farmTimer); if (fmView === 'exp') { farmTick(); updateExpLive(); return; } if (fmView === 'camp') { farmTick(); updateCampLive(); return; } if (fmView === 'house') { farmTick(); updateHouseLive(); return; } if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
@@ -291,6 +291,7 @@ function farmSVG(id, lv, bare) {
 }
 
 /* ---------- admin → Farm: the town wallpaper and where each building's label sits on it ---------- */
+let hsAdmIn = 'h1';   // admin → Base: which house's inside is being edited
 function renderFarmTab() {
   const p = $('#adPanel'); if (!p) return;
   const bg = MEDIA.get('farm:bg');
@@ -318,6 +319,13 @@ function renderFarmTab() {
     <div class="fm-sliders">${HOME_HOUSES.map(h => { const q = farmPos('h:' + h.id), img = MEDIA.get('house:' + h.id); return `<div class="fm-sl hs-sl" style="--fc:${h.col}"><b>${esc(h.name)}</b>
       <span class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}${img ? 'Replace' : 'Upload'} picture<input type="file" accept="image/*" class="sr" data-hsup="${h.id}"></label>${img ? `<button class="btn ghost sm" data-hsdel="${h.id}">Remove</button>` : ''}</span>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="h:${h.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="h:${h.id}"></label><label>Width <input type="range" min="6" max="45" step=".5" value="${houseW(h.id)}" data-hsw="${h.id}"></label></div>`; }).join('')}</div>
+    <div><h3>Inside the houses</h3><p class="tiny">Tapping an owned house takes the player inside it. Pick a house, upload its inside wallpaper (1920×1080 best, black without one) and drag each room's card to where the character should stand.</p></div>
+    <div class="row chips">${HOME_HOUSES.map(h => `<button class="chip ${hsAdmIn === h.id ? 'on' : ''}" data-hsin="${h.id}">${esc(h.name)} · ${h.slots}</button>`).join('')}</div>
+    ${(() => { const h = houseOf(hsAdmIn), bg = MEDIA.get('house:in:' + h.id); return `<div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} inside wallpaper<input type="file" accept="image/*" class="sr" id="hiUp"></label>${bg ? '<button class="btn ghost sm" id="hiDel">Remove</button>' : ''}</div>
+    <div class="fm-adprev" id="hiPrev">${bg ? `<img src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+      ${Array.from({ length: h.slots }, (_, i) => { const k = `hr:${h.id}:${i}`, q = farmPos(k); return `<span class="fm-dot hr-dot" data-fmdrag="${k}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col}"><i></i><span class="hs-dn">Room ${i + 1}</span></span>`; }).join('')}</div>
+    <div class="fm-sliders">${Array.from({ length: h.slots }, (_, i) => { const k = `hr:${h.id}:${i}`, q = farmPos(k); return `<div class="fm-sl" style="--fc:${h.col}"><b>Room ${i + 1}</b>
+      <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${k}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${k}"></label></div>`; }).join('')}</div>`; })()}
   </div>`;
   const setPos = (id, x, y, rerender) => {
     S.farmLayout = { ...(S.farmLayout || {}), [id]: { x: Math.round(clamp(x, 2, 98) * 2) / 2, y: Math.round(clamp(y, 4, 96) * 2) / 2 } };
@@ -336,6 +344,9 @@ function renderFarmTab() {
   $('#fmResetPos').onclick = () => { S.farmLayout = {}; persist(); renderFarmTab(); };
   $('#fmOpen').onclick = () => { closeModal(); openFarm(); };
   $('#hsOpen').onclick = () => { closeModal(); openFarm('house'); };
+  p.querySelectorAll('[data-hsin]').forEach(b => b.onclick = () => { hsAdmIn = b.dataset.hsin; renderFarmTab(); });
+  $('#hiUp').onchange = async ev => { try { if (await mediaSet('house:in:' + hsAdmIn, await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Inside wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const hid = $('#hiDel'); if (hid) hid.onclick = async () => { await mediaDel('house:in:' + hsAdmIn); renderFarmTab(); };
   $('#hsBgUp').onchange = async ev => { try { if (await mediaSet('house:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('House wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const hbd = $('#hsBgDel'); if (hbd) hbd.onclick = async () => { await mediaDel('house:bg'); renderFarmTab(); };
   p.querySelectorAll('[data-hsup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('house:' + i.dataset.hsup, await resizeImage(ev.target.files[0], 900, 'image/png'))) { renderFarmTab(); toast('House picture saved.'); } } catch (e) { toast(e.message, true); } });

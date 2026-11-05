@@ -4,7 +4,9 @@
    (HOUSE_CAP_H) and collected like Base resources. A character lives in one house at a time (it can still go on Camp
    or Expedition jobs). No drawn houses: the admin uploads a wallpaper (media key house:bg, black without one) and a
    picture per house (house:<id>), places them on the 16:9 stage (S.farmLayout['h:<id>'] = {x, y}) and sets each
-   picture's width (S.farmLayout['hs:<id>'] = {w}, % of the stage) in admin → Base → House.
+   picture's width (S.farmLayout['hs:<id>'] = {w}, % of the stage) in admin → Base → House. Tapping an owned house goes
+   inside it: a screen of its own (inside wallpaper house:in:<id>) with each room as a character card (positions
+   S.farmLayout['hr:<id>:<room>'], also set in admin).
    State S.house {own: [house ids], rooms: {houseId: [{c, t, acc} | null, …]}} (player save). */
 const HOUSE_BOND = 1000, HOUSE_CAP_H = 24, HOUSE_RATE = HOUSE_BOND / 864e5;
 const HOME_HOUSES = [
@@ -15,7 +17,7 @@ const HOME_HOUSES = [
   { id: 'h5', name: 'Pearl Palace', slots: 5, cost: { pearls: 300 }, x: 50, y: 26, col: '#ff7ccf' }
 ];
 const houseOf = id => HOME_HOUSES.find(h => h.id === id);
-const housePosDef = id => { const h = houseOf(String(id).replace(/^h:/, '')); return h ? { x: h.x, y: h.y } : { x: 50, y: 50 }; };
+const housePosDef = id => { const k = String(id); if (k.startsWith('hr:')) { const [, hid, i] = k.split(':'); return houseRoomPosDef(hid, +i); } const h = houseOf(k.replace(/^h:/, '')); return h ? { x: h.x, y: h.y } : { x: 50, y: 50 }; };
 const houseW = id => ((S.farmLayout || {})['hs:' + id] || {}).w || 18;
 function houseState() {
   if (!S.house || typeof S.house !== 'object') S.house = { own: [], rooms: {} };
@@ -65,7 +67,7 @@ function buyHouse(id) {
       <span class="tiny">Price: ${curIcon(k)} ${fmt(n)} ${name} · you have ${fmt(S.wallet[k] || 0)}</span>
       <div class="row" style="justify-content:center"><button class="btn ghost" id="hbNo">Cancel</button><button class="btn gold" id="hbYes">Buy</button></div></div>`,
     onMount: () => { $('#hbNo').onclick = closeModal; $('#hbYes').onclick = () => {
-      if ((S.wallet[k] || 0) < n) return; S.wallet[k] -= n; houseState().own.push(id); closeModal(); persist(); renderMenu(); fmSel = id; renderFarm(); toast(`The ${h.name} is yours! Move characters in to raise their bond.`);
+      if ((S.wallet[k] || 0) < n) return; S.wallet[k] -= n; houseState().own.push(id); closeModal(); persist(); renderMenu(); enterHouse(id); toast(`The ${h.name} is yours! Tap a room to move someone in.`);
     }; } });
 }
 /* move a character into a room (or out with cid = null); stored bond is collected first */
@@ -80,15 +82,23 @@ INFO.house = () => ({ title: 'House', body: `<p class="desc">Buy houses and move
   <table class="cs-table"><thead><tr><th>House</th><th>Rooms</th><th>Price</th><th>Bond a day</th></tr></thead><tbody>
   ${HOME_HOUSES.map(h => { const [k, n] = Object.entries(h.cost)[0]; return `<tr><td>${esc(h.name)}</td><td>${h.slots}</td><td>${fmt(n)} ${k === 'coins' ? 'gold' : 'pearls'}</td><td>up to ${fmt(h.slots * HOUSE_BOND)}</td></tr>`; }).join('')}</tbody></table>` });
 
-/* the House view of the Base screen (opened from its own home tab) */
-let housePick = -1, houseSeen = '';
+/* the House view of the Base screen (opened from its own home tab): first the map of the five houses; tapping an owned house
+   goes inside it (houseIn), a screen of its own with the house's inside wallpaper (house:in:<id>, black without one) and its
+   rooms as character cards placed by the admin (S.farmLayout['hr:<id>:<room>']). Tapping a house you don't own opens the
+   Buy panel; buying it takes you inside. */
+let houseIn = null, roomSel = -1, housePick = -1, houseSeen = '';
+const houseRoomPosDef = (hid, i) => { const h = houseOf(hid), n = h ? h.slots : 1; return { x: Math.round((50 + (i - (n - 1) / 2) * 15) * 2) / 2, y: 64 }; };
 function houseBg() { const bg = MEDIA.get('house:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'; }
+function houseInBg(id) { const bg = MEDIA.get('house:in:' + id); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'; }
+function enterHouse(id) { houseIn = id; roomSel = -1; housePick = -1; fmSel = null; renderFarm(); }
 function renderHouse() {
   houseTick();
+  if (houseIn && houseOf(houseIn) && houseOwned(houseIn)) return renderHouseIn(houseOf(houseIn));
+  houseIn = null;
   const st = houseState(), residents = HOME_HOUSES.reduce((t, h) => t + houseRooms(h.id).filter(Boolean).length, 0);
   fmEl.innerHTML = `<div class="fm-scroll"><div class="fm-stage">${houseBg()}
       ${HOME_HOUSES.map(h => { const q = farmPos('h:' + h.id), own = houseOwned(h.id), img = MEDIA.get('house:' + h.id), stored = own ? houseStored(h.id) : 0, n = houseRooms(h.id).filter(Boolean).length, [ck, cn] = Object.entries(h.cost)[0];
-        return `<button class="fm-spot hs-spot ${own ? '' : 'locked'} ${fmSel === h.id ? 'on' : ''}" data-hs="${h.id}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col};--hw:${houseW(h.id)}">
+        return `<button class="fm-spot hs-spot ${own ? '' : 'locked'} ${fmSel === h.id ? 'on' : ''}" data-hs="${h.id}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col};--hw:${houseW(h.id)}" aria-label="${esc(h.name)}${own ? ', go inside' : ''}">
           ${img ? `<img class="hs-img" src="${img}" alt="">` : ''}
           ${stored >= 1 ? `<span class="fm-bubble">${curIcon('bondheart')}</span>` : ''}
           <span class="fm-label"><b>${esc(h.name)}</b><span>${own ? `${n} / ${h.slots} living here${stored >= 1 ? ` · <b id="hss-${h.id}">${fmt(stored)}</b> ${curIcon('bondheart')}` : ''}` : `${curIcon(ck)} ${fmt(cn)}`}</span></span></button>`; }).join('')}
@@ -96,50 +106,79 @@ function renderHouse() {
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">House</h2>${infoBtn('house', 'How houses work')}<span class="fm-rate ts">${residents} living here · ${fmt(residents * HOUSE_BOND)} ${curIcon('bondheart')} / day</span></div>
     <div class="fm-cur">${['coins', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
     <button class="btn gold fm-all" id="hsAll">${curIcon('bondheart')}Collect all</button>
-    ${fmSel && houseOf(fmSel) ? `<aside class="fm-panel glass-deep" id="fmPanel">${housePanel(houseOf(fmSel))}</aside>` : ''}`;
-  houseSeen = HOME_HOUSES.map(h => houseStored(h.id) >= 1 ? 1 : 0).join('');
+    ${fmSel && houseOf(fmSel) && !houseOwned(fmSel) ? `<aside class="fm-panel glass-deep" id="fmPanel">${houseBuyPanel(houseOf(fmSel))}</aside>` : ''}`;
+  houseSeen = 'map:' + HOME_HOUSES.map(h => houseStored(h.id) >= 1 ? 1 : 0).join('');
   $('#fmBack').onclick = closeFarm;
   $('#hsAll').onclick = () => houseCollectUI(st.own);
-  fmEl.querySelectorAll('[data-hs]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.hs ? null : b.dataset.hs; housePick = -1; renderFarm(); });
-  fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; housePick = -1; renderFarm(); } };
+  fmEl.querySelectorAll('[data-hs]').forEach(b => b.onclick = e => { e.stopPropagation(); const id = b.dataset.hs; if (houseOwned(id)) return enterHouse(id); fmSel = fmSel === id ? null : id; renderFarm(); });
+  fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;
-  const h = houseOf(fmSel);
-  pn.querySelector('[data-fmx]').onclick = () => { fmSel = null; housePick = -1; renderFarm(); };
-  const buy = $('#hsBuy'); if (buy) buy.onclick = () => buyHouse(h.id);
-  const col = $('#hsCol'); if (col) col.onclick = () => houseCollectUI([h.id]);
-  pn.querySelectorAll('[data-room]').forEach(b => b.onclick = () => { const i = +b.dataset.room; housePick = housePick === i ? -1 : i; renderFarm(); });
-  pn.querySelectorAll('[data-rout]').forEach(b => b.onclick = e => { e.stopPropagation(); setRoom(h.id, +b.dataset.rout, null); housePick = -1; renderFarm(); });
-  pn.querySelectorAll('[data-hpick]').forEach(b => b.onclick = () => { if (housePick < 0) return; const cid = b.dataset.hpick, e = findEntry(cid); setRoom(h.id, housePick, cid); housePick = -1; renderFarm(); toast(`${e ? e.name : 'They'} moved into the ${h.name}.`); });
+  pn.querySelector('[data-fmx]').onclick = () => { fmSel = null; renderFarm(); };
+  const buy = $('#hsBuy'); if (buy) buy.onclick = () => buyHouse(fmSel);
 }
-function housePanel(h) {
-  const own = houseOwned(h.id), [ck, cn] = Object.entries(h.cost)[0];
-  let body;
-  if (!own) body = `<p class="tiny">${h.slots} room${h.slots > 1 ? 's' : ''}. Each character living here earns ${fmt(HOUSE_BOND)} bond EXP a day (up to ${fmt(h.slots * HOUSE_BOND)} a day for the whole house).</p>
+function houseBuyPanel(h) {
+  const [ck, cn] = Object.entries(h.cost)[0], img = MEDIA.get('house:' + h.id);
+  return `<div class="fm-ph" style="--fc:${h.col}"><div><b>${esc(h.name)}</b><span class="farm-lv">${h.slots} room${h.slots > 1 ? 's' : ''} · ${fmt(HOUSE_BOND)} bond / day each · not owned</span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
+    <div style="--fc:${h.col}" class="stack">${img ? `<img class="hs-pv" src="${img}" alt="">` : ''}
+      <p class="tiny">${h.slots} room${h.slots > 1 ? 's' : ''}. Each character living here earns ${fmt(HOUSE_BOND)} bond EXP a day (up to ${fmt(h.slots * HOUSE_BOND)} a day for the whole house). Once it's yours, tap it to go inside.</p>
       <button class="btn gold" id="hsBuy" ${(S.wallet[ck] || 0) < cn ? 'disabled' : ''}>Buy · ${curIcon(ck)} ${fmt(cn)}</button>
-      ${(S.wallet[ck] || 0) < cn ? `<span class="tiny">You have ${fmt(S.wallet[ck] || 0)} ${ck === 'coins' ? 'gold' : 'pearls'}.</span>` : ''}`;
-  else {
-    const rooms = houseRooms(h.id), stored = houseStored(h.id);
-    const room = (r, i) => { const e = r && findEntry(r.c), full = r && bondFull(r.c), w = roomWhole(r), pct = r ? Math.min(100, (r.acc || 0) / HOUSE_BOND * 100) : 0;
-      return `<button class="hs-room ${e ? 'r' + e.rarity : 'empty'} ${housePick === i ? 'on' : ''}" data-room="${i}" aria-label="Room ${i + 1}">
-        ${e ? `<span class="ex-av r${e.rarity}">${thumbImg(e)}</span><span class="hs-rinfo"><b>${esc(e.name)}</b><span class="tiny">${bondTag(e.id, 'sm')} ${full ? 'Max bond' : `${fmt(w)} / ${fmt(HOUSE_BOND)} stored`}</span><span class="bar"><i id="hsb-${h.id}-${i}" style="width:${full ? 100 : pct}%"></i></span></span><span class="hs-out" data-rout="${i}" role="button" title="Move out">${icon('close')}</span>`
-          : `<span class="hs-plus">${icon('plus')}</span><span class="hs-rinfo"><b>Room ${i + 1}</b><span class="tiny">Empty · tap to move someone in</span></span>`}</button>`; };
-    const list = expChars();
-    const picker = housePick >= 0 ? `<span class="lbl-sm">Who moves into room ${housePick + 1}?</span>
-      <div class="ex-pick">${list.map(x => { const at = houseWhere(x.id), here = at && at.id === h.id && houseRooms(h.id)[housePick] && houseRooms(h.id)[housePick].c === x.id;
+      ${(S.wallet[ck] || 0) < cn ? `<span class="tiny">You have ${fmt(S.wallet[ck] || 0)} ${ck === 'coins' ? 'gold' : 'pearls'}.</span>` : ''}</div>`;
+}
+/* inside one house: its rooms as character cards on the house's own wallpaper */
+function renderHouseIn(h) {
+  const rooms = houseRooms(h.id), n = rooms.filter(Boolean).length, stored = houseStored(h.id), owned = HOME_HOUSES.filter(x => houseOwned(x.id)), oi = owned.findIndex(x => x.id === h.id);
+  fmEl.innerHTML = `<div class="fm-scroll"><div class="fm-stage">${houseInBg(h.id)}
+      ${rooms.map((r, i) => { const q = farmPos(`hr:${h.id}:${i}`), e = r && findEntry(r.c), w = roomWhole(r), full = r && bondFull(r.c);
+        return `<button class="fm-spot hr-spot ${e ? 'r' + e.rarity : 'empty'} ${roomSel === i ? 'on' : ''}" data-hr="${i}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col}" aria-label="Room ${i + 1}${e ? `: ${esc(e.name)}` : ', empty'}">
+          ${w >= 1 ? `<span class="fm-bubble">${curIcon('bondheart')}</span>` : ''}
+          <span class="hr-card ${e ? 'r' + e.rarity : ''}">${e ? `<img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}>` : `<span class="hr-plus">${icon('plus')}</span>`}</span>
+          <span class="fm-label"><b>${e ? esc(e.name) : `Room ${i + 1}`}</b><span>${e ? (full ? 'Max bond' : `<b id="hrs-${i}">${fmt(w)}</b> / ${fmt(HOUSE_BOND)} ${curIcon('bondheart')}`) : 'Empty · move someone in'}</span></span></button>`; }).join('')}
+    </div></div>
+    <div class="fm-top"><button class="cs-back" id="hsOut">${icon('back')}Houses</button><h2 class="ts">${esc(h.name)}</h2>${infoBtn('house', 'How houses work')}<span class="fm-rate ts">${n} / ${h.slots} living here · ${fmt(n * HOUSE_BOND)} ${curIcon('bondheart')} / day</span></div>
+    <div class="fm-cur">${['coins', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
+    ${owned.length > 1 ? `<button class="fm-switch left" id="hsPrev" aria-label="Previous house">${icon('back')}<b>${esc(owned[(oi - 1 + owned.length) % owned.length].name)}</b></button><button class="fm-switch right" id="hsNext" aria-label="Next house"><b>${esc(owned[(oi + 1) % owned.length].name)}</b>${icon('back')}</button>` : ''}
+    <button class="btn gold fm-all" id="hsCol" ${stored >= 1 ? '' : 'disabled'}>${curIcon('bondheart')}Collect ${stored >= 1 ? fmt(stored) + ' bond' : ''}</button>
+    ${roomSel >= 0 && roomSel < rooms.length ? `<aside class="fm-panel glass-deep" id="fmPanel">${roomPanel(h, roomSel)}</aside>` : ''}`;
+  houseSeen = h.id + ':' + rooms.map(r => roomWhole(r) >= 1 ? 1 : 0).join('');
+  $('#hsOut').onclick = () => { houseIn = null; roomSel = -1; renderFarm(); };
+  const pv = $('#hsPrev'), nx = $('#hsNext');
+  if (pv) pv.onclick = () => enterHouse(owned[(oi - 1 + owned.length) % owned.length].id);
+  if (nx) nx.onclick = () => enterHouse(owned[(oi + 1) % owned.length].id);
+  $('#hsCol').onclick = () => houseCollectUI([h.id]);
+  fmEl.querySelectorAll('[data-hr]').forEach(b => b.onclick = e => { e.stopPropagation(); const i = +b.dataset.hr; roomSel = roomSel === i ? -1 : i; housePick = rooms[i] ? -1 : i; renderFarm(); });
+  fmEl.querySelector('.fm-stage').onclick = () => { if (roomSel >= 0) { roomSel = -1; housePick = -1; renderFarm(); } };
+  const pn = $('#fmPanel'); if (!pn) return;
+  pn.querySelector('[data-fmx]').onclick = () => { roomSel = -1; housePick = -1; renderFarm(); };
+  const rc = $('#hrCol'); if (rc) rc.onclick = () => houseCollectUI([h.id]);
+  const ro = $('#hrOut'); if (ro) ro.onclick = () => { const e = rooms[roomSel] && findEntry(rooms[roomSel].c); setRoom(h.id, roomSel, null); housePick = roomSel; renderFarm(); if (e) toast(`${e.name} moved out of the ${h.name}.`); };
+  const rs = $('#hrSwap'); if (rs) rs.onclick = () => { housePick = housePick === roomSel ? -1 : roomSel; renderFarm(); };
+  pn.querySelectorAll('[data-hpick]').forEach(b => b.onclick = () => { const cid = b.dataset.hpick, e = findEntry(cid); setRoom(h.id, roomSel, cid); housePick = -1; renderFarm(); toast(`${e ? e.name : 'They'} moved into the ${h.name}.`); });
+}
+function roomPanel(h, i) {
+  const r = houseRooms(h.id)[i], e = r && findEntry(r.c), list = expChars();
+  const picker = housePick === i ? `<span class="lbl-sm">Who moves into room ${i + 1}?</span>
+      <div class="ex-pick">${list.map(x => { const at = houseWhere(x.id), here = e && e.id === x.id;
         return `<button class="ex-pc r${x.rarity} ${here ? 'on' : ''}" data-hpick="${esc(x.id)}" ${here ? 'disabled' : ''} title="${esc(x.name)}${at ? ` · lives in the ${esc(at.name)}` : ''}${bondFull(x.id) ? ' · max bond' : ''}"><span class="ex-av r${x.rarity}">${thumbImg(x)}</span><small>${esc(x.name)}</small>${at ? `<em>${esc(at.name)}</em>` : bondFull(x.id) ? '<em>Max bond</em>' : ''}</button>`; }).join('') || '<p class="tiny">You don\'t own any characters yet.</p>'}</div>
       <span class="tiny">Picking someone who lives in another house moves them here.</span>` : '';
-    body = `<div class="hs-rooms">${rooms.map(room).join('')}</div>${picker}
-      <button class="btn gold" id="hsCol" ${stored >= 1 ? '' : 'disabled'}>${curIcon('bondheart')}Collect ${stored >= 1 ? fmt(stored) + ' bond' : ''}</button>`;
-  }
-  return `<div class="fm-ph" style="--fc:${h.col}"><div><b>${esc(h.name)}</b><span class="farm-lv">${h.slots} room${h.slots > 1 ? 's' : ''} · ${fmt(HOUSE_BOND)} bond / day each${own ? '' : ' · not owned'}</span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
+  let body;
+  if (e) {
+    const full = bondFull(e.id), w = roomWhole(r), pct = Math.min(100, (r.acc || 0) / HOUSE_BOND * 100);
+    body = `<div class="ex-who"><span class="ex-av big r${e.rarity}">${thumbImg(e)}</span><b>${esc(e.name)}</b><span class="tiny">${bondTag(e.id, 'sm')} Bond level ${bondLv(e.id)}${full ? ' · max' : ''}</span></div>
+      <div class="farm-up"><span class="lbl-sm">${full ? 'Max bond reached: nothing more to earn' : `Stored bond · ${fmt(HOUSE_BOND)} a day, up to one day`}</span><span class="bar"><i id="hrb-${i}" style="width:${full ? 100 : pct}%"></i></span><span class="tiny" id="hrl-${i}">${full ? 'Move them out to make room for someone else' : `${fmt(w)} / ${fmt(HOUSE_BOND)} bond EXP`}</span></div>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" id="hrCol" ${houseStored(h.id) >= 1 ? '' : 'disabled'}>${curIcon('bondheart')}Collect</button><button class="btn ghost" id="hrSwap">${icon('swap')}Swap resident</button><button class="btn ghost" id="hrOut">${icon('close')}Move out</button></div>${picker}`;
+  } else body = `<p class="tiny">This room is empty. A character living here earns ${fmt(HOUSE_BOND)} bond EXP a day.</p>${picker}`;
+  return `<div class="fm-ph" style="--fc:${h.col}"><div><b>Room ${i + 1}</b><span class="farm-lv">${esc(h.name)} · ${e ? 'occupied' : 'empty'}</span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
     <div style="--fc:${h.col}" class="stack">${body}</div>`;
 }
 function updateHouseLive() {
   houseTick();
-  const seen = HOME_HOUSES.map(h => houseStored(h.id) >= 1 ? 1 : 0).join('');
+  const h = houseIn && houseOf(houseIn);
+  const seen = h ? h.id + ':' + houseRooms(h.id).map(r => roomWhole(r) >= 1 ? 1 : 0).join('') : 'map:' + HOME_HOUSES.map(x => houseStored(x.id) >= 1 ? 1 : 0).join('');
   if (seen !== houseSeen) { renderFarm(); renderMenu(); return; }
-  HOME_HOUSES.forEach(h => { const s = $('#hss-' + h.id); if (s) s.textContent = fmt(houseStored(h.id));
-    houseRooms(h.id).forEach((r, i) => { const b = $(`#hsb-${h.id}-${i}`); if (b && r && !bondFull(r.c)) b.style.width = Math.min(100, (r.acc || 0) / HOUSE_BOND * 100) + '%'; }); });
-  const c = $('#hsCol'); if (c && fmSel) { const n = houseStored(fmSel); c.disabled = n < 1; c.innerHTML = `${curIcon('bondheart')}Collect ${n >= 1 ? fmt(n) + ' bond' : ''}`; }
+  if (!h) { HOME_HOUSES.forEach(x => { const s = $('#hss-' + x.id); if (s) s.textContent = fmt(houseStored(x.id)); }); return; }
+  houseRooms(h.id).forEach((r, i) => { if (!r || bondFull(r.c)) return; const w = roomWhole(r), s = $('#hrs-' + i), b = $('#hrb-' + i), l = $('#hrl-' + i);
+    if (s) s.textContent = fmt(w); if (b) b.style.width = Math.min(100, (r.acc || 0) / HOUSE_BOND * 100) + '%'; if (l) l.textContent = `${fmt(w)} / ${fmt(HOUSE_BOND)} bond EXP`; });
+  const c = $('#hsCol'); if (c) { const n = houseStored(h.id); c.disabled = n < 1; c.innerHTML = `${curIcon('bondheart')}Collect ${n >= 1 ? fmt(n) + ' bond' : ''}`; }
 }
 ICONS.home = ICONS.home || '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>';
+ICONS.swap = ICONS.swap || '<path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/>';
