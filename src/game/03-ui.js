@@ -57,6 +57,7 @@ function renderMenu() {
   $('#houseDot').hidden = !houseReady();
   $('#guildDot').hidden = !guildReady();
   $('#frDot').hidden = !frReady();
+  { const on = ftuLive(); $('#hmFtu').hidden = !on; if (on) $('#ftuTime').textContent = ftuLeftTxt(); }
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();

@@ -4304,3 +4304,40 @@ button.pt-slot:hover{border-color:#fff}
 /* VIP window: active cosmetic privileges */
 .vipx-privs li.on{font-weight:700}
 .vipx-act{margin-left:auto;padding:1px 8px;border-radius:99px;font-size:10px;background:var(--cry-grad);color:var(--cry-ink);white-space:nowrap}
+/* ---------- First Top-Up offer (43-ftu.js) ---------- */
+.modal-back[data-kind=ftu] .modal{width:min(980px,calc(100vw - 24px))}
+.ftu{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.ftu-art{position:relative;min-height:340px;border-radius:20px;overflow:hidden;border:2px solid rgba(255,255,255,.6);box-shadow:0 0 0 3px rgba(197,139,255,.35),0 0 30px rgba(255,110,199,.35);background:radial-gradient(circle at 50% 35%,#5a2a8a,#140c28)}
+.ftu-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.ftu-art img.chibi{object-fit:contain}
+.ftu-art::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(10,6,24,.85));pointer-events:none}
+.ftu-who{position:absolute;left:16px;bottom:14px;z-index:1;display:flex;align-items:center;gap:8px}
+.ftu-who b{font-family:var(--display);font-size:24px;text-shadow:0 2px 8px #000}
+.ftu-side{display:grid;align-content:center;justify-items:start;gap:10px}
+.ftu-tag{padding:3px 12px;border-radius:99px;background:linear-gradient(90deg,#ff8fd0,#c58bff);color:#fff;font-family:var(--display);font-size:12px;box-shadow:0 0 12px rgba(255,110,199,.5)}
+.ftu-title{margin:0;font-family:var(--display);font-style:italic;font-size:clamp(32px,4vw,46px);line-height:1;background:var(--cry-grad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 rgba(43,24,85,.6))}
+.ftu-time{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:rgba(0,0,0,.4);font-family:var(--display);font-size:13px}
+.ftu-time .ic{width:15px;height:15px}
+.ftu-items{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.ftu-it{display:grid;justify-items:center;gap:3px;text-align:center}
+.ftu-it .inv-cell{width:72px;height:72px}
+.ftu-it b{font-family:var(--display);font-size:15px}
+.ftu-it small{font-size:10px;opacity:.75}
+.ftu-card{position:relative;width:78px;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:2px solid #e7b8ff;box-shadow:0 0 14px rgba(197,139,255,.6)}
+.ftu-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.ftu-card .rtag{position:absolute;left:4px;top:4px;transform:scale(.8);transform-origin:left top}
+.ftu-val{padding:3px 10px;border-radius:99px;background:rgba(255,95,158,.18);border:1px solid rgba(255,95,158,.5);color:#ffb3d4;font-family:var(--display);font-size:12px}
+.ftu-buy{min-width:240px;justify-content:center;font-size:18px}
+@media (max-width:760px){.ftu{grid-template-columns:1fr}.ftu-art{min-height:220px}}
+.ftu-ban{position:relative;display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:12px 18px;min-height:74px;border-radius:16px;overflow:hidden;text-align:left;color:#fff;border:1px solid rgba(255,170,220,.55);background:linear-gradient(100deg,#2a0f3e,#4a1a6e 55%,#7a2a8a);box-shadow:0 0 18px rgba(255,110,199,.25)}
+.ftu-ban img{position:absolute;right:0;top:0;width:45%;height:100%;object-fit:cover;object-position:50% 25%;-webkit-mask:linear-gradient(90deg,transparent,#000 45%);mask:linear-gradient(90deg,transparent,#000 45%);opacity:.85}
+.ftu-ban-t{position:relative;display:grid;gap:2px}
+.ftu-ban-t b{font-family:var(--display);font-style:italic;font-size:20px;background:var(--cry-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ftu-ban-t small{font-size:12px;opacity:.9}
+.ftu-ban-r{position:relative;margin-left:auto;display:grid;justify-items:end;gap:4px}
+.ftu-ban-r em{font-style:normal;display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:99px;background:rgba(0,0,0,.45)}
+.ftu-ban-r em .ic{width:13px;height:13px}
+.ftu-ban-p{padding:6px 18px;border-radius:99px;background:var(--cry-grad);color:var(--cry-ink);font-family:var(--display);font-size:15px}
+.hm-ftu .evo{animation:ftuPulse 2s ease-in-out infinite}
+@keyframes ftuPulse{0%,100%{box-shadow:0 0 0 2px rgba(255,143,208,.6),0 6px 16px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 3px rgba(255,143,208,.9),0 0 22px rgba(255,110,199,.8)}}
+.hm-ftu .el{white-space:nowrap}

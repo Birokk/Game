@@ -431,6 +431,7 @@ function renderBannersTab() {
           <input type="checkbox" data-std="${esc(u.id)}" ${u.standard ? 'checked' : ''} aria-label="${esc(u.name)} on the permanent banner"><i></i></label>`).join('') : '<div class="empty">No URs yet. Add some in the Game pool tab.</div>'}</div>
       <p class="tiny">All ${pullableSSRs().length} pullable SSRs appear on the Limited, Weekly and Permanent banners.</p>
     </section>
+    ${ftuAdminHTML()}
     <section class="stack" style="align-content:start">
       <div><h3>UR selector</h3><p class="tiny">The permanent banner's milestones give a random permanent UR at 100, 200, 400 and 500 pulls and a UR selector at 300 and 600, where the player chooses one of these characters. Tap to switch them on; with none chosen, every permanent UR character is offered.</p></div>
       <div class="row" style="flex-wrap:wrap;gap:6px">${chars.map(u => { const on = (S.banners.standard.sel || []).includes(u.id); return `<button type="button" class="chip ${on ? 'on' : ''}" data-selur="${esc(u.id)}">${on ? '✓ ' : ''}${esc(u.name)}</button>`; }).join('') || '<span class="tiny">No UR characters yet.</span>'}</div>
@@ -452,6 +453,7 @@ function renderBannersTab() {
       <p class="tiny">${pullableSkins(5).length} UR and ${pullableSkins(4).length} SSR outfits are on this banner.</p>
     </section>
   </div>`;
+  bindFtuAdmin();
   document.querySelectorAll('[data-selur]').forEach(b => b.onclick = () => { const id = b.dataset.selur, cur = S.banners.standard.sel || []; S.banners.standard.sel = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]; persist(); renderBannersTab(); });
   $('#bnBgName').oninput = e => { S.banners.beginner.name = e.target.value.trim() || BANNER_DEFAULT_NAME.beginner; persist(); };
   document.querySelectorAll('[data-bgpick]').forEach(sel => sel.onchange = () => { const p = [...(S.banners.beginner.picks || [])]; p[+sel.dataset.bgpick] = sel.value || null; S.banners.beginner.picks = p.slice(0, 3); persist(); renderMenu(); });
