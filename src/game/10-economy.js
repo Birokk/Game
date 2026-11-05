@@ -76,7 +76,10 @@ function spinSlices() {
 function openSpin() {
   const SL = spinSlices();
   const conic = SPIN.map((s, i) => `${s.jackpot ? '#f2b8ee' : i % 2 ? '#2c2560' : '#4a2f7e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
-  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="stack" style="justify-items:center">
+  const art = MEDIA.get('spin:art');
+  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="spin-lay"><div class="spin-art">${art ? `<img src="${art}" alt="">` : MCAL_ART}<div class="mcal-hd"><b>Daily Spin</b><span>${spinsPerDay()} spin${spinsPerDay() > 1 ? 's' : ''} a day · resets at midnight</span></div>
+      <div class="spin-art-ft">${SPIN.slice().sort((a, b) => a.w - b.w).slice(0, 3).map(s => `<span>${curIcon(s.give)}${spinName(s)}</span>`).join('')}</div></div>
+    <div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
       <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">
         ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
@@ -85,7 +88,7 @@ function openSpin() {
     <div class="tiny" id="spinNote">${spinNoteText()}</div>
     <div class="row" style="justify-content:center;gap:8px"><span class="tiny">Chances</span><button type="button" class="cs-info" id="spinInfo" aria-label="Spin chances">${icon('info')}</button></div>
     <div class="spin-odds" id="spinOdds" hidden>${SPIN.map(s => `<span>${curIcon(s.give)}${spinName(s)}</span><b>${s.w}%</b>`).join('')}</div>
-  </div>`, onMount: () => {
+  </div></div>`, onMount: () => {
     $('#spinInfo').onclick = () => { const o = $('#spinOdds'); o.hidden = !o.hidden; };
     $('#spinGo').onclick = () => {
       if (!spinReady()) return;

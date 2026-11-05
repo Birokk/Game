@@ -139,7 +139,7 @@ function petArtPicker(p) {
 function petTabHTML(c) {
   const eq = petEqOf(c.id), n = S.pool.filter(e => e.type === 'pet' && owns(e.id)).reduce((t, p) => t + (S.owned[p.id] || 0), 0);
   return `<div class="lbl-sm">Pet · ${eq ? '1' : '0'}/1 with ${esc(c.name)}</div>
-    <button class="pt-slot ${eq ? 'full r' + eq.rarity : ''}" id="petSlot" aria-label="Choose a pet">${eq ? petCard(eq, petEqStar(c.id)) + pgBadge(petEqGrade(c.id)) : `<span class="mem-empty">${icon('paw')}<span class="tiny">Tap to choose a pet</span></span>`}</button>
+    <button class="pt-slot ${eq ? 'full r' + eq.rarity + ' ' + pet6(petEqStar(c.id), eq.rarity) : ''}" id="petSlot" aria-label="Choose a pet">${eq ? petCard(eq, petEqStar(c.id)) + pgBadge(petEqGrade(c.id)) : `<span class="mem-empty">${icon('paw')}<span class="tiny">Tap to choose a pet</span></span>`}</button>
     ${eq ? petArtPicker(eq) : ''}
     <div class="row" style="gap:8px">${eq ? '<button class="btn ghost sm" id="petOff">Send the pet away</button>' : ''}<button class="btn ghost sm" id="petFuse">${icon('fuse')}Fuse pets</button></div>
     <p class="tiny">${n ? `You have ${n} pet${n === 1 ? '' : 's'}. ` : ''}Tap the slot to pick one. Each copy can be with one character at a time; fuse two copies of the same pet for a star.</p>`;

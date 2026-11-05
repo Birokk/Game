@@ -18,6 +18,61 @@ const TOPUP = [[6, '0.99'], [30, '4.99'], [98, '14.99'], [198, '29.99'], [328, '
 /* bonus pearls: the first purchase of each pack is doubled, later ones give +10%; the $0.99 pack has no bonus (S.topupFirst = [pack indices bought]) */
 const topupBonus = i => { const [n, usd] = TOPUP[i]; if (usd === '0.99') return { n: 0, first: false }; const first = !(S.topupFirst || []).includes(i); return { n: first ? n : Math.round(n * .1), first }; };
 const TOPUP_FREE = true;   // testing: Top Up packs are free (no real payments yet)
+/* Top Up → Daily / Weekly / Monthly packs: a free gift every reset plus paid bundles that beat the base 6 pearls per $1
+   (PEARLS_PER_USD) and add character fragments, UR memory tickets and stamina bottles. Each pack can be bought `limit`
+   times per reset (daily = local midnight, weekly = Monday, monthly = the 1st). State S.packs[kind] = {key, got: {id: n}}. */
+const PEARLS_PER_USD = 6;
+const PACKS = {
+  daily: { label: 'Daily', key: () => dayKey(), list: [
+    { id: 'free', name: 'Daily Gift', usd: 0, items: { coins: 2000, bottles: 1, cfssr: 1 } },
+    { id: 'd1', name: 'Morning Pearls', usd: 0.99, limit: 1, items: { pearls: 10, bottles: 1 } },
+    { id: 'd2', name: 'Lantern Bundle', usd: 2.99, limit: 1, items: { pearls: 30, cfssr: 2, bottles: 2 } },
+    { id: 'd3', name: 'Tide Bundle', usd: 4.99, limit: 1, items: { pearls: 50, cfur: 1, cfssr: 3, bottles: 3 } },
+    { id: 'd4', name: 'Pearl Chest', usd: 9.99, limit: 1, items: { pearls: 110, cfur: 2, cfssr: 4, bottles: 5 } }] },
+  weekly: { label: 'Weekly', key: () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dayKey(d); }, list: [
+    { id: 'free', name: 'Weekly Gift', usd: 0, items: { pearls: 5, cfssr: 3, bottles: 2 } },
+    { id: 'w1', name: 'Week Starter', usd: 4.99, limit: 1, items: { pearls: 45, cfssr: 3, bottles: 3 } },
+    { id: 'w2', name: 'Explorer Pack', usd: 9.99, limit: 1, items: { pearls: 95, cfur: 2, cfssr: 5, bottles: 5 } },
+    { id: 'w3', name: 'Voyager Pack', usd: 19.99, limit: 1, items: { pearls: 200, memtk: 1, cfur: 4, cfssr: 6, bottles: 8 } },
+    { id: 'w4', name: "Captain's Hoard", usd: 49.99, limit: 1, items: { pearls: 520, memtk: 2, cfur: 10, cfssr: 12, bottles: 15 } }] },
+  monthly: { label: 'Monthly', key: () => monthKey(), list: [
+    { id: 'free', name: 'Monthly Gift', usd: 0, items: { pearls: 15, cfur: 2, bottles: 3 } },
+    { id: 'm1', name: 'Moon Pack', usd: 9.99, limit: 1, items: { pearls: 100, cfur: 3, cfssr: 5, bottles: 10 } },
+    { id: 'm2', name: 'Tidal Treasure', usd: 29.99, limit: 1, items: { pearls: 320, memtk: 1, cfur: 8, cfssr: 10, bottles: 15 } },
+    { id: 'm3', name: 'Starlit Vault', usd: 49.99, limit: 1, items: { pearls: 550, memtk: 2, cfur: 15, cfssr: 20, bottles: 20 } },
+    { id: 'm4', name: 'Sovereign Trove', usd: 99.99, limit: 1, items: { pearls: 1150, memtk: 4, cfur: 30, cfssr: 40, bottles: 40 } }] } };
+const TOP_SUBS = [['pearls', 'Pearls'], ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']];
+let topSub = 'pearls';
+function packState(kind) { S.packs = S.packs || {}; const k = PACKS[kind].key(); if (!S.packs[kind] || S.packs[kind].key !== k) S.packs[kind] = { key: k, got: {} }; return S.packs[kind]; }
+const packLeft = (kind, pk) => (pk.usd ? pk.limit || 1 : 1) - (packState(kind).got[pk.id] || 0);
+const packFreeReady = kind => packLeft(kind, PACKS[kind].list[0]) > 0;
+const packsReady = () => ['daily', 'weekly', 'monthly'].some(packFreeReady);
+function packResetTxt(kind) {
+  const n = new Date(); let r;
+  if (kind === 'daily') { r = new Date(n); r.setHours(24, 0, 0, 0); }
+  else if (kind === 'weekly') { r = new Date(n); r.setHours(0, 0, 0, 0); r.setDate(r.getDate() + (8 - r.getDay()) % 7 || 7); }
+  else r = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+  return `Resets in ${dhLeft(r - n)}`;
+}
+function packsHTML(kind) {
+  const P = PACKS[kind];
+  return `<div class="pk-head"><span class="pk-reset">${icon('clock')}${packResetTxt(kind)}</span><span class="tiny">Base rate ${PEARLS_PER_USD} pearls per $1 · every pack below beats it${TOPUP_FREE ? ' · free while testing' : ''}</span></div>
+    <div class="pk-grid">${P.list.map(pk => { const left = packLeft(kind, pk), val = pk.usd ? Math.round((pk.items.pearls || 0) / (pk.usd * PEARLS_PER_USD) * 100 - 100) : 0;
+      return `<div class="pk ${pk.usd ? '' : 'free'} ${left > 0 ? '' : 'out'}">
+        <div class="pk-top"><b>${esc(pk.name)}</b>${pk.usd ? `<span class="pk-val">+${val}% value</span>` : '<span class="pk-val free">FREE</span>'}</div>
+        <div class="pk-items">${Object.entries(pk.items).map(([k, n]) => bpItem(k, n)).join('')}</div>
+        <div class="pk-ft"><span class="tiny">${pk.usd ? `${left} / ${pk.limit || 1} left · +${fmt(Math.round(pk.usd * VIP_PER_USD))} VIP EXP` : left > 0 ? 'Claim once per reset' : 'Claimed · come back after the reset'}</span>
+          ${left <= 0 ? `<button class="mall-buy" disabled>${pk.usd ? 'Sold out' : 'Claimed'}</button>` : pk.usd ? (TOPUP_FREE ? `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">$${pk.usd} · Free test</button>` : `<button class="mall-buy" disabled>$${pk.usd} · Soon</button>`) : `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">Claim</button>`}</div></div>`; }).join('')}</div>`;
+}
+function buyPack(kind, id) {
+  const pk = PACKS[kind].list.find(x => x.id === id); if (!pk || packLeft(kind, pk) <= 0) return;
+  if (pk.usd && !TOPUP_FREE) return;
+  const st = packState(kind); st.got[id] = (st.got[id] || 0) + 1;
+  Object.entries(pk.items).forEach(([k, n]) => { S.wallet[k] = (S.wallet[k] || 0) + n; });
+  const got = { ...pk.items }; if (pk.usd) { vipFromUsd(pk.usd); got.vip = Math.round(pk.usd * VIP_PER_USD); }
+  persist(); renderMenu(); refreshSummon(); renderShop();
+  showRewards(pk.name, got, pk.usd ? `${PACKS[kind].label} pack · $${pk.usd}${TOPUP_FREE ? ' · free while testing' : ''}` : `${PACKS[kind].label} free gift`);
+}
 let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
 const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
@@ -25,6 +80,7 @@ function openShop(tab) {
   closeModal();
   if (tab === 'monthly' || tab === 'dust') { tab = 'exchange'; exSub = 'seaweeds'; }   // monthly pulls live in the Seaweeds exchange
   if (tab && tab.startsWith('points')) tab = 'points';
+  else if (['daily', 'weekly', 'monthly'].includes(tab)) { topSub = tab; tab = 'topup'; }
   else if (tab === 'frags') { tab = 'exchange'; exSub = 'frags'; }
   else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
@@ -40,7 +96,7 @@ function renderShop() {
   const item = (id, ic, name, sub, price, cur, extra = '', r = 4) => `<div class="mall-item ${extra}"><span class="mall-ic r${r}">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
     <button class="mall-buy ${W[cur] >= price && !extra.includes('soldout') ? 'ok' : ''}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   const tab = SHOP_TABS.find(t => t[0] === shopTab);
-  let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
+  let strip = shopTab === 'topup' ? TOP_SUBS.map(([k, l]) => `<button class="mall-pill ${k === topSub ? 'on' : ''}" data-topsub="${k}">${l}${k !== 'pearls' && packFreeReady(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('') : shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
     const e = hotSub === 'skins' && shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
@@ -57,7 +113,8 @@ function renderShop() {
       <div class="mall-skins">${list.map(x => { const par = findEntry(x.parent), own = owns(x.id);
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
-  } else if (shopTab === 'topup') {
+  } else if (shopTab === 'topup' && topSub !== 'pearls') body = packsHTML(topSub);
+  else if (shopTab === 'topup') {
     body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
       <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b>${(() => { const bo = topupBonus(i); return bo.n ? `<span class="tu-bonus ${bo.first ? 'first' : ''}">${bo.first ? 'First purchase ×2' : '+10% bonus'} · +${fmt(bo.n)}</span>` : '<span class="tu-bonus none">No bonus</span>'; })()}<span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
@@ -89,7 +146,7 @@ function renderShop() {
   shopEl.innerHTML = `<div class="mall-word">SHOP</div>
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
       <div class="inv-cur">${(shopTab === 'points' ? ['spt', 'sptp', 'pearls'] : shopTab === 'exchange' && exSub === 'frags' ? ['cfssr', 'cfur', 'pearls'] : ['pearls', 'starlight', 'dust']).map(k => `<div class="cur">${curIcon(k)}<b>${fmt(k === 'spt' ? PT_FEAT.reduce((a, b) => a + ptOf(b), 0) : k === 'sptp' ? ptOf('perm') : W[k] || 0)}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
-    <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b></button>`).join('')}</aside>
+    <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b>${k === 'topup' && packsReady() ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</aside>
     <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && hotSub === 'pass' ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
     <p class="mall-foot">Please spend responsibly.</p>`;
   $('#shopClose').onclick = closeShop;
@@ -103,6 +160,8 @@ function renderShop() {
     S.wallet.pearls += n + bo.n; if (bo.first) S.topupFirst = [...(S.topupFirst || []), i];
     const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop();
     showRewards('Top Up', { pearls: n + bo.n, vip: vx }, `${fmt(n)} pearls${bo.n ? ` + ${fmt(bo.n)} bonus (${bo.first ? 'first purchase ×2' : '+10%'})` : ''} · free while testing`); });
+  shopEl.querySelectorAll('[data-topsub]').forEach(b => b.onclick = () => { topSub = b.dataset.topsub; renderShop(); });
+  shopEl.querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.pack.split('|'); buyPack(k, id); });
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
   shopEl.querySelectorAll('[data-frag]').forEach(b => b.onclick = () => fragBuy(b.dataset.frag));
   shopEl.querySelectorAll('[data-ptbuy]').forEach(b => b.onclick = () => { const [src, id] = b.dataset.ptbuy.split('|'); confirmPtBuy(src, id); });

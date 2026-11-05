@@ -3873,3 +3873,37 @@ button.pt-slot:hover{border-color:#fff}
 .modal-back[data-kind=fuse] .fu>.tabs.fu-subs.fu-mini .tab{font-size:13px;padding:6px 12px;opacity:.95}
 .inv-medal .pg-badge{display:none}
 .inv-hero .inv-pgr{font-size:13px;padding:2px 9px;vertical-align:middle;margin-left:6px}
+/* pet slot on the character's Pet tab: 6★ animated border too */
+.pt-slot.pet6::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:3px;z-index:3;pointer-events:none;
+  background:conic-gradient(from var(--mfa),transparent 0 22%,#ff6ec7 36%,#fff 40%,transparent 44% 72%,#3ee6d0 86%,#fff 90%,transparent 94%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:mfSpin 2.6s linear infinite}
+.pt-slot.pet6.r4::after{background:conic-gradient(from var(--mfa),transparent 0 22%,#ffb067 36%,#fff 40%,transparent 44% 72%,#ff7a1a 86%,#fff 90%,transparent 94%)}
+.pt-slot.pet6.r5{border-color:#ff6ec7;box-shadow:0 0 16px rgba(255,110,199,.55)}.pt-slot.pet6.r4{border-color:#ffb067;box-shadow:0 0 16px rgba(255,150,60,.55)}
+/* daily spin: art panel on the left, wheel on the right */
+.modal-back[data-kind=spin] .modal{width:min(900px,100%)}
+.spin-lay{display:grid;grid-template-columns:minmax(200px,38%) minmax(0,1fr);gap:18px;align-items:stretch}
+.spin-art{position:relative;border-radius:16px;overflow:hidden;min-height:360px;background:#1a0f30;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.spin-art img,.spin-art .mcal-def{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.spin-art-ft{position:absolute;left:10px;right:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.spin-art-ft span{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:rgba(10,6,24,.75);border:1px solid rgba(255,255,255,.18);font-size:11px}
+.spin-art-ft .cic{width:15px;height:15px}
+@media (max-width:720px){.spin-lay{grid-template-columns:1fr}.spin-art{min-height:150px}}
+/* Top Up → Daily / Weekly / Monthly packs */
+.pk-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px}
+.pk-reset{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-family:var(--display);font-size:13px}
+.pk-reset .ic{width:14px;height:14px}
+.pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pk{display:grid;gap:10px;padding:12px;border-radius:16px;background:linear-gradient(160deg,rgba(80,40,140,.45),rgba(20,14,40,.85));border:1.5px solid rgba(200,160,255,.3)}
+.pk.free{background:linear-gradient(160deg,rgba(40,140,110,.4),rgba(14,24,30,.85));border-color:rgba(120,240,190,.4)}
+.pk.out{opacity:.55}
+.pk-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pk-top b{font-family:var(--display);font-weight:400;font-size:18px}
+.pk-val{padding:2px 9px;border-radius:999px;background:linear-gradient(90deg,#ff5d8f,#ff8a5c);font-family:var(--body);font-weight:900;font-size:11px;white-space:nowrap}
+.pk-val.free{background:linear-gradient(90deg,#3fd47e,#7ff0c0);color:#06301d}
+.pk-items{display:flex;flex-wrap:wrap;gap:6px}
+.pk-items .inv-cell{width:64px}
+.pk-ft{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pk-ft .mall-buy{white-space:nowrap}
+.mall-pill{position:relative}.mall-pill .dot-n{top:-2px;right:-2px}
+.evp-item{position:relative}
+.pk{display:flex;flex-direction:column}.pk-ft{margin-top:auto}
