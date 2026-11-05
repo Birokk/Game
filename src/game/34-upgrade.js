@@ -79,7 +79,7 @@ function upPetCopy(id, i) {
   openUpgradePop({ title: 'Pet stars', target: { r: p.rarity, pic: petCellPic(p), name: p.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: Math.min(6, MAX_STARS - tgt.st), cands,
     stars: st => starRow(st, false), note: 'Each copy you add gives +1★ and is gone after fusing, whatever its stars.',
     onFuse: keys => { const cps2 = petCopies(id), t = cps2[i], feeds = keys.map(k => cps2[+k]).filter(f => f && !f.who); if (!t || !feeds.length) return;
-      const arr = petCopiesSt(id), to = t.st + feeds.length; arr.splice(arr.indexOf(t.st), 1); feeds.forEach(f => arr.splice(arr.indexOf(f.st), 1)); arr.push(to); S.owned[id] -= feeds.length; S.petSt[id] = arr;
+      const arr = petCopiesSt(id), to = t.st + feeds.length; arr[t.k] = to; petRemoveCopies(id, feeds.map(f => f.k));
       if (t.who) { S.petEqSt = S.petEqSt || {}; S.petEqSt[t.who] = to; }
       persist(); refreshCharacters(); renderFuse(); if (typeof renderPets === 'function') renderPets(); if (typeof renderInventory === 'function') renderInventory(); toast(`${p.name} is now ${to}★${t.who ? ` (with ${(findEntry(t.who) || {}).name})` : ''}.`); } });
 }

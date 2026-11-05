@@ -4,48 +4,56 @@
    is lower for UR pets (PG_CHANCE); a failed try only costs the gold. Auto upgrade keeps trying until the target grade,
    the gold runs out or you press Stop, at ×1 / ×2 / ×4 speed (PG_SPEEDS). The grade will set how strong the pet's buff is
    (no buffs yet). An equipped pet's grade adds CS to its character, rising to 600 at SSS (PG_CS, "Pet grade" line in 27-score).
-   State S.petGr[petId] = grade index 0–8. */
+   Grades belong to each pet COPY (S.petGr[copy uid] = 0–8; copy ids in S.petIds, see 06-pets.js), so two copies of the
+   same pet can have different grades; the CS uses the grade of the copy the character holds (petEqGrade). */
 const PG_NAMES = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'], PG_MAX = PG_NAMES.length - 1;
 const PG_CS = [0, 40, 90, 150, 220, 300, 390, 490, 600];
 const PG_CHANCE = { 4: [.95, .85, .75, .62, .5, .38, .27, .17], 5: [.85, .74, .62, .5, .39, .29, .19, .11] };   // chance for grade g → g+1
 const PG_GOLD = { 4: [1000, 2000, 4000, 7000, 12000, 20000, 32000, 50000], 5: [1500, 3000, 6000, 10500, 18000, 30000, 48000, 75000] };
 const PG_SPEEDS = [1, 2, 4], PG_STEP_MS = 700;
-const petGrade = id => Math.max(0, Math.min(PG_MAX, (S.petGr || {})[id] || 0));
+const petGradeU = uid => Math.max(0, Math.min(PG_MAX, (S.petGr || {})[uid] || 0));
+const petEqGrade = cid => { const p = petEqOf(cid); return p ? petGradeU((S.petEqU || {})[cid]) : 0; };
+/* older saves kept one grade per pet (S.petGr[petId]): give it to that pet's best copy */
+(() => { const g = S.petGr || {}; Object.keys(g).forEach(k => { const e = findEntry(k); if (e && e.type === 'pet') { const cps = owns(k) ? petCopies(k) : []; if (cps[0]) g[cps[0].uid] = Math.max(g[cps[0].uid] || 0, g[k]); delete g[k]; } }); })();
 const pgRar = p => +p.rarity >= 5 ? 5 : 4;
-const pgChance = p => PG_CHANCE[pgRar(p)][petGrade(p.id)] || 0, pgCost = p => PG_GOLD[pgRar(p)][petGrade(p.id)] || 0;
 let pgSel = null, pgAuto = null, pgSpeed = 1, pgTarget = PG_MAX, pgLog = [];
-const pgPets = () => S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => petGrade(b.id) - petGrade(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+/* every owned pet copy: {p, st, uid, gr, who} */
+const pgCopies = () => S.pool.filter(e => e.type === 'pet' && owns(e.id)).flatMap(p => petCopies(p.id).map(cp => ({ ...cp, p }))).sort((a, b) => b.gr - a.gr || b.p.rarity - a.p.rarity || a.p.name.localeCompare(b.p.name) || b.st - a.st);
+const pgCur = () => pgCopies().find(c => c.uid === pgSel);
+const pgChance = c => PG_CHANCE[pgRar(c.p)][petGradeU(c.uid)] || 0, pgCost = c => PG_GOLD[pgRar(c.p)][petGradeU(c.uid)] || 0;
 /* one try: pay the gold, roll the chance; returns 'up' | 'fail' | 'gold' | 'max' */
-function pgTry(p) {
-  const g = petGrade(p.id); if (g >= PG_MAX) return 'max';
-  const cost = pgCost(p); if (S.wallet.coins < cost) return 'gold';
+function pgTry(c) {
+  const g = petGradeU(c.uid); if (g >= PG_MAX) return 'max';
+  const cost = pgCost(c); if (S.wallet.coins < cost) return 'gold';
   S.wallet.coins -= cost; S.petGr = S.petGr || {};
-  const ok = Math.random() < pgChance(p);
-  if (ok) S.petGr[p.id] = g + 1;
+  const ok = Math.random() < pgChance(c);
+  if (ok) S.petGr[c.uid] = g + 1;
   pgLog.unshift({ ok, from: g, to: ok ? g + 1 : g, cost }); if (pgLog.length > 8) pgLog.length = 8;
   return ok ? 'up' : 'fail';
 }
 function pgStop(msg) { clearTimeout(pgAuto); pgAuto = null; persist(); renderMenu(); if (msg) toast(msg); renderPets(); }
 function pgRun() {
-  const p = findEntry(pgSel); if (!p || !modalEl || modalEl.dataset.kind !== 'pets' || petTab !== 'grade') return pgStop();
-  if (petGrade(p.id) >= pgTarget) return pgStop(`${p.name} reached grade ${PG_NAMES[petGrade(p.id)]}.`);
-  const r = pgTry(p);
-  if (r === 'gold') return pgStop(`Not enough gold for the next try (${fmt(pgCost(p))}).`);
-  if (r === 'max') return pgStop(`${p.name} is already at grade SSS.`);
+  const c = pgCur(); if (!c || !modalEl || modalEl.dataset.kind !== 'pets' || petTab !== 'grade') return pgStop();
+  if (c.gr >= pgTarget) return pgStop(`${c.p.name} reached grade ${PG_NAMES[c.gr]}.`);
+  const r = pgTry(c);
+  if (r === 'gold') return pgStop(`Not enough gold for the next try (${fmt(pgCost(c))}).`);
+  if (r === 'max') return pgStop(`${c.p.name} is already at grade SSS.`);
   renderPets();
   pgAuto = setTimeout(pgRun, PG_STEP_MS / pgSpeed);
 }
 function petGradeHTML() {
-  const list = pgPets();
+  const list = pgCopies();
   if (!list.length) return '<div class="cs-pill">No pets yet. Hatch an egg first.</div>';
-  if (!list.some(p => p.id === pgSel)) pgSel = list[0].id;
-  const p = findEntry(pgSel), g = petGrade(p.id), max = g >= PG_MAX, cost = pgCost(p), ch = pgChance(p);
+  if (!list.some(c => c.uid === pgSel)) pgSel = list[0].uid;
+  const c = pgCur(), p = c.p, g = c.gr, max = g >= PG_MAX, cost = pgCost(c), ch = pgChance(c);
   const tOpts = PG_NAMES.map((n, i) => i > g ? `<option value="${i}" ${i === pgTarget ? 'selected' : ''}>${n}</option>` : '').join('');
   return `<div class="pg">
-    <div class="pg-list">${list.map(x => `<button class="pg-pet r${x.rarity} ${x.id === pgSel ? 'on' : ''}" data-pgsel="${esc(x.id)}" ${pgAuto ? 'disabled' : ''}><img src="${mediaArt(x) || petWide(x)}" alt=""><span class="pg-nm"><b>${esc(x.name)}</b>${rtag(x.rarity)}</span>${gradeTag(PG_NAMES[petGrade(x.id)], 'pg-g')}</button>`).join('')}</div>
+    <div class="pg-list">${list.map(x => `<button class="pg-pet r${x.p.rarity} ${x.uid === pgSel ? 'on' : ''}" data-pgsel="${x.uid}" ${pgAuto ? 'disabled' : ''}><img src="${mediaArt(x.p) || petWide(x.p)}" alt=""><span class="pg-nm"><b>${esc(x.p.name)}</b><span class="pg-sub">${rtag(x.p.rarity)}${starRow(x.st, false)}</span>${x.who ? `<small>With ${esc((findEntry(x.who) || {}).name || '')}</small>` : ''}</span>${gradeTag(PG_NAMES[x.gr], 'pg-g')}</button>`).join('')}</div>
     <div class="pg-main r${p.rarity}">
-      <div class="pg-hero"><img src="${mediaArt(p) || petWide(p)}" alt=""><div class="pg-big">${gradeTag(PG_NAMES[g], 'big')}${max ? '' : `<span class="pg-arrow">${icon('back')}</span>${gradeTag(PG_NAMES[g + 1], 'big dim')}`}</div></div>
-      <h3 class="pg-title">${esc(p.name)} ${rtag(p.rarity)}</h3>
+      <div class="pg-corner">${gradeTag(PG_NAMES[g], 'big')}<small>Grade</small></div>
+      <div class="pg-hero"><img src="${mediaArt(p) || petWide(p)}" alt="">
+        <div class="pg-info"><h3 class="pg-title">${esc(p.name)} ${rtag(p.rarity)}</h3><span class="pg-stars">${starRow(c.st, false)}</span>${c.who ? `<span class="tiny">With ${esc((findEntry(c.who) || {}).name || '')}</span>` : '<span class="tiny">Not with a character</span>'}
+          <span class="pg-next">${max ? 'Fully upgraded' : `Next grade ${gradeTag(PG_NAMES[g + 1], 'dim')}`}</span></div></div>
       <div class="pg-track">${PG_NAMES.map((n, i) => `<span class="${i <= g ? 'on' : ''}">${n}</span>`).join('')}</div>
       <div class="pg-stats">
         <div><span class="lbl-sm">Success chance</span><b>${max ? '—' : Math.round(ch * 100) + '%'}</b></div>
@@ -60,14 +68,14 @@ function petGradeHTML() {
         <div class="pg-speed" role="group" aria-label="Auto speed">${PG_SPEEDS.map(v => `<button class="${v === pgSpeed ? 'on' : ''}" data-pgspd="${v}">×${v}</button>`).join('')}</div>
         <button class="btn ${pgAuto ? 'ghost' : 'mint'}" id="pgAuto">${pgAuto ? 'Stop' : 'Auto upgrade'}</button>
       </div>`}
-      <div class="pg-log">${pgLog.length ? pgLog.map(l => `<span class="${l.ok ? 'ok' : 'no'}">${l.ok ? `Success! ${PG_NAMES[l.from]} → ${PG_NAMES[l.to]}` : `Failed at ${PG_NAMES[l.from]}`} · −${fmt(l.cost)} gold</span>`).join('') : '<span class="tiny">Each try costs gold. A failed try keeps the grade.</span>'}</div>
-      <p class="tiny">Chances per grade (${pgRar(p) === 5 ? 'UR' : 'SSR'} pets): ${PG_CHANCE[pgRar(p)].map((c, i) => `${PG_NAMES[i]}→${PG_NAMES[i + 1]} ${Math.round(c * 100)}%`).join(' · ')}. Gold: ${fmt(S.wallet.coins)}.</p>
+      <div class="pg-log">${pgLog.length ? pgLog.map(l => `<span class="${l.ok ? 'ok' : 'no'}">${l.ok ? `Success! ${PG_NAMES[l.from]} → ${PG_NAMES[l.to]}` : `Failed at ${PG_NAMES[l.from]}`} · −${fmt(l.cost)} gold</span>`).join('') : '<span class="tiny">Each copy of a pet has its own grade. Each try costs gold; a failed try keeps the grade.</span>'}</div>
+      <p class="tiny">Chances per grade (${pgRar(p) === 5 ? 'UR' : 'SSR'} pets): ${PG_CHANCE[pgRar(p)].map((x, i) => `${PG_NAMES[i]}→${PG_NAMES[i + 1]} ${Math.round(x * 100)}%`).join(' · ')}. Gold: ${fmt(S.wallet.coins)}.</p>
     </div></div>`;
 }
 function bindPetGrade(root) {
-  root.querySelectorAll('[data-pgsel]').forEach(b => b.onclick = () => { pgSel = b.dataset.pgsel; pgLog = []; const g = petGrade(pgSel); if (pgTarget <= g) pgTarget = PG_MAX; renderPets(); });
-  const one = $('#pgOne'); if (one) one.onclick = () => { const p = findEntry(pgSel), r = pgTry(p); if (r === 'gold') toast('Not enough gold.'); persist(); renderMenu(); renderPets(); };
+  root.querySelectorAll('[data-pgsel]').forEach(b => b.onclick = () => { pgSel = b.dataset.pgsel; pgLog = []; const c = pgCur(); if (c && pgTarget <= c.gr) pgTarget = PG_MAX; renderPets(); });
+  const one = $('#pgOne'); if (one) one.onclick = () => { const c = pgCur(); if (!c) return; const r = pgTry(c); if (r === 'gold') toast('Not enough gold.'); persist(); renderMenu(); renderPets(); };
   const t = $('#pgTarget'); if (t) t.onchange = () => { pgTarget = +t.value; };
   root.querySelectorAll('[data-pgspd]').forEach(b => b.onclick = () => { pgSpeed = +b.dataset.pgspd; if (pgAuto) { clearTimeout(pgAuto); pgAuto = setTimeout(pgRun, PG_STEP_MS / pgSpeed); } renderPets(); });
-  const a = $('#pgAuto'); if (a) a.onclick = () => { if (pgAuto) return pgStop(); const p = findEntry(pgSel); if (pgTarget <= petGrade(p.id)) pgTarget = PG_MAX; pgAuto = setTimeout(pgRun, 60); renderPets(); };
+  const a = $('#pgAuto'); if (a) a.onclick = () => { if (pgAuto) return pgStop(); const c = pgCur(); if (c && pgTarget <= c.gr) pgTarget = PG_MAX; pgAuto = setTimeout(pgRun, 60); renderPets(); };
 }

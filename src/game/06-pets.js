@@ -48,8 +48,22 @@ function petCopiesSt(id) {
   S.petSt = S.petSt || {};
   const a = S.petSt[id] || [], n = S.owned[id] || 0;
   while (a.length < n) a.push(0);
-  if (a.length > n) { a.sort((x, y) => y - x); a.length = n; }
+  if (a.length > n) { const ids = petUids(id, a.length), pairs = a.map((v, k) => [v, ids[k]]).sort((x, y) => y[0] - x[0]).slice(0, n); a.length = 0; pairs.forEach(p => a.push(p[0])); S.petIds[id] = pairs.map(p => p[1]); }
   S.petSt[id] = a; return a;
+}
+/* every pet copy also has a stable id (S.petIds[petId], same order as S.petSt[petId]) so its grade and holder follow it */
+const petNewUid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function petUids(id, len = (S.petSt && S.petSt[id] || []).length) {
+  S.petIds = S.petIds || {}; const ids = S.petIds[id] || [];
+  while (ids.length < len) ids.push(petNewUid());
+  if (ids.length > len) ids.length = len;
+  S.petIds[id] = ids; return ids;
+}
+/* remove copies by their index in S.petSt (highest first so the others keep their place) */
+function petRemoveCopies(id, ks) {
+  const st = petCopiesSt(id), ids = petUids(id);
+  [...ks].sort((a, b) => b - a).forEach(k => { st.splice(k, 1); const [u] = ids.splice(k, 1); if (S.petGr && u in S.petGr) delete S.petGr[u]; });
+  S.owned[id] = st.length;
 }
 // old saves: duplicates were stars (stars = copies − 1) → one copy that keeps those stars
 if (!S.petSt) { S.petSt = {}; S.pool.filter(e => e.type === 'pet').forEach(e => { const n = S.owned[e.id] || 0; if (n) { S.petSt[e.id] = [Math.min(MAX_STARS, n - 1)]; S.owned[e.id] = 1; } });
@@ -62,9 +76,9 @@ function grantEntry(item) {
   return { isNew: !prev, starUp, pearls: 0, maxed };
 }
 
-let petTab = 'hatch', petTimer = null;
+let petTab = 'mine', petTimer = null;
 function openPets(tab) {
-  petTab = tab || 'hatch';
+  petTab = tab || 'mine';
   openModal({ title: 'Pets', ic: 'heart', wide: true, kind: 'pets', body: '<div id="petRoot"></div>', onMount: () => {
     renderPets();
     clearInterval(petTimer);
@@ -86,7 +100,7 @@ function renderPets() {
   syncIncubators();
   const P = S.pets, pets = S.pool.filter(e => e.type === 'pet').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   const copies = pets.filter(e => owns(e.id)).flatMap(p => petCopies(p.id).map(cp => ({ ...cp, p })));
-  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${copies.length}</span>`], ['grade', 'Upgrade']].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  const tabs = `<nav class="tabs pt-side" aria-label="Pets">${[['mine', 'paw', `My pets <span>${copies.length}</span>`], ['hatch', 'heart', 'Hatchery'], ['grade', 'up', 'Upgrade']].map(([k, ic, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${icon(ic)}${l}</button>`).join('')}</nav>`;   // on the left: My pets, Hatchery, Upgrade
   if (petTab === 'grade') { root.innerHTML = `<div class="stack">${tabs}${petGradeHTML()}</div>`; bindPetGrade(root); root.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => { petTab = b.dataset.ptab; renderPets(); }); return; }
   if (petTab === 'mine') {
     const missing = pets.filter(e => !owns(e.id));

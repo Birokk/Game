@@ -15,7 +15,7 @@ function openFuse(r) {
 }
 function renderFuse() {
   const root = $('#fuRoot'); if (!root) return;
-  const tabs = `<div class="tabs" style="margin:0">${Object.entries(FUSE_NEXT).map(([f, t]) => `<button class="tab ${+f === fuseR ? 'on' : ''}" data-fur="${f}">${ctag(+f)} → ${ctag(t)}</button>`).join('')}<button class="tab ${fuseR === 'star' ? 'on' : ''}" data-fur="star">${ctag(5)} Stars</button><button class="tab ${fuseR === 'mem' ? 'on' : ''}" data-fur="mem">${icon('memory')} Memories</button><button class="tab ${fuseR === 'memst' ? 'on' : ''}" data-fur="memst">${icon('memory')} Memory Stars</button><button class="tab ${fuseR === 'pet' ? 'on' : ''}" data-fur="pet">${icon('paw')} Pets</button></div>`;
+  const tabs = fuseTabsHTML();
   if (fuseR === 'star') return renderStarUp(root, tabs);
   if (fuseR === 'pet') return renderPetFuse(root, tabs);
   if (fuseR === 'memst') return renderMemStarFuse(root, tabs);
@@ -46,7 +46,19 @@ function renderFuse() {
   $('#fuClear').onclick = () => { fusePot = []; renderFuse(); };
   $('#fuGo').onclick = doFuse;
 }
-function bindFuseTabs(root) { root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = ['star', 'mem', 'memst', 'pet'].includes(b.dataset.fur) ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); }); }
+/* categories on the left (Wardrobe, Memories, Pets); the chosen category's tabs along the top */
+const FU_CATS = [['wardrobe', 'wardrobe', 'Wardrobe', [[3, () => `${ctag(3)} → ${ctag(4)}`], [4, () => `${ctag(4)} → ${ctag(5)}`], ['star', () => `${ctag(5)} Stars`]]],
+  ['memory', 'memory', 'Memories', [['mem', () => 'Exchange'], ['memst', () => 'Memory Stars']]], ['pets', 'paw', 'Pets', [['pet', () => 'Pet Stars']]]];
+const fuseCat = () => FU_CATS.find(c => c[3].some(([k]) => k === fuseR)) || FU_CATS[0];
+function fuseTabsHTML() {
+  const cat = fuseCat();
+  return `<nav class="tabs fu-cats" aria-label="Fusion categories">${FU_CATS.map(c => `<button class="tab ${c === cat ? 'on' : ''}" data-fucat="${c[0]}">${icon(c[1])}${c[2]}</button>`).join('')}</nav>
+    <div class="tabs fu-subs">${cat[3].map(([k, l]) => `<button class="tab ${k === fuseR ? 'on' : ''}" data-fur="${k}">${l()}</button>`).join('')}</div>`;
+}
+function bindFuseTabs(root) {
+  root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = ['star', 'mem', 'memst', 'pet'].includes(b.dataset.fur) ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); });
+  root.querySelectorAll('[data-fucat]').forEach(b => b.onclick = () => { const c = FU_CATS.find(x => x[0] === b.dataset.fucat); fuseR = c[3][0][0]; fusePot = []; renderFuse(); });
+}
 function doFuse() {
   const to = FUSE_NEXT[fuseR], targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   if (!n || !targets.length) return;
@@ -75,11 +87,13 @@ function showFuseResults(got, spent) {
    petCopies(id) lists the copies (highest stars first) with who holds each; a holder whose copy is gone is sent away. */
 const petEqStar = cid => ((S.petEqSt || {})[cid]) || 0;
 function petCopies(id) {
-  const out = petCopiesSt(id).slice().sort((a, b) => b - a).map(st => ({ id, st, who: null }));
+  const st = petCopiesSt(id), ids = petUids(id);
+  const out = st.map((v, k) => ({ id, st: v, k, uid: ids[k], gr: petGradeU(ids[k]), who: null })).sort((x, y) => y.st - x.st || y.gr - x.gr);
   const holders = Object.keys(S.petEq || {}).filter(cid => S.petEq[cid] === id && owns(cid));
-  holders.sort((a, b) => petEqStar(b) - petEqStar(a)).forEach(cid => {
-    const c = out.find(x => !x.who && x.st === petEqStar(cid)) || out.find(x => !x.who);
-    if (c) { c.who = cid; if (c.st !== petEqStar(cid)) { S.petEqSt = S.petEqSt || {}; S.petEqSt[cid] = c.st; } } else { delete S.petEq[cid]; }
+  S.petEqU = S.petEqU || {};
+  holders.sort((x, y) => petEqStar(y) - petEqStar(x)).forEach(cid => {
+    const c = out.find(x => !x.who && x.uid === S.petEqU[cid]) || out.find(x => !x.who && x.st === petEqStar(cid)) || out.find(x => !x.who);
+    if (c) { c.who = cid; S.petEqU[cid] = c.uid; if (c.st !== petEqStar(cid)) { S.petEqSt = S.petEqSt || {}; S.petEqSt[cid] = c.st; } } else { delete S.petEq[cid]; }
   });
   return out;
 }
@@ -92,8 +106,7 @@ function petFusePlan(id) {
 }
 function fusePet(id) {
   const p = findEntry(id), plan = petFusePlan(id); if (!p || !plan) return;
-  const arr = petCopiesSt(id); arr.splice(arr.indexOf(plan.tgt.st), 1); arr.splice(arr.indexOf(plan.feed.st), 1); arr.push(plan.tgt.st + 1);
-  S.owned[id] -= 1; S.petSt[id] = arr;
+  const arr = petCopiesSt(id); arr[plan.tgt.k] = plan.tgt.st + 1; petRemoveCopies(id, [plan.feed.k]);   // the upgraded copy keeps its identity (and grade)
   if (plan.tgt.who) { S.petEqSt = S.petEqSt || {}; S.petEqSt[plan.tgt.who] = plan.tgt.st + 1; }
   persist(); refreshCharacters(); renderFuse(); if (typeof renderPets === 'function') renderPets();
   toast(`${p.name} is now ${plan.tgt.st + 1}★${plan.tgt.who ? ` (with ${(findEntry(plan.tgt.who) || {}).name})` : ''}.`);
@@ -149,7 +162,7 @@ function openPetPick(c) {
       const cp = list[+b.dataset.pp]; if (!cp || (cp.who && cp.who !== c.id)) return;
       S.petEq = S.petEq || {}; S.petEqSt = S.petEqSt || {};
       if (cp.who === c.id) { delete S.petEq[c.id]; toast(`${cp.p.name} went back to the Hatchery.`); }
-      else { S.petEq[c.id] = cp.p.id; S.petEqSt[c.id] = cp.st; toast(`${cp.p.name} (${cp.st}★) is now with ${c.name}.`); }
+      else { S.petEq[c.id] = cp.p.id; S.petEqSt[c.id] = cp.st; S.petEqU = S.petEqU || {}; S.petEqU[c.id] = cp.uid; toast(`${cp.p.name} (${cp.st}★) is now with ${c.name}.`); }
       persist(); renderCharacters(); render();
     });
   };
