@@ -12,6 +12,7 @@ document.addEventListener('click', e => {
   else if (k === 'pets') openPets();
   else if (k === 'farm') openFarm();
   else if (k === 'house') openFarm('house');
+  else if (k === 'guild') openFarm('guild');
   else if (k === 'raids') openRaids();
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();

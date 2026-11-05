@@ -133,7 +133,7 @@ function renderPets() {
           ? `<div class="inc locked buy"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + k + 1}</b><button class="btn gold sm" data-incbuy>Unlock · ${costHTML(cost)}</button></div>`
           : `<div class="inc locked"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + k + 1}</b><span class="tiny">Unlock incubator ${INCUBATORS + k} first · ${cost} pearls</span></div>`).join('')}
         <div class="inc locked soon"><span class="inc-glass">${icon('lock')}</span><b>Incubator ${INCUBATORS + INC_BUY.length + 1}</b><span class="tiny">To be updated</span></div></div></div>
-      <p class="tiny">Fragments drop from summons in place of some gold coins. Eggs also appear around the plaza: walk into one to catch it for ${EGG_STAMINA} stamina.</p>
+      <p class="tiny">Fragments drop from summons in place of some gold coins.</p>
     </div>`;
   }
   root.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => { petTab = b.dataset.ptab; renderPets(); });

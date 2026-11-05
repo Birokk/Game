@@ -86,7 +86,7 @@ function renderRanking() {
   const av = p => p.me ? `<span class="rk-av">${avatarHTML(44)}</span>` : `<span class="rk-av bot" style="--h:${p.hue}">${esc(p.name[0])}</span>`;
   const row = (p, i) => `<div class="rk-row ${p.me ? 'me' : ''} ${i < 3 ? 'top top' + (i + 1) : i < 10 ? 'top10' : ''}">
     <span class="rk-n">${i < 10 ? `<i><b>${i + 1}</b></i>` : i + 1}</span>${av(p)}
-    <span class="rk-who"><span class="rk-nm"><b class="vipn vn-${p.vip ? vipGrade(p.vip).toLowerCase() : '0'}">${esc(p.name)}</b>${p.me ? '<small>(you)</small>' : ''}${rankTitleOf(p)}</span><small>Lv ${p.lv} · UID ${p.uid}</small></span>
+    <span class="rk-who"><span class="rk-nm">${rankGuildTag(p)}<b class="vipn vn-${p.vip ? vipGrade(p.vip).toLowerCase() : '0'}">${esc(p.name)}</b>${p.me ? '<small>(you)</small>' : ''}${rankTitleOf(p)}</span><small>Lv ${p.lv} · UID ${p.uid}</small></span>
     ${T.id === 'char' ? `<span class="rk-char">${p.char ? `${thumbImg(p.char, 'rk-cimg')}<span><b>${esc(p.char.name)}</b>${gradeTag(csGrade(p.best))}</span>` : '<small>No character yet</small>'}</span>` : '<span></span>'}
     <span class="rk-val">${T.id === 'vip' ? vipBadge(p.vip, 'sm') : ''}<b>${T.show(p)}</b><small>${T.unit}</small></span></div>`;
   root.innerHTML = `<div class="rk">

@@ -36,7 +36,7 @@ function openStamina() {
   const v = stamina(), left = stamMs() - (Date.now() - S.stamina.t);
   openModal({ title: 'Stamina', ic: 'bolt', body: `<div class="stack">
     <div class="balance"><span>${curIcon('stamina')} Stamina</span><b>${v} / ${stamMax()}</b></div>
-    <p class="tiny">${v >= stamMax() ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every ${stamEvery()} up to ${stamMax()}${stamMax() > STAMINA_BASE ? ' (membership)' : ''}; bottles, refills and the farm can raise it up to ${STAMINA_CAP}. Catching an egg in the plaza costs ${EGG_STAMINA}.</p>
+    <p class="tiny">${v >= stamMax() ? 'Full. ' : `+1 in ${Math.ceil(left / 6e4)} min. `}Stamina refills 1 every ${stamEvery()} up to ${stamMax()}${stamMax() > STAMINA_BASE ? ' (membership)' : ''}; bottles, refills and the farm can raise it up to ${STAMINA_CAP}.</p>
     <div class="frag-row">${curIcon('bottles')}<div style="display:grid;flex:1"><b>Stamina recovery bottle</b><span class="tiny">Restores ${BOTTLE_STAMINA} stamina · you have ${S.wallet.bottles}</span></div>
       <button class="btn mint sm" id="useBottle" ${S.wallet.bottles ? '' : 'disabled'}>Use</button></div>
     ${(() => { const used = refillsUsed(), cost = STAMINA_REFILLS[used];

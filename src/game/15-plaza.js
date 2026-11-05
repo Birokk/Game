@@ -556,7 +556,6 @@ function drawMap(cv, cssW, cssH, opt = {}) {
   g.imageSmoothingEnabled = true;
   g.drawImage(mapBase, ox, oy, mapBase.width * sc, mapBase.height * sc);
   if (opt.follow) POIS.forEach(p => { const q = toPx(p.x, p.y); g.fillStyle = 'rgba(30,32,28,.9)'; g.beginPath(); g.arc(q.x, q.y, 4.5, 0, 7); g.fill(); g.fillStyle = p.locked ? '#ff6a5a' : '#f1ead8'; g.beginPath(); g.arc(q.x, q.y, 2, 0, 7); g.fill(); });
-  plazaEggs.forEach(e => { const p = toPx(e.x, e.y); g.fillStyle = e.r === 'ur' ? '#ff6ec7' : '#ffd36b'; ell(g, p.x, p.y - 1, 2.4, 3); });
   others().forEach(b => { const p = toPx(b.x, b.y); g.fillStyle = 'rgba(20,20,20,.7)'; ell(g, p.x, p.y, 3.2, 3.2); g.fillStyle = '#c9c2b0'; ell(g, p.x, p.y, 2.2, 2.2); });
   const pp = toPx(player.x, player.y);
   g.strokeStyle = '#e8453a'; g.lineWidth = 2.5; g.beginPath(); g.arc(pp.x, pp.y, 6.5, 0, 7); g.stroke();
@@ -717,7 +716,7 @@ function update(dt) {
     c.x += dx / dd * dt * 1.1; c.y += dy / dd * dt * 1.1; if (Math.abs(dx) > .01) c.dir = dx < 0 ? -1 : 1;
   });
   netUpdate(dt);
-  updateEggs(dt); updateFx(dt);
+  updateFx(dt);
   const k = 1 - Math.pow(.003, dt);
   cam.x += (player.x * TS - cam.x) * k; cam.y += (player.y * TS - 20 - cam.y) * k;
 }
@@ -738,24 +737,6 @@ function updateFx(dt) {
   });
   for (let i = puffs.length - 1; i >= 0; i--) { const p = puffs[i]; p.life -= dt; if (p.life <= 0) { puffs.splice(i, 1); continue; } p.y -= dt * 16; p.x += dt * 6; p.r += dt * 4; }
   for (let i = embers.length - 1; i >= 0; i--) { const p = embers[i]; p.life -= dt; if (p.life <= 0) { embers.splice(i, 1); continue; } p.x += p.vx * dt; p.y += p.vy * dt; }
-}
-
-/* catchable eggs */
-const plazaEggs = [];
-let eggTimer = 45;
-function spawnEgg() { const p = randomWalkableNear(28, 22, 22); if (p) plazaEggs.push({ x: p.x, y: p.y, r: Math.random() < .15 ? 'ur' : 'ssr', ph: Math.random() * 6 }); }
-spawnEgg(); spawnEgg();
-function updateEggs(dt) {
-  eggTimer -= dt;
-  if (eggTimer <= 0) { eggTimer = 60 + Math.random() * 90; if (plazaEggs.length < 3) spawnEgg(); }
-  if (menuOpen || tele) return;
-  for (let i = plazaEggs.length - 1; i >= 0; i--) {
-    const g = plazaEggs[i], d = Math.hypot(g.x - player.x, g.y - player.y);
-    if (d > 1.4) { g.warned = false; continue; }
-    if (d > .65 || g.warned) continue;
-    if (spendStamina(EGG_STAMINA)) { plazaEggs.splice(i, 1); S.pets.eggs.push(g.r); persist(); renderMenu(); toast(`Caught a ${EGG[g.r].name}! −${EGG_STAMINA} stamina. Hatch it in Pets.`); logChat('', `You caught a ${EGG[g.r].name}.`, '', true); }
-    else { g.warned = true; toast(`Catching an egg costs ${EGG_STAMINA} stamina. You have ${stamina()}.`); }
-  }
 }
 
 /* ---------- render ---------- */
@@ -832,13 +813,6 @@ function render() {
     if (cr.kind === 'hen') list.push({ y: cr.y * TS, d: () => drawHen(c, cr.x * TS, cr.y * TS, cr.dir, now + cr.home.x) });
     else list.push({ y: -1, d: () => drawDuck(c, (LAKE.x + Math.cos(cr.a) * LAKE.rx * .55) * TS, (LAKE.y + .6 + Math.sin(cr.a) * LAKE.ry * .45) * TS, now + cr.a) });
   });
-  plazaEggs.forEach(e => list.push({ y: e.y * TS, d: () => {
-    const x = e.x * TS, y = e.y * TS, b = Math.sin(now * 2.5 + e.ph) * 2, ur = e.r === 'ur';
-    softDot(c, x, y - 10 + b, 22, ur ? 'rgba(255,120,210,A)' : 'rgba(255,220,140,A)', .5);
-    c.fillStyle = 'rgba(10,8,4,.45)'; c.beginPath(); c.ellipse(x, y, 7, 2.8, 0, 0, 7); c.fill();
-    const eg = c.createLinearGradient(x - 6, y - 20, x + 6, y); if (ur) { eg.addColorStop(0, '#c58bff'); eg.addColorStop(.5, '#ff6ec7'); eg.addColorStop(1, '#3ee6d0'); } else { eg.addColorStop(0, '#fffaf0'); eg.addColorStop(1, '#e6c08a'); }
-    c.fillStyle = eg; c.beginPath(); c.ellipse(x, y - 9 + b, 6, 8, 0, 0, 7); c.fill();
-  } }));
   list.sort((a, b) => a.y - b.y);
   list.forEach(it => {
     if (!it.e) return it.d();
