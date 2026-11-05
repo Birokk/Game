@@ -23,6 +23,7 @@ document.addEventListener('click', e => {
   else if (k === 'honor') openHonor();
   else if (k === 'spin') openSpin();
   else if (k === 'ach') openAch();
+  else if (k === 'fuse') openFuse();
   else if (k === 'quests') openQuests();
   else if (k === 'redeem') openRedeem();
   else if (k === 'buytickets') openBuyTickets(t.dataset.tkbk);

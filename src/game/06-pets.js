@@ -86,7 +86,8 @@ function renderPets() {
   syncIncubators();
   const P = S.pets, pets = S.pool.filter(e => e.type === 'pet').sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
   const copies = pets.filter(e => owns(e.id)).flatMap(p => petCopies(p.id).map(cp => ({ ...cp, p })));
-  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${copies.length}</span>`]].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  const tabs = `<div class="tabs" style="margin:0">${[['hatch', 'Hatchery'], ['mine', `My pets <span>${copies.length}</span>`], ['grade', 'Upgrade']].map(([k, l]) => `<button class="tab ${petTab === k ? 'on' : ''}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  if (petTab === 'grade') { root.innerHTML = `<div class="stack">${tabs}${petGradeHTML()}</div>`; bindPetGrade(root); root.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => { petTab = b.dataset.ptab; renderPets(); }); return; }
   if (petTab === 'mine') {
     const missing = pets.filter(e => !owns(e.id));
     root.innerHTML = `<div class="stack">${tabs}
