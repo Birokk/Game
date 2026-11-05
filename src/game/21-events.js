@@ -74,7 +74,7 @@ function msignBoard() {
       <b>${d}</b><span class="mcal-ic">${curIcon(k)}</span><em>${n >= 1000 ? fmt(n / 1000) + 'k' : n}</em>${got ? `<span class="chk">${icon('check')}</span>` : now ? '<span class="mcal-tag">Claim</span>' : miss ? `<span class="mcal-tag">${left ? `${curIcon('pearls')}${MSIGN_PEARL}` : 'Missed'}</span>` : ''}</button>`; };
   return `<div class="mcal">
     <div class="mcal-art">${art ? `<img src="${art}" alt="">` : MCAL_ART}<div class="mcal-hd"><b>${monthName()}</b><span>${new Date().getFullYear()} · Monthly Sign-in</span></div>
-      <div class="mcal-tot">${Object.entries(MSIGN_TOTAL).map(([k, n]) => `<span>${curIcon(k)}${n >= 1000 ? fmt(n / 1000) + 'k' : n}</span>`).join('')}</div></div>
+</div>
     <div class="mcal-main"><div class="mcal-wd">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => `<span>${w}</span>`).join('')}</div>
       <div class="mcal-grid">${'<i></i>'.repeat(first)}${Array.from({ length: N }, (_, i) => cell(i + 1)).join('')}</div>
       <div class="mcal-foot"><span>Signed in <b>${m.got.length} / ${N}</b></span><span>Make-ups left <b>${left} / ${msignMakeups()}</b> · tap a missed day to sign in for ${MSIGN_PEARL} pearl</span></div></div>
@@ -161,6 +161,7 @@ function renderEventsTab() {
   p.innerHTML = `<div class="stack">
     <div class="ad-head" style="margin:0"><h3>Events</h3><div class="row"><button class="btn mint sm" id="evAdd">${icon('plus')}New event</button><button class="btn ghost sm" id="evOpen">Open events</button></div></div>
     <p class="tiny">Each event has its own wallpaper behind the event page (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the limited banner's art is used. Events with an end date disappear for players after that day.</p>
+    <div class="row" style="gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05)"><b>Daily spin art</b><span class="tiny">The picture on the left of the Daily spin window (portrait, ~600×720)</span>${MEDIA.get('spin:art') ? `<img src="${MEDIA.get('spin:art')}" alt="" style="width:48px;height:58px;object-fit:cover;border-radius:8px">` : ''}<label class="btn mint sm">${icon('upload')}${MEDIA.get('spin:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-spinup></label>${MEDIA.get('spin:art') ? '<button class="btn ghost sm" data-spindel>Default art</button>' : ''}</div>
     ${list.map(e => { const bg = MEDIA.get('ev:' + e.id), login = e.id === 'login', builtin = EV_BUILTIN.includes(e.id);
       return `<div class="ev-ad">
         <div class="ev-adprev">${(() => { const w = e.id === 'mystery' && mboxSkin() && baseArt(mboxSkin()) || bg; return w ? `<img src="${w}" alt="">` : '<span class="tiny">No wallpaper</span>'; })()}</div>
@@ -178,6 +179,8 @@ function renderEventsTab() {
   </div>`;
   bindMboxAdmin();
   p.querySelectorAll('[data-evf]').forEach(i => i.onchange = () => { const e = eventOf(i.dataset.evid); if (!e) return; e[i.dataset.evf] = i.value.trim() || null; if (i.dataset.evf === 'name' && !e.name) e.name = 'Event'; persist(); });
+  p.querySelectorAll('[data-spinup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('spin:art', await resizeImage(ev.target.files[0], 900, 'image/jpeg'))) { renderEventsTab(); toast('Daily spin art saved.'); } } catch (er) { toast(er.message, true); } });
+  p.querySelectorAll('[data-spindel]').forEach(b => b.onclick = async () => { await mediaDel('spin:art'); renderEventsTab(); });
   p.querySelectorAll('[data-mcalup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('msign:art', await resizeImage(ev.target.files[0], 900, 'image/jpeg'))) { renderEventsTab(); toast('Calendar art saved.'); } } catch (er) { toast(er.message, true); } });
   p.querySelectorAll('[data-mcaldel]').forEach(b => b.onclick = async () => { await mediaDel('msign:art'); renderEventsTab(); });
   p.querySelectorAll('[data-evmk]').forEach(i => i.onchange = () => { const e = eventOf('msign'); e.makeups = clamp(Math.floor(+i.value) || 0, 0, 28); i.value = e.makeups; persist(); });

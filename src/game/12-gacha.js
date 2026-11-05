@@ -382,7 +382,7 @@ function specialTitleHTML(B, hero) {
 }
 function specialPullHTML(bk) {
   const open = bannerOpen(bk), can = canPull(10, bk);
-  if (bk === 'beginner') return `<button class="sx-pull gold" data-pull="10" ${open ? '' : 'disabled'}>Summon 10 ${payHTML(10, bk)}<span class="sx-off">−20%</span>${can ? '<span class="dot-n"></span>' : ''}</button>`;
+  if (bk === 'beginner') { const was = payFor(10, bk).k === 'pearls' ? COST[10] : '×10'; return `<button class="sx-pull gold sx-disc-btn" data-pull="10" ${open ? '' : 'disabled'}>Summon 10 <span class="sx-off">−20%</span><span class="sx-disc"><s>${was}</s>${payHTML(10, bk)}</span>${can ? '<span class="dot-n"></span>' : ''}</button>`; }
   const st = stepIdx();
   return st >= STEP_N ? `<button class="sx-pull" disabled>All steps done</button>`
     : `<button class="sx-pull gold" data-pull="10" ${open ? '' : 'disabled'}>Step ${st + 1} · Summon 10 ${payHTML(10, bk)}${can ? '<span class="dot-n"></span>' : ''}</button>`;

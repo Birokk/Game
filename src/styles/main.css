@@ -3907,3 +3907,18 @@ button.pt-slot:hover{border-color:#fff}
 .mall-pill{position:relative}.mall-pill .dot-n{top:-2px;right:-2px}
 .evp-item{position:relative}
 .pk{display:flex;flex-direction:column}.pk-ft{margin-top:auto}
+/* summon tabs: the vignette is tinted by banner type */
+.sx-tab[data-bk=beginner]::before{background:linear-gradient(90deg,rgba(8,70,42,.88),rgba(20,120,70,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+.sx-tab[data-bk=stepup]::before{background:linear-gradient(90deg,rgba(95,55,0,.88),rgba(170,110,20,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+.sx-tab[data-bk=limited]::before{background:linear-gradient(90deg,rgba(110,10,55,.88),rgba(200,40,110,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+.sx-tab[data-bk=weekly]::before{background:linear-gradient(90deg,rgba(8,40,110,.88),rgba(30,100,200,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+.sx-tab[data-bk=skins]::before{background:linear-gradient(90deg,rgba(110,15,95,.88),rgba(220,70,180,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+.sx-tab[data-bk=memories]::before{background:linear-gradient(90deg,rgba(5,75,85,.88),rgba(30,170,170,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+.sx-tab[data-bk=standard]::before{background:linear-gradient(90deg,rgba(40,30,100,.88),rgba(110,90,210,.35) 50%,transparent 78%),linear-gradient(0deg,rgba(0,0,0,.35),transparent 50%)}
+/* Beginner Wish button: −20% centred on top, the old price crossed out next to the new one */
+.sx-pull .sx-off{left:50%;top:-12px;transform:translateX(-50%)}
+.sx-disc{display:inline-flex;align-items:center;gap:8px}
+.sx-disc s{font-family:var(--body);font-weight:900;font-size:17px;opacity:.55;text-decoration-thickness:2.5px;text-decoration-color:#d6246f}
+.sx-disc-btn{gap:10px}
+.sx-disc-btn .sx-off{position:static;transform:none;top:auto;left:auto;align-self:center;font-size:12px;line-height:1.5;padding:1px 8px}
+.pk-grid{align-items:start}

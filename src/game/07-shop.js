@@ -24,23 +24,23 @@ const TOPUP_FREE = true;   // testing: Top Up packs are free (no real payments y
 const PEARLS_PER_USD = 6;
 const PACKS = {
   daily: { label: 'Daily', key: () => dayKey(), list: [
-    { id: 'free', name: 'Daily Gift', usd: 0, items: { coins: 2000, bottles: 1, cfssr: 1 } },
-    { id: 'd1', name: 'Morning Pearls', usd: 0.99, limit: 1, items: { pearls: 10, bottles: 1 } },
-    { id: 'd2', name: 'Lantern Bundle', usd: 2.99, limit: 1, items: { pearls: 30, cfssr: 2, bottles: 2 } },
-    { id: 'd3', name: 'Tide Bundle', usd: 4.99, limit: 1, items: { pearls: 50, cfur: 1, cfssr: 3, bottles: 3 } },
-    { id: 'd4', name: 'Pearl Chest', usd: 9.99, limit: 1, items: { pearls: 110, cfur: 2, cfssr: 4, bottles: 5 } }] },
+    { id: 'free', name: 'Daily Gift', usd: 0, items: { coins: 1000, bottles: 1 } },
+    { id: 'd1', name: 'Morning Pearls', usd: 0.99, limit: 1, items: { pearls: 7, bottles: 1 } },
+    { id: 'd2', name: 'Lantern Bundle', usd: 2.99, limit: 1, items: { pearls: 20, cfssr: 1, bottles: 1 } },
+    { id: 'd3', name: 'Tide Bundle', usd: 4.99, limit: 1, items: { pearls: 34, cfssr: 2, bottles: 2 } },
+    { id: 'd4', name: 'Pearl Chest', usd: 9.99, limit: 1, items: { pearls: 70, cfur: 1, cfssr: 2, bottles: 3 } }] },
   weekly: { label: 'Weekly', key: () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dayKey(d); }, list: [
-    { id: 'free', name: 'Weekly Gift', usd: 0, items: { pearls: 5, cfssr: 3, bottles: 2 } },
-    { id: 'w1', name: 'Week Starter', usd: 4.99, limit: 1, items: { pearls: 45, cfssr: 3, bottles: 3 } },
-    { id: 'w2', name: 'Explorer Pack', usd: 9.99, limit: 1, items: { pearls: 95, cfur: 2, cfssr: 5, bottles: 5 } },
-    { id: 'w3', name: 'Voyager Pack', usd: 19.99, limit: 1, items: { pearls: 200, memtk: 1, cfur: 4, cfssr: 6, bottles: 8 } },
-    { id: 'w4', name: "Captain's Hoard", usd: 49.99, limit: 1, items: { pearls: 520, memtk: 2, cfur: 10, cfssr: 12, bottles: 15 } }] },
+    { id: 'free', name: 'Weekly Gift', usd: 0, items: { pearls: 3, cfssr: 1, bottles: 1 } },
+    { id: 'w1', name: 'Week Starter', usd: 4.99, limit: 1, items: { pearls: 33, cfssr: 2, bottles: 2 } },
+    { id: 'w2', name: 'Explorer Pack', usd: 9.99, limit: 1, items: { pearls: 68, cfur: 1, cfssr: 3, bottles: 3 } },
+    { id: 'w3', name: 'Voyager Pack', usd: 19.99, limit: 1, items: { pearls: 140, cfur: 2, cfssr: 4, bottles: 5 } },
+    { id: 'w4', name: "Captain's Hoard", usd: 49.99, limit: 1, items: { pearls: 360, memtk: 1, cfur: 4, cfssr: 6, bottles: 8 } }] },
   monthly: { label: 'Monthly', key: () => monthKey(), list: [
-    { id: 'free', name: 'Monthly Gift', usd: 0, items: { pearls: 15, cfur: 2, bottles: 3 } },
-    { id: 'm1', name: 'Moon Pack', usd: 9.99, limit: 1, items: { pearls: 100, cfur: 3, cfssr: 5, bottles: 10 } },
-    { id: 'm2', name: 'Tidal Treasure', usd: 29.99, limit: 1, items: { pearls: 320, memtk: 1, cfur: 8, cfssr: 10, bottles: 15 } },
-    { id: 'm3', name: 'Starlit Vault', usd: 49.99, limit: 1, items: { pearls: 550, memtk: 2, cfur: 15, cfssr: 20, bottles: 20 } },
-    { id: 'm4', name: 'Sovereign Trove', usd: 99.99, limit: 1, items: { pearls: 1150, memtk: 4, cfur: 30, cfssr: 40, bottles: 40 } }] } };
+    { id: 'free', name: 'Monthly Gift', usd: 0, items: { pearls: 10, cfur: 1, bottles: 2 } },
+    { id: 'm1', name: 'Moon Pack', usd: 9.99, limit: 1, items: { pearls: 68, cfur: 1, cfssr: 3, bottles: 4 } },
+    { id: 'm2', name: 'Tidal Treasure', usd: 29.99, limit: 1, items: { pearls: 210, cfur: 3, cfssr: 5, bottles: 8 } },
+    { id: 'm3', name: 'Starlit Vault', usd: 49.99, limit: 1, items: { pearls: 360, memtk: 1, cfur: 5, cfssr: 8, bottles: 10 } },
+    { id: 'm4', name: 'Sovereign Trove', usd: 99.99, limit: 1, items: { pearls: 750, memtk: 2, cfur: 10, cfssr: 15, bottles: 15 } }] } };
 const TOP_SUBS = [['pearls', 'Pearls'], ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']];
 let topSub = 'pearls';
 function packState(kind) { S.packs = S.packs || {}; const k = PACKS[kind].key(); if (!S.packs[kind] || S.packs[kind].key !== k) S.packs[kind] = { key: k, got: {} }; return S.packs[kind]; }
@@ -56,7 +56,7 @@ function packResetTxt(kind) {
 }
 function packsHTML(kind) {
   const P = PACKS[kind];
-  return `<div class="pk-head"><span class="pk-reset">${icon('clock')}${packResetTxt(kind)}</span><span class="tiny">Base rate ${PEARLS_PER_USD} pearls per $1 · every pack below beats it${TOPUP_FREE ? ' · free while testing' : ''}</span></div>
+  return `<div class="pk-head"><span class="pk-reset">${icon('clock')}${packResetTxt(kind)}</span></div>
     <div class="pk-grid">${P.list.map(pk => { const left = packLeft(kind, pk), val = pk.usd ? Math.round((pk.items.pearls || 0) / (pk.usd * PEARLS_PER_USD) * 100 - 100) : 0;
       return `<div class="pk ${pk.usd ? '' : 'free'} ${left > 0 ? '' : 'out'}">
         <div class="pk-top"><b>${esc(pk.name)}</b>${pk.usd ? `<span class="pk-val">+${val}% value</span>` : '<span class="pk-val free">FREE</span>'}</div>
