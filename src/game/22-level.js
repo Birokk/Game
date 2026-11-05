@@ -31,8 +31,8 @@ function lvReward(lv) {
 const lvClaimed = lv => (S.lvClaimed || []).includes(lv);
 const lvReady = () => { const L = playerLv().lv; for (let i = 1; i <= L; i++) if (!lvClaimed(i)) return true; return false; };
 /* shared "You got" window for claimed rewards: got = {currencyKey: amount} */
-const REW_NAMES = { coins: ['gold', 'gold'], pearls: ['pearl', 'pearls'], tickets: ['Limited ticket', 'Limited tickets'], wishes: ['Standard ticket', 'Standard tickets'], bottles: ['stamina bottle', 'stamina bottles'], exp: ['EXP', 'EXP'], starlight: ['Coral', 'Corals'], dust: ['Seaweed', 'Seaweeds'], rings: ['ring', 'rings'], memtk: ['UR memory ticket', 'UR memory tickets'], vip: ['VIP EXP', 'VIP EXP'], nametk: ['name change ticket', 'name change tickets'] };
-const REW_R = { tickets: 5, pearls: 5, starlight: 5, rings: 5, wishes: 4, bottles: 4, coins: 3, exp: 3, dust: 3, vip: 5, memtk: 5, nametk: 4 };
+const REW_NAMES = { coins: ['gold', 'gold'], pearls: ['pearl', 'pearls'], tickets: ['Limited ticket', 'Limited tickets'], wishes: ['Standard ticket', 'Standard tickets'], bottles: ['stamina bottle', 'stamina bottles'], exp: ['EXP', 'EXP'], starlight: ['Coral', 'Corals'], dust: ['Seaweed', 'Seaweeds'], rings: ['ring', 'rings'], memtk: ['UR memory ticket', 'UR memory tickets'], vip: ['VIP EXP', 'VIP EXP'], nametk: ['name change ticket', 'name change tickets'], ursel: ['UR selector', 'UR selectors'], cfur: ['UR character fragment', 'UR character fragments'], cfssr: ['SSR character fragment', 'SSR character fragments'] };
+const REW_R = { tickets: 5, pearls: 5, starlight: 5, rings: 5, wishes: 4, bottles: 4, coins: 3, exp: 3, dust: 3, vip: 5, memtk: 5, nametk: 4, ursel: 5, cfur: 5, cfssr: 4 };
 function showRewards(title, got, sub = '') {
   const items = Object.entries(got).filter(([, n]) => n > 0); if (!items.length) return;
   const old = document.querySelector('.rewpop'); if (old) old.remove();
