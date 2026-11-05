@@ -106,7 +106,7 @@ function renderPets() {
     const missing = pets.filter(e => !owns(e.id));
     root.innerHTML = `<div class="stack">${tabs}
       <div class="row" style="justify-content:space-between;align-items:center"><span class="tiny">Every pet is its own copy. Fuse two copies of the same pet for +1★ (up to ${MAX_STARS}★).</span><button class="btn gold sm" id="ptFuse">${icon('fuse')}Fuse pets</button></div>
-      ${copies.length ? `<div class="pt-list">${copies.sort((a, b) => b.p.rarity - a.p.rarity || a.p.name.localeCompare(b.p.name) || b.st - a.st).map(cp => `<div class="pt-card r${cp.p.rarity} ${cp.who ? 'busy' : ''}">${petCard(cp.p, cp.st)}${cp.who ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</div>`).join('')}</div>` : '<div class="cs-pill">No pets yet. Hatch eggs in the Hatchery.</div>'}
+      ${copies.length ? `<div class="pt-list">${copies.sort((a, b) => b.p.rarity - a.p.rarity || a.p.name.localeCompare(b.p.name) || b.st - a.st).map(cp => `<div class="pt-card r${cp.p.rarity} ${pet6(cp.st, cp.p.rarity)} ${cp.who ? 'busy' : ''}">${petCard(cp.p, cp.st)}${pgBadge(cp.gr)}${cp.who ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</div>`).join('')}</div>` : '<div class="cs-pill">No pets yet. Hatch eggs in the Hatchery.</div>'}
       ${missing.length ? `<span class="lbl-sm">Not found yet · ${missing.length}</span><div class="pt-list">${missing.map(p => `<div class="pt-card r${p.rarity} bw">${petCard(p, 0, true)}</div>`).join('')}</div>` : ''}</div>`;
     const pf = $('#ptFuse'); if (pf) pf.onclick = () => openFuse('pet');
   } else {

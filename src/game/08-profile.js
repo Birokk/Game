@@ -100,7 +100,7 @@ function renderProfile() {
         <div><b>${chars.length}/${allChars.length}</b><span>Characters</span></div>
         <div><b>${ownedOf('pet').length}/${S.pool.filter(e => e.type === 'pet').length}</b><span>Pets</span></div>
         <div><b>${S.ach.length}/${ACH.length}</b><span>Achievements</span></div>
-        <div title="UR characters and unique UR memories you own"><b>${urs}</b><span>URs owned</span></div>
+        <div title="UR characters and unique UR memories you own"><b>${urs}</b><span data-norw>URs owned</span></div>
         <div class="tcs" title="Total CS: the Character Score of every character you own, added up"><b>${fmt(totalCS)}</b><span>Total CS</span></div>
       </div>
     <div><div class="ad-head" style="margin:0 0 8px"><h3>Showcase</h3><span class="row" style="gap:8px;align-items:center"><span class="tiny">Show off up to 4 characters you own · grades</span>${csInfoBtn()}</span></div>

@@ -139,7 +139,7 @@ function petArtPicker(p) {
 function petTabHTML(c) {
   const eq = petEqOf(c.id), n = S.pool.filter(e => e.type === 'pet' && owns(e.id)).reduce((t, p) => t + (S.owned[p.id] || 0), 0);
   return `<div class="lbl-sm">Pet · ${eq ? '1' : '0'}/1 with ${esc(c.name)}</div>
-    <button class="pt-slot ${eq ? 'full r' + eq.rarity : ''}" id="petSlot" aria-label="Choose a pet">${eq ? petCard(eq, petEqStar(c.id)) : `<span class="mem-empty">${icon('paw')}<span class="tiny">Tap to choose a pet</span></span>`}</button>
+    <button class="pt-slot ${eq ? 'full r' + eq.rarity : ''}" id="petSlot" aria-label="Choose a pet">${eq ? petCard(eq, petEqStar(c.id)) + pgBadge(petEqGrade(c.id)) : `<span class="mem-empty">${icon('paw')}<span class="tiny">Tap to choose a pet</span></span>`}</button>
     ${eq ? petArtPicker(eq) : ''}
     <div class="row" style="gap:8px">${eq ? '<button class="btn ghost sm" id="petOff">Send the pet away</button>' : ''}<button class="btn ghost sm" id="petFuse">${icon('fuse')}Fuse pets</button></div>
     <p class="tiny">${n ? `You have ${n} pet${n === 1 ? '' : 's'}. ` : ''}Tap the slot to pick one. Each copy can be with one character at a time; fuse two copies of the same pet for a star.</p>`;
@@ -153,7 +153,7 @@ function openPetPick(c) {
       .sort((a, b) => (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || !!a.who - !!b.who || b.p.rarity - a.p.rarity || b.st - a.st || a.p.name.localeCompare(b.p.name));
     el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">Pet</h2><span class="tiny">${list.length} pet${list.length === 1 ? '' : 's'} · tap one to bring it along</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
       ${list.length ? `<div class="pt-list wdp-pets">${list.map((cp, i) => { const mine = cp.who === c.id, busy = cp.who && !mine;
-        return `<button class="pt-card r${cp.p.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-pp="${i}" ${busy ? 'disabled' : ''}>${petCard(cp.p, cp.st)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</button>`; }).join('')}</div>`
+        return `<button class="pt-card r${cp.p.rarity} ${pet6(cp.st, cp.p.rarity)} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-pp="${i}" ${busy ? 'disabled' : ''}>${petCard(cp.p, cp.st)}${pgBadge(cp.gr)}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">With ${esc((findEntry(cp.who) || {}).name || '')}</span>` : ''}</button>`; }).join('')}</div>`
         : '<div class="cs-pill">You don\'t have any pets yet. Hatch eggs in the Hatchery.</div>'}
       <div class="row" style="justify-content:center;gap:10px">${petEqOf(c.id) ? '<button class="btn ghost" data-ppoff>Send the pet away</button>' : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;
     el.querySelectorAll('[data-wdpx]').forEach(b => b.onclick = () => el.remove());
@@ -352,8 +352,8 @@ function renderMemFuse(root, tabs) {
   const inPot = id => memPot.filter(x => x === id).length, urs = (S.memories || []).filter(m => +m.rarity === memFuseR);
   const list = (S.memories || []).filter(m => +m.rarity === memFuseR && memSpare(m.id) > 0), n = Math.floor(memPot.length / 3);
   root.innerHTML = `<div class="fu">${tabs}
+    <div class="tabs fu-subs fu-mini">${[4, 5].map(r => `<button class="tab ${memFuseR === r ? 'on' : ''}" data-mfr="${r}">3 × ${ctag(r)} → 1 × ${ctag(r)}</button>`).join('')}</div>
     <p class="tiny">Exchange 3 spare memories of the same rarity for 1 random memory of that rarity from every memory in the game. Equipped copies are never used.</p>
-    <div class="tabs" style="margin:0">${[4, 5].map(r => `<button class="tab ${memFuseR === r ? 'on' : ''}" data-mfr="${r}">3 × ${ctag(r)} → 1 × ${ctag(r)}</button>`).join('')}</div>
     <div class="fu-pot"><div class="fu-count"><b>${memPot.length}</b> in the pot · makes <b>${n}</b> ${CRN[memFuseR]} memor${n === 1 ? 'y' : 'ies'}${memPot.length % 3 ? ` · ${3 - memPot.length % 3} more for the next one` : ''}</div>
       <div class="row" style="justify-content:center;gap:8px"><button class="btn ghost sm" id="mfAll" ${list.some(m => memSpare(m.id) > inPot(m.id)) ? '' : 'disabled'}>Add all</button><button class="btn ghost sm" id="mfClear" ${memPot.length ? '' : 'disabled'}>Clear</button>
         <button class="btn gold" id="mfGo" ${n && urs.length ? '' : 'disabled'}>${icon('fuse')}Exchange ×${n}</button></div>

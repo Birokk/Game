@@ -67,7 +67,7 @@ function renderPetFuse(root, tabs) {
   const all = S.pool.filter(e => e.type === 'pet' && owns(e.id)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).flatMap(p => petCopies(p.id).map((cp, i) => ({ ...cp, i, p })));
   root.innerHTML = `<div class="fu">${tabs}
     <p class="tiny">Tap the pet copy you want to upgrade, then choose another copy of the same pet to fuse into it: +1★ (up to ${MAX_STARS}★). Pets with a character can be upgraded but are never used up.</p>
-    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: cp.p.rarity, pic: `${petCellPic(cp.p)}<span class="inv-pst">${cp.st}★</span>`, under: `${starRow(cp.st, false)}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.st >= MAX_STARS ? 'maxed' : '', attrs: `data-ptup="${esc(cp.p.id)}|${cp.i}"` })).join('')}</div>`
+    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: cp.p.rarity, pic: `${petCellPic(cp.p)}<span class="inv-pst">${cp.st}★</span>${pgBadge(cp.gr)}`, under: `${starRow(cp.st, false)}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: `petc ${pet6(cp.st, cp.p.rarity)} ${cp.st >= MAX_STARS ? 'maxed' : ''}`, attrs: `data-ptup="${esc(cp.p.id)}|${cp.i}"` })).join('')}</div>`
       : '<div class="cs-pill">You don\'t have any pets yet. Hatch eggs in the Hatchery.</div>'}</div>`;
   bindFuseTabs(root);
   root.querySelectorAll('[data-ptup]').forEach(b => b.onclick = () => { const [id, i] = b.dataset.ptup.split('|'); upPetCopy(id, +i); });
@@ -75,8 +75,8 @@ function renderPetFuse(root, tabs) {
 function upPetCopy(id, i) {
   const p = findEntry(id), cps = petCopies(id), tgt = cps[i]; if (!p || !tgt) return;
   if (tgt.st >= MAX_STARS) { toast(`This ${p.name} is already at ${MAX_STARS}★.`); return; }
-  const cands = cps.map((c, j) => ({ ...c, j })).filter(c => c.j !== i && !c.who).map(c => ({ key: String(c.j), r: p.rarity, pic: `${petCellPic(p)}<span class="inv-pst">${c.st}★</span>`, under: starRow(c.st, false) }));
-  openUpgradePop({ title: 'Pet stars', target: { r: p.rarity, pic: petCellPic(p), name: p.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: Math.min(6, MAX_STARS - tgt.st), cands,
+  const cands = cps.map((c, j) => ({ ...c, j })).filter(c => c.j !== i && !c.who).map(c => ({ key: String(c.j), r: p.rarity, pic: `${petCellPic(p)}<span class="inv-pst">${c.st}★</span>${pgBadge(c.gr)}`, under: starRow(c.st, false) }));
+  openUpgradePop({ title: 'Pet stars', target: { r: p.rarity, pic: petCellPic(p) + pgBadge(tgt.gr), name: p.name + (tgt.who ? ` · with ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.st, to: tgt.st + 1, need: Math.min(6, MAX_STARS - tgt.st), cands,
     stars: st => starRow(st, false), note: 'Each copy you add gives +1★ and is gone after fusing, whatever its stars.',
     onFuse: keys => { const cps2 = petCopies(id), t = cps2[i], feeds = keys.map(k => cps2[+k]).filter(f => f && !f.who); if (!t || !feeds.length) return;
       const arr = petCopiesSt(id), to = t.st + feeds.length; arr[t.k] = to; petRemoveCopies(id, feeds.map(f => f.k));

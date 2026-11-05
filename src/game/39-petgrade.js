@@ -15,6 +15,9 @@ const petGradeU = uid => Math.max(0, Math.min(PG_MAX, (S.petGr || {})[uid] || 0)
 const petEqGrade = cid => { const p = petEqOf(cid); return p ? petGradeU((S.petEqU || {})[cid]) : 0; };
 /* older saves kept one grade per pet (S.petGr[petId]): give it to that pet's best copy */
 (() => { const g = S.petGr || {}; Object.keys(g).forEach(k => { const e = findEntry(k); if (e && e.type === 'pet') { const cps = owns(k) ? petCopies(k) : []; if (cps[0]) g[cps[0].uid] = Math.max(g[cps[0].uid] || 0, g[k]); delete g[k]; } }); })();
+/* the grade badge drawn in the top-right corner of every pet picture (cards, slots, Bag, fusion, upgrade popup) */
+const pgBadge = gr => `<span class="pg-badge">${gradeTag(PG_NAMES[Math.max(0, Math.min(PG_MAX, gr || 0))])}</span>`;
+const pet6 = (st, r) => st >= MAX_STARS ? `pet6 ${+r === 5 ? 'r5' : 'r4'}` : '';   // animated border at 6★
 const pgRar = p => +p.rarity >= 5 ? 5 : 4;
 let pgSel = null, pgAuto = null, pgSpeed = 1, pgTarget = PG_MAX, pgLog = [];
 /* every owned pet copy: {p, st, uid, gr, who} */
