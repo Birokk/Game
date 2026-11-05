@@ -57,7 +57,7 @@ function renderMenu() {
   $('#houseDot').hidden = !houseReady();
   $('#guildDot').hidden = !guildReady();
   $('#frDot').hidden = !frReady();
-  { const on = ftuLive(); $('#hmFtu').hidden = !on; if (on) $('#ftuTime').textContent = ftuLeftTxt(); }
+  { const lo = liveOffers(); $('#hmOffer').hidden = !lo.length; if (lo.length) { $('#offerName').textContent = lo.length > 1 ? `Offers · ${lo.length}` : lo[0].name; $('#offerTime').textContent = offerLeftTxt(lo[0]); } }
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();

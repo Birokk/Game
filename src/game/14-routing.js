@@ -14,7 +14,7 @@ document.addEventListener('click', e => {
   else if (k === 'house') openFarm('house');
   else if (k === 'guild') openFarm('guild');
   else if (k === 'friends') openFriends();
-  else if (k === 'ftu') openFtu();
+  else if (k === 'offer') openOffer(t.dataset.offer);
   else if (k === 'raids') openRaids();
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();
