@@ -220,8 +220,8 @@ function sampleState() {
     featuredId: 'aria',
     wallpaper: null,
     owned: {},
-    banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, memories: { name: 'Memory Wish' }, standard: { name: 'Pearl Wish' } },
-    gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, memories: { pity5: 0, pity4: 0, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
+    banners: { beginner: { name: 'Beginner Wish', picks: [] }, stepup: { name: 'Step-Up Summon', featured: null, ver: 0 }, limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, memories: { name: 'Memory Wish' }, standard: { name: 'Pearl Wish' } },
+    gacha: { beginner: { pity5: 0, pity4: 0, total: 0 }, stepup: { pity5: 0, pity4: 0, guarantee: false, total: 0, step: 0, key: '' }, limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, memories: { pity5: 0, pity4: 0, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
     monthly: { key: null, limited: 0, standard: 0 },
@@ -317,6 +317,7 @@ function persist() {
 function applyContent(c) {
   for (const k of CONTENT_KEYS) if (c[k] !== undefined) S[k] = c[k];
   if (!S.media) S.media = {};
+  const fb = sampleState().banners; S.banners = S.banners || {}; for (const k of Object.keys(fb)) S.banners[k] = { ...fb[k], ...(S.banners[k] || {}) };   // new banners (Beginner Wish, Step-Up) in older content
   ensureMC();
   lastContentJSON = JSON.stringify(splitState(S).content);
   localStorage.setItem(CONTENT_KEY, lastContentJSON);

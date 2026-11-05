@@ -3667,3 +3667,23 @@ button.pt-slot:hover{border-color:#fff}
 @keyframes mwBolt{0%{opacity:1}6%{opacity:.2}10%{opacity:1}16%{opacity:.15}22%{opacity:1}60%{opacity:.85}64%{opacity:.25}68%{opacity:1}100%{opacity:1}}
 .sum .sum-mwt{display:flex;justify-content:center;align-items:center;gap:10px;margin:-4px 0 10px}
 .sum .sum-mwt .tiny{color:#ffc2a8}
+
+/* Beginner Wish / Step-Up (12-gacha.js specialTitleHTML / specialPullHTML) */
+.sx-pull .sx-off{position:absolute;top:-10px;left:18px;padding:2px 10px;border-radius:999px;font-family:var(--body);font-weight:900;font-size:13px;background:linear-gradient(90deg,#ff5d8f,#ff8a5c);color:#fff;box-shadow:0 2px 8px rgba(255,80,120,.5)}
+.sx-pull[disabled]{opacity:.55;cursor:default;transform:none}
+.sx-title .sx-bg-note{color:rgba(255,255,255,.75)}
+.stp{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:min(500px,44vw);margin-top:8px}
+.stp-n{position:relative;display:grid;justify-items:center;gap:3px;padding:8px 4px 7px;border-radius:12px;background:rgba(14,10,30,.62);border:1.5px solid rgba(255,255,255,.14);backdrop-filter:blur(6px);text-align:center}
+.stp-n .stp-no{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-family:var(--display);font-size:15px;background:rgba(255,255,255,.1);color:#fff}
+.stp-n .stp-no svg{width:16px;height:16px}
+.stp-n .stp-c,.stp-n .stp-g{display:inline-flex;align-items:center;gap:3px;font-family:var(--body);font-weight:900;font-size:12px;white-space:nowrap}
+.stp-n .stp-c .cic,.stp-n .stp-g .cic{width:14px;height:14px}
+.stp-n .stp-g{color:#ffe08a;font-size:11px}
+.stp-n .stp-p{min-height:26px;display:grid;place-items:center;font-family:var(--read);font-size:10px;line-height:1.15;color:#ffc2e6}
+.stp-n.perk{border-color:rgba(255,160,220,.45)}
+.stp-n.on{border-color:transparent;background:linear-gradient(rgba(30,16,52,.85),rgba(30,16,52,.85)) padding-box,var(--cry-grad) border-box;box-shadow:0 0 16px var(--cry-glow);transform:translateY(-3px)}
+.stp-n.on .stp-no{background:var(--cry-grad);color:var(--cry-ink)}
+.stp-n.done{opacity:.55}
+.stp-n.done .stp-no{background:rgba(120,230,170,.25);color:#9ff5c6}
+.stp-n:last-child .stp-p{color:#ffd36b;font-weight:700}
+@media (max-width:820px){.stp{width:min(100%,92vw);gap:4px}.stp-n{padding:6px 2px}.stp-n .stp-p{font-size:9px}}
