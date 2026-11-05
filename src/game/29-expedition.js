@@ -49,7 +49,7 @@ function collectExpeditions(ids) {
   ids.filter(expDone).forEach(id => { const e = expOf(id), c = findEntry(e.char), ur = c && +c.rarity === 5, got = rollExpedition(ur);
     got.forEach(([k, n]) => { if (k !== 'exp') S.wallet[k] = (S.wallet[k] || 0) + n; });
     const xp = got.find(([k]) => k === 'exp'); if (xp) gainExp(xp[1]);
-    res.push({ area: expArea(id), c, ur, got });
+    res.push({ area: expArea(id), c, ur, got }); statAdd('expd');
     const d = { ...S.expd }; delete d[id]; S.expd = d; });
   if (!res.length) { toast('Nobody is back yet.'); return; }
   persist(); renderMenu(); refreshSummon(); renderFarm();

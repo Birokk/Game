@@ -46,6 +46,7 @@ function renderMenu() {
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#sumDot').hidden = !bannerKeys().some(k => canPull(10, k) || freeReady(k));
+  if (booted) { const st = statState(); if (st.lastDay !== dayKey()) { st.lastDay = dayKey(); st.days = (st.days || 0) + 1; persist(); } }   // login days (achievements)
   $('#evDot').hidden = !loginReady() && !msignReady();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();

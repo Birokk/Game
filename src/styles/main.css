@@ -4261,3 +4261,5 @@ button.pt-slot:hover{border-color:#fff}
 
 .evp-main.tlm.nochar{width:min(1040px,calc(100vw - min(260px,30vw) - 110px))}
 .tl-day.d7 .tl-hd{background-image:linear-gradient(90deg,#ff8fd0,#c8a2ff 50%,#7fa8ff)}
+.ach-long{font-style:normal;font-size:10px;padding:1px 8px;border-radius:99px;margin-left:6px;vertical-align:2px;background:linear-gradient(90deg,#ff9a3c,#ff3d7f,#c58bff);color:#fff;box-shadow:0 0 10px rgba(255,90,140,.5)}
+.frp-show .pf-mem{cursor:default}

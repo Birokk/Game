@@ -57,6 +57,7 @@ const Q_SETS = { daily: { list: QUESTS, title: 'Daily', next: () => { const n = 
   weekly: { list: WQUESTS, title: 'Weekly', next: () => { const m = weekStart(); return new Date(m.getFullYear(), m.getMonth(), m.getDate() + 7); } } };
 function questAdd(id, n = 1) {
   if (!(n > 0)) return;
+  statAdd(id, n);   // lifetime totals for the achievements
   const sets = { ...Q_SETS, ...BP_SETS };   // the Pearl Honor missions count the same actions
   for (const set of Object.keys(sets)) { const q = sets[set].list.find(x => x.id === id); if (!q) continue;
     const st = qState(set); st.p[id] = Math.min(q.need, (st.p[id] || 0) + n); }

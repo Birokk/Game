@@ -38,7 +38,8 @@ function frProfile(p) {
   const r = seeded('frp:' + p.name), chars = S.pool.filter(e => e.type === 'character' && !e.mc);
   const cs = p.cs || Object.fromEntries(chars.map(c => [c.id, botCharCS({ name: p.name, skill: p.skill }, c)]).filter(([, n]) => n));
   const owned = Object.entries(cs).map(([id, n]) => ({ e: findEntry(id), cs: n })).filter(x => x.e).sort((a, b) => b.cs - a.cs);
-  const show = owned.slice(0, 4).map(x => ({ ...x, st: Math.min(6, Math.floor(r() * 7 * (.4 + p.skill * .8))) }));
+  const mems = S.memories || [];
+  const show = owned.slice(0, 4).map(x => ({ ...x, st: Math.min(6, Math.floor(r() * 7 * (.4 + p.skill * .8))), mem: mems.length && r() < .9 ? { m: mems[Math.floor(r() * mems.length)], st: Math.min(3, Math.floor(r() * 4 * (.3 + p.skill))) } : null }));   // each showcased character's equipped memory
   const titles = TITLES.filter(t => !t.rank && t.id !== 'maxwinner'), cards = CARDS.filter(k => !String(k.id).startsWith('rk-'));
   const fav = show[0] && show[0].e, artCard = fav && baseArt(fav) && r() < .45;
   const mins = Math.floor(Math.pow(r(), 2) * 60 * 72);
@@ -125,7 +126,9 @@ function openFrProfile(uid) {
   const old = document.querySelector('.frpop'); if (old) old.remove();
   const el = document.createElement('div'); el.className = 'rdrop frpop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', fp.name + "'s profile");
   const slots = [0, 1, 2, 3].map(i => { const x = fp.show[i]; if (!x) return '<div class="pf-col"><span class="pf-slot none"><span class="pf-add"><span>Empty</span></span></span></div>';
-    return `<div class="pf-col"><span class="pf-slot r${x.e.rarity}"><img src="${baseCard(x.e)}" alt="" ${baseArt(x.e) ? `style="${cardImgStyle(x.e, 'base')}"` : ''}><span class="pf-cs">${gradeTag(csGrade(x.cs), 'sm')}</span><span class="pf-sl">${rtag(x.e.rarity)}<b>${esc(x.e.name)}</b>${starRow(x.st)}</span></span><span class="frp-cs">${fmt(x.cs)} CS</span></div>`; }).join('');
+    const mm = x.mem && x.mem.m, mart = mm && artFrom(mm.img);
+    const memPrev = mm ? `<span class="pf-mem mem-fr mst${x.mem.st}" data-memview="${esc(mm.id)}|${x.mem.st}" title="${esc(mm.name)} · hold to view">${mart ? `<img src="${mart}" alt="">` : icon('memory')}<span class="pf-mem-tag">${rtag(mm.rarity)}${memStarRow(x.mem.st)}</span></span>` : '<span class="pf-mem none"><span class="tiny">No memory</span></span>';
+    return `<div class="pf-col"><span class="pf-slot r${x.e.rarity}"><img src="${baseCard(x.e)}" alt="" ${baseArt(x.e) ? `style="${cardImgStyle(x.e, 'base')}"` : ''}><span class="pf-cs">${gradeTag(csGrade(x.cs), 'sm')}</span><span class="pf-sl">${rtag(x.e.rarity)}<b>${esc(x.e.name)}</b>${starRow(x.st)}</span></span>${memPrev}<span class="frp-cs">${fmt(x.cs)} CS</span></div>`; }).join('');
   el.innerHTML = `<div class="rdrop-box frp-box">
       <button class="inv-x frp-x" data-frx aria-label="Close">${icon('close')}</button>
       <div class="pf-card frp-card">${cardLayer(fp.card)}

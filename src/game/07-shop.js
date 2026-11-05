@@ -273,21 +273,80 @@ function buyShop(id) {
 }
 
 /* ---------- achievements: each pays 1 pearl once ---------- */
-const ACH_PEARLS = 1;
+const ACH_PEARLS = 1, ACH_LONG_PEARLS = 50;   // pearls per achievement; the five long ones give 50
 const ownedOf = t => S.pool.filter(e => e.type === t && owns(e.id));
-const totalPulls = () => S.gacha.limited.total + S.gacha.standard.total;
+const totalPulls = () => Object.values(S.gacha || {}).reduce((t, g) => t + ((g && g.total) || 0), 0);   // every banner
+/* lifetime counters for achievements: S.stats {days, lastDay, gift, stamina, summon, fountain, gold, raid, base, scrwin, expd} */
+const statState = () => (S.stats = S.stats || {});
+function statAdd(k, n = 1) { const st = statState(); st[k] = (st[k] || 0) + n; }
+const stat = k => statState()[k] || 0;
+const ownChars = () => ownedOf('character'), maxOf = arr => arr.length ? Math.max(...arr) : 0;
+const charsAt = f => ownChars().filter(f).length;
+const fullSetWorn = () => Object.values(S.wear || {}).some(w => { const ids = Object.values(w || {}).filter(Boolean); if (ids.length < 6) return false; const sets = ids.map(id => (clothOf(id) || {}).set); return sets[0] && sets.every(x => x === sets[0]); });
+/* achievements: `long` = the five that take a long time (50 pearls each), everything else ACH_PEARLS */
 const ACH = [
   { id: 'pull1', name: 'First Wish', desc: 'Summon once', n: () => totalPulls(), goal: 1 },
   { id: 'pull100', name: 'Star Gazer', desc: 'Summon 100 times', n: () => totalPulls(), goal: 100 },
-  { id: 'char1', name: 'New Friend', desc: 'Own a character', n: () => ownedOf('character').length, goal: 1 },
-  { id: 'char3', name: 'Growing Circle', desc: 'Own 3 characters', n: () => ownedOf('character').length, goal: 3 },
-  { id: 'ur', name: 'Lucky Star', desc: 'Own a UR character', n: () => ownedOf('character').filter(e => e.rarity === 5).length, goal: 1 },
-  { id: 'star6', name: 'Shining Bright', desc: `Raise a character to ${MAX_STARS} stars`, n: () => Math.max(0, ...ownedOf('character').map(e => starsOf(e.id))), goal: MAX_STARS },
-  { id: 'pet', name: 'Egg Whisperer', desc: 'Hatch a pet', n: () => ownedOf('pet').length, goal: 1 },
+  { id: 'pull500', name: 'Wish Upon Wish', desc: 'Summon 500 times', n: () => totalPulls(), goal: 500 },
+  { id: 'pull1000', name: 'Thousand Lanterns', desc: 'Summon 1,000 times', n: () => totalPulls(), goal: 1000 },
+  { id: 'pull10000', name: 'Ten Thousand Wishes', desc: 'Summon 10,000 times', n: () => totalPulls(), goal: 10000, long: true },
+  { id: 'maxwin', name: 'Jackpot', desc: 'Get a Max Win', n: () => (S.unlocks || []).includes('max-win') ? 1 : 0, goal: 1 },
+  { id: 'login7', name: 'Regular', desc: 'Log in on 7 different days', n: () => stat('days'), goal: 7 },
+  { id: 'login30', name: 'Familiar Face', desc: 'Log in on 30 different days', n: () => stat('days'), goal: 30 },
+  { id: 'login100', name: 'Lantern Keeper', desc: 'Log in on 100 different days', n: () => stat('days'), goal: 100 },
+  { id: 'login365', name: 'A Year of Lanterns', desc: 'Log in on 365 different days', n: () => stat('days'), goal: 365, long: true },
+  { id: 'char1', name: 'New Friend', desc: 'Own a character', n: () => ownChars().length, goal: 1 },
+  { id: 'char3', name: 'Growing Circle', desc: 'Own 3 characters', n: () => ownChars().length, goal: 3 },
+  { id: 'char5', name: 'Full Table', desc: 'Own 5 characters', n: () => ownChars().length, goal: 5 },
+  { id: 'char10', name: 'Grand Gathering', desc: 'Own 10 characters', n: () => ownChars().length, goal: 10 },
+  { id: 'ur', name: 'Lucky Star', desc: 'Own a UR character', n: () => charsAt(e => e.rarity === 5), goal: 1 },
+  { id: 'ur3', name: 'Constellation', desc: 'Own 3 UR characters', n: () => charsAt(e => e.rarity === 5), goal: 3 },
+  { id: 'ur5', name: 'Galaxy', desc: 'Own 5 UR characters', n: () => charsAt(e => e.rarity === 5), goal: 5 },
+  { id: 'star6', name: 'Shining Bright', desc: `Raise a character to ${MAX_STARS} stars`, n: () => maxOf(ownChars().map(e => starsOf(e.id))), goal: MAX_STARS },
+  { id: 'star6x3', name: 'Three Suns', desc: `Raise 3 characters to ${MAX_STARS} stars`, n: () => charsAt(e => starsOf(e.id) >= MAX_STARS), goal: 3 },
+  { id: 'sss', name: 'Unrivalled', desc: 'Raise a character to grade SSS', n: () => charsAt(e => csGrade(gradeScore(e)) === 'SSS'), goal: 1 },
+  { id: 'urplus', name: 'Beyond the Stars', desc: 'Raise a character to UR+ or SSR+', n: () => charsAt(e => urPlus(e)), goal: 1 },
+  { id: 'cs100k', name: 'Rising Power', desc: 'Reach 100,000 Total CS', n: () => ownChars().reduce((t, e) => t + charScore(e), 0), goal: 100000 },
+  { id: 'cs1m', name: 'Living Legend', desc: 'Reach 1,000,000 Total CS', n: () => ownChars().reduce((t, e) => t + charScore(e), 0), goal: 1000000, long: true },
+  { id: 'bond5', name: 'Heart to Heart', desc: 'Reach bond level 5 with anyone', n: () => maxOf(S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 5 },
+  { id: 'bond10', name: 'Soulbound', desc: 'Reach bond level 10 with anyone', n: () => maxOf(S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 10 },
+  { id: 'wed', name: 'Eternal Promise', desc: 'Marry a character', n: () => Object.values(S.bond || {}).filter(b => b && b.married).length, goal: 1 },
+  { id: 'bond10x10', name: 'Heart of the Plaza', desc: 'Reach bond level 10 with 10 characters', n: () => charsAt(e => bondLv(e.id) >= BOND_MAX), goal: 10, long: true },
+  { id: 'gift50', name: 'Generous', desc: 'Give 50 gifts', n: () => stat('gift'), goal: 50 },
   { id: 'skin', name: 'Fashionista', desc: 'Own a skin', n: () => ownedOf('skin').length, goal: 1 },
-  { id: 'bond5', name: 'Heart to Heart', desc: 'Reach bond level 5 with anyone', n: () => Math.max(0, ...S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 5 },
+  { id: 'skin5', name: 'Trendsetter', desc: 'Own 5 skins', n: () => ownedOf('skin').length, goal: 5 },
+  { id: 'skin10', name: 'Runway Star', desc: 'Own 10 skins', n: () => ownedOf('skin').length, goal: 10 },
+  { id: 'pet', name: 'Egg Whisperer', desc: 'Hatch a pet', n: () => ownedOf('pet').length, goal: 1 },
+  { id: 'pet3', name: 'Little Zoo', desc: 'Own 3 different pets', n: () => ownedOf('pet').length, goal: 3 },
+  { id: 'pet6', name: 'Menagerie', desc: 'Own 6 different pets', n: () => ownedOf('pet').length, goal: 6 },
+  { id: 'petsss', name: 'Best in Show', desc: 'Raise a pet to grade SSS', n: () => maxOf(Object.values(S.petGr || {})) >= 8 ? 1 : 0, goal: 1 },
+  { id: 'mem5', name: 'Scrapbook', desc: 'Own 5 different memories', n: () => (S.memories || []).filter(m => owns(m.id)).length, goal: 5 },
+  { id: 'memur', name: 'Treasured Moment', desc: 'Own a UR memory', n: () => (S.memories || []).filter(m => +m.rarity === 5 && owns(m.id)).length, goal: 1 },
+  { id: 'mem3', name: 'Polished Memory', desc: 'Raise a memory to 3 stars', n: () => maxOf(Object.values(S.memSt || {}).flat()), goal: 3 },
+  { id: 'cloth50', name: 'Walk-in Closet', desc: 'Own 50 clothing pieces', n: () => wardCount(), goal: 50 },
+  { id: 'fullset', name: 'Dressed to Impress', desc: 'Dress a character in a full 6-piece set', n: () => fullSetWorn() ? 1 : 0, goal: 1 },
+  { id: 'lv10', name: 'Getting Started', desc: 'Reach player level 10', n: () => playerLv().lv, goal: 10 },
+  { id: 'lv30', name: 'Seasoned', desc: 'Reach player level 30', n: () => playerLv().lv, goal: 30 },
+  { id: 'lv60', name: 'Plaza Veteran', desc: 'Reach player level 60', n: () => playerLv().lv, goal: 60 },
+  { id: 'vip1', name: 'Patron', desc: 'Reach VIP 1', n: () => vipLv(), goal: 1 },
+  { id: 'vip5', name: 'Noble Patron', desc: 'Reach VIP 5', n: () => vipLv(), goal: 5 },
+  { id: 'raid10', name: 'Dungeon Crawler', desc: 'Clear raids 10 times', n: () => stat('raid'), goal: 10 },
+  { id: 'raid100', name: 'Raid Regular', desc: 'Clear raids 100 times', n: () => stat('raid'), goal: 100 },
+  { id: 'raid5000', name: 'Grand Raider', desc: 'Clear raids 5,000 times', n: () => stat('raid'), goal: 5000, long: true },
+  { id: 'stam5k', name: 'Tireless', desc: 'Spend 5,000 stamina', n: () => stat('stamina'), goal: 5000 },
+  { id: 'gold1m', name: 'Big Spender', desc: 'Spend 1,000,000 gold', n: () => stat('gold'), goal: 1000000 },
+  { id: 'wish30', name: 'Wishful', desc: 'Make 30 wishes at a fountain', n: () => stat('fountain'), goal: 30 },
+  { id: 'scr10', name: 'Lucky Scratcher', desc: 'Win 10 scratch cards', n: () => stat('scrwin'), goal: 10 },
+  { id: 'exp10', name: 'Explorer', desc: 'Bring back 10 expeditions', n: () => stat('expd'), goal: 10 },
+  { id: 'farm4', name: 'Thriving Base', desc: 'Build all four Base buildings', n: () => FARM_DEFS.filter(d => farmOf(d.id).lv > 0).length, goal: 4 },
+  { id: 'farm7', name: 'Master Builder', desc: 'Raise a Base building to level 7', n: () => maxOf(FARM_DEFS.map(d => farmOf(d.id).lv)), goal: 7 },
+  { id: 'house1', name: 'Homeowner', desc: 'Buy a house', n: () => ((S.house || {}).own || []).length, goal: 1 },
+  { id: 'house5', name: 'Estate', desc: 'Own all five houses', n: () => ((S.house || {}).own || []).length, goal: 5 },
+  { id: 'guild', name: 'Better Together', desc: 'Join or create a guild', n: () => (S.guild && S.guild.id) ? 1 : 0, goal: 1 },
+  { id: 'friend5', name: 'Social Butterfly', desc: 'Have 5 friends', n: () => ((S.friends || {}).list || []).length, goal: 5 },
+  { id: 'bp30', name: 'Honored', desc: 'Reach Pearl Honor level 30', n: () => bpLv(), goal: 30 },
   { id: 'spin', name: 'Wheel of Fortune', desc: 'Spin the daily wheel', n: () => S.spin.last ? 1 : 0, goal: 1 }
-].map(a => ({ ...a, ok: () => a.n() >= a.goal }));
+].map(a => ({ ...a, pearls: a.long ? ACH_LONG_PEARLS : ACH_PEARLS, ok: () => a.n() >= a.goal }));
 function openAch() {
   openModal({ title: 'Achievements', ic: 'trophy', wide: true, kind: 'ach', body: '<div id="achRoot"></div>', onMount: renderAch });
 }
@@ -295,12 +354,12 @@ function renderAch() {
   const root = $('#achRoot'); if (!root) return;
   const done = S.ach.length, ready = ACH.filter(a => a.ok() && !S.ach.includes(a.id));
   root.innerHTML = `<div class="stack">
-    <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.length * ACH_PEARLS)}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
+    <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.reduce((t, a) => t + a.pearls, 0))}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
     <div class="ach-list">${ACH.map(a => { const got = S.ach.includes(a.id), ok = a.ok(), v = Math.min(a.goal, a.n());
       return `<div class="ach ${got ? 'got' : ok ? 'ready' : ''}"><span class="ach-ic">${icon(got ? 'check' : 'trophy')}</span>
-        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${got ? '' : expTag(EXP.ach)}</div>
-        ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(ACH_PEARLS)}</button>`}</div>`; }).join('')}</div></div>`;
-  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += ACH_PEARLS; gainExp(EXP.ach); } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
+        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}${a.long ? ' <em class="ach-long">Legendary</em>' : ''}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${got ? '' : expTag(EXP.ach)}</div>
+        ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(a.pearls)}</button>`}</div>`; }).join('')}</div></div>`;
+  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += (ACH.find(a => a.id === id) || {}).pearls || ACH_PEARLS; gainExp(EXP.ach); } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
   root.querySelectorAll('[data-ach]').forEach(b => b.onclick = () => claim([b.dataset.ach]));
   const all = $('#achAll'); if (all) all.onclick = () => claim(ready.map(a => a.id));
 }
