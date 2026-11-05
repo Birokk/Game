@@ -114,8 +114,8 @@ if (!ICONS.star) ICONS.star = '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l
    that pull (fragFloor). Exchange → Fragments: 60 for a random character of that rarity, 120 for one you choose. */
 const LOW_DROPS = [['ssr', .2], ['ur', .06], ['cfssr', .18], ['cfur', .08]], CF_MIN10 = { cfur: 1, cfssr: 2 }, CF_RANDOM = 60, CF_PICK = 120;
 function lowDrop() { const x = Math.random(); let a = 0; for (const [k, p] of LOW_DROPS) { a += p; if (x < a) return k; } return null; }
-/* character banners can give an SSR memory instead of an SSR character */
-const SSR_MEM_BK = ['limited', 'weekly', 'standard', 'beginner'], SSR_MEM_CHANCE = .25;
+/* character banners: SSR results are 67% SSR characters, 33% SSR memories */
+const SSR_MEM_BK = ['limited', 'weekly', 'standard', 'beginner'], SSR_MEM_CHANCE = .33;   // SSR results: 67% characters, 33% memories
 const lowIc = r => r.kind === 'cfrag' ? r.cf : r.kind === 'frag' ? 'frag' + r.frag : 'coins';
 function fragFloor(results, bk) {
   for (const k of ['cfur', 'cfssr']) {
@@ -306,7 +306,7 @@ function renderSummon() {
   // a hero with uploaded art fills the screen; chibis stand in a lineup
   const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
-    return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.feat && !I.skins ? (I.step ? '<br>Step-Up' : '<br>Summon') : ''}</b>${dotFor(k)}</button>`; };
+    return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}">${TAB_IC[k] ? `<span class="sx-tab-ic ${k}" title="${TAB_IC[k][1]}">${TAB_IC[k][0]}</span>` : ''}<small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.feat && !I.skins ? (I.step ? '<br>Step-Up' : '<br>Summon') : ''}</b>${dotFor(k)}</button>`; };
   const what = B.skins ? 'outfit' : B.mems ? 'memory' : 'character';
   smEl.className = 'sx r5';
   smEl.innerHTML = `<div class="sx-word">${B.word}</div>
@@ -349,6 +349,12 @@ function renderSummon() {
   $('#sxHist').onclick = () => openRates(bk, true);
   const pb = $('#sxPts'); if (pb) pb.onclick = () => openShop('points:' + (PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm'));
 }
+/* small icons on the banner tabs: Beginner = a sprout, Step-Up = steps with an arrow, Weekly = a clock (it changes every week) */
+const TAB_IC = {
+  beginner: ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M12 13c0-4 3-6.5 8-6.5 0 4.5-3 6.5-8 6.5zM12 11C12 7.5 9.5 5 5 5c0 4 2.5 6 7 6z" fill="currentColor"/></svg>', 'Beginner: 50 pulls, 20% off, a UR at pull 50'],
+  stepup: ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h5v-4h5v-4h5V8h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M14 4h6v6M20 4l-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Step-Up: 7 steps, better odds as you climb'],
+  weekly: ['<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 9v4l3 2M9 2h6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M19.5 4.5l1.5 1.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>', 'Weekly: a new UR every Monday']
+};
 /* the right side of the summon screen for the Beginner Wish (pulls left, the 3 URs of pull 50) and the Step-Up (the 7 steps) */
 function specialTitleHTML(B, hero) {
   const setup = `<button class="btn ghost sm" data-open="admin" data-adtab="banners">${icon('wrench')}Set it up in admin</button>`;

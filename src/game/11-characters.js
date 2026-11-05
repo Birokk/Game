@@ -1,11 +1,11 @@
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let wdSlot = 'hat', memSlot = 0;
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false, csShown = '';
-/* the roster: the main character first, then favourites, then by CS (highest first), then rarity (S.favs = [character ids]) */
+/* the roster: favourites first, then by CS (highest first), then rarity, the main character included (S.favs = [character ids]) */
 const isFav = id => (S.favs || []).includes(id);
 function charList() {
   const list = S.pool.filter(e => e.type === 'character' && owns(e.id)), cs = new Map(list.map(e => [e.id, charScore(e)]));
-  return list.sort((a, b) => !!b.mc - !!a.mc || isFav(b.id) - isFav(a.id) || cs.get(b.id) - cs.get(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+  return list.sort((a, b) => isFav(b.id) - isFav(a.id) || cs.get(b.id) - cs.get(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
 }
 function toggleFav(id) { S.favs = isFav(id) ? (S.favs || []).filter(x => x !== id) : [...(S.favs || []), id]; persist(); renderCharacters(); toast(isFav(id) ? `${(findEntry(id) || {}).name} added to favourites.` : `${(findEntry(id) || {}).name} removed from favourites.`); }
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
