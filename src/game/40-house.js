@@ -208,13 +208,12 @@ function wpTapHeart(x, y) {
 }
 menuEl.addEventListener('click', e => {
   if (uiHidden || !menuOpen || e.target.closest('button, a, input, select, textarea, label, .cur, #promo, nav, .hm, .wpb')) return;
-  const c = wpBondChar(); if (!c) return;
+  const c = wpBondChar(); if (!c || wpbState().n >= WPB_DAILY) return;   // done for today: taps do nothing (no hearts, no popup)
   const now2 = Date.now(); wpbTaps = now2 - wpbLast < WPB_GAP ? wpbTaps + 1 : 1; wpbLast = now2;
   wpTapHeart(e.clientX, e.clientY);
   if (wpbTaps < WPB_TAPS) return;
   wpbTaps = 0;
   const st = wpbState();
-  if (st.n >= WPB_DAILY) { wpBondPop(c, null, `Done for today (${WPB_DAILY} / ${WPB_DAILY}) · come back tomorrow`); return; }
   if (bondLv(c.id) >= BOND_MAX) { wpBondPop(c, null, 'Already at max bond'); return; }
   const before = bondBarParts(c.id), lv0 = bondLv(c.id), n = addBond(c.id, WPB_BOND); st.n++;
   persist(); refreshCharacters();
