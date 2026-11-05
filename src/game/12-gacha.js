@@ -108,16 +108,30 @@ function permShopPicks() {
   return { chars: pick(urCharsAll()), mems: pick(urMems()) };
 }
 if (!ICONS.star) ICONS.star = '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>';
-/* character fragments (wallet cfur / cfssr): extra drops on every summon, on top of the results: each pull has a CF_UR chance
-   of 1 UR fragment and a CF_SSR chance of 1 SSR fragment, and every ×10 gives at least 1 UR and 2 SSR fragments.
-   Exchange → Fragments: 60 for a random character of that rarity, 120 for one you choose (CF_RANDOM, CF_PICK) */
-const CF_UR = .06, CF_SSR = .2, CF_MIN10 = { ur: 1, ssr: 2 }, CF_RANDOM = 60, CF_PICK = 120;
-function rollCharFrags(n) {
-  let ur = 0, ssr = 0;
-  for (let i = 0; i < n; i++) { if (Math.random() < CF_UR) ur++; if (Math.random() < CF_SSR) ssr++; }
-  if (n >= 10) { ur = Math.max(ur, CF_MIN10.ur); ssr = Math.max(ssr, CF_MIN10.ssr); }
-  S.wallet.cfur = (S.wallet.cfur || 0) + ur; S.wallet.cfssr = (S.wallet.cfssr || 0) + ssr;
-  return { ur, ssr };
+/* character fragments (wallet cfur / cfssr) are summon RESULTS in the lowest tier, like gold and egg fragments (LOW_DROPS:
+   SSR egg fragment 20%, UR egg fragment 6%, SSR character fragment 18%, UR character fragment 8%, else 500 gold).
+   Every ×10 holds at least 1 UR and 2 SSR character fragments (CF_MIN10): missing ones replace egg fragments or gold in
+   that pull (fragFloor). Exchange → Fragments: 60 for a random character of that rarity, 120 for one you choose. */
+const LOW_DROPS = [['ssr', .2], ['ur', .06], ['cfssr', .18], ['cfur', .08]], CF_MIN10 = { cfur: 1, cfssr: 2 }, CF_RANDOM = 60, CF_PICK = 120;
+function lowDrop() { const x = Math.random(); let a = 0; for (const [k, p] of LOW_DROPS) { a += p; if (x < a) return k; } return null; }
+/* character banners can give an SSR memory instead of an SSR character */
+const SSR_MEM_BK = ['limited', 'weekly', 'standard', 'beginner'], SSR_MEM_CHANCE = .25;
+const lowIc = r => r.kind === 'cfrag' ? r.cf : r.kind === 'frag' ? 'frag' + r.frag : 'coins';
+function fragFloor(results, bk) {
+  for (const k of ['cfur', 'cfssr']) {
+    let need = CF_MIN10[k] - results.filter(r => r.kind === 'cfrag' && r.cf === k).length;
+    while (need > 0) {
+      const i = results.findIndex(r => r.kind === 'frag') >= 0 ? results.findIndex(r => r.kind === 'frag') : results.findIndex(r => r.kind === 'coins');
+      if (i < 0) break;
+      const old = results[i];
+      if (old.kind === 'frag') S.pets.frags[old.frag]--;
+      else { const b = booted; booted = false; S.wallet.coins -= old.amount; booted = b; }   // taking the gold back is not "spending"
+      S.wallet[k] = (S.wallet[k] || 0) + 1; results[i] = { kind: 'cfrag', rarity: 3, cf: k };
+      const h = S.gacha.history[results.length - 1 - i]; if (h && h.banner === bk) h.name = resultView(results[i]).name;
+      need--;
+    }
+  }
+  return results;
 }
 const fragChars = r => S.pool.filter(e => e.type === 'character' && !e.mc && +e.rarity === r && e.pullable !== false);
 CUR_SVG.cfur = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cfuG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9ad9"/><stop offset=".5" stop-color="#b98bff"/><stop offset="1" stop-color="#7ff0e0"/></linearGradient></defs><path d="M12 2l7 6-2.6 12H7.6L5 8z" fill="url(#cfuG)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 8h14M12 2l-2.4 6L12 20l2.4-12z" fill="none" stroke="#fff" stroke-width=".9" opacity=".7"/></svg>';
@@ -187,12 +201,14 @@ function rollOne(bk, force, urX = 1) {
     else ({ item, lost } = pickUR(B, g));
   }
   else if (rarity === 4) {
-    if (B.ssr.length) item = rpick(B.ssr);
+    const sm = SSR_MEM_BK.includes(bk) && Math.random() < SSR_MEM_CHANCE ? pullableMems(4).filter(Boolean) : [];   // character banners sometimes give an SSR memory
+    if (sm.length) item = rpick(sm); else if (B.ssr.length) item = rpick(B.ssr);
   }
-  // the lowest tier is 500 gold coins, or sometimes an egg fragment
-  const frag = rarity === 3 ? (() => { const x = Math.random(); return x < FRAG_SSR ? 'ssr' : x < FRAG_SSR + FRAG_UR ? 'ur' : null; })() : null;
+  // the lowest tier: 500 gold coins, an egg fragment or a character fragment (LOW_DROPS)
+  const low = rarity === 3 ? lowDrop() : null, frag = low === 'ssr' || low === 'ur' ? low : null;
   let res;
   if (frag) { S.pets.frags[frag]++; res = { kind: 'frag', rarity, frag }; }
+  else if (low) { S.wallet[low] = (S.wallet[low] || 0) + 1; res = { kind: 'cfrag', rarity, cf: low }; }
   else if (!item) {
     const amount = FILLER_COINS[rarity]; S.wallet.coins += amount;
     res = { kind: 'coins', rarity, amount };
@@ -201,11 +217,11 @@ function rollOne(bk, force, urX = 1) {
     // Corals for every character pulled; more for copies past max stars
     if (item.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[rarity] || 0; S.wallet.starlight += res.starlight; }
     // the rare upgrade: an SSR turns into a UR after it is revealed
-    if (rarity === 4 && bk !== 'beginner' && (force === 'up' || Math.random() < UPGRADE_CHANCE)) { const up = upgradeSSR(B, g, res); if (up) { res = up.res; item = up.item; rarity = 5; } }
+    if (rarity === 4 && bk !== 'beginner' && item.type !== 'memory' && (force === 'up' || Math.random() < UPGRADE_CHANCE)) { const up = upgradeSSR(B, g, res); if (up) { res = up.res; item = up.item; rarity = 5; } }
   }
   res.hard = rarity === 5 && p5 >= 1 && !res.up && !force;   // guaranteed by hard pity: never faked out
   S.wallet.dust += DUST_PER_PULL;
-  S.gacha.history.unshift({ name: res.kind === 'coins' ? `${fmt(res.amount)} gold coins` : res.kind === 'frag' ? `${EGG[frag].name} fragment` : item.name, rarity, banner: bk, t: Date.now() });
+  S.gacha.history.unshift({ name: res.kind === 'entry' ? item.name : resultView(res).name, rarity, banner: bk, t: Date.now() });
   if (S.gacha.history.length > 80) S.gacha.history.length = 80;
   return res;
 }
@@ -248,12 +264,12 @@ function doPull(n, bk = curBanner, free = false) {
   let bonus = 0, results;
   if (bk === 'stepup') { const sp = stepPull(); results = sp.out; bonus = sp.gold; }
   else results = (maxwin && maxWinResults(bk)) || Array.from({ length: n }, () => rollOne(bk));
+  if (n === 10 && !maxwin) fragFloor(results, bk);   // every ×10: at least 1 UR and 2 SSR character fragments
   addPoints(bk, n);   // summon points: 1 per pull (not on the Beginner Wish or Step-Up)
-  const cfrag = rollCharFrags(n);   // character fragments on top of the results
   if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
-  showPull(results, n, bk, { maxwin, bonus, cfrag });
+  showPull(results, n, bk, { maxwin, bonus });
   // remember the best ×10 pulls so they can be replayed: Max Wins, upgrades, and pulls with 2+ URs (with or without the double animation)
   const st0 = pullState;
   if (n === 10 && st0 && (maxwin || results.some(r => r.up) || results.filter(r => r.rarity === 5).length >= 2)) {
@@ -466,7 +482,8 @@ function openRates(bk, histOpen) {
       <tr><td>${rtag(5)}</td><td>${+(BASE5 * X * 100).toFixed(2)}% · guaranteed by pull ${HARD_PITY} · ${f ? `50% ${esc(f.name)}, otherwise ${B.skins ? 'another UR outfit' : 'a permanent UR'} and the next UR is guaranteed featured` : `each of the ${B.ur.length} UR ${B.skins ? 'outfits' : B.mems ? 'memories' : 'characters'} is equally likely`}</td></tr>
       <tr><td>${rtag(4)}</td><td>${+(BASE4 * X * 100).toFixed(2)}% · at least one every 10 pulls · ${B.skins ? `one of ${B.ssr.length} SSR outfits` : B.mems ? `one of ${B.ssr.length} SSR memories` : 'a random SSR'}</td></tr>
       ${B.bk === 'weekly' ? `<tr><td>${icon('clock')}</td><td>The featured UR is picked at random every Monday (00:00 UTC). Next change in ${shortLeft(B.ends)}.</td></tr>` : ''}
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - FRAG_SSR - FRAG_UR) * 100)}%), an SSR egg fragment (${FRAG_SSR * 100}%) or a UR egg fragment (${FRAG_UR * 100}%)</td></tr>
+      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - LOW_DROPS.reduce((a, d) => a + d[1], 0)) * 100)}%), an SSR egg fragment (20%), a UR egg fragment (6%), an SSR character fragment (18%) or a UR character fragment (8%) · every ×10 has at least 1 UR and 2 SSR character fragments</td></tr>
+      ${SSR_MEM_BK.includes(bk) ? `<tr><td>${icon('memory')}</td><td>${SSR_MEM_CHANCE * 100}% of SSR results are a random SSR memory instead of an SSR character</td></tr>` : ''}
     </table>
     <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicate characters give ${STARLIGHT_MAX[5]} Corals (UR) or ${STARLIGHT_MAX[4]} (SSR) instead of a star. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
     ${replaysHTML()}
@@ -480,12 +497,12 @@ function specialRates(B) {
   if (B.begin) return `<table class="rates">
       <tr><td>${rtag(5)}</td><td>Pull ${BEGIN_PULLS} is a guaranteed UR character: one of ${B.ur.map(u => esc(u.name)).join(', ') || 'the 3 chosen URs'} (equal chance). No UR character can drop before it; a UR roll (${+(BASE5 * 100).toFixed(2)}%) gives a random UR memory instead${urMems().length ? '' : ' (an SSR while there are no UR memories)'}.</td></tr>
       <tr><td>${rtag(4)}</td><td>${+(BASE4 * 100).toFixed(2)}% · at least one every 10 pulls · a random SSR character</td></tr>
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins or an egg fragment</td></tr>
+      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins, an egg fragment or a character fragment (at least 1 UR and 2 SSR per ×10)</td></tr>
       <tr><td>${icon('info')}</td><td>${BEGIN_PULLS} pulls in total, ×10 only, 20% off: ${BEGIN_TK} Standard tickets or ${BEGIN_PEARLS} pearls per ×10. No SSR → UR upgrades. You have ${beginLeft()} pulls left.</td></tr></table>`;
   if (B.step) return `<table class="rates">
       <tr><td>${rtag(5)}</td><td>${+(BASE5 * 100).toFixed(2)}% per pull (step 1: ${+(BASE5 * 50).toFixed(2)}%, step 5: ${+(BASE5 * 150).toFixed(2)}%) · 50% ${B.feat ? esc(B.feat.name) : 'the rate-up character'}, otherwise a permanent UR character and the next UR is the rate-up · getting a UR never resets the steps</td></tr>
       <tr><td>${rtag(4)}</td><td>${+(BASE4 * 100).toFixed(2)}% · at least one every 10 pulls · a random SSR character</td></tr>
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins or an egg fragment</td></tr>
+      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins, an egg fragment or a character fragment (at least 1 UR and 2 SSR per ×10)</td></tr>
       ${STEP_COST.map((c, i) => `<tr><td><b>Step ${i + 1}</b></td><td>${c} pearls · ×10${STEP_PERK[i] ? ` · <b>${STEP_PERK[i]}</b>` : ''} · +${fmt(STEP_GOLD[i])} gold</td></tr>`).join('')}
     </table>`;
   return '';
@@ -509,6 +526,7 @@ const rpick = a => a[Math.floor(Math.random() * a.length)];
 function resultView(r) {
   if (r.kind === 'coins') return { name: `${fmt(r.amount)} gold coins`, type: 'Gold coins', img: null };
   if (r.kind === 'frag') return { name: `${EGG[r.frag].name} fragment`, type: 'Egg fragment', img: null };
+  if (r.kind === 'cfrag') return { name: `${r.cf === 'cfur' ? 'UR' : 'SSR'} character fragment`, type: 'Character fragment', img: null };
   const e = findEntry(r.id) || { name: '?', type: 'item' };
   return { name: e.name, type: TYPES[e.type], img: baseSplash(e), card: baseCard(e) };
 }
@@ -1035,7 +1053,7 @@ function advancePull() {
   pullEl.classList.remove('r3', 'r4', 'r5'); pullEl.classList.add('r' + r.rarity);
   $('#pullStage').innerHTML = `<div class="rv r${r.rarity} ${v.img ? 'has-art' : ''} ">
     <div class="rv-glow"></div>
-    ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`}
+    ${v.img ? `<img class="rv-blur" src="${v.img}" alt=""><img class="rv-splash" src="${v.img}" alt="">` : `<div class="rv-coin">${curIcon(lowIc(r))}</div>`}
     <div class="rv-flash"></div><div class="rv-sweep"></div>
     <div class="rv-info">
       <div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(v.type)}</div>
@@ -1085,7 +1103,7 @@ function showSummary() {
   $('#pullStage').innerHTML = `<div class="sum">
     <h2>Summon results${st.maxwin ? ' <span class="sum-mw">MAX WIN</span>' : ''}</h2>${st.maxwin && !st.replay ? `<div class="sum-mwt"><span class="tiny">Title unlocked</span>${titleHTML(TITLES.find(t => t.id === 'maxwinner'))}</div>` : ''}
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r), e = r.kind === 'entry' && findEntry(r.id), mem = e && e.type === 'memory' && memOf(e.id);
-      const pic = mem ? `<span class="scard-mem">${memCellPic(mem, 0)}</span>` : v.card ? `<img src="${v.card}" alt="" class="${e && baseArt(e) ? '' : 'chibi'}" ${e && baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>` : `<div class="coinbox">${curIcon(r.kind === 'frag' ? 'frag' + r.frag : 'coins')}</div>`;
+      const pic = mem ? `<span class="scard-mem">${memCellPic(mem, 0)}</span>` : v.card ? `<img src="${v.card}" alt="" class="${e && baseArt(e) ? '' : 'chibi'}" ${e && baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>` : `<div class="coinbox">${curIcon(lowIc(r))}</div>`;
       return `<div class="scard r${r.rarity}" style="--i:${i}">
       ${pic}
       ${r.isNew ? '<span class="new">NEW</span>' : ''}${r.up ? '<span class="new upg">UPGRADED</span>' : ''}
@@ -1106,7 +1124,8 @@ function sumItems(st) {
   const R = st.results, add = (k, n, l, ic = curIcon(k)) => n ? out.push([ic, fmt(n), l]) : 0, out = [];
   add('coins', R.reduce((a, r) => a + (r.kind === 'coins' ? r.amount : 0), 0), 'Gold');
   add('coins', st.bonus || 0, 'Step reward');
-  if (st.cfrag) { add('cfur', st.cfrag.ur, 'UR character fragment'); add('cfssr', st.cfrag.ssr, 'SSR character fragment'); }
+  add('cfur', R.filter(r => r.kind === 'cfrag' && r.cf === 'cfur').length, 'UR character fragment');
+  add('cfssr', R.filter(r => r.kind === 'cfrag' && r.cf === 'cfssr').length, 'SSR character fragment');
   add('fragssr', R.filter(r => r.kind === 'frag' && r.frag === 'ssr').length, 'SSR egg fragment');
   add('fragur', R.filter(r => r.kind === 'frag' && r.frag === 'ur').length, 'UR egg fragment');
   add('pearls', R.reduce((a, r) => a + (r.pearls || 0), 0), 'Pearls (extra copies)');

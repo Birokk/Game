@@ -46,7 +46,7 @@ function renderMenu() {
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#sumDot').hidden = !bannerKeys().some(k => canPull(10, k) || freeReady(k));
-  $('#evDot').hidden = !loginReady();
+  $('#evDot').hidden = !loginReady() && !msignReady();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
   if (booted && typeof rankSettle === 'function') rankSettle();

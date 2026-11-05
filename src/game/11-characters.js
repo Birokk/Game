@@ -1,7 +1,13 @@
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let wdSlot = 'hat', memSlot = 0;
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false, csShown = '';
-const charList = () => S.pool.filter(e => e.type === 'character' && owns(e.id)).sort((a, b) => !!b.mc - !!a.mc || b.rarity - a.rarity || a.name.localeCompare(b.name));
+/* the roster: the main character first, then favourites, then by CS (highest first), then rarity (S.favs = [character ids]) */
+const isFav = id => (S.favs || []).includes(id);
+function charList() {
+  const list = S.pool.filter(e => e.type === 'character' && owns(e.id)), cs = new Map(list.map(e => [e.id, charScore(e)]));
+  return list.sort((a, b) => !!b.mc - !!a.mc || isFav(b.id) - isFav(a.id) || cs.get(b.id) - cs.get(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
+}
+function toggleFav(id) { S.favs = isFav(id) ? (S.favs || []).filter(x => x !== id) : [...(S.favs || []), id]; persist(); renderCharacters(); toast(isFav(id) ? `${(findEntry(id) || {}).name} added to favourites.` : `${(findEntry(id) || {}).name} removed from favourites.`); }
 const skinsOf = id => S.pool.filter(e => e.type === 'skin' && e.parent === id);
 function openCharacters(id) {
   csShown = '';
@@ -188,14 +194,16 @@ function renderCharacters() {
   U.innerHTML = `
     <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
-        <span class="ring"><span>${thumbImg(e)}</span></span>${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
+        <span class="ring"><span>${thumbImg(e)}</span></span>${isFav(e.id) ? `<span class="cs-fav">${icon('star')}</span>` : ''}${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}</button>`).join('')}</nav>
     <div class="cs-side cs-ui">
       <button class="rbtn" id="csViewBtn" aria-label="View the art without the menu">${icon('eye')}</button>
+      <button class="rbtn cs-favbtn ${isFav(c.id) ? 'on' : ''}" id="csFavBtn" aria-pressed="${isFav(c.id)}" aria-label="${isFav(c.id) ? 'Remove from favourites' : 'Add to favourites'}" title="Favourite">${icon('star')}</button>
     </div>
     <section class="cs-panel cs-ui ${enter ? 'enter' : ''}">${head}${body}</section>`;
   U.querySelector('.cs-list').scrollTop = keepList;
   $('#csBack').onclick = closeCharacters;
+  $('#csFavBtn').onclick = () => toggleFav(c.id);
   $('#csHelp').onclick = () => openModal({ title: 'Characters', ic: 'chars', body: `<div class="stack">
       <p class="desc">Pick a character on the left. <b>Home</b> shows stars and outfits, <b>Bond</b> is where you give gifts and, at bond level 10, propose with a ring, and <b>Character Info</b> has their profile. Badges under the name show what you've achieved with each character.</p>
       <p class="desc">Every duplicate copy adds a star, up to ${MAX_STARS}. After that each copy from a summon gives ${STARLIGHT_MAX[5]} Corals for a UR or ${STARLIGHT_MAX[4]} for an SSR.</p>
