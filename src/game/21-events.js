@@ -9,13 +9,15 @@ function eventList() {
   list.forEach(e => { if (e.id === 'mystery' && e.name === 'Mystery Box') { e.name = 'Mystery Fountain'; if (e.sub === 'Limited summon · 10 pulls · premium outfit inside') e.sub = 'Limited summon · 10 wishes · premium outfit inside'; } });   // renamed
   if (!list.some(e => e.id === 'msign')) { const i = list.findIndex(e => e.id === 'login'); list = [...list.slice(0, i + 1), { id: 'msign', name: 'Monthly Sign-in', sub: 'A reward for every day of the month', makeups: MSIGN_MAKEUPS }, ...list.slice(i + 1)]; }
   if (!list.some(e => e.id === 'scratch')) { const i = list.findIndex(e => e.id === 'login'); list = [...list.slice(0, i + 1), { id: 'scratch', name: 'Scratch Cards', sub: 'Match three icons to win pearls' }, ...list.slice(i + 1)]; }
+  const lg = list.find(e => e.id === 'login');
+  if (lg && !lg.tlSeeded) { lg.tlSeeded = true; if (!list.some(isTl)) list = [...list, newTloginEvent(true)]; }   // one sample Total Login event, once
   if (list !== S.events) S.events = list;
   return list;
 }
 const eventOf = id => eventList().find(e => e.id === id);
 const eventEnd = e => e.end ? new Date(e.end + 'T23:59:59').getTime() : null;
 const EV_BUILTIN = ['mystery', 'login', 'msign', 'scratch'];
-const eventLive = e => e.id === 'login' || e.id === 'msign' || e.id === 'scratch' || !eventEnd(e) || eventEnd(e) > Date.now();
+const eventLive = e => isTl(e) ? tlLive(e) : e.id === 'login' || e.id === 'msign' || e.id === 'scratch' || !eventEnd(e) || eventEnd(e) > Date.now();
 /* ---------- Monthly Sign-in (built-in event 'msign') ----------
    A calendar of the current month: day N's reward is claimed ON day N (today = today's date). Missed earlier days can be
    signed in afterwards by tapping that day, for MSIGN_PEARL pearl each, up to MSIGN_MAKEUPS times a month (admin →
@@ -109,6 +111,7 @@ function eventTimer(e) {
   if (!e) return '';
   if (e.id === 'msign') { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1); return `New month in ${dhLeft(r - n)}`; }
   if (e.id === 'login' || e.id === 'scratch') { const t = new Date(); t.setHours(24, 0, 0, 0); return `Resets in ${dhLeft(t - Date.now())}`; }
+  if (isTl(e)) return eventEnd(e) ? `Ends in ${dhLeft(eventEnd(e) - Date.now())}` : 'Ongoing';
   return eventEnd(e) ? dhLeft(eventEnd(e) - Date.now()) : 'Ongoing';
 }
 /* the wallpaper: the admin's upload, else the limited banner's art, else a night-sky gradient */
@@ -125,17 +128,20 @@ function renderEvents() {
     ${e.id === 'mystery' || e.id === 'scratch' ? `<div class="evp-cur"><span class="cur" title="Pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b><button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button></span></div>` : ''}
     <button class="inv-x evp-x" id="evClose" aria-label="Close">${icon('close')}</button>
     <aside class="evp-side"><span class="evp-pill">${icon('clock')}Limited-Time</span>
-      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' || x.id === 'msign' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'msign' && msignReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
-    <section class="evp-main ${e.id === 'msign' ? 'cal' : ''}">
+      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' || x.id === 'msign' || isTl(x) ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'msign' && msignReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) || (isTl(x) && tlCanDays(x).length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
+    ${isTl(e) ? tlCharHTML(e) : ''}
+    <section class="evp-main ${e.id === 'msign' ? 'cal' : ''} ${isTl(e) ? 'tlm' : ''}">
       <h1 class="evp-title">${esc(e.name || 'Event')}</h1>
       <span class="evp-time">${icon('clock')}<span id="evTime">${eventTimer(e)}</span></span>
       ${e.sub && e.id !== 'mystery' && e.id !== 'msign' ? `<p class="evp-sub">${esc(e.sub)}</p>` : ''}
-      ${e.id === 'login' ? loginBoard() : e.id === 'msign' ? msignBoard() : e.id === 'scratch' ? scratchBoard() : e.id === 'mystery' ? mysteryBoard() : e.text ? `<div class="evp-text">${esc(e.text).replace(/\n/g, '<br>')}</div>` : ''}
+      ${isTl(e) ? tloginBoard(e) : e.id === 'login' ? loginBoard() : e.id === 'msign' ? msignBoard() : e.id === 'scratch' ? scratchBoard() : e.id === 'mystery' ? mysteryBoard() : e.text ? `<div class="evp-text">${esc(e.text).replace(/\n/g, '<br>')}</div>` : ''}
     </section>`;
   $('#evClose').onclick = closeEvents;
   evEl.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { evSel = b.dataset.ev; renderEvents(); });
   evEl.querySelectorAll('.evl-day.now').forEach(b => b.onclick = claimLogin);
   evEl.querySelectorAll('[data-msday]').forEach(b => b.onclick = () => { const d = +b.dataset.msday; if (d === msignToday()) claimMsign(d); else makeupMsign(d); });
+  evEl.querySelectorAll('[data-tlclaim]').forEach(b => b.onclick = () => claimTlogin(e.id));
+  const ts = $('#tlStrip'); if (ts) { const c = ts.querySelector('.tl-day.can') || ts.querySelectorAll('.tl-day.got')[ts.querySelectorAll('.tl-day.got').length - 1]; if (c) ts.scrollLeft = Math.max(0, c.offsetLeft - ts.clientWidth / 2 + c.clientWidth / 2); ts.addEventListener('wheel', ev => { if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) { ts.scrollLeft += ev.deltaY; ev.preventDefault(); } }, { passive: false }); }
   if (e.id === 'scratch') bindScratch();
   if (e.id === 'mystery') bindMystery();
 }
@@ -159,25 +165,25 @@ function renderEventsTab() {
   const p = $('#adPanel'); if (!p) return;
   const list = eventList();
   p.innerHTML = `<div class="stack">
-    <div class="ad-head" style="margin:0"><h3>Events</h3><div class="row"><button class="btn mint sm" id="evAdd">${icon('plus')}New event</button><button class="btn ghost sm" id="evOpen">Open events</button></div></div>
+    <div class="ad-head" style="margin:0"><h3>Events</h3><div class="row"><button class="btn mint sm" id="evAdd">${icon('plus')}New event</button><button class="btn mint sm" id="evAddTl">${icon('calendar')}New login event</button><button class="btn ghost sm" id="evOpen">Open events</button></div></div>
     <p class="tiny">Each event has its own wallpaper behind the event page (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the limited banner's art is used. Events with an end date disappear for players after that day.</p>
     <div class="row" style="gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05)"><b>Daily spin art</b><span class="tiny">The picture on the left of the Daily spin window (portrait, ~600×720)</span>${MEDIA.get('spin:art') ? `<img src="${MEDIA.get('spin:art')}" alt="" style="width:48px;height:58px;object-fit:cover;border-radius:8px">` : ''}<label class="btn mint sm">${icon('upload')}${MEDIA.get('spin:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-spinup></label>${MEDIA.get('spin:art') ? '<button class="btn ghost sm" data-spindel>Default art</button>' : ''}</div>
     ${list.map(e => { const bg = MEDIA.get('ev:' + e.id), login = e.id === 'login', builtin = EV_BUILTIN.includes(e.id);
       return `<div class="ev-ad">
         <div class="ev-adprev">${(() => { const w = e.id === 'mystery' && mboxSkin() && baseArt(mboxSkin()) || bg; return w ? `<img src="${w}" alt="">` : '<span class="tiny">No wallpaper</span>'; })()}</div>
         <div class="stack" style="gap:8px;min-width:0">
-          <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${builtin && e.id !== 'mystery' ? '<span class="tag">Built in</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
+          <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${builtin && e.id !== 'mystery' ? '<span class="tag">Built in</span>' : isTl(e) ? '<span class="tag">Login event</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
           <input class="input" data-evf="sub" data-evid="${esc(e.id)}" maxlength="80" value="${esc(e.sub || '')}" placeholder="Subtitle (optional)" aria-label="Subtitle">
           ${e.id === 'msign' ? `<div class="row" style="gap:8px;align-items:center"><span class="tiny">Calendar art (portrait, ~600×720)</span><label class="btn mint sm">${icon('upload')}${MEDIA.get('msign:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-mcalup></label>${MEDIA.get('msign:art') ? '<button class="btn ghost sm" data-mcaldel>Default art</button>' : ''}</div>` : ''}
           ${e.id === 'msign' ? `<label class="field" style="max-width:320px"><span>Missed-day make-ups per month (${MSIGN_PEARL} pearl each)</span><input class="input" type="number" min="0" max="28" data-evmk value="${msignMakeups()}"></label>` : ''}
-          ${login ? `<div class="ev-days"><span class="tiny">Limited tickets per day</span>${loginDays().map((n, i) => `<label>Day ${i + 1}<input class="input" type="number" min="1" max="99" data-evday="${i}" value="${n}"></label>`).join('')}</div>`
+          ${isTl(e) ? tlAdminHTML(e) : login ? `<div class="ev-days"><span class="tiny">Limited tickets per day</span>${loginDays().map((n, i) => `<label>Day ${i + 1}<input class="input" type="number" min="1" max="99" data-evday="${i}" value="${n}"></label>`).join('')}</div>`
             : e.id === 'mystery' ? mboxAdmin() : builtin ? '<span class="tiny">Scratch cards: 5 pearls each, 10 a day. Prizes and odds are set in the game code.</span>' : `<textarea class="input" data-evf="text" data-evid="${esc(e.id)}" rows="3" maxlength="1200" placeholder="What the event is about" aria-label="Event text">${esc(e.text || '')}</textarea>`}
           <div class="row" style="gap:8px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-evbg="${esc(e.id)}"></label>
             ${bg ? `<button class="btn ghost sm" data-evbgdel="${esc(e.id)}">Remove wallpaper</button>` : ''}
             ${builtin ? '' : `<button class="link" data-evdel="${esc(e.id)}" style="color:${evDelArm === e.id ? '#ff6b81' : ''}">${evDelArm === e.id ? 'Tap again to delete' : 'Delete'}</button>`}</div>
         </div></div>`; }).join('')}
   </div>`;
-  bindMboxAdmin();
+  bindMboxAdmin(); bindTlAdmin(p);
   p.querySelectorAll('[data-evf]').forEach(i => i.onchange = () => { const e = eventOf(i.dataset.evid); if (!e) return; e[i.dataset.evf] = i.value.trim() || null; if (i.dataset.evf === 'name' && !e.name) e.name = 'Event'; persist(); });
   p.querySelectorAll('[data-spinup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('spin:art', await resizeImage(ev.target.files[0], 900, 'image/jpeg'))) { renderEventsTab(); toast('Daily spin art saved.'); } } catch (er) { toast(er.message, true); } });
   p.querySelectorAll('[data-spindel]').forEach(b => b.onclick = async () => { await mediaDel('spin:art'); renderEventsTab(); });
@@ -192,5 +198,80 @@ function renderEventsTab() {
     evDelArm = null; await mediaDel('ev:' + id); S.events = eventList().filter(e => e.id !== id); persist(); renderEventsTab(); toast('Event deleted.');
   });
   $('#evAdd').onclick = () => { S.events = [...eventList(), { id: `ev-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, name: 'New event', sub: null, text: null, end: null }]; persist(); renderEventsTab(); };
+  $('#evAddTl').onclick = () => { S.events = [...eventList(), newTloginEvent(false)]; persist(); renderEventsTab(); toast('Login event added: 14 days starting today. Set its dates, days and rewards below.'); };
   $('#evOpen').onclick = () => { closeModal(); openEvents(); };
+}
+
+/* ---------- Total Login events (type 'tlogin', admin → Events → "New login event"), after the owner's reference ----------
+   A 1–2 week event between a start and an end date: every day you open the game during it counts as one login day, and
+   day N's reward can be claimed once you have N login days (they don't have to be in a row). Each event: {id, type: 'tlogin',
+   name, sub, start, end ('YYYY-MM-DD'), days: 7–14, rewards: [{k, n}] (one per day), char: pool character id, charName}.
+   Its page: "N-day login to claim", the date range, a horizontal strip of Day cards (crystal header, reward card, amount,
+   claimed check, claimable glow; tap to claim every reached day) and the event character on the right with a name plate
+   (a PNG cutout uploaded per event, media key evchar:<id>; else the character's base art in a soft frame).
+   Player state S.tlogin[eventId] = {days: [dayKeys logged in], got: [day numbers claimed]}. */
+const TL_KEYS = ['pearls', 'tickets', 'wishes', 'coins', 'bottles', 'dust', 'starlight', 'cfssr', 'cfur', 'fragssr', 'fragur', 'eggur', 'memtk', 'nametk', 'exp', 'gplush'];
+const TL_DEFAULT = d => [{ k: 'coins', n: 10000 }, { k: 'wishes', n: 1 }, { k: 'bottles', n: 1 }, { k: 'pearls', n: 10 }, { k: 'cfssr', n: 3 }, { k: 'tickets', n: 1 }, { k: 'tickets', n: 3 }][d % 7];
+const tlDate = s => s ? new Date(s + 'T00:00:00') : null;
+const isTl = e => e && e.type === 'tlogin';
+const tlLive = e => { const a = tlDate(e.start), b = eventEnd(e), t = Date.now(); return (!a || a.getTime() <= t) && (!b || b > t); };
+const tlDays = e => clamp(Math.floor(+e.days) || 7, 1, 14);
+const tlReward = (e, d) => { const r = (e.rewards || [])[d - 1]; return r && TL_KEYS.includes(r.k) && r.n > 0 ? r : TL_DEFAULT(d - 1); };
+function tlState(id) { S.tlogin = S.tlogin || {}; const s = S.tlogin[id] || (S.tlogin[id] = { days: [], got: [] }); s.days = s.days || []; s.got = s.got || []; return s; }
+const tlCount = e => Math.min(tlDays(e), tlState(e.id).days.length);
+const tlCanDays = e => { const n = tlCount(e), g = tlState(e.id).got, out = []; for (let d = 1; d <= n; d++) if (!g.includes(d)) out.push(d); return out; };
+/* count today as a login day for every running Total Login event (called from renderMenu) */
+function tlTick() { eventList().filter(e => isTl(e) && tlLive(e)).forEach(e => { const s = tlState(e.id); if (!s.days.includes(dayKey())) { s.days.push(dayKey()); persist(); } }); }
+const tloginReady = () => eventList().some(e => isTl(e) && tlLive(e) && tlCanDays(e).length);
+function claimTlogin(id) {
+  const e = eventOf(id); if (!e) return; const list = tlCanDays(e); if (!list.length) return;
+  const st = tlState(id), got = {};
+  list.forEach(d => { st.got.push(d); const r = tlReward(e, d); got[r.k] = (got[r.k] || 0) + r.n; });
+  guildGrant(Object.fromEntries(Object.entries(got).filter(([k]) => k !== 'exp'))); if (got.exp) gainExp(got.exp);
+  persist(); renderMenu(); refreshSummon(); renderEvents();
+  showRewards(e.name || 'Total Login', got, `${list.length} day${list.length === 1 ? '' : 's'} claimed`);
+}
+const tlFmtDate = s => { const d = tlDate(s); return d ? `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}` : '…'; };
+function tloginBoard(e) {
+  const n = tlCount(e), st = tlState(e.id), N = tlDays(e), can = tlCanDays(e);
+  const cards = Array.from({ length: N }, (_, i) => { const d = i + 1, r = tlReward(e, d), got = st.got.includes(d), ok = can.includes(d);
+    return `<button class="tl-day ${got ? 'got' : ''} ${ok ? 'can' : ''} ${d > n ? 'lock' : ''}" ${ok ? 'data-tlclaim' : 'tabindex="-1"'} aria-label="Day ${d}: ${fmt(r.n)} ${(REW_NAMES[r.k] || [r.k, r.k])[r.n === 1 ? 0 : 1]}${got ? ', claimed' : ok ? ', claim' : ''}">
+      <span class="tl-hd">Day ${d}</span>
+      <span class="tl-body"><span class="tl-rw r${REW_R[r.k] || 4}">${curIcon(r.k)}<em>${fmt(r.n)}</em></span>${got ? `<span class="tl-ok">${icon('check')}</span>` : ''}</span>
+      <span class="tl-ft">${got ? 'Claimed' : ok ? 'Claim' : '✦'}</span></button>`; }).join('');
+  return `<div class="tl"><div class="tl-top"><span class="tl-count"><b>${n}</b>-day login to claim</span><span class="tl-dates">${tlFmtDate(e.start)} — ${tlFmtDate(e.end)}</span></div>
+    <div class="tl-strip" id="tlStrip">${cards}</div>
+    <p class="evp-note">Every day you log in during the event counts, even with gaps. ${can.length ? `${can.length} reward${can.length === 1 ? '' : 's'} ready: tap a glowing card.` : n >= N ? 'All rewards claimed.' : 'Come back tomorrow for the next day.'}</p></div>`;
+}
+function tlCharHTML(e) {
+  const cut = MEDIA.get('evchar:' + e.id), c = e.char && findEntry(e.char), name = e.charName || (c && c.name) || '';
+  if (!cut && !(c && baseArt(c))) return '';
+  return `<div class="tl-char ${cut ? 'cut' : 'art'}">${cut ? `<img src="${cut}" alt="">` : `<img src="${baseArt(c)}" alt="">`}${name ? `<span class="tl-name">${esc(name)}</span>` : ''}</div>`;
+}
+/* admin editor for one Total Login event */
+function tlAdminHTML(e) {
+  const chars = S.pool.filter(x => x.type === 'character'), N = tlDays(e), cut = MEDIA.get('evchar:' + e.id);
+  return `<div class="tl-ad">
+    <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <label class="tiny">Starts <input class="input" type="date" data-tlf="start" data-evid="${esc(e.id)}" value="${esc(e.start || '')}"></label>
+      <label class="tiny">Ends <input class="input" type="date" data-tlf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>
+      <label class="tiny">Days <select class="input" data-tlf="days" data-evid="${esc(e.id)}">${Array.from({ length: 14 }, (_, i) => `<option ${i + 1 === N ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>
+      <label class="tiny">Character <select class="input" data-tlf="char" data-evid="${esc(e.id)}"><option value="">None</option>${chars.map(c => `<option value="${esc(c.id)}" ${e.char === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+      <label class="tiny">Name plate <input class="input" data-tlf="charName" data-evid="${esc(e.id)}" maxlength="30" value="${esc(e.charName || '')}" placeholder="Character's name"></label></div>
+    <div class="row" style="gap:8px;align-items:center"><span class="tiny">Character cutout (PNG with a transparent background, optional; else the character's art)</span><label class="btn mint sm">${icon('upload')}${cut ? 'Replace' : 'Upload'}<input type="file" accept="image/png,image/webp,image/*" class="sr" data-tlcut="${esc(e.id)}"></label>${cut ? `<button class="btn ghost sm" data-tlcutdel="${esc(e.id)}">Remove</button>` : ''}</div>
+    <div class="tl-ad-days">${Array.from({ length: N }, (_, i) => { const r = tlReward(e, i + 1); return `<label><span>Day ${i + 1}</span><select class="input" data-tlk="${i}" data-evid="${esc(e.id)}">${TL_KEYS.map(k => `<option value="${k}" ${r.k === k ? 'selected' : ''}>${(REW_NAMES[k] || [k, k])[1]}</option>`).join('')}</select><input class="input" type="number" min="1" max="999999" data-tln="${i}" data-evid="${esc(e.id)}" value="${r.n}"></label>`; }).join('')}</div></div>`;
+}
+function bindTlAdmin(p) {
+  const ev = id => eventOf(id);
+  p.querySelectorAll('[data-tlf]').forEach(i => i.onchange = () => { const e = ev(i.dataset.evid); if (!e) return; const f = i.dataset.tlf; e[f] = f === 'days' ? +i.value : i.value || null; persist(); if (f === 'days') renderEventsTab(); });
+  const setR = (i, key, val) => { const e = ev(i.dataset.evid); if (!e) return; const N = tlDays(e); e.rewards = Array.from({ length: N }, (_, d) => ({ ...tlReward(e, d + 1) })); e.rewards[+i.dataset[key]][key === 'tlk' ? 'k' : 'n'] = val; persist(); };
+  p.querySelectorAll('[data-tlk]').forEach(i => i.onchange = () => setR(i, 'tlk', i.value));
+  p.querySelectorAll('[data-tln]').forEach(i => i.onchange = () => { const v = clamp(Math.floor(+i.value) || 1, 1, 999999); i.value = v; setR(i, 'tln', v); });
+  p.querySelectorAll('[data-tlcut]').forEach(i => i.onchange = async evt => { try { if (await mediaSet('evchar:' + i.dataset.tlcut, await resizeImage(evt.target.files[0], 1200, 'image/png'))) { renderEventsTab(); toast('Character cutout saved.'); } } catch (er) { toast(er.message, true); } });
+  p.querySelectorAll('[data-tlcutdel]').forEach(b => b.onclick = async () => { await mediaDel('evchar:' + b.dataset.tlcutdel); renderEventsTab(); });
+}
+function newTloginEvent(sample) {
+  const t = new Date(), iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, end = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 20);
+  const f = S.pool.find(x => x.id === S.featuredId) || S.pool.find(x => x.type === 'character' && !x.mc);
+  return { id: sample ? 'tl-sample' : `tl-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, type: 'tlogin', name: 'Total Login', sub: '14-day login event', start: iso(t), end: iso(end), days: 14, rewards: Array.from({ length: 14 }, (_, d) => d === 13 ? { k: 'memtk', n: 1 } : d === 6 ? { k: 'tickets', n: 5 } : TL_DEFAULT(d)), char: f ? f.id : null, charName: '' };
 }

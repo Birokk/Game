@@ -46,7 +46,8 @@ function renderMenu() {
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#sumDot').hidden = !bannerKeys().some(k => canPull(10, k) || freeReady(k));
-  $('#evDot').hidden = !loginReady() && !msignReady();
+  if (booted && typeof tlTick === 'function') tlTick();
+  $('#evDot').hidden = !loginReady() && !msignReady() && !tloginReady();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
   if (booted && typeof rankSettle === 'function') rankSettle();
@@ -259,7 +260,7 @@ function setMC(k, switching) {
 const LOAD_TIPS = [
   'Every duplicate adds a star. At 3★ and 6★ some characters reveal new splash art.',
   'Losing the 50/50 on the limited banner guarantees the featured UR next time.',
-  'Eggs hide around the plaza. Walk into one to catch it.',
+  'Tap your home wallpaper three times for some bond with that character, three times a day.',
   'Give gifts to raise bond. At bond level 10 you can propose with a ring.',
   'Spin the daily wheel for a 1% chance at a marriage ring.',
   'Tap your avatar to change your title, frame and namecard.',

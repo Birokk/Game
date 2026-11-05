@@ -77,6 +77,13 @@ function buyPack(kind, id) {
   persist(); renderMenu(); refreshSummon(); renderShop();
   showRewards(pk.name, got, pk.usd ? `${PACKS[kind].label} pack · $${pk.usd}${TOPUP_FREE ? ' · free while testing' : ''}` : `${PACKS[kind].label} free gift`);
 }
+/* the VIP bar on top of Top Up → Pearls (after the owner's reference): shield with the VIP level, rank name, VIP EXP toward the next level, Privileges */
+function vipShopBar() {
+  const lv = vipLv(), xp = vipState().xp, next = VIP_XP[lv], pct = next ? Math.min(100, xp / next * 100) : 100;
+  return `<div class="vsb"><span class="vsb-sh"><b>${lv}</b></span>
+    <span class="vsb-mid"><span class="vsb-rank">${esc(VIP_RANKS[lv] || 'Guest')}</span><span class="vsb-xp">${curIcon('vip')}<span class="vsb-bar"><i style="width:${pct}%"></i><em>${next ? `${fmt(xp)} / ${fmt(next)}` : `${fmt(xp)} · max level`}</em></span></span></span>
+    <button class="vsb-btn" data-open="vip">Privileges${vipReady() ? '<span class="dot-n"></span>' : ''}</button></div>`;
+}
 let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
 const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
@@ -119,7 +126,7 @@ function renderShop() {
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup' && topSub !== 'pearls') body = packsHTML(topSub);
   else if (shopTab === 'topup') {
-    body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
+    body = `${vipShopBar()}<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
       <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b>${(() => { const bo = topupBonus(i); return bo.n ? `<span class="tu-bonus ${bo.first ? 'first' : ''}">${bo.first ? 'First purchase ×2' : '+10% bonus'} · +${fmt(bo.n)}</span>` : '<span class="tu-bonus none">No bonus</span>'; })()}<span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets, marriage rings and name change tickets.</p>
