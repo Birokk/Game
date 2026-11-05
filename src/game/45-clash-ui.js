@@ -35,7 +35,7 @@ const CC_DECK_MAX = 12;
 let ccdEl = null;
 const ccdF = { style: 'all', type: 'all', ap: 0, q: '' };
 function openDeck() {
-  closeModal(); ccSave();
+  closeModal(); ccSave(); ccArtPrewarm();
   if (!ccdEl) { ccdEl = document.createElement('div'); ccdEl.className = 'ccd'; ccdEl.setAttribute('role', 'dialog'); ccdEl.setAttribute('aria-label', 'Deck'); document.body.appendChild(ccdEl); }
   renderDeck();
 }
@@ -276,44 +276,6 @@ function ccHalfHTML(G, p, keyset) {
   // each half is its own piece (stone wall + field) so a board skin can replace one player's side; data-skin picks it
   return `<div class="cc-half ${p === 0 ? 'me' : 'op'}" data-skin="default"><div class="cc-field"><i class="cc-lanediv l1"></i><i class="cc-lanediv l2"></i></div>${p === 1 ? traps + rowsHTML : rowsHTML + traps}</div>`;
 }
-/* the world around the arena: painted once (forest canopy, two rivers, rocks, flowers) and reused */
-let ccEnvCache = null;
-function ccEnvImage() {
-  if (ccEnvCache) return ccEnvCache;
-  const c = document.createElement('canvas'); c.width = 1600; c.height = 900; const g = c.getContext('2d'), R = seeded('cc-world');
-  const bg = g.createRadialGradient(800, 450, 150, 800, 450, 950); bg.addColorStop(0, '#3a5a2a'); bg.addColorStop(1, '#14220f'); g.fillStyle = bg; g.fillRect(0, 0, 1600, 900);
-  for (let i = 0; i < 260; i++) { g.fillStyle = R() < .5 ? `rgba(88,112,52,${.12 + R() * .16})` : `rgba(34,48,22,${.15 + R() * .2})`; g.beginPath(); g.ellipse(R() * 1600, R() * 900, 20 + R() * 70, 10 + R() * 40, R() * 3, 0, 7); g.fill(); }
-  // rivers down both sides, with banks and shimmer
-  const river = (x0, ph) => {
-    const pts = []; for (let y = -40; y <= 940; y += 30) pts.push([x0 + Math.sin(y / 130 + ph) * 34 + Math.sin(y / 47 + ph * 2) * 8, y]);
-    const band = (w, col) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x - w, y) : g.moveTo(x - w, y)); for (let i = pts.length - 1; i >= 0; i--) g.lineTo(pts[i][0] + w, pts[i][1]); g.closePath(); g.fillStyle = col; g.fill(); };
-    band(64, '#5b5236'); band(56, '#3e6b74');
-    const wg = g.createLinearGradient(x0 - 50, 0, x0 + 50, 0); wg.addColorStop(0, '#1f5a7a'); wg.addColorStop(.5, '#3d9cc4'); wg.addColorStop(1, '#1f5a7a'); band(48, wg);
-    g.strokeStyle = 'rgba(220,245,255,.35)'; g.lineWidth = 2;
-    for (let i = 0; i < 40; i++) { const [x, y] = pts[Math.floor(R() * pts.length)]; g.beginPath(); g.moveTo(x - 14 + R() * 10, y + R() * 20); g.quadraticCurveTo(x, y - 4 + R() * 20, x + 10 + R() * 10, y + R() * 20); g.stroke(); }
-    for (let i = 0; i < 26; i++) { const [x, y] = pts[Math.floor(R() * pts.length)], s = R() < .5 ? -1 : 1; rock(x + s * (52 + R() * 14), y + R() * 20, 6 + R() * 10); }
-  };
-  function rock(x, y, r) { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x + r * .3, y + r * .4, r, r * .7, 0, 0, 7); g.fill(); const rg = g.createRadialGradient(x - r * .4, y - r * .4, 1, x, y, r); rg.addColorStop(0, '#c9c4b0'); rg.addColorStop(1, '#5d5a4c'); g.fillStyle = rg; g.beginPath(); g.ellipse(x, y, r, r * .75, R(), 0, 7); g.fill(); }
-  river(150, 0.7); river(1455, 2.3);
-  // flowers and ferns
-  for (let i = 0; i < 160; i++) { g.fillStyle = ['#f7d36b', '#ff9ad5', '#ffffff', '#b9a8ff'][Math.floor(R() * 4)]; g.globalAlpha = .7; g.beginPath(); g.arc(R() * 1600, R() * 900, 1.5 + R() * 2, 0, 7); g.fill(); }
-  g.globalAlpha = 1;
-  // tree canopies, light from the top left
-  function tree(x, y, r) {
-    g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(x + r * .35, y + r * .4, r * 1.05, r * .95, 0, 0, 7); g.fill();
-    for (let k = 0; k < 7; k++) {
-      const a = k / 7 * 6.28 + R(), cx = k === 6 ? x : x + Math.cos(a) * r * .42, cy = k === 6 ? y : y + Math.sin(a) * r * .42, rr = r * (k === 6 ? .62 : .55);
-      const tg = g.createRadialGradient(cx - rr * .45, cy - rr * .5, rr * .1, cx, cy, rr); tg.addColorStop(0, '#7fbf4f'); tg.addColorStop(.5, '#3c7a2a'); tg.addColorStop(1, '#173d15');
-      g.fillStyle = tg; g.beginPath(); g.arc(cx, cy, rr, 0, 7); g.fill();
-    }
-    g.fillStyle = 'rgba(200,240,150,.18)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(x - r * .3 + R() * r * .4, y - r * .35 + R() * r * .3, r * .08, 0, 7); g.fill(); }
-  }
-  const spots = [];
-  for (let i = 0; i < 70; i++) { const side = R(); spots.push(side < .42 ? [R() * 250, R() * 900] : side < .84 ? [1350 + R() * 250, R() * 900] : [240 + R() * 1120, R() < .5 ? -10 + R() * 30 : 880 + R() * 30]); }
-  spots.sort((a, b) => a[1] - b[1]).forEach(([x, y]) => tree(x, y, 38 + R() * 46));
-  const lg = g.createLinearGradient(0, 0, 1600, 900); lg.addColorStop(0, 'rgba(255,230,160,.12)'); lg.addColorStop(.5, 'rgba(0,0,0,0)'); lg.addColorStop(1, 'rgba(0,0,30,.25)'); g.fillStyle = lg; g.fillRect(0, 0, 1600, 900);
-  return ccEnvCache = c;
-}
 function ccRender(before) {
   if (!ccM) return;
   const G = ccM.G, me = G.players[0], op = G.players[1], keyset = ccTargets(), my = ccMyTurn();
@@ -349,6 +311,7 @@ function ccRender(before) {
     ${ccM.log ? `<div class="ccm-log"><b>Match log</b><ol>${G.log.slice(-40).reverse().map(l => `<li class="k-${l.k} p${l.p}">${esc(l.t)}</li>`).join('')}</ol></div>` : ''}
     ${G.phase === 'choice' && G.pending.p === 0 ? `<div class="ccm-choice"><b>Seer: keep one card</b><p>The other goes back on top of your deck.</p><div>${G.pending.opts.map(o => { const c = me.deck.find(x => x.iid === o); return `<button class="ccm-ch" data-choice="${o}">${ccCardHTML(c.id, { tip: false })}</button>`; }).join('')}</div></div>` : ''}`;
   ccM.el.classList.toggle('aiming', !!selCard && my); ccRenderTurn(); ccPeekRender(); ccActRender(keyset, selCard);
+  ccArtEnsure();
   if (before) ccPlayFx(before);
 }
 /* End Turn is the glowing orb at the right end of the battle line */

@@ -4728,3 +4728,21 @@ b.ccd-dname{border:0}
 .ccu.fx-poison{animation:ccPoiA .6s}@keyframes ccPoiA{50%{filter:drop-shadow(0 0 14px #6fd84b)}}
 .ccu.fx-spell{animation:ccSpellA .5s}@keyframes ccSpellA{50%{filter:drop-shadow(0 0 18px #c79cff) brightness(1.3)}}
 .cc-trap.fx-trap{animation:ccSpellA .6s}.cc-trap.fx-in{animation:ccIn .35s}
+
+/* textured board (46-clash-art.js paints the halves, the battle line and the UI tiles) */
+.ccm.tex .cc-half{background:var(--cc-tex-me) 0 0/100% 100% no-repeat;box-shadow:0 0 0 2px rgba(18,14,8,.85),10px 14px 28px rgba(0,0,0,.65)}
+.ccm.tex .cc-half.op{background-image:var(--cc-tex-op)}
+.ccm.tex .cc-field{background:none;box-shadow:none}
+.ccm.tex .cc-lanediv,.ccm.tex .cc-trap-rune{display:none}
+.ccm.tex .cc-slot{border-color:transparent;background:none;box-shadow:none}
+.ccm.tex .cc-slot-l{opacity:0}
+.ccm.tex .cc-slot.tgt{border-color:#fff3b0;background:rgba(255,240,150,.16)}
+.ccm.tex .cc-trap{background:none;box-shadow:none}
+.ccm.tex .ccb-line{background:var(--cc-tex-line) 0 0/100% 100%;box-shadow:0 0 0 2px #2a2014,4px 6px 14px rgba(0,0,0,.65)}
+.ccm.tex .ccb-flow{left:96px;right:126px;top:11px;height:10px}
+.ccm.tex .ccm-hero,.ccm.tex .ccb-ap,.ccm.tex .ccm-piles span,.ccm.tex .ccm-act,.ccm.tex .ccm-log,.ccm.tex .ccm-tb{background:linear-gradient(160deg,rgba(255,240,210,.06),rgba(0,0,0,.42)),var(--tx-stone);background-size:auto,192px}
+.ccm.tex .ccm-hero,.ccm.tex .ccm-act{border-image:var(--tx-bronze) 3 / 3px stretch;border-image-outset:0;border-radius:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),inset 0 2px 10px rgba(0,0,0,.4),6px 9px 18px rgba(0,0,0,.6)}
+.ccm.tex .ccm-hero::before,.ccm.tex .ccm-act::before{content:"";position:absolute;inset:-6px;pointer-events:none;background:radial-gradient(circle,#ffe7a8 0 2px,#a8782e 3px,#3a2810 4.5px,transparent 5px) 0 0/100% 100% no-repeat,radial-gradient(circle,#ffe7a8 0 2px,#a8782e 3px,#3a2810 4.5px,transparent 5px) 100% 0/12px 12px no-repeat,radial-gradient(circle,#ffe7a8 0 2px,#a8782e 3px,#3a2810 4.5px,transparent 5px) 0 100%/12px 12px no-repeat,radial-gradient(circle,#ffe7a8 0 2px,#a8782e 3px,#3a2810 4.5px,transparent 5px) 100% 100%/12px 12px no-repeat;background-size:12px 12px}
+.ccm.tex .ccm-hero.act{box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),0 0 24px rgba(255,220,140,.5),6px 9px 18px rgba(0,0,0,.6)}
+.ccm.tex .ccb-crest{background:radial-gradient(circle at 40% 30%,rgba(255,240,200,.12),rgba(0,0,0,.55) 70%),var(--tx-stone);background-size:auto,192px}
+.ccm.tex .ccb-ap{border-image:var(--tx-bronze) 2 / 2px stretch;border-radius:0}
