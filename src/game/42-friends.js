@@ -79,12 +79,10 @@ const frReady = () => frRecvList().length > 0;
 let frTab = 'list', frQuery = '';
 function openFriends(tab) { if (tab) frTab = tab; frState(); openModal({ title: 'Friends', ic: 'friends', wide: true, kind: 'friends', body: '<div id="frRoot"></div>', onMount: renderFriends }); }
 function frRow(fp, actions) {
-  const shows = fp.show.map(x => `<span class="fr-ch r${x.e.rarity}" title="${esc(x.e.name)}">${baseThumb(x.e)}</span>`).join('');
   return `<div class="fr-row"><span class="fr-bg">${cardLayer(fp.card)}</span>
     <button class="fr-av" data-frp="${fp.uid}" aria-label="View ${esc(fp.name)}'s profile">${frAvatar(fp, 70)}<b class="fr-lv">${fp.lv}</b></button>
     <span class="fr-who"><span class="fr-nm"><b>${esc(fp.name)}</b>${titleHTML(fp.title)}${fp.guild ? `<span class="fr-gd" title="${esc(fp.guild.name)}">${guildIcon(fp.guild.icon, 20)}</span>` : ''}</span>
       <span class="fr-sub"><span class="fr-on ${fp.mins < 5 ? 'on' : ''}"><i></i>${frSeen(fp.mins)}</span><span class="fr-st">${icon('chat')}${esc(fp.status)}</span></span></span>
-    <span class="fr-chs">${shows}</span>
     <span class="fr-act">${actions}</span></div>`;
 }
 function renderFriends() {

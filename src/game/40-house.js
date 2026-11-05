@@ -182,3 +182,41 @@ function updateHouseLive() {
 }
 ICONS.home = ICONS.home || '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>';
 ICONS.swap = ICONS.swap || '<path d="M7 7h11l-3-3"/><path d="M17 17H6l3 3"/>';
+/* ---------- wallpaper bond: tap the home wallpaper 3 times in a row → +200 bond for the character shown, 3 times a day ----------
+   The wallpaper's character: a character's own art, or the character a skin belongs to (memories and Pearl Tide give nothing).
+   A popup under the currencies shows the character's icon, bond level and bar (wpBondPop). State S.wpBond {day, n}. */
+const WPB_TAPS = 3, WPB_BOND = 200, WPB_DAILY = 3, WPB_GAP = 1200;
+let wpbTaps = 0, wpbLast = 0, wpbHide = null;
+function wpBondChar() { const w = wallpaperInfo(); if (!w || !w.e) return null; const e = w.e.type === 'skin' ? findEntry(w.e.parent) : w.e; return e && e.type === 'character' && owns(e.id) ? e : null; }
+const wpbState = () => { if (!S.wpBond || S.wpBond.day !== dayKey()) S.wpBond = { day: dayKey(), n: 0 }; return S.wpBond; };
+function bondBarParts(id) { const lv = bondLv(id), xp = bondOf(id).xp; if (lv >= BOND_MAX) return { lv, pct: 100, txt: 'Max bond' }; const a = BOND_XP[lv], b = BOND_XP[lv + 1]; return { lv, pct: (xp - a) / (b - a) * 100, txt: `${fmt(xp - a)} / ${fmt(b - a)}` }; }
+function wpBondPop(e, before, msg, gained) {
+  let el = $('#wpBondPop');
+  if (!el) { el = document.createElement('div'); el.id = 'wpBondPop'; el.className = 'wpb'; menuEl.appendChild(el); }
+  const after = bondBarParts(e.id), up = before && after.lv > before.lv;
+  el.innerHTML = `<span class="wpb-ic r${e.rarity}">${thumbImg(e)}</span>
+    <span class="wpb-mid"><span class="wpb-top"><b>${esc(e.name)}</b>${bondTag(e.id, 'sm')}${gained ? `<em class="wpb-gain">+${fmt(gained)}</em>` : ''}</span>
+      <span class="wpb-bar"><i style="width:${(before && !up ? before : after).pct}%"></i></span>
+      <small>${esc(msg)}</small></span>`;
+  el.classList.remove('out'); el.classList.add('on');
+  if (before && !up) requestAnimationFrame(() => requestAnimationFrame(() => { const i = el.querySelector('.wpb-bar i'); if (i) i.style.width = after.pct + '%'; }));
+  clearTimeout(wpbHide); wpbHide = setTimeout(() => { el.classList.add('out'); el.classList.remove('on'); }, 3200);
+}
+function wpTapHeart(x, y) {
+  const h = document.createElement('span'); h.className = 'wpb-heart'; h.style.left = x + 'px'; h.style.top = y + 'px'; h.innerHTML = curIcon('bondheart');
+  menuEl.appendChild(h); setTimeout(() => h.remove(), 900);
+}
+menuEl.addEventListener('click', e => {
+  if (uiHidden || !menuOpen || e.target.closest('button, a, input, select, textarea, label, .cur, #promo, nav, .hm, .wpb')) return;
+  const c = wpBondChar(); if (!c) return;
+  const now2 = Date.now(); wpbTaps = now2 - wpbLast < WPB_GAP ? wpbTaps + 1 : 1; wpbLast = now2;
+  wpTapHeart(e.clientX, e.clientY);
+  if (wpbTaps < WPB_TAPS) return;
+  wpbTaps = 0;
+  const st = wpbState();
+  if (st.n >= WPB_DAILY) { wpBondPop(c, null, `Done for today (${WPB_DAILY} / ${WPB_DAILY}) · come back tomorrow`); return; }
+  if (bondLv(c.id) >= BOND_MAX) { wpBondPop(c, null, 'Already at max bond'); return; }
+  const before = bondBarParts(c.id), lv0 = bondLv(c.id), n = addBond(c.id, WPB_BOND); st.n++;
+  persist(); refreshCharacters();
+  wpBondPop(c, before, bondLv(c.id) > lv0 ? `Bond level ${bondLv(c.id)}! · ${WPB_DAILY - st.n} left today` : `${WPB_DAILY - st.n} left today`, n);
+});
