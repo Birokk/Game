@@ -243,7 +243,9 @@ function ccDo(a) {
   const err = ccApply(G, a);
   if (err) { toast(err); return false; }
   ccM.sel = null;
+  const hit = G.fx.filter(f => f.id === 'hero1' && f.type === 'dmg').reduce((t, f) => t + f.n, 0);
   ccRender(before);
+  if (hit > CC_SLASH_MIN) ccSlash(hit);
   ccAfter();
   return true;
 }
@@ -267,6 +269,22 @@ function ccAfter() {
     return;
   }
   ccM.busy = false; ccRender();
+}
+
+/* big hit: when one of your actions deals more than 2 damage to the enemy hero, a diagonal slice slashes in from your side
+   with the splash art of the character on your profile picture */
+const CC_SLASH_MIN = 2;
+function ccSlash(n) {
+  if (!ccM) return;
+  const stage = ccM.el.querySelector('.ccm-stage'); stage.querySelectorAll('.ccsl').forEach(x => x.remove());
+  const w = avatarEntry() || wallpaperInfo(), art = !!w && wpHasArt(w);
+  const src = w ? wpSrc(w) : portrait(S.player.look, 4), name = w ? w.e.name : (S.player.name || 'You');
+  const el = document.createElement('div'); el.className = 'ccsl';
+  el.innerHTML = `<i class="ccsl-flash"></i><div class="ccsl-move"><div class="ccsl-panel"><img src="${src}" alt="" class="${art ? '' : 'chibi'}"><i class="ccsl-lines"></i><i class="ccsl-shade"></i></div>
+    <div class="ccsl-edgew"><i class="ccsl-edge"></i></div><div class="ccsl-txt"><small>${esc(name)}</small><b>\u2212${n}</b><em>${n >= 5 ? 'Crushing blow' : 'Direct hit'}</em></div></div>`;
+  stage.appendChild(el);
+  const ui = ccM.el.querySelector('.ccm-ui'); ui.classList.remove('ccsl-shake'); void ui.offsetWidth; ui.classList.add('ccsl-shake');
+  setTimeout(() => { el.remove(); ui.classList.remove('ccsl-shake'); }, 1900);
 }
 
 /* ---- drawing ---- */
