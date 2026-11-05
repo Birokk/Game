@@ -140,7 +140,7 @@ function rankTitleOf(p) {
   if (!rankStandCache || rankStandCache.wk !== playWeek()) rankStandCache = { wk: playWeek(), s: rankStandings(false) };
   const best = Math.min(...RANK_REW_BOARDS.map(([b]) => { const i = rankStandCache.s[b].indexOf(p.name); return i >= 0 && i < 3 ? i + 1 : 9; }));
   if (best <= 3) return titleHTML(rankTitle(best));
-  const base = TITLES.filter(t => !t.rank && t.need !== 'mbtitle');
+  const base = TITLES.filter(t => !t.rank && !t.vip && t.need !== 'mbtitle');
   return titleHTML(base[Math.floor(seeded('rankttl:' + p.name)() * base.length)]);
 }
 function rankSettle(force) {

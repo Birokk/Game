@@ -40,7 +40,7 @@ function frProfile(p) {
   const owned = Object.entries(cs).map(([id, n]) => ({ e: findEntry(id), cs: n })).filter(x => x.e).sort((a, b) => b.cs - a.cs);
   const mems = S.memories || [];
   const show = owned.slice(0, 4).map(x => ({ ...x, st: Math.min(6, Math.floor(r() * 7 * (.4 + p.skill * .8))), mem: mems.length && r() < .9 ? { m: mems[Math.floor(r() * mems.length)], st: Math.min(3, Math.floor(r() * 4 * (.3 + p.skill))) } : null }));   // each showcased character's equipped memory
-  const titles = TITLES.filter(t => !t.rank && t.id !== 'maxwinner'), cards = CARDS.filter(k => !String(k.id).startsWith('rk-'));
+  const titles = TITLES.filter(t => !t.rank && !t.vip && t.id !== 'maxwinner'), cards = CARDS.filter(k => !String(k.id).startsWith('rk-') && !k.vip);
   const fav = show[0] && show[0].e, artCard = fav && baseArt(fav) && r() < .45;
   const mins = Math.floor(Math.pow(r(), 2) * 60 * 72);
   const guild = typeof botGuild === 'function' ? botGuild(p.name) : null;
