@@ -144,7 +144,8 @@ function startClash(deck, seed) {
   const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', 'Bot']);
   ccM = { G, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: false, timer: 0, log: false, done: false };
   const el = document.createElement('div'); el.className = 'ccm'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Card Clash match');
-  el.innerHTML = '<div class="ccm-stage"></div>'; document.body.appendChild(el); ccM.el = el;
+  el.innerHTML = '<div class="ccm-stage"><canvas class="ccm-envc" width="1600" height="900"></canvas><div class="ccm-ui"></div></div>'; document.body.appendChild(el); ccM.el = el;
+  el.querySelector('.ccm-envc').getContext('2d').drawImage(ccEnvImage(), 0, 0);
   ccM.onResize = () => ccFit(); addEventListener('resize', ccM.onResize); ccFit();
   el.addEventListener('click', ccClick);
   el.addEventListener('mouseover', e => { if (!ccM) return; const t = e.target.closest('[data-peek]'), k = t ? t.dataset.peek : null; if (ccM.peekHover !== k) { ccM.peekHover = k; ccPeekRender(); } });
@@ -228,7 +229,11 @@ function ccDo(a) {
 function ccAfter() {
   if (!ccM) return;
   const G = ccM.G;
-  if (G.phase === 'over') { ccM.busy = true; ccM.timer = setTimeout(ccEndScreen, 900); return; }
+  if (G.phase === 'over') {
+    ccM.busy = true; ccRender();
+    [0, 1].forEach(p => { if (G.players[p].hp <= 0) { const h = ccM.el.querySelector(`.ccm-hero[data-hero="${p}"]`); if (h) h.classList.add('fx-shatter'); } });
+    ccM.timer = setTimeout(ccEndScreen, 1300); return;
+  }
   if (G.active === 1) {
     ccM.busy = true; ccRenderTurn();
     ccM.timer = setTimeout(() => {
@@ -266,31 +271,78 @@ const CC_SHIELD = '<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-
 function ccHalfHTML(G, p, keyset) {
   const P = G.players[p], rows = p === 1 ? [1, 0] : [0, 1];
   const slot = (l, r) => { const u = P.board[l][r], k = `${p}${l}${r}`; return `<div class="cc-slot ${r === 0 ? 'front' : 'back'} ${keyset.has('s' + k) ? 'tgt' : ''}" data-slot="${k}">${u ? ccUnitHTML(G, u, keyset) : `<span class="cc-slot-l">${r === 0 ? 'Front' : 'Back'}</span>`}</div>`; };
-  const traps = `<div class="cc-traps">${[0, 1, 2].map(l => { const c = P.traps[l], k = `${p}${l}`; return `<div class="cc-trap ${c ? 'set' : ''} ${keyset.has('t' + k) ? 'tgt' : ''}" data-trap="${k}" ${c && p === 0 ? `data-peek="c${c.id}"` : ''} title="${c ? (p === 0 ? esc(ccDef(c.id).name + ': ' + ccDef(c.id).text) : 'A face-down trap') : `${CC_LANES[l]} lane trap slot`}">${c ? (p === 0 ? `<span class="cc-trap-c" style="--cs:${CC_STYLES[ccDef(c.id).style][1]}">${ccGlyph(ccDef(c.id))}<b>${esc(ccDef(c.id).name)}</b></span>` : '<span class="cc-trap-c back"></span>') : ''}</div>`; }).join('')}</div>`;
-  const rowsHTML = rows.map(r => `<div class="cc-row ${r === 0 ? 'front' : 'back'}">${[0, 1, 2].map(l => slot(l, r)).join('')}</div>`).join('');
-  return `<div class="cc-half ${p === 0 ? 'me' : 'op'}" data-skin="${p === 0 ? 'default' : 'default'}"><div class="cc-field"></div>${p === 1 ? traps + rowsHTML : rowsHTML + traps}</div>`;
+  const traps = `<div class="cc-traps">${[0, 1, 2].map(l => { const c = P.traps[l], k = `${p}${l}`; return `<div class="cc-trap ${c ? 'set' : ''} ${keyset.has('t' + k) ? 'tgt' : ''}" data-trap="${k}" ${c && p === 0 ? `data-peek="c${c.id}"` : ''} title="${c ? (p === 0 ? esc(ccDef(c.id).name + ': ' + ccDef(c.id).text) : 'A face-down trap') : `${CC_LANES[l]} lane trap slot`}">${c ? (p === 0 ? `<span class="cc-trap-c" style="--cs:${CC_STYLES[ccDef(c.id).style][1]}">${ccGlyph(ccDef(c.id))}<b>${esc(ccDef(c.id).name)}</b></span>` : '<span class="cc-trap-c back"></span>') : '<i class="cc-trap-rune"></i>'}</div>`; }).join('')}</div>`;
+  const rowsHTML = `<div class="cc-rows">${rows.map(r => `<div class="cc-row ${r === 0 ? 'front' : 'back'}">${[0, 1, 2].map(l => slot(l, r)).join('')}</div>`).join('')}</div>`;
+  // each half is its own piece (stone wall + field) so a board skin can replace one player's side; data-skin picks it
+  return `<div class="cc-half ${p === 0 ? 'me' : 'op'}" data-skin="default"><div class="cc-field"><i class="cc-lanediv l1"></i><i class="cc-lanediv l2"></i></div>${p === 1 ? traps + rowsHTML : rowsHTML + traps}</div>`;
+}
+/* the world around the arena: painted once (forest canopy, two rivers, rocks, flowers) and reused */
+let ccEnvCache = null;
+function ccEnvImage() {
+  if (ccEnvCache) return ccEnvCache;
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 900; const g = c.getContext('2d'), R = seeded('cc-world');
+  const bg = g.createRadialGradient(800, 450, 150, 800, 450, 950); bg.addColorStop(0, '#3a5a2a'); bg.addColorStop(1, '#14220f'); g.fillStyle = bg; g.fillRect(0, 0, 1600, 900);
+  for (let i = 0; i < 260; i++) { g.fillStyle = R() < .5 ? `rgba(88,112,52,${.12 + R() * .16})` : `rgba(34,48,22,${.15 + R() * .2})`; g.beginPath(); g.ellipse(R() * 1600, R() * 900, 20 + R() * 70, 10 + R() * 40, R() * 3, 0, 7); g.fill(); }
+  // rivers down both sides, with banks and shimmer
+  const river = (x0, ph) => {
+    const pts = []; for (let y = -40; y <= 940; y += 30) pts.push([x0 + Math.sin(y / 130 + ph) * 34 + Math.sin(y / 47 + ph * 2) * 8, y]);
+    const band = (w, col) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x - w, y) : g.moveTo(x - w, y)); for (let i = pts.length - 1; i >= 0; i--) g.lineTo(pts[i][0] + w, pts[i][1]); g.closePath(); g.fillStyle = col; g.fill(); };
+    band(64, '#5b5236'); band(56, '#3e6b74');
+    const wg = g.createLinearGradient(x0 - 50, 0, x0 + 50, 0); wg.addColorStop(0, '#1f5a7a'); wg.addColorStop(.5, '#3d9cc4'); wg.addColorStop(1, '#1f5a7a'); band(48, wg);
+    g.strokeStyle = 'rgba(220,245,255,.35)'; g.lineWidth = 2;
+    for (let i = 0; i < 40; i++) { const [x, y] = pts[Math.floor(R() * pts.length)]; g.beginPath(); g.moveTo(x - 14 + R() * 10, y + R() * 20); g.quadraticCurveTo(x, y - 4 + R() * 20, x + 10 + R() * 10, y + R() * 20); g.stroke(); }
+    for (let i = 0; i < 26; i++) { const [x, y] = pts[Math.floor(R() * pts.length)], s = R() < .5 ? -1 : 1; rock(x + s * (52 + R() * 14), y + R() * 20, 6 + R() * 10); }
+  };
+  function rock(x, y, r) { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x + r * .3, y + r * .4, r, r * .7, 0, 0, 7); g.fill(); const rg = g.createRadialGradient(x - r * .4, y - r * .4, 1, x, y, r); rg.addColorStop(0, '#c9c4b0'); rg.addColorStop(1, '#5d5a4c'); g.fillStyle = rg; g.beginPath(); g.ellipse(x, y, r, r * .75, R(), 0, 7); g.fill(); }
+  river(150, 0.7); river(1455, 2.3);
+  // flowers and ferns
+  for (let i = 0; i < 160; i++) { g.fillStyle = ['#f7d36b', '#ff9ad5', '#ffffff', '#b9a8ff'][Math.floor(R() * 4)]; g.globalAlpha = .7; g.beginPath(); g.arc(R() * 1600, R() * 900, 1.5 + R() * 2, 0, 7); g.fill(); }
+  g.globalAlpha = 1;
+  // tree canopies, light from the top left
+  function tree(x, y, r) {
+    g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(x + r * .35, y + r * .4, r * 1.05, r * .95, 0, 0, 7); g.fill();
+    for (let k = 0; k < 7; k++) {
+      const a = k / 7 * 6.28 + R(), cx = k === 6 ? x : x + Math.cos(a) * r * .42, cy = k === 6 ? y : y + Math.sin(a) * r * .42, rr = r * (k === 6 ? .62 : .55);
+      const tg = g.createRadialGradient(cx - rr * .45, cy - rr * .5, rr * .1, cx, cy, rr); tg.addColorStop(0, '#7fbf4f'); tg.addColorStop(.5, '#3c7a2a'); tg.addColorStop(1, '#173d15');
+      g.fillStyle = tg; g.beginPath(); g.arc(cx, cy, rr, 0, 7); g.fill();
+    }
+    g.fillStyle = 'rgba(200,240,150,.18)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(x - r * .3 + R() * r * .4, y - r * .35 + R() * r * .3, r * .08, 0, 7); g.fill(); }
+  }
+  const spots = [];
+  for (let i = 0; i < 70; i++) { const side = R(); spots.push(side < .42 ? [R() * 250, R() * 900] : side < .84 ? [1350 + R() * 250, R() * 900] : [240 + R() * 1120, R() < .5 ? -10 + R() * 30 : 880 + R() * 30]); }
+  spots.sort((a, b) => a[1] - b[1]).forEach(([x, y]) => tree(x, y, 38 + R() * 46));
+  const lg = g.createLinearGradient(0, 0, 1600, 900); lg.addColorStop(0, 'rgba(255,230,160,.12)'); lg.addColorStop(.5, 'rgba(0,0,0,0)'); lg.addColorStop(1, 'rgba(0,0,30,.25)'); g.fillStyle = lg; g.fillRect(0, 0, 1600, 900);
+  return ccEnvCache = c;
 }
 function ccRender(before) {
   if (!ccM) return;
   const G = ccM.G, me = G.players[0], op = G.players[1], keyset = ccTargets(), my = ccMyTurn();
-  const stage = ccM.el.querySelector('.ccm-stage');
-  const pips = (P, p) => { const max = Math.max(P.ap, G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap); return `<div class="ccm-ap ${p ? 'op' : 'me'}"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span><small>AP</small></div>`; };
+  const ui = ccM.el.querySelector('.ccm-ui');
+  const ap = (P, p) => { const max = Math.max(P.ap, G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
   const hero = p => { const P = G.players[p]; return `<div class="ccm-hero ${p ? 'op' : 'me'} ${keyset.has('h' + p) ? 'tgt' : ''} ${G.active === p ? 'act' : ''}" data-hero="${p}">
       <span class="ccm-ava">${p === 0 ? avatarHTML(64) : `<span class="ccm-bot">${CC_IC}</span>`}</span>
-      <span class="ccm-gem ${p ? 'red' : 'blue'}"><b>${Math.max(0, P.hp)}</b></span>
-      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : 'Average bot · same deck'}</small></span></div>`; };
+      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : 'Same deck as you'}</small></span>
+      <span class="ccm-gem ${p ? 'red' : 'blue'}"><b>${Math.max(0, P.hp)}</b></span></div>`; };
   const sel = ccM.sel, selCard = sel && sel.kind === 'hand' ? me.hand.find(c => c.iid === sel.iid) : null;
-  const n = me.hand.length, handHTML = me.hand.map((c, i) => { const d = ccDef(c.id), playable = my && G.phase === 'main' && d.ap <= me.ap && ccLegal(G).some(a => a.iid === c.iid); const rot = (i - (n - 1) / 2) * 4.5, dy = Math.abs(i - (n - 1) / 2) * 6;
-    return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}">${ccCardHTML(c.id, { tip: false })}</button>`; }).join('');
-  stage.innerHTML = `<div class="ccm-env"></div>
-    <div class="ccm-top"><span class="ccm-round">Round <b>${G.round}</b> / ${CC_CFG.rounds}${G.round >= CC_CFG.overtime ? ' · <em>Overtime</em>' : G.round >= CC_CFG.overtime - 3 ? ` · Overtime in ${CC_CFG.overtime - G.round}` : ''}</span></div>
+  const legal = my && G.phase === 'main' ? ccLegal(G) : [];
+  const n = me.hand.length, handHTML = me.hand.map((c, i) => { const d = ccDef(c.id), playable = d.ap <= me.ap && legal.some(a => a.iid === c.iid), mid = (n - 1) / 2, rot = (i - mid) * 3.2, dy = Math.pow(Math.abs(i - mid), 1.6) * 4;
+    return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
+  const ot = G.round >= CC_CFG.overtime;
+  ui.innerHTML = `
     <div class="ccm-tools"><button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
-    <div class="ccm-ophand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -4}deg"></span>`).join('')}<small>${op.hand.length} in hand</small></div>
-    <div class="ccm-boardwrap"><div class="ccm-board">${ccHalfHTML(G, 1, keyset)}<div class="cc-line"><span></span></div>${ccHalfHTML(G, 0, keyset)}</div></div>
+    <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg"></span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
-    <div class="ccm-piles op"><span title="Draw deck">${icon('chars')}${op.deck.length}</span><span title="Discard pile">${icon('trash')}${op.disc.length}</span></div>
-    <div class="ccm-piles me"><span title="Draw deck">${icon('chars')}${me.deck.length}</span><span title="Discard pile">${icon('trash')}${me.disc.length}</span></div>
-    <div class="ccm-turnbox">${pips(op, 1)}<div class="ccm-disc ${my ? 'mine' : ''}" id="ccDisc"></div>${pips(me, 0)}</div>
+    <div class="ccb ${G.active === 1 ? 'turn-op' : ''}">
+      <span class="ccb-torch tl"></span><span class="ccb-torch tr"></span><span class="ccb-torch bl"></span><span class="ccb-torch br"></span>
+      ${ccHalfHTML(G, 1, keyset)}
+      <div class="ccb-line"><span class="ccb-flow"></span>
+        <div class="ccb-crest ${ot ? 'ot' : ''}" title="${ot ? 'Overtime: every unit loses 1 HP at the start of its owner’s turn' : `Overtime starts in round ${CC_CFG.overtime}`}"><small>${ot ? 'Overtime' : 'Round'}</small><b>${G.round}</b><small>of ${CC_CFG.rounds}</small></div>
+        <div class="ccb-orbwrap">${ap(op, 1)}<div id="ccOrb"></div>${ap(me, 0)}</div>
+      </div>
+      ${ccHalfHTML(G, 0, keyset)}
+    </div>
+    <div class="ccm-piles op"><span title="Bot's draw deck">${icon('chars')}${op.deck.length}</span><span title="Bot's discard pile">${icon('trash')}${op.disc.length}</span></div>
+    <div class="ccm-piles me"><span title="Your draw deck">${icon('chars')}${me.deck.length}</span><span title="Your discard pile">${icon('trash')}${me.disc.length}</span></div>
     <div class="ccm-hand">${handHTML}</div>
     <div class="ccm-peek"></div>
     <div class="ccm-act"></div>
@@ -299,11 +351,14 @@ function ccRender(before) {
   ccM.el.classList.toggle('aiming', !!selCard && my); ccRenderTurn(); ccPeekRender(); ccActRender(keyset, selCard);
   if (before) ccPlayFx(before);
 }
+/* End Turn is the glowing orb at the right end of the battle line */
 function ccRenderTurn() {
-  if (!ccM) return; const d = ccM.el.querySelector('#ccDisc'); if (!d) return;
-  const G = ccM.G, my = ccMyTurn();
-  d.className = `ccm-disc ${G.active === 0 ? 'mine' : ''}`;
-  d.innerHTML = G.phase === 'over' ? '<b>Match over</b>' : G.active === 0 ? `<b>Your turn</b><button id="ccEnd" ${my && G.phase === 'main' ? '' : 'disabled'}>End turn</button>` : '<b>Opponent’s turn</b><small class="ccm-think">thinking<i></i><i></i><i></i></small>';
+  if (!ccM) return; const d = ccM.el.querySelector('#ccOrb'); if (!d) return;
+  const G = ccM.G, my = ccMyTurn(), can = my && G.phase === 'main';
+  const idle = can && !ccLegal(G).some(a => a.k === 'summon' || a.k === 'spell' || a.k === 'trap' || a.k === 'equip' || a.k === 'attack');
+  d.innerHTML = G.phase === 'over' ? '<button class="ccb-orb done" disabled><b>Match<br>over</b></button>'
+    : G.active === 0 ? `<button class="ccb-orb ${idle ? 'hint' : ''}" id="ccEnd" ${can ? '' : 'disabled'} title="End your turn"><b>End<br>turn</b></button>`
+    : '<button class="ccb-orb op" disabled><b>Enemy<br>turn</b><small class="ccm-think"><i></i><i></i><i></i></small></button>';
 }
 function ccPeekRender() {
   if (!ccM) return; const box = ccM.el.querySelector('.ccm-peek'); if (!box) return;
@@ -371,18 +426,49 @@ function ccPlayFx(before) {
     setTimeout(() => fl.remove(), 1300);
   }
 }
+/* end of the match: the losing hero's gem shatters, then a golden victory or a red defeat animation with the results */
 function ccEndScreen() {
   if (!ccM) return;
   const G = ccM.G, sv = ccSave();
   if (!ccM.done) { ccM.done = true; if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; persist(); }
   const res = G.winner === 0 ? ['Victory', 'win'] : G.winner === 1 ? ['Defeat', 'lose'] : ['Draw', 'draw'];
   const ms = Date.now() - G.started, mm = Math.floor(ms / 60000), ss = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
-  const box = document.createElement('div'); box.className = `ccm-end ${res[1]}`;
-  box.innerHTML = `<div class="ccm-endbox"><h2>${res[0]}</h2><p>${esc(G.reason)}</p>
-    <div class="ccm-endst"><span>Rounds<b>${Math.min(G.round, CC_CFG.rounds)}</b></span><span>Turns<b>${G.turnNo}</b></span><span>Time<b>${mm}:${ss}</b></span><span>Your HP<b>${Math.max(0, G.players[0].hp)}</b></span></div>
-    <p class="tiny">Deck: ${esc(ccM.deck.name)} (mirror) · seed ${G.seed} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
-    <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch</button><button class="btn ghost" id="ccBack">Back to Deck</button></div></div>`;
+  const crack = res[1] === 'lose' ? `<svg class="ccf-crack" viewBox="0 0 1600 900" preserveAspectRatio="none">${Array.from({ length: 9 }, (_, i) => { const a = i / 9 * 6.283 + .3; let x = 800, y = 450, d = `M${x} ${y}`; for (let k = 0; k < 7; k++) { x += Math.cos(a + Math.sin(k * 2.1 + i) * .5) * (60 + k * 22); y += Math.sin(a + Math.cos(k * 1.7 + i) * .5) * (40 + k * 14); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return `<path d="${d}" style="--d:${i * .05}s"/>`; }).join('')}</svg>` : '';
+  const box = document.createElement('div'); box.className = `ccm-end ccf ${res[1]}`;
+  box.innerHTML = `<canvas class="ccf-c" width="1600" height="900"></canvas><div class="ccf-rays"></div>${crack}<div class="ccf-flash"></div>
+    <div class="ccf-mid"><div class="ccf-emblem"><svg viewBox="0 0 24 24"><path d="${res[1] === 'win' ? 'M5 16L3 6l5.5 4L12 4l3.5 6L21 6l-2 10zm0 2h14v2H5z' : res[1] === 'lose' ? 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5zm-1.2 4l1.4 4.2-2.6 1.6 3.4 6.2-.8-4.8 2.4-1.4L13 6z' : CC_GLYPH.defense}"/></svg></div>
+      <h1 class="ccf-t" data-t="${res[0]}">${res[0]}</h1>
+      <div class="ccm-endbox"><p>${esc(G.reason)}</p>
+      <div class="ccm-endst"><span>Rounds<b>${Math.min(G.round, CC_CFG.rounds)}</b></span><span>Turns<b>${G.turnNo}</b></span><span>Time<b>${mm}:${ss}</b></span><span>Your HP<b>${Math.max(0, G.players[0].hp)}</b></span></div>
+      <p class="tiny">Deck: ${esc(ccM.deck.name)} (mirror) · seed ${G.seed} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
+      <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch</button><button class="btn ghost" id="ccBack">Back to Deck</button></div></div></div>`;
   ccM.el.querySelector('.ccm-stage').appendChild(box);
+  if (res[1] === 'lose') ccM.el.querySelector('.ccm-ui').classList.add('ccf-shake');
+  // particles: gold sparks rising and bursting for a win, red embers and ash drifting for a loss
+  const cv = box.querySelector('.ccf-c'), g = cv.getContext('2d'), win = res[1] === 'win', draw = res[1] === 'draw', P = [];
+  const add = (burst) => { const a = Math.random() * 6.283, sp = burst ? 3 + Math.random() * 9 : 0; P.push(win || draw
+    ? { x: burst ? 800 : Math.random() * 1600, y: burst ? 330 : 920, vx: burst ? Math.cos(a) * sp : (Math.random() - .5) * 1.2, vy: burst ? Math.sin(a) * sp - 2 : -2 - Math.random() * 4, r: 1.5 + Math.random() * 3.5, life: 1, dec: .006 + Math.random() * .01, hue: draw ? 220 : 38 + Math.random() * 18, star: Math.random() < .3 }
+    : { x: Math.random() * 1600, y: -20 + Math.random() * 300, vx: (Math.random() - .5) * 1.5, vy: .6 + Math.random() * 2.2, r: 1.5 + Math.random() * 3.5, life: 1, dec: .004 + Math.random() * .006, hue: Math.random() * 20, star: false }); };
+  for (let i = 0; i < (win ? 160 : 40); i++) add(win);
+  let t0 = performance.now();
+  const loop = now => {
+    if (!box.isConnected) return;
+    const t = now - t0; g.clearRect(0, 0, 1600, 900); g.globalCompositeOperation = 'lighter';
+    if (t < 9000 && P.length < 420) for (let i = 0; i < (win ? 5 : 4); i++) add(false);
+    if (win && t > 900 && t < 1000 && !box._b2) { box._b2 = 1; for (let i = 0; i < 120; i++) add(true); }
+    for (let i = P.length - 1; i >= 0; i--) {
+      const p = P[i]; p.x += p.vx; p.y += p.vy; p.life -= p.dec;
+      if (win || draw) { p.vy += .04; p.vx *= .99; } else { p.vx += Math.sin((p.y + i) / 40) * .03; }
+      if (p.life <= 0 || p.y > 940 || p.y < -60) { P.splice(i, 1); continue; }
+      const col = `hsla(${p.hue},100%,${win || draw ? 62 : 50}%,${Math.min(1, p.life * 1.4)})`;
+      g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 12;
+      if (p.star) { g.save(); g.translate(p.x, p.y); g.rotate(t / 400 + i); g.beginPath(); for (let k = 0; k < 8; k++) { const rr = k % 2 ? p.r * .6 : p.r * 2.4; g.lineTo(Math.cos(k * .785) * rr, Math.sin(k * .785) * rr); } g.fill(); g.restore(); }
+      else { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+    }
+    g.shadowBlur = 0; g.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 }
 function ccLeave() {
   if (!ccM) return;
