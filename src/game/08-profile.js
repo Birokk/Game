@@ -58,28 +58,26 @@ function openProfile() {
   pfTab = 'avatar'; pfSlot = -1; pfEditName = false; pfMode = 'view';
   openModal({ title: 'Profile', ic: 'chars', kind: 'profile', body: '<div id="pfRoot"></div>', onMount: renderProfile });
 }
-function renderProfile() {
-  const root = $('#pfRoot'); if (!root) return;
-  const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character' && !mcOff(e.id));
-  P.showcase = P.showcase.map(id => id && findEntry(id) && owns(id) ? id : null);
-  const urs = chars.filter(e => e.rarity === 5).length + (S.memories || []).filter(m => +m.rarity === 5 && owns(m.id)).length,   // UR characters + unique UR memories owned
-    totalCS = chars.filter(e => e.type === 'character').reduce((t, e) => t + charScore(e), 0);   // Total CS: every owned character's CS added up
+/* profile settings pickers open in a see-through popup over the profile (avatar, frame, title, namecard, showcase slot) */
+const PF_PICKS = { avatar: 'Avatar', frame: 'Avatar frame', title: 'Title', card: 'Namecard' };
+function pfOptsHTML(kind) {
+  const P = S.profile, chars = ownedChars();
   const lockTag = o => unlocked(o) ? '' : `<span class="pf-lock">${icon('lock')}${esc(UNLOCK[o.need][1])}</span>`;
   const opt = (on, locked, inner, data, label) => `<button class="pf-opt ${on ? 'on' : ''} ${locked ? 'locked' : ''}" ${locked ? 'disabled' : data}>${inner}<span class="pf-ol">${label}</span></button>`;
   let opts;
-  if (pfSlot >= 0) {
+  if (kind === 'slot') {
     opts = `<p class="tiny">Pick a character for showcase slot ${pfSlot + 1}.</p><div class="pf-grid">
       ${opt(!P.showcase[pfSlot], false, `<span class="pf-empty">${icon('close')}</span>`, 'data-show=""', 'Empty slot')}
       ${chars.map(e => opt(P.showcase[pfSlot] === e.id, false, `<span class="pf-thumb r${e.rarity}">${thumbImg(e)}</span>`, `data-show="${esc(e.id)}"`, esc(e.name))).join('')}</div>
       ${chars.length ? '' : '<div class="empty">You don\'t own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>'}`;
-  } else if (pfTab === 'avatar') {
+  } else if (kind === 'avatar') {
     const list = artChoices().filter(o => o.open), cur = avatarEntry();
     opts = `<p class="tiny">Use any art you own as your avatar: each character's base art and its 3★ / 6★ splash arts once unlocked, and every skin.</p><div class="pf-grid">
       ${opt(!cur, false, avatarHTML(64, null), 'data-av=""', 'My character')}
       ${list.map(o => opt(!!cur && cur.id === o.id, false, avatarHTML(64, wpParse(o.id)), `data-av="${esc(o.id)}"`, esc(wpName(wpParse(o.id))))).join('')}</div>`;
-  } else if (pfTab === 'frame') {
+  } else if (kind === 'frame') {
     opts = `<div class="pf-grid">${FRAMES.map(f => opt(frameOf() === f, !unlocked(f), avatarHTML(64, avatarEntry(), f.id) + lockTag(f), `data-fr="${f.id}"`, `${esc(f.name)}${f.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}</div>`;
-  } else if (pfTab === 'title') {
+  } else if (kind === 'title') {
     opts = `<div class="pf-grid wide">${TITLES.map(t => opt(titleOf() === t, !unlocked(t), `<span class="pf-tt">${titleHTML(t)}</span>${lockTag(t)}`, `data-tt="${t.id}"`, '')).join('')}</div>`;
   } else {
     const cur = cardBG(P.card);
@@ -87,10 +85,51 @@ function renderProfile() {
       ${CARDS.map(k => opt(cur.cls === 'nc-' + k.id, !unlocked(k), `<span class="pf-nc">${cardLayer({ cls: 'nc-' + k.id })}</span>${lockTag(k)}`, `data-nc="${k.id}"`, `${esc(k.name)}${k.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}
       ${artChoices().filter(o => o.open).map(o => opt(P.card === 'char:' + o.id && cur.cls === 'nc-char', false, `<span class="pf-nc">${cardLayer(cardBG('char:' + o.id))}</span>`, `data-nc="char:${esc(o.id)}"`, esc(wpName(wpParse(o.id))))).join('')}</div>`;
   }
+  return opts;
+}
+function openPfPick(kind, slot) {
+  const old = document.querySelector('.pfpick'); if (old) old.remove();
+  if (kind === 'slot') pfSlot = slot; else { pfTab = kind; pfSlot = -1; }
+  const el = document.createElement('div'); el.className = 'rdrop pfpick'; el.setAttribute('role', 'dialog');
+  const close = () => { el.remove(); pfSlot = -1; renderProfile(); };
+  const render = () => {
+    const k = pfSlot >= 0 ? 'slot' : pfTab, title = k === 'slot' ? `Showcase slot ${pfSlot + 1}` : PF_PICKS[k];
+    el.setAttribute('aria-label', title);
+    el.innerHTML = `<div class="rdrop-box wdp-box pfp-box"><div class="wdp-head"><h2 class="ts">${esc(title)}</h2><button class="inv-x" data-pfpx aria-label="Close">${icon('close')}</button></div>
+      ${k === 'slot' ? '' : `<div class="tabs pfp-tabs">${Object.entries(PF_PICKS).map(([t, l]) => `<button class="tab ${pfTab === t ? 'on' : ''}" data-pft="${t}">${l}</button>`).join('')}</div>`}
+      <div class="pfp-body">${pfOptsHTML(k)}</div>
+      <div class="row" style="justify-content:center"><button class="btn gold" data-pfpx>Done</button></div></div>`;
+    const P = S.profile, save = () => { persist(); renderMenu(); renderProfile(); render(); };
+    el.querySelectorAll('[data-pfpx]').forEach(b => b.onclick = close);
+    el.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; render(); });
+    el.querySelectorAll('[data-show]').forEach(b => b.onclick = () => {
+      const id = b.dataset.show || null;
+      if (id) P.showcase = P.showcase.map(x => x === id ? null : x);   // a character can only sit in one slot
+      P.showcase[pfSlot] = id; persist(); renderMenu(); close();
+    });
+    el.querySelectorAll('[data-av]').forEach(b => b.onclick = () => { P.avatar = b.dataset.av || null; save(); });
+    el.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { P.frame = b.dataset.fr; save(); });
+    el.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { P.title = b.dataset.tt; save(); });
+    el.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { P.card = b.dataset.nc; save(); });
+    el.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => el.remove()));
+  };
+  render();
+  el.addEventListener('click', e => { if (e.target === el) close(); });
+  el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } });
+  document.body.appendChild(el);
+  const x = el.querySelector('.inv-x'); if (x) x.focus();
+}
+
+function renderProfile() {
+  const root = $('#pfRoot'); if (!root) return;
+  const P = S.profile, chars = ownedChars(), allChars = S.pool.filter(e => e.type === 'character' && !mcOff(e.id));
+  P.showcase = P.showcase.map(id => id && findEntry(id) && owns(id) ? id : null);
+  const urs = chars.filter(e => e.rarity === 5).length + (S.memories || []).filter(m => +m.rarity === 5 && owns(m.id)).length,   // UR characters + unique UR memories owned
+    totalCS = chars.filter(e => e.type === 'character').reduce((t, e) => t + charScore(e), 0);   // Total CS: every owned character's CS added up
   const view = pfMode === 'view';
   const mt = modalEl && modalEl.querySelector('#mTitle'); if (mt) mt.textContent = view ? 'Profile' : 'Profile settings';
   root.innerHTML = `<div class="stack pf-mode-${pfMode}">
-    ${view ? '' : `<div class="row pf-back"><button class="btn ghost sm" id="pfBack">${icon('back')}Back to profile</button><span class="tiny">Tap a showcase slot, or pick an avatar, frame, title or namecard below.</span></div>`}
+    ${view ? '' : `<div class="row pf-back"><button class="btn ghost sm" id="pfBack">${icon('back')}Back to profile</button><span class="tiny">Tap a showcase slot, or one of the buttons below to change your avatar, frame, title or namecard.</span></div>`}
     <div class="pf-card">${cardLayer(cardBG(P.card))}${view ? `<button class="pf-set" id="pfSet" aria-label="Profile settings" data-tip="${esc('<b>Profile settings</b><span>Avatar, frame, title, namecard, showcase and name</span>')}">${icon('gear')}<span>Profile settings</span></button>` : ''}
       <div class="pf-me">${avatarHTML(108)}
         <div class="pf-who"><span class="pf-lvrow"><button class="pf-vip" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipBadge()}${vipReady() ? '<span class="dot-n"></span>' : ''}</button><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span></span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="Change name">${icon('edit')}</button></span>${titleHTML()}</div>
@@ -107,8 +146,7 @@ function renderProfile() {
       <div class="pf-show">${P.showcase.map((id, i) => { const e = id && findEntry(id), mid = e && memEqOf(e.id)[0], mm = mid && memOf(mid), mst = mm ? (memCopies(mm.id), memEqStar(e.id)) : 0, mart = mm && artFrom(mm.img);
         const memPrev = e ? (mm ? `<span class="pf-mem mem-fr mst${mst}" data-memview="${esc(mm.id)}|${mst}" title="${esc(mm.name)} · hold to view">${mart ? `<img src="${mart}" alt="">` : icon('memory')}<span class="pf-mem-tag">${rtag(mm.rarity)}${memStarRow(mst)}</span></span>` : '<span class="pf-mem none"><span class="tiny">No memory</span></span>') : '';
         return `<div class="pf-col"><button class="pf-slot ${e ? 'r' + e.rarity : 'none'} ${st6(e)} ${pfSlot === i ? 'on' : ''}" data-slot="${i}" aria-label="Showcase slot ${i + 1}">${e ? `<img src="${getArt(e)}" alt="" ${mediaArt(e) ? `style="${cardImgStyle(e)}"` : ''}><span class="pf-bdg">${badgeRow(e, 22, true)}</span><span class="pf-cs">${csTag(e, 'sm')}</span><span class="pf-sl">${e.type === 'character' ? charRtag(e) : rtag(e.rarity)}<b>${esc(e.name)}</b>${starsFor(e)}</span>` : `<span class="pf-add">${icon('plus')}<span>Add</span></span>`}</button>${memPrev}</div>`; }).join('')}</div></div>
-    ${view ? '' : `<div class="tabs" style="margin:0">${[['avatar', 'Avatar'], ['frame', 'Avatar frame'], ['title', 'Title'], ['card', 'Namecard']].map(([k, l]) => `<button class="tab ${pfSlot < 0 && pfTab === k ? 'on' : ''}" data-pft="${k}">${l}</button>`).join('')}</div>
-    ${opts}`}
+    ${view ? '' : `<div class="pf-edits">${Object.entries(PF_PICKS).map(([k, l]) => `<button class="btn ghost" data-pft="${k}">${l}</button>`).join('')}</div>`}
   </div>`;
   bindCSInfo(root);
   const save = () => { persist(); renderMenu(); renderProfile(); };
@@ -122,17 +160,8 @@ function renderProfile() {
   const pe = $('#pfEdit'); if (pe && view) pe.remove();
   if (pe && !view) pe.onclick = () => openRename(() => { openProfile(); pfMode = 'edit'; renderProfile(); });
   const ni = $('#pfNameIn'); if (ni) ni.onkeydown = e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { e.stopPropagation(); pfEditName = false; renderProfile(); } };
-  root.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => { pfTab = b.dataset.pft; pfSlot = -1; renderProfile(); });
-  root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { if (view) { pfMode = 'edit'; } pfSlot = pfSlot === +b.dataset.slot ? -1 : +b.dataset.slot; renderProfile(); });
-  root.querySelectorAll('[data-show]').forEach(b => b.onclick = () => {
-    const id = b.dataset.show || null;
-    if (id) P.showcase = P.showcase.map(x => x === id ? null : x);   // a character can only sit in one slot
-    P.showcase[pfSlot] = id; pfSlot = -1; save();
-  });
-  root.querySelectorAll('[data-av]').forEach(b => b.onclick = () => { P.avatar = b.dataset.av || null; save(); });
-  root.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { P.frame = b.dataset.fr; save(); });
-  root.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { P.title = b.dataset.tt; save(); });
-  root.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { P.card = b.dataset.nc; save(); });
+  root.querySelectorAll('[data-pft]').forEach(b => b.onclick = () => openPfPick(b.dataset.pft));
+  root.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { if (view) { pfMode = 'edit'; renderProfile(); } openPfPick('slot', +b.dataset.slot); });
 }
 
 /* ---------- name change: 1 name change ticket (wallet nametk) and once every 72 hours (S.player.nameAt) ----------

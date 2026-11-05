@@ -63,6 +63,7 @@ function renderMenu() {
       <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
   $('#limTime').innerHTML = `${icon('clock')}Limited ends in ${shortLeft()}`;
+  $('#moreDot').hidden = ![...document.querySelectorAll('#hmDrop .dot-n')].some(d => !d.hidden);   // the Menu button lights when anything inside it does
   applyWallpaper();
 }
 
@@ -105,6 +106,14 @@ function tickWorld() {
   el.classList.remove('fresh'); void el.offsetWidth; el.classList.add('fresh');
 }
 $('#ticker').onclick = () => setMenu(false);
+
+/* home Menu: a dropdown with the less-used round icons (Shop, Bag, Ranking, Level, Achievements, Fusion, Friends, Team, Redeem);
+   Daily Spin, Events, Quests and Honor stay on screen. Closes on an outside tap, Esc or after picking something. */
+function setHmDrop(open) { const d = $('#hmDrop'); d.hidden = !open; $('#hmMore').setAttribute('aria-expanded', open); $('#hmMore').classList.toggle('on', open); }
+$('#hmMore').onclick = e => { e.stopPropagation(); setHmDrop($('#hmDrop').hidden); };
+$('#hmDrop').addEventListener('click', e => { if (e.target.closest('[data-open]')) setHmDrop(false); });
+document.addEventListener('click', e => { if (!$('#hmDrop').hidden && !e.target.closest('#hmDrop, #hmMore')) setHmDrop(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#hmDrop').hidden) setHmDrop(false); });
 
 /* hide every menu element and keep only the wallpaper; any tap brings it back */
 let uiHidden = false;

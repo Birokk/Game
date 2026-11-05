@@ -15,7 +15,7 @@ function openModal({ title, ic, body, wide, small, kind, onMount }) {
   if (onMount) onMount(back.querySelector('.m-body'));
   back.querySelector('[data-close]').focus({ preventScroll: true });
 }
-function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; refreshCharacters(); } }
+function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; document.querySelectorAll(".pfpick").forEach(x => x.remove()); refreshCharacters(); } }
 
 const PLACEHOLDERS = {
   friends: ['Friends', 'friends', 'Friend list, invites, and meeting up with friends in the plaza.'],
@@ -144,13 +144,18 @@ function renderSettings() {
 }
 
 /* wallpaper picker */
-function openWallpaper() {
+function openWallpaper(tab) {
+  wpTab = tab === 'mem' ? 'mem' : 'arts';
   openModal({ title: 'Wallpaper', ic: 'image', wide: true, kind: 'wallpaper', body: '<div id="wpRoot"></div>', onMount: renderWallpaperPicker });
 }
+/* tabs: Splash arts (characters / skins) and Memories (every owned memory with art; its id works as a wallpaper id) */
+let wpTab = 'arts';
+const memWpChoices = () => (S.memories || []).filter(m => owns(m.id) && artFrom(m.img)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+  .map(m => ({ id: m.id, e: memEntry(m.id), a: ASC.find(x => x.k === 'base'), open: true }));
 function renderWallpaperPicker() {
   const root = $('#wpRoot'); if (!root) return;
   // every art is its own choice: the base splash art, then the 3★ and 6★ splash arts (locked until those stars)
-  const opts = artChoices(), ownedList = opts;
+  const mems = memWpChoices(), opts = wpTab === 'mem' ? mems : artChoices(), ownedList = opts;
   const list = wpList();
   const tile = o => {
     if (!o) { const on = !list.length; return `<button class="wpt ${on ? 'on' : ''}" data-wp="" aria-pressed="${on}"><span class="mini"></span><span class="lab">Pearl Tide (default)</span>${on ? `<span class="chk">${icon('check')}</span>` : ''}</button>`; }
@@ -160,9 +165,13 @@ function renderWallpaperPicker() {
       ${o.a.k !== 'base' ? `<span class="wpt-star">${o.a.label}</span>` : ''}${o.open ? '' : `<span class="wpt-lock">${icon('lock')}<small>${o.a.stars}★</small></span>`}
       <span class="lab">${esc(wpName(w))}</span>${on ? `<span class="chk">${n}</span>` : ''}</button>`;
   };
-  root.innerHTML = `<p class="tiny" style="margin-bottom:14px">Pick up to ${WP_MAX} wallpapers (${list.length}/${WP_MAX} chosen); tap again to remove one. Each splash art is its own wallpaper: the base art and the 3★ / 6★ arts once unlocked, whatever the character has equipped. With two or more, tap once on an empty part of the main screen to show arrows and switch between them. Pearl Tide clears the list.</p>
+  const tabs = `<div class="tabs wp-tabs">${[['arts', 'Splash arts'], ['mem', `Memories <span class="wp-tn">${mems.length}</span>`]].map(([k, l]) => `<button class="tab ${wpTab === k ? 'on' : ''}" data-wptab="${k}">${l}</button>`).join('')}</div>`;
+  root.innerHTML = `${tabs}<p class="tiny" style="margin-bottom:14px">${wpTab === 'mem' ? `Every memory you own can be a wallpaper too. They share the ${WP_MAX} wallpaper slots with splash arts (${list.length}/${WP_MAX} chosen); tap again to remove one.</p>
+    <div class="wpgrid mem">${mems.map(tile).join('')}</div>
+    ${mems.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any memories with art yet. <button class="link" data-open="summon">Go to the Memory Wish</button></div>`}` : `Pick up to ${WP_MAX} wallpapers (${list.length}/${WP_MAX} chosen); tap again to remove one. Each splash art is its own wallpaper: the base art and the 3★ / 6★ arts once unlocked, whatever the character has equipped. With two or more, tap once on an empty part of the main screen to show arrows and switch between them. Pearl Tide clears the list.</p>
     <div class="wpgrid">${tile(null)}${opts.map(tile).join('')}</div>
-    ${ownedList.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>`}`;
+    ${ownedList.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>`}`}`;
+  root.querySelectorAll('[data-wptab]').forEach(b => b.onclick = () => { wpTab = b.dataset.wptab; renderWallpaperPicker(); });
   root.querySelectorAll('[data-wp]').forEach(b => b.onclick = () => {
     const id = b.dataset.wp, cur = wpList();
     if (b.dataset.lock) { toast(`This splash art unlocks at ${b.dataset.lock} stars.`); return; }
