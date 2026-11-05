@@ -4386,3 +4386,9 @@ button.pt-slot:hover{border-color:#fff}
 .of-items{display:grid;gap:6px}
 .of-it{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr) auto;gap:6px;align-items:center}
 @media (max-width:760px){.of-ad{grid-template-columns:1fr}}
+/* offer popup fixes: room for the italic title's last letter; every reward's picture sits in the same row, labels on one line */
+.ofp-name{padding:0 .25em .06em 0;margin-right:-.25em}
+.ofp-items{align-items:flex-start}
+.ofp-it{grid-template-rows:72px auto auto;align-content:start;max-width:none}
+.ofp-it>.inv-cell,.ofp-it>.ofp-card{align-self:center}
+.ofp-it small{white-space:nowrap}
