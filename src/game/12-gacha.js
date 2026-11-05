@@ -47,7 +47,7 @@ const skinsEnd = () => S.banners.skins && S.banners.skins.end ? +new Date(S.bann
 const SPECIAL_BK = ['beginner', 'stepup'], isSpecial = bk => SPECIAL_BK.includes(bk);
 const BEGIN_PULLS = 50, BEGIN_TK = 8, BEGIN_PEARLS = 24;
 const STEP_N = 7, STEP_COST = [6, 12, 18, 24, 30, 30, 30], STEP_GOLD = [5000, 10000, 15000, 20000, 30000, 40000, 50000];
-const STEP_UR_X = [.5, 1, 1, 1, 1.5, 1, 1], STEP_PERK = ['½ UR rate', '', '', '1 UR memory', '1.5× UR rate', '', 'Rate-up guaranteed'];
+const STEP_UR_X = [.5, 1, 1.5, 1, 1.5, 1, 1], STEP_PERK = ['½ UR rate', '', '1.5× UR rate', '1 UR memory', '1.5× UR rate', '', 'Rate-up guaranteed'];
 const urMems = () => (S.memories || []).filter(m => +m.rarity === 5).map(m => memEntry(m.id)).filter(Boolean);
 const urCharsAll = () => S.pool.filter(e => e.type === 'character' && !e.mc && +e.rarity === 5 && e.pullable !== false);
 const beginPicks = () => ((S.banners.beginner || {}).picks || []).map(id => findEntry(id)).filter(e => e && e.type === 'character' && +e.rarity === 5);
@@ -75,6 +75,40 @@ function stepPull() {
   g.step = s + 1; S.wallet.coins += STEP_GOLD[s];
   return { out, gold: STEP_GOLD[s] };
 }
+/* ---------- summon points ----------
+   Every pull on a regular banner gives 1 point (not the Beginner Wish or Step-Up). Pulls on the Limited, Weekly and Outfit
+   banners give points for THAT banner (S.spoints[bk] = {key, n}), spent in Shop → Summon Points on copies of the banner's
+   featured UR / outfit for PT_PRICE each. When the banner changes (new featured character / outfit, new end date, new week)
+   its leftover points move to the Permanent points automatically. Pulls on the Permanent and Memory banners (and featured
+   banners with nothing featured) give Permanent points (S.spoints.perm), spent in the Permanent shop: 3 random UR characters
+   and 3 random UR memories, the same for everyone, changing every month, max 1 of each per month (S.spoints.buy). */
+const PT_PRICE = 200, PT_FEAT = ['limited', 'weekly', 'skins'];
+function ptKey(bk) {
+  if (bk === 'limited') return S.featuredId && limitedUR() ? `${S.featuredId}:${S.banners.limited.end || ''}` : '';
+  if (bk === 'weekly') { const w = weeklyUR(); return w ? `w${weekIndex()}:${w.id}` : ''; }
+  if (bk === 'skins') { const f = skinFeatured(); return f ? `${f.id}:${S.banners.skins.end || ''}` : ''; }
+  return '';
+}
+function ptState() {
+  const P = S.spoints = S.spoints || {}; P.perm = P.perm || 0;
+  for (const bk of PT_FEAT) { const k = ptKey(bk), st = P[bk]; if (!st || st.key !== k) { if (st && st.n > 0) P.perm += st.n; P[bk] = { key: k, n: 0 }; } }   // a changed banner hands its points over
+  if (!P.buy || P.buy.key !== monthKey()) P.buy = { key: monthKey(), ids: [] };
+  return P;
+}
+const ptOf = bk => { const P = ptState(); return bk === 'perm' ? P.perm : (P[bk] || {}).n || 0; };
+function addPoints(bk, n) {
+  if (isSpecial(bk) || !(n > 0)) return;
+  const P = ptState();
+  if (PT_FEAT.includes(bk) && P[bk].key) P[bk].n += n; else P.perm += n;
+}
+/* the Permanent shop's monthly picks: 3 UR characters + 3 UR memories, shuffled by the month (same for every player) */
+function permShopPicks() {
+  const seed = weekHash(+monthKey().replace('-', ''));
+  const pick = list => { const a = list.slice().sort((x, y) => x.id.localeCompare(y.id)); let x = seed; for (let i = a.length - 1; i > 0; i--) { x = weekHash(x + i); const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, 3); };
+  return { chars: pick(urCharsAll()), mems: pick(urMems()) };
+}
+if (!ICONS.star) ICONS.star = '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>';
+CUR_SVG.spt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="sptG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2fb"/><stop offset=".5" stop-color="#d9b8ff"/><stop offset="1" stop-color="#8fd8ff"/></linearGradient></defs><circle cx="12" cy="12" r="10" fill="#2b1855" stroke="url(#sptG)" stroke-width="2"/><path d="M12 5.2l1.9 4.3 4.6.4-3.5 3 1.1 4.6L12 15l-4.1 2.5 1.1-4.6-3.5-3 4.6-.4z" fill="url(#sptG)"/></svg>';
 /* everything a banner needs: featured UR (50/50 with a guarantee), the UR pool otherwise, the SSR pool, look and timer */
 function bannerInfo(bk) {
   const std = standardURs(), ssr = pullableSSRs();
@@ -198,6 +232,7 @@ function doPull(n, bk = curBanner, free = false) {
   let bonus = 0, results;
   if (bk === 'stepup') { const sp = stepPull(); results = sp.out; bonus = sp.gold; }
   else results = (maxwin && maxWinResults(bk)) || Array.from({ length: n }, () => rollOne(bk));
+  addPoints(bk, n);   // summon points: 1 per pull (not on the Beginner Wish or Step-Up)
   if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
@@ -261,6 +296,7 @@ function renderSummon() {
       <button class="sx-rb ts" id="sxRates"><span class="c">${icon('info')}</span>Rates</button>
       <button class="sx-rb ts" id="sxHist"><span class="c">${icon('clock')}</span>History</button>
       <button class="sx-rb ts" data-open="shop"><span class="c">${icon('shop')}</span>Shop</button>
+      ${isSpecial(bk) ? '' : `<button class="sx-rb ts" id="sxPts" title="Summon points: 1 per pull, spend ${PT_PRICE} in the shop"><span class="c">${curIcon('spt')}</span>Points<small class="sx-ptn">${fmt(ptOf(PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm'))}</small></button>`}
     </div>
     ${MILES[bk] ? milestoneBtn(bk) : ''}
     <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
@@ -278,6 +314,7 @@ function renderSummon() {
   $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
   const ms = $('#sxMile'); if (ms) ms.onclick = () => confirmMilestone(ms.dataset.mbk);
   $('#sxHist').onclick = () => openRates(bk, true);
+  const pb = $('#sxPts'); if (pb) pb.onclick = () => openShop('points:' + (PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm'));
 }
 /* the right side of the summon screen for the Beginner Wish (pulls left, the 3 URs of pull 50) and the Step-Up (the 7 steps) */
 function specialTitleHTML(B, hero) {

@@ -5,7 +5,10 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
-const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency']];
+const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency'], ['points', 'star', 'Summon Points']];
+/* Summon Points sub-tabs: one per featured banner (its own points) + the Permanent shop (12-gacha.js: ptState, addPoints) */
+const PT_SUBS = [['limited', 'Limited'], ['weekly', 'Weekly'], ['skins', 'Outfits'], ['perm', 'Permanent']];
+let ptSub = 'limited';
 /* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
 const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium'], ['memories', 'Memories']], PREM_PRICE = 720, PREM_LIMIT = 1;
 const MEMX_PRICE = 300;   // Exchange → Memories: any UR memory for 300 Corals, once per memory per account (S.memEx = [ids])
@@ -24,6 +27,7 @@ const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img cla
 function openShop(tab) {
   closeModal();
   if (tab === 'monthly' || tab === 'dust') { tab = 'exchange'; exSub = 'seaweeds'; }   // monthly pulls live in the Seaweeds exchange
+  if (tab && tab.startsWith('points')) { ptSub = tab.split(':')[1] || ptSub; tab = 'points'; }
   else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
   if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
@@ -38,7 +42,7 @@ function renderShop() {
   const item = (id, ic, name, sub, price, cur, extra = '', r = 4) => `<div class="mall-item ${extra}"><span class="mall-ic r${r}">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
     <button class="mall-buy ${W[cur] >= price && !extra.includes('soldout') ? 'ok' : ''}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   const tab = SHOP_TABS.find(t => t[0] === shopTab);
-  let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
+  let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : shopTab === 'points' ? PT_SUBS.map(([k, l]) => `<button class="mall-pill ${k === ptSub ? 'on' : ''}" data-ptsub="${k}">${l}<small>${fmt(ptOf(k))}</small></button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
     const e = hotSub === 'skins' && shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
@@ -61,7 +65,8 @@ function renderShop() {
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets, marriage rings and name change tickets.</p>
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}${item('pn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_PEARLS, 'pearls', '', 4)}</div>`;
-  } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
+  } else if (shopTab === 'points') body = ptShopHTML();
+  else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
     <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}${item('sn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_CORALS, 'starlight', '', 4)}</div>`;
   else if (shopTab === 'exchange' && exSub === 'memories') { const urs = (S.memories || []).filter(m => +m.rarity === 5).sort((a, b) => memExUsed(a.id) - memExUsed(b.id) || a.name.localeCompare(b.name));
     body = `<div class="mall-limit"><b>Limit: 1 per memory per account</b><span>${urs.filter(m => memExUsed(m.id)).length} / ${urs.length} UR memories exchanged</span></div><p class="tiny">Trade ${MEMX_PRICE} Corals for a copy (0★) of any UR memory. Each memory can be exchanged once.</p>
@@ -100,8 +105,47 @@ function renderShop() {
     const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop();
     showRewards('Top Up', { pearls: n + bo.n, vip: vx }, `${fmt(n)} pearls${bo.n ? ` + ${fmt(bo.n)} bonus (${bo.first ? 'first purchase ×2' : '+10%'})` : ''} · free while testing`); });
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
+  shopEl.querySelectorAll('[data-ptsub]').forEach(b => b.onclick = () => { ptSub = b.dataset.ptsub; renderShop(); });
+  shopEl.querySelectorAll('[data-ptbuy]').forEach(b => b.onclick = () => { const [src, id] = b.dataset.ptbuy.split('|'); confirmPtBuy(src, id); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
   shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
+}
+/* Shop → Summon Points: a featured banner's page (its featured UR / outfit for PT_PRICE of that banner's points) or the
+   Permanent shop (3 UR characters + 3 UR memories this month, 1 of each per month) */
+function ptCard(e, src, done) {
+  const P = ptOf(src), ok = !done && P >= PT_PRICE, mem = e.type === 'memory', m = mem && memOf(e.id);
+  const pic = mem ? `<span class="mall-mem-art mem-fr mst0">${artFrom(m.img) ? `<img src="${artFrom(m.img)}" alt="">` : icon('memory')}</span>` : `<img src="${baseCard(e)}" alt="" ${baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>`;
+  const sub = mem ? `Owned ×${S.owned[e.id] || 0}` : e.type === 'skin' ? (owns(e.id) ? 'Owned' : (findEntry(e.parent) || {}).name || 'Outfit') : owns(e.id) ? starRow(starsOf(e.id), -1, e) : 'Not owned yet';
+  return `<div class="${mem ? 'mall-mem' : 'mall-skin'} r${e.rarity}">${pic}${rtag(e.rarity)}<span class="mall-skin-nm"><b>${esc(e.name)}</b><small>${sub}</small></span>
+    ${done ? `<button class="mall-buy" disabled>${src === 'perm' ? '1/1 this month' : 'Owned'}</button>` : `<button class="mall-buy ${ok ? 'ok' : ''}" data-ptbuy="${src}|${esc(e.id)}">${curIcon('spt')}${fmt(PT_PRICE)}</button>`}</div>`;
+}
+function ptShopHTML() {
+  const P = ptState();
+  if (ptSub === 'perm') {
+    const { chars, mems } = permShopPicks(), got = id => P.buy.ids.includes(id);
+    return `<div class="mall-limit"><b>Permanent points: ${fmt(P.perm)}</b><span>1 per pull on the Permanent and Memory banners · leftover banner points move here · new picks on the 1st (${nextMonthIn()}) · 1 of each per month</span></div>
+      <h3 class="mall-h">UR characters this month</h3>${chars.length ? `<div class="mall-skins">${chars.map(e => ptCard(e, 'perm', got(e.id))).join('')}</div>` : '<p class="mall-empty">No UR characters in the game yet.</p>'}
+      <h3 class="mall-h">UR memories this month</h3>${mems.length ? `<div class="mall-mems">${mems.map(e => ptCard(e, 'perm', got(e.id))).join('')}</div>` : '<p class="mall-empty">No UR memories in the game yet.</p>'}`;
+  }
+  const B = bannerInfo(ptSub), f = B.feat, what = ptSub === 'skins' ? 'outfit' : 'character';
+  return `<div class="mall-limit"><b>${esc(bannerName(ptSub))} points: ${fmt(ptOf(ptSub))}</b><span>1 per pull on this banner · ${PT_PRICE} points = 1 copy of its featured ${what} · when the banner changes, leftover points move to Permanent points</span></div>
+    ${f ? `<div class="mall-skins">${ptCard(f, ptSub, ptSub === 'skins' && owns(f.id))}</div>` : `<p class="mall-empty">This banner has no featured ${what} right now, so its pulls give Permanent points.</p>`}`;
+}
+function confirmPtBuy(src, id) {
+  const e = findEntry(id), P = ptState(); if (!e) return;
+  const have = src === 'perm' ? P.perm : (P[src] || {}).n || 0;
+  if (src === 'perm' && P.buy.ids.includes(id)) { toast(`You already got ${e.name} this month.`); return; }
+  if (e.type === 'skin' && owns(id)) { toast(`You already own ${e.name}.`); return; }
+  if (have < PT_PRICE) { toast(`You need ${PT_PRICE} points. You have ${fmt(have)}.`); return; }
+  openModal({ title: 'Summon points', ic: 'star', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${PT_PRICE} ${src === 'perm' ? 'Permanent' : esc(bannerName(src))} points</b> on a copy of <b>${esc(e.name)}</b>?${src === 'perm' ? ' You can get each one once this month.' : ''}</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="ptNo">Cancel</button><button class="btn gold" id="ptYes">Exchange · ${curIcon('spt')}${PT_PRICE}</button></div></div>`,
+    onMount: () => { $('#ptNo').onclick = closeModal; $('#ptYes').onclick = () => {
+      closeModal(); if (src === 'perm') { P.perm -= PT_PRICE; P.buy.ids.push(id); } else P[src].n -= PT_PRICE;
+      const res = { kind: 'entry', id, rarity: +e.rarity, ...grantEntry(e) };
+      if (e.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[+e.rarity] || 0; S.wallet.starlight += res.starlight; }
+      persist(); renderMenu(); refreshCharacters(); refreshSummon(); renderShop();
+      showPull([res], 1, src === 'perm' ? 'standard' : src, { preview: true, exchange: true, direct: true }); }; } });
 }
 function confirmMemEx(id) {
   const m = memOf(id); if (!m || +m.rarity !== 5) return;

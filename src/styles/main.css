@@ -3687,3 +3687,7 @@ button.pt-slot:hover{border-color:#fff}
 .stp-n.done .stp-no{background:rgba(120,230,170,.25);color:#9ff5c6}
 .stp-n:last-child .stp-p{color:#ffd36b;font-weight:700}
 @media (max-width:820px){.stp{width:min(100%,92vw);gap:4px}.stp-n{padding:6px 2px}.stp-n .stp-p{font-size:9px}}
+/* summon points (shop tab + summon screen button) */
+.sx-rb .sx-ptn{position:absolute;top:-4px;right:-6px;min-width:22px;padding:1px 6px;border-radius:999px;font-family:var(--body);font-weight:900;font-size:11px;line-height:1.4;background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.sx-rb .c .cic{width:30px;height:30px}
+.mall-pill small{margin-left:6px;padding:0 6px;border-radius:999px;font-family:var(--body);font-weight:900;font-size:11px;background:rgba(0,0,0,.25)}
