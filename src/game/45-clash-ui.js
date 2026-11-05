@@ -139,20 +139,41 @@ function openQuickMatch() {
 /* ---- the match ---- */
 let ccM = null;
 const CC_LANES = ['Left', 'Center', 'Right'];
+const CC_TIPS = [
+  'Melee units fight from the Front row; Ranged units can attack from either row.',
+  'A Ranged unit attacking from the Back takes no damage back from a Melee unit.',
+  'Killing a unit pushes up to 2 leftover damage into the enemy hero.',
+  'Face-down traps trigger when an enemy enters their lane, attacks from it, or casts a spell on a unit there.',
+  'From round 20, every unit loses 1 HP at the start of its owner\u2019s turn.',
+  'Haste units can attack the turn they arrive. Free Move units can move first and then attack (Dash).',
+  'You can only heal your hero by 1 HP each round, so protect it with units.',
+  'The bot plays the same deck as you, so you always know what it might have.'
+];
+/* starting a match: the loading screen covers everything while the board, the forest and the textures are built,
+   and the match (and the bot) only starts once the board is revealed */
 function startClash(deck, seed) {
-  ccStop();
+  ccStop(); closeModal();
   const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', 'Bot']);
-  ccM = { G, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: false, timer: 0, log: false, done: false };
-  const el = document.createElement('div'); el.className = 'ccm'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Card Clash match');
-  el.innerHTML = '<div class="ccm-stage"><canvas class="ccm-envc" width="1600" height="900"></canvas><div class="ccm-ui"></div></div>'; document.body.appendChild(el); ccM.el = el;
-  el.querySelector('.ccm-envc').getContext('2d').drawImage(ccEnvImage(), 0, 0);
-  ccM.onResize = () => ccFit(); addEventListener('resize', ccM.onResize); ccFit();
-  el.addEventListener('click', ccClick);
-  el.addEventListener('mouseover', e => { if (!ccM) return; const t = e.target.closest('[data-peek]'), k = t ? t.dataset.peek : null; if (ccM.peekHover !== k) { ccM.peekHover = k; ccPeekRender(); } });
-  el.addEventListener('mouseleave', () => { if (ccM) { ccM.peekHover = null; ccPeekRender(); } });
-  ccM.onKey = e => { if (e.key === 'Escape' && ccM && !document.querySelector('.modal-back')) { if (ccM.sel) { ccM.sel = null; ccRender(); } } };
-  addEventListener('keydown', ccM.onKey);
-  ccFx0(); ccRender(); ccAfter();
+  const m = ccM = { G, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
+  showLoading(() => { if (ccM !== m) return; m.loading = false; m.busy = false; ccFx0(); ccRender(); ccAfter(); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
+    const tick = () => new Promise(r => setTimeout(r, 16));
+    if (ccM !== m) return;
+    const el = document.createElement('div'); el.className = 'ccm'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Card Clash match');
+    el.innerHTML = '<div class="ccm-stage"><canvas class="ccm-envc" width="1600" height="900"></canvas><div class="ccm-ui"></div></div>'; document.body.appendChild(el); m.el = el;
+    m.onResize = () => ccFit(); addEventListener('resize', m.onResize); ccFit();
+    el.addEventListener('click', e => { if (ccM && !ccM.loading) ccClick(e); });
+    el.addEventListener('mouseover', e => { if (!ccM) return; const t = e.target.closest('[data-peek]'), k = t ? t.dataset.peek : null; if (ccM.peekHover !== k) { ccM.peekHover = k; ccPeekRender(); } });
+    el.addEventListener('mouseleave', () => { if (ccM) { ccM.peekHover = null; ccPeekRender(); } });
+    m.onKey = e => { if (e.key === 'Escape' && ccM && !ccM.loading && !document.querySelector('.modal-back')) { if (ccM.sel) { ccM.sel = null; ccRender(); } } };
+    addEventListener('keydown', m.onKey);
+    set(.08); await tick();
+    el.querySelector('.ccm-envc').getContext('2d').drawImage(ccEnvImage(), 0, 0); set(.32); await tick();
+    cctTiles(); set(.4); await tick();
+    ccRender(); set(.5); await tick();
+    await ccArtLoad(set, .5, .96);
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    set(1);
+  } });
 }
 function ccStop() { if (!ccM) return; clearTimeout(ccM.timer); removeEventListener('resize', ccM.onResize); removeEventListener('keydown', ccM.onKey); if (ccM.el) ccM.el.remove(); ccM = null; }
 function ccFit() { if (!ccM) return; const s = Math.min(innerWidth / 1600, innerHeight / 900); ccM.el.style.setProperty('--s', s); }
@@ -227,7 +248,7 @@ function ccDo(a) {
   return true;
 }
 function ccAfter() {
-  if (!ccM) return;
+  if (!ccM || ccM.loading) return;
   const G = ccM.G;
   if (G.phase === 'over') {
     ccM.busy = true; ccRender();

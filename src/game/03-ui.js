@@ -273,24 +273,44 @@ function loadingArt() {
   const arts = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && mediaArt(e)).map(mediaArt);   // fallback: uploaded character art
   return arts.length ? { src: rpick(arts), fit: 'contain' } : null;
 }
-function showLoading(done) {
+/* loading screen. Without opts it runs a short timed bar (sign-in). With opts.run (an async function given set(0..1))
+   the bar follows the real work, never goes back, finishes only once run() is done, and stays up at least opts.min ms */
+function showLoading(done, opts = {}) {
   const art = loadingArt(), el = document.createElement('div');
   el.className = 'loading';
   el.innerHTML = `${art ? `${art.fit === 'contain' ? `<img class="cs-blur" src="${art.src}" alt="">` : ''}<img class="ld-img ${art.fit}" src="${art.src}" alt="">` : '<div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div></div>'}
     <div class="ld-shade"></div><div class="ld-logo">Blank: Project</div>
-    <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(LOAD_TIPS))}</p>
-      <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">Loading</span><span class="ld-pct">0%</span></div>
+    <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(opts.tips || LOAD_TIPS))}</p>
+      <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">${esc(opts.label || 'Loading')}</span><span class="ld-pct">0%</span></div>
       <div class="ld-bar"><i></i></div></div>`;
   document.body.appendChild(el);
-  const bar = el.querySelector('.ld-bar i'), pct = el.querySelector('.ld-pct'), t0 = performance.now(), dur = 2300 + Math.random() * 700;
+  const bar = el.querySelector('.ld-bar i'), pct = el.querySelector('.ld-pct'), t0 = performance.now();
+  const finish = () => { el.querySelector('.ld-txt').textContent = 'Ready'; setTimeout(() => { el.classList.add('out'); done && done(); setTimeout(() => el.remove(), 500); }, 250); };
+  if (!opts.run) {
+    const dur = 2300 + Math.random() * 700;
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), v = Math.round((1 - Math.pow(1 - k, 2.2)) * 100);
+      bar.style.width = v + '%'; pct.textContent = v + '%';
+      if (k < 1) return requestAnimationFrame(step);
+      finish();
+    };
+    requestAnimationFrame(step);
+    return el;
+  }
+  let target = 0, shown = 0, over = false; const min = opts.min || 900;
+  const set = v => { target = Math.max(target, Math.min(1, v)); };
   const step = now => {
-    const k = Math.min(1, (now - t0) / dur), v = Math.round((1 - Math.pow(1 - k, 2.2)) * 100);
-    bar.style.width = v + '%'; pct.textContent = v + '%';
-    if (k < 1) return requestAnimationFrame(step);
-    el.querySelector('.ld-txt').textContent = 'Ready';
-    setTimeout(() => { el.classList.add('out'); done && done(); setTimeout(() => el.remove(), 500); }, 250);
+    const cap = over ? 1 : Math.min(target, .97), timeCap = over ? 1 : Math.min(.97, (now - t0) / min);
+    shown += (Math.min(cap, Math.max(timeCap * .35, cap)) - shown) * .18;
+    if (over && now - t0 >= min && shown > .995) shown = 1;
+    const v = Math.round(shown * 100); bar.style.width = v + '%'; pct.textContent = v + '%';
+    if (shown < 1) return requestAnimationFrame(step);
+    finish();
   };
   requestAnimationFrame(step);
+  // let the screen paint first, then do the work under it
+  setTimeout(() => Promise.resolve().then(() => opts.run(set)).catch(e => { console.error(e); }).finally(() => { target = 1; over = true; }), 60);
+  return el;
 }
 
 /* new outfit popup: shown after buying a skin */

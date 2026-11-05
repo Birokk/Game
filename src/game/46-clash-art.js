@@ -314,29 +314,41 @@ function ccEnvImage() {
   return ccEnvCache = c;
 }
 
-/* measure the halves on the first render, paint them, cache as blob URLs, and switch the board to the textured look */
-let ccTex = null, ccTexBusy = false;
-function ccArtEnsure() {
-  if (!ccM) return;
-  const el = ccM.el, t = cctTiles();
-  el.style.setProperty('--tx-stone', `url(${t.stone})`); el.style.setProperty('--tx-bronze', `url(${t.bronze})`);
-  if (ccTex) { ccArtApply(el); return; }
-  if (ccTexBusy) return;
+/* textures: measured from the real DOM once (ccArtGeo), painted during the match loading screen (ccArtLoad), cached as decoded
+   JPEG blob URLs for the session (ccTex) and switched on with the .ccm.tex class; every render re-applies them (ccArtEnsure) */
+let ccTex = null;
+function ccArtVars(el) { const t = cctTiles(); el.style.setProperty('--tx-stone', `url(${t.stone})`); el.style.setProperty('--tx-bronze', `url(${t.bronze})`); }
+function ccArtEnsure() { if (!ccM) return; ccArtVars(ccM.el); if (ccTex) ccArtApply(ccM.el); }
+function ccArtGeo(el) {
   const stage = el.querySelector('.ccm-stage'), s = stage.getBoundingClientRect().width / 1600 || 1;
   const rel = (n, base) => { const a = n.getBoundingClientRect(), b = base.getBoundingClientRect(); return { x: (a.left - b.left) / s, y: (a.top - b.top) / s, w: a.width / s, h: a.height / s }; };
   const geo = {};
   for (const side of ['op', 'me']) {
-    const h = el.querySelector(`.cc-half.${side}`); if (!h) return;
+    const h = el.querySelector(`.cc-half.${side}`); if (!h) return null;
     geo[side] = { ...rel(h, h), slots: [...h.querySelectorAll('.cc-slot')].map(n => rel(n, h)), traps: [...h.querySelectorAll('.cc-trap')].map(n => rel(n, h)), field: rel(h.querySelector('.cc-field'), h) };
   }
-  const line = el.querySelector('.ccb-line'), lr = line && rel(line, line);
-  ccTexBusy = true;
-  setTimeout(() => ccArtPaint(geo, lr), 60);
+  const line = el.querySelector('.ccb-line'); if (!line) return null;
+  geo.line = rel(line, line);
+  return geo;
 }
-function ccArtPaint(geo, lr) {
-  const canv = { op: cctPaintHalf(geo.op, 'op', 'default'), me: cctPaintHalf(geo.me, 'me', 'default'), line: cctPaintLine(lr.w, lr.h) };
-  const keys = Object.keys(canv), urls = {};
-  keys.forEach(k => canv[k].toBlob(b => { urls[k] = URL.createObjectURL(b); if (Object.keys(urls).length === keys.length) { ccTex = urls; ccTexBusy = false; if (ccM) ccArtApply(ccM.el); } }, 'image/jpeg', .9));
+const cctTick = () => new Promise(r => setTimeout(r, 16));
+async function ccArtLoad(set = () => {}, from = .5, to = .95) {
+  if (!ccM) return;
+  const el = ccM.el; ccArtVars(el);
+  if (!ccTex) {
+    const geo = ccArtGeo(el); if (!geo) return;
+    const span = to - from, canv = {};
+    canv.op = cctPaintHalf(geo.op, 'op', 'default'); set(from + span * .38); await cctTick();
+    canv.me = cctPaintHalf(geo.me, 'me', 'default'); set(from + span * .76); await cctTick();
+    canv.line = cctPaintLine(geo.line.w, geo.line.h); set(from + span * .84); await cctTick();
+    const urls = {};
+    await Promise.all(Object.keys(canv).map(k => new Promise(res => canv[k].toBlob(b => { urls[k] = b ? URL.createObjectURL(b) : canv[k].toDataURL('image/jpeg', .9); res(); }, 'image/jpeg', .9))));
+    set(from + span * .92);
+    await Promise.all(Object.values(urls).map(u => { const im = new Image(); im.src = u; return (im.decode ? im.decode() : Promise.resolve()).catch(() => {}); }));
+    ccTex = urls;
+  }
+  set(to);
+  if (ccM && ccM.el === el) ccArtApply(el);
 }
 function ccArtApply(el) {
   el.style.setProperty('--cc-tex-op', `url(${ccTex.op})`); el.style.setProperty('--cc-tex-me', `url(${ccTex.me})`); el.style.setProperty('--cc-tex-line', `url(${ccTex.line})`);
