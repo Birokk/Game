@@ -4181,10 +4181,7 @@ button.pt-slot:hover{border-color:#fff}
 .evl-rw .chk{background:var(--cry-grad);color:var(--cry-ink)}
 .evp-ic .scr-ic{color:#f5afe8}
 .scr-card{border-color:rgba(245,175,232,.55)}
-.scr-card.won,.scr-card.ticket.won{border-color:#f5afe8;box-shadow:0 0 0 3px rgba(245,175,232,.3),0 0 40px rgba(200,162,255,.4),0 14px 40px rgba(0,0,0,.5)}
 .scr-head b{background:linear-gradient(90deg,#ffe4f6,#c8a2ff 60%,#94b8ff)}
-.scr-cell.hit{background:radial-gradient(circle at 50% 40%,rgba(245,175,232,.45),rgba(148,184,255,.12));border-color:#f5afe8;color:#fff0fa}
-.scr-row.big b{color:#f5afe8}
 .scr-card.ticket::before{border-color:rgba(245,175,232,.25)}
 .scr-card.ticket .scr-head span{color:#ffd9f1}
 .scr-stub{border-left-color:rgba(245,175,232,.55)}
@@ -4242,8 +4239,13 @@ button.pt-slot:hover{border-color:#fff}
 @media (max-width:700px){.loading .ld-bottom{left:6%;right:6%}.loading .ld-bar{height:16px}}
 
 /* ---------- Top Up → Pearls: the VIP bar ---------- */
-.vsb{display:flex;align-items:center;gap:16px;padding:14px 22px;margin-bottom:12px;border-radius:999px 999px 999px 999px / 60px;position:relative;
-  background:linear-gradient(180deg,#fff9fe,#f0e6fb);border:2px solid #fff;box-shadow:0 0 0 2px rgba(200,162,255,.6),0 8px 20px rgba(0,0,0,.35);clip-path:polygon(2% 50%,5% 0,95% 0,98% 50%,95% 100%,5% 100%);padding-left:5%;padding-right:5%}
+.vsb{position:relative;display:flex;align-items:center;gap:16px;margin:24px 0 12px;padding:16px 7%;min-height:84px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+.vsb-plate{position:absolute;inset:0;z-index:0;clip-path:polygon(0 50%,2.2% 30%,3.4% 0,96.6% 0,97.8% 30%,100% 50%,97.8% 70%,96.6% 100%,3.4% 100%,2.2% 70%);background:linear-gradient(90deg,#c8a2ff,#f5afe8 50%,#94b8ff)}
+.vsb-plate::before{content:"";position:absolute;inset:3px;clip-path:inherit;background:linear-gradient(180deg,#fffbff,#f3eafc 60%,#e9ddf8)}
+.vsb-crest{position:absolute;z-index:0;left:31%;right:31%;top:-22px;height:44px;border-radius:50% 50% 0 0 / 100% 100% 0 0;background:linear-gradient(90deg,#c8a2ff,#f5afe8 50%,#94b8ff);display:grid;place-items:start center}
+.vsb-crest::before{content:"";position:absolute;inset:3px 3px -6px;border-radius:inherit;background:linear-gradient(180deg,#fffbff,#fffbff)}
+.vsb-crest svg{position:relative;width:110px;height:34px;margin-top:4px;stroke:#c8a2ff;fill:none;stroke-width:1.4;opacity:.9}
+.vsb>*:not(.vsb-plate):not(.vsb-crest){position:relative;z-index:1}
 .vsb-sh{flex:none;width:52px;height:58px;display:grid;place-items:center;clip-path:polygon(50% 100%,6% 78%,0 12%,50% 0,100% 12%,94% 78%);background:linear-gradient(160deg,#ffe4f6,#c8a2ff 55%,#7a62c9)}
 .vsb-sh b{font-family:var(--display);font-size:24px;color:#fff;text-shadow:0 2px 3px rgba(43,24,85,.6)}
 .vsb-mid{flex:1;display:grid;gap:8px;min-width:0}
@@ -4255,4 +4257,7 @@ button.pt-slot:hover{border-color:#fff}
 .vsb-bar em{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--display);font-size:11px;color:#fff;text-shadow:0 1px 2px #000}
 .vsb-btn{position:relative;flex:none;padding:10px 34px;border-radius:999px;background:var(--cry-grad);color:var(--cry-ink);font-family:var(--display);font-size:17px;border:2px solid #fff;box-shadow:0 4px 12px rgba(120,80,170,.4),0 0 14px var(--cry-glow)}
 .vsb-btn .dot-n{top:-2px;right:2px}
-@media (max-width:700px){.vsb{gap:10px;padding:10px 7%}.vsb-rank{padding:4px 18px;font-size:14px}.vsb-btn{padding:8px 14px;font-size:14px}}
+@media (max-width:700px){.vsb{gap:10px;padding:12px 7%}.vsb-crest{left:25%;right:25%}.vsb-rank{padding:4px 18px;font-size:14px}.vsb-btn{padding:8px 14px;font-size:14px}}
+
+.evp-main.tlm.nochar{width:min(1040px,calc(100vw - min(260px,30vw) - 110px))}
+.tl-day.d7 .tl-hd{background-image:linear-gradient(90deg,#ff8fd0,#c8a2ff 50%,#7fa8ff)}

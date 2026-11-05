@@ -80,7 +80,7 @@ function buyPack(kind, id) {
 /* the VIP bar on top of Top Up → Pearls (after the owner's reference): shield with the VIP level, rank name, VIP EXP toward the next level, Privileges */
 function vipShopBar() {
   const lv = vipLv(), xp = vipState().xp, next = VIP_XP[lv], pct = next ? Math.min(100, xp / next * 100) : 100;
-  return `<div class="vsb"><span class="vsb-sh"><b>${lv}</b></span>
+  return `<div class="vsb"><span class="vsb-plate"></span><span class="vsb-crest"><svg viewBox="0 0 110 34" aria-hidden="true"><circle cx="55" cy="30" r="7"/><path d="M55 4v14M41 8l7 12M69 8l-7 12M30 16l12 8M80 16l-12 8M22 28h14M74 28h14"/></svg></span><span class="vsb-sh"><b>${lv}</b></span>
     <span class="vsb-mid"><span class="vsb-rank">${esc(VIP_RANKS[lv] || 'Guest')}</span><span class="vsb-xp">${curIcon('vip')}<span class="vsb-bar"><i style="width:${pct}%"></i><em>${next ? `${fmt(xp)} / ${fmt(next)}` : `${fmt(xp)} · max level`}</em></span></span></span>
     <button class="vsb-btn" data-open="vip">Privileges${vipReady() ? '<span class="dot-n"></span>' : ''}</button></div>`;
 }
