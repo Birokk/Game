@@ -55,6 +55,7 @@ function renderMenu() {
   $('#farmDot').hidden = !farmReady();
   $('#houseDot').hidden = !houseReady();
   $('#guildDot').hidden = !guildReady();
+  $('#frDot').hidden = !frReady();
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();
