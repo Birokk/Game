@@ -114,6 +114,12 @@ function leafBlob(g, x, y, r, seed, pal = [WPAL.gD, WPAL.g, WPAL.gL, WPAL.gH]) {
     g.beginPath(); g.ellipse(lx, ly, r * .16, r * .09, a, 0, 7); g.fill();
   }
 }
+/* volume: light from the sun (top left) over the whole sprite, shade toward the bottom right, on top of what's painted */
+function volumeShade(g, x0, y0, x1, y1, lit = .2, dark = .5) {
+  const gr = g.createLinearGradient(x0, y0, x1, y1);
+  gr.addColorStop(0, `rgba(255,240,200,${lit})`); gr.addColorStop(.45, 'rgba(255,240,200,0)'); gr.addColorStop(.6, 'rgba(8,18,14,0)'); gr.addColorStop(1, `rgba(8,18,14,${dark})`);
+  g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = gr; g.fillRect(0, 0, g.canvas.width, g.canvas.height); g.restore();
+}
 /* ---------- sprites, painted once ---------- */
 const WSPR = {};
 function treeSprite(v) {
@@ -123,6 +129,7 @@ function treeSprite(v) {
   g.fillStyle = WPAL.wood; g.fillRect(73, 112, 5, 46);
   const blobs = [[75, 60, 44], [42, 82, 30], [108, 82, 30], [75, 100, 34], [52, 46, 26], [100, 46, 26], [75, 28, 22]];
   blobs.forEach(([x, y, r], i) => leafBlob(g, x + (hash(v, i) - .5) * 10, y + (hash(i, v) - .5) * 8, r, v * 31 + i));
+  volumeShade(g, 20, 10, 135, 150);
   return c;
 }
 function pineSprite(v) {
@@ -135,6 +142,7 @@ function pineSprite(v) {
     g.fillStyle = gr; g.beginPath(); g.moveTo(55, top); g.quadraticCurveTo(55 + w * .5, top + 20, 55 + w, y2); g.quadraticCurveTo(55, y2 - 8, 55 - w, y2); g.quadraticCurveTo(55 - w * .5, top + 20, 55, top); g.fill();
     for (let k = 0; k < 10; k++) { g.strokeStyle = `rgba(150,175,110,${.25 + hash(v, i * 10 + k) * .25})`; g.lineWidth = 1.5; const sx = 55 - w * .7 + hash(i, k, v) * w * .8, sy = top + 14 + hash(k, i) * 22; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx - 6, sy + 6); g.stroke(); }
   }
+  volumeShade(g, 10, 10, 105, 150, .16, .45);
   return c;
 }
 function bushSprite(v) {
@@ -144,6 +152,7 @@ function bushSprite(v) {
   [[30, 40, 18], [58, 40, 18], [44, 30, 20], [44, 46, 16]].forEach(([x, y, r], i) => leafBlob(g, x + (hash(v, i) - .5) * 8, y, r, v * 17 + i, pals[v]));
   if (v === 1) for (let k = 0; k < 6; k++) { g.fillStyle = '#e8d6a0'; g.beginPath(); g.arc(28 + hash(k, 1) * 34, 26 + hash(1, k) * 22, 1.8, 0, 7); g.fill(); }
   if (v === 3) for (let k = 0; k < 5; k++) { g.fillStyle = '#c96a6a'; g.beginPath(); g.arc(28 + hash(k, 3) * 34, 28 + hash(3, k) * 20, 2, 0, 7); g.fill(); }
+  volumeShade(g, 14, 8, 80, 66, .18, .45);
   return c;
 }
 /* thatched house: a big straw roof with rows of strands, dark plank walls, glowing windows and a porch */
@@ -189,6 +198,8 @@ function houseSprite(h) {
   }
   g.strokeStyle = 'rgba(70,52,30,.75)'; g.lineWidth = 5; g.beginPath(); g.moveTo(left - 6, eave); g.quadraticCurveTo(W / 2, eave + 10, right + 6, eave); g.stroke();
   g.fillStyle = 'rgba(255,245,210,.5)'; g.fillRect(left + 26, roofTop + 4, right - left - 52, 3);
+  { const rs = g.createLinearGradient(left, 0, right, 0); rs.addColorStop(0, 'rgba(255,244,214,.22)'); rs.addColorStop(.48, 'rgba(255,244,214,0)'); rs.addColorStop(.52, 'rgba(40,26,12,.12)'); rs.addColorStop(1, 'rgba(40,26,12,.38)');
+    g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = rs; g.fillRect(0, 0, W, eave + 12); g.restore(); }   // the roof's far slope turns away from the sun
   if (h.id !== 'lathel') { const cx = right - (right - left) * .22; g.fillStyle = '#6e6a63'; g.fillRect(cx - 7, roofTop - 4, 14, 22); g.fillStyle = '#8f8a82'; g.fillRect(cx - 7, roofTop - 4, 14, 4); }
   return c;
 }
@@ -226,6 +237,83 @@ function spr(o) {
 /* where each sprite's base point sits inside it (px from left, px from top) */
 const ANCHOR = { tree: [75, 158], pine: [55, 160], bush: [45, 56], tent: [55, 80], log: [35, 26], crate: [20, 34], barrel: [18, 40], lamp: [15, 84], well: [35, 70], board: [30, 68], hay: [30, 40], bench: [35, 34], sign: [25, 54], gate: [35, 96], boat: [45, 26], fence: [20, 36] };
 
+/* ---------- relief: a height field (a wooded hill inside the ring road, rolling bumps, dips for the water and the paths)
+   shaded by the sun from the top left, painted once over the ground so the valley reads as 3D from the same camera ---------- */
+const RELIEF_K = 4;   // samples per tile
+function paintRelief(g, WW, WH) {
+  const RW = MW * RELIEF_K, RH = MH * RELIEF_K, h = new Float32Array(RW * RH), R = mulberry32(11);
+  const bumps = [{ x: 29, y: 22.5, a: 7, s: 7.5 }];
+  for (let i = 0; i < 26; i++) bumps.push({ x: R() * MW, y: MOUNT_ROWS + R() * (MH - MOUNT_ROWS), a: (R() - .35) * 2.6, s: 2 + R() * 4 });
+  for (let j = 0; j < RH; j++) for (let i = 0; i < RW; i++) {
+    const x = (i + .5) / RELIEF_K, y = (j + .5) / RELIEF_K, t = tileAt(Math.floor(x), Math.floor(y));
+    let v = 0; bumps.forEach(b => { const d2 = ((x - b.x) ** 2 + (y - b.y) ** 2) / (b.s * b.s); if (d2 < 9) v += b.a * Math.exp(-d2); });
+    if (t === T.WATER || t === T.BRIDGE || t === T.DOCK) v -= 2.4; else if (walkT(t)) v -= .7;
+    h[j * RW + i] = v;
+  }
+  // smooth it (three box passes) so the slopes are soft
+  const tmp = new Float32Array(RW * RH);
+  for (let pass = 0; pass < 3; pass++) {
+    for (let j = 0; j < RH; j++) for (let i = 0; i < RW; i++) { let s2 = 0, n = 0; for (let d = -2; d <= 2; d++) { const ii = i + d; if (ii >= 0 && ii < RW) { s2 += h[j * RW + ii]; n++; } } tmp[j * RW + i] = s2 / n; }
+    for (let j = 0; j < RH; j++) for (let i = 0; i < RW; i++) { let s2 = 0, n = 0; for (let d = -2; d <= 2; d++) { const jj = j + d; if (jj >= 0 && jj < RH) { s2 += tmp[jj * RW + i]; n++; } } h[j * RW + i] = s2 / n; }
+  }
+  const cv = mk(RW, RH), cg = cv.getContext('2d'), img = cg.createImageData(RW, RH), L = [-.62, -.62, .48], at = (i, j) => h[clamp(j, 0, RH - 1) * RW + clamp(i, 0, RW - 1)];
+  for (let j = 0; j < RH; j++) for (let i = 0; i < RW; i++) {
+    const k = (j * RW + i) * 4, y = j / RELIEF_K;
+    if (y < MOUNT_ROWS + 1) { img.data[k + 3] = 0; continue; }
+    const dx = (at(i + 1, j) - at(i - 1, j)) * 3, dy = (at(i, j + 1) - at(i, j - 1)) * 3, n = Math.hypot(dx, dy, 1);
+    const lit = (-dx * L[0] - dy * L[1] + L[2]) / n - L[2], fade = Math.min(1, (y - MOUNT_ROWS - 1) / 2);
+    if (lit >= 0) { img.data[k] = 255; img.data[k + 1] = 238; img.data[k + 2] = 196; img.data[k + 3] = Math.min(130, lit * 420) * fade; }
+    else { img.data[k] = 8; img.data[k + 1] = 18; img.data[k + 2] = 16; img.data[k + 3] = Math.min(170, -lit * 480) * fade; }
+  }
+  cg.putImageData(img, 0, 0);
+  g.save(); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(cv, 0, 0, WW, WH); g.restore();
+}
+
+/* ---------- cast shadows: every sprite throws a silhouette onto the ground away from the sun (toward the bottom right),
+   drawn into one layer so overlapping shadows don't stack ---------- */
+const SH_KX = .72, SH_KY = .36, SHADOW = {};
+function silhouette(key, s, ay) {
+  if (SHADOW[key]) return SHADOW[key];
+  const w = s.width, hh = Math.min(s.height, Math.ceil(ay)), a = mk(w, hh), ag = a.getContext('2d');
+  ag.drawImage(s, 0, 0);
+  const d = ag.getImageData(0, 0, w, hh);
+  for (let k = 3; k < d.data.length; k += 4) { const v = d.data[k]; d.data[k - 3] = 16; d.data[k - 2] = 24; d.data[k - 1] = 30; d.data[k] = v > 150 ? 255 : v > 110 ? (v - 110) * 6 : 0; }   // only the solid parts, not the baked soft shadows
+  ag.putImageData(d, 0, 0);
+  const b = mk(w + 8, hh + 8), bg = b.getContext('2d'); bg.filter = 'blur(2px)'; bg.drawImage(a, 4, 4);
+  return SHADOW[key] = b;
+}
+/* draw a sprite's shadow: sprite pixel (sx, sy) with the base point (ax, ay) lands at px + (sx-ax) + (ay-sy)*KX, py + (ay-sy)*KY */
+function castShadow(g, sil, px, py, ax, ay, k = 1) {
+  g.save(); g.transform(1, 0, -SH_KX, -SH_KY, px - (ax + 4) * k + (ay + 4) * k * SH_KX, py + (ay + 4) * k * SH_KY);
+  g.drawImage(sil, 0, 0, sil.width * k, sil.height * k); g.restore();
+}
+function charShadow(g, px, py, s = 1) {
+  g.save(); g.transform(1, 0, -SH_KX * s, -SH_KY * s, px, py);
+  g.fillStyle = 'rgb(16,24,30)'; g.beginPath(); g.ellipse(0, -9, 6.5, 9, 0, 0, 7); g.fill(); g.beginPath(); g.arc(0, -25, 10, 0, 7); g.fill();
+  g.restore();
+}
+const gfxLv = () => (S.settings && S.settings.gfx) || 'high';
+/* the objects never move, so their shadows are painted once into the ground (one layer, so overlaps don't stack) */
+function bakeShadows() {
+  const WW = ground.width, WH = ground.height, L = mk(WW, WH), lg = L.getContext('2d');
+  objects.forEach(o => {
+    const px = o.x * TS, py = o.y * TS;
+    if (o.kind === 'house') { const s2 = o.spr, ay = s2.height - 22; castShadow(lg, silhouette('house' + o.h.id, s2, ay), px, py, s2.width / 2, ay); return; }
+    const a = ANCHOR[o.kind]; if (!a || o.kind === 'boat') return;
+    castShadow(lg, silhouette(o.kind + (o.v ?? '') + (o.col || ''), spr(o), a[1]), px, py, a[0], a[1], o.s || 1);
+  });
+  const g = ground.getContext('2d'); g.save(); g.globalAlpha = .44; g.drawImage(L, 0, 0); g.restore();
+}
+const SWAY = { tree: .03, pine: .022, bush: .012 }, SWAY_N = 3, SWAY_M = 8, SWAYED = {};
+/* trees lean in the wind from their base: 7 pre-drawn lean steps per sprite (drawing a skewed sprite every frame is slow on weak devices) */
+function swaySprite(key, s, ay, sw, step) {
+  const k2 = key + ':' + step; if (SWAYED[k2]) return SWAYED[k2];
+  const c2 = mk(s.width + SWAY_M * 2, s.height), g2 = c2.getContext('2d'), sk = step / SWAY_N * sw;
+  g2.setTransform(1, 0, sk, 1, SWAY_M - sk * ay, 0); g2.drawImage(s, 0, 0);
+  return SWAYED[k2] = c2;
+}
+const dofCv = mk(1, 1), dofG = dofCv.getContext('2d');
+
 /* ---------- the painted ground ---------- */
 const ground = mk(MW * TS, MH * TS);
 function paintGround() {
@@ -249,6 +337,12 @@ function paintGround() {
     for (let i = 0; i < 1800; i++) softDot(tg, R() * WW, R() * WH, 8 + R() * 30, ['rgba(176,156,118,A)', 'rgba(222,208,176,A)', 'rgba(150,132,98,A)'][i % 3], .3);
     for (let i = 0; i < 2200; i++) { tg.fillStyle = R() < .5 ? 'rgba(120,104,80,.5)' : 'rgba(236,226,200,.6)'; const r = .8 + R() * 1.8; tg.beginPath(); tg.ellipse(R() * WW, R() * WH, r * 1.3, r, 0, 0, 7); tg.fill(); }
   });
+  // depth: the paths and the water sit a little below the meadow, lit from the top left (the sun): a shadow band along
+  // their top-left edges and a light band along their bottom-right edges
+  const inset = (m, dx, dy, col) => { const t = mk(WW, WH), tg = t.getContext('2d'); tg.drawImage(m, 0, 0); tg.globalCompositeOperation = 'destination-out'; tg.drawImage(m, dx, dy); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = col; tg.fillRect(0, 0, WW, WH); g.drawImage(t, 0, 0); };
+  inset(pm, 6, 7, 'rgba(70,52,30,.42)'); inset(pm, -4, -5, 'rgba(255,246,220,.28)');
+  inset(wm, 11, 13, 'rgba(10,24,26,.55)'); inset(wm, -5, -6, 'rgba(200,232,222,.22)');
+  paintRelief(g, WW, WH);
   // grass tufts creeping over the path edges
   for (let y = MOUNT_ROWS; y < MH; y++) for (let x = 0; x < MW; x++) {
     if (!walkT(tiles[idx(x, y)])) continue;
@@ -290,7 +384,7 @@ function paintMapBase() {
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (walkT(tiles[idx(x, y)])) { g.beginPath(); g.arc((x + .5) * MPX, (y + .5) * MPX, MPX * .82, 0, 7); g.fill(); }
 }
 
-buildMap(); paintGround(); paintMapBase();
+buildMap(); paintGround(); bakeShadows(); paintMapBase();
 
 /* ---------- characters: small chibis with big heads, soft shading and a dark round shadow ---------- */
 function drawMini(c, x, y, look, o = {}) {
@@ -710,6 +804,14 @@ function render() {
   c.drawImage(ground, vx, vy, vw, vh, vx, vy, vw, vh);
   // water shimmer
   for (let i = 0; i < 26; i++) { const x = (hash(i, Math.floor(now * .6), 1) * MW), y = (hash(Math.floor(now * .6), i, 2) * MH); if (tileAt(Math.floor(x), Math.floor(y)) !== T.WATER) continue; const a = Math.sin((now * .6 % 1) * Math.PI); c.strokeStyle = `rgba(230,245,240,${.45 * a})`; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x * TS - 6, y * TS); c.lineTo(x * TS + 6, y * TS); c.stroke(); }
+  // characters' and hens' cast shadows (the objects' shadows are baked into the ground, bakeShadows)
+  const shadows = gfxLv() !== 'low';
+  if (shadows) {
+    c.save(); c.globalAlpha = .34;
+    entities.forEach(e => { const px = e.x * TS, py = e.y * TS; if (px > vx - 40 && px < vx + vw + 60 && py > vy - 20 && py < vy + vh + 40) charShadow(c, px, py, e === player ? teleAlpha() : 1); });
+    critters.forEach(cr => { if (cr.kind === 'hen') { c.save(); c.transform(1, 0, -SH_KX, -SH_KY, cr.x * TS, cr.y * TS); c.fillStyle = 'rgb(16,24,30)'; c.beginPath(); c.ellipse(0, -5, 5, 5, 0, 0, 7); c.fill(); c.restore(); } });
+    c.restore();
+  }
   if (marker && now - marker.t < .8) { const f = (now - marker.t) / .8; c.strokeStyle = `rgba(255,250,220,${1 - f})`; c.lineWidth = 2; c.beginPath(); c.ellipse(marker.x * TS, marker.y * TS, 6 + f * 10, 3 + f * 5, 0, 0, 7); c.stroke(); }
   // depth-sorted things
   const list = [], inView = (px, py, w, h) => px + w > vx - 20 && px - w < vx + vw + 20 && py + 20 > vy && py - h < vy + vh + 20;
@@ -720,7 +822,10 @@ function render() {
     const a = ANCHOR[o.kind]; if (!a) return;
     const s = spr(o), k = o.s || 1;
     if (!inView(px, py, a[0] * k, a[1] * k)) return;
-    list.push({ y: py, d: () => c.drawImage(s, px - a[0] * k, py - a[1] * k, s.width * k, s.height * k) });
+    const sw = shadows && SWAY[o.kind];
+    if (sw) { const step = Math.round(Math.sin(now * 1.1 + o.x * .9 + o.y * .4) * SWAY_N), s3 = swaySprite(o.kind + (o.v ?? ''), s, a[1], sw, step);   // trees lean in the wind from their base
+      list.push({ y: py, d: () => c.drawImage(s3, px - (a[0] + SWAY_M) * k, py - a[1] * k, s3.width * k, s3.height * k) }); }
+    else list.push({ y: py, d: () => c.drawImage(s, px - a[0] * k, py - a[1] * k, s.width * k, s.height * k) });
   });
   entities.forEach(e => list.push({ y: e.y * TS, e }));
   critters.forEach(cr => {
@@ -750,10 +855,24 @@ function render() {
   glowsAt.forEach(l => { const fl = l.fire ? 1 + Math.sin(now * 9) * .06 : 1; softDot(c, l.x * TS, l.y * TS, l.r * TS * fl, `rgba(${l.c},A)`, l.fire ? .28 : .16); });
   flies.forEach(f => { const x = f.x * TS, y = f.y * TS; if (x < vx - 20 || x > vx + vw + 20 || y < vy - 20 || y > vy + vh + 20) return; c.globalAlpha = .35 + .65 * Math.abs(Math.sin(now * 1.6 + f.p)); c.drawImage(flyGlow, x - 12, y - 12); });
   c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  // depth of field (High graphics): the top and bottom of the screen go softly out of focus, like a tilt-shift photo of a model valley
+  if (gfxLv() === 'high') {
+    const dw = Math.ceil(canvas.width / 5), dh = Math.ceil(canvas.height / 5);   // a small copy scaled back up = a cheap soft blur
+    if (dofCv.width !== dw || dofCv.height !== dh) { dofCv.width = dw; dofCv.height = dh; }
+    dofG.setTransform(1, 0, 0, 1, 0, 0); dofG.globalCompositeOperation = 'copy'; dofG.imageSmoothingQuality = 'high'; dofG.drawImage(canvas, 0, 0, dw, dh);
+    dofG.globalCompositeOperation = 'destination-in'; const mg = dofG.createLinearGradient(0, 0, 0, dh);
+    mg.addColorStop(0, 'rgba(0,0,0,1)'); mg.addColorStop(.24, 'rgba(0,0,0,0)'); mg.addColorStop(.76, 'rgba(0,0,0,0)'); mg.addColorStop(1, 'rgba(0,0,0,.9)');
+    dofG.fillStyle = mg; dofG.fillRect(0, 0, dw, dh); dofG.globalCompositeOperation = 'source-over';
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.imageSmoothingQuality = 'high'; c.drawImage(dofCv, 0, 0, canvas.width, canvas.height); c.restore();
+  }
   // screen space: falling leaves, out-of-focus foliage in the corners, a soft vignette
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   leaves.forEach(l => { c.save(); c.translate(l.x * W, l.y * H); c.rotate(l.r); c.fillStyle = 'rgba(170,190,90,.75)'; c.beginPath(); c.ellipse(0, 0, l.s, l.s * .45, 0, 0, 7); c.fill(); c.restore(); });
   [[0, H, Math.min(W, H) * .32], [W, H, Math.min(W, H) * .26]].forEach(([x, y, r]) => { const fg = c.createRadialGradient(x, y, r * .2, x, y, r); fg.addColorStop(0, 'rgba(26,36,20,.75)'); fg.addColorStop(.6, 'rgba(40,52,30,.45)'); fg.addColorStop(1, 'rgba(40,52,30,0)'); c.fillStyle = fg; c.fillRect(x - r, y - r, r * 2, r * 2); });
+  // warm sunlight from the top left, cooler shade toward the bottom right, and a faint haze far up the screen (distance)
+  const sun = c.createLinearGradient(0, 0, W, H); sun.addColorStop(0, 'rgba(255,226,170,.13)'); sun.addColorStop(.45, 'rgba(255,226,170,0)'); sun.addColorStop(.7, 'rgba(14,26,40,0)'); sun.addColorStop(1, 'rgba(14,26,40,.16)');
+  c.fillStyle = sun; c.fillRect(0, 0, W, H);
+  const haze = c.createLinearGradient(0, 0, 0, H * .35); haze.addColorStop(0, 'rgba(190,206,214,.14)'); haze.addColorStop(1, 'rgba(190,206,214,0)'); c.fillStyle = haze; c.fillRect(0, 0, W, H * .35);
   const vg = c.createRadialGradient(W / 2, H * .45, Math.min(W, H) * .35, W / 2, H / 2, Math.max(W, H) * .78);
   vg.addColorStop(0, 'rgba(20,16,10,0)'); vg.addColorStop(1, 'rgba(20,16,10,.45)'); c.fillStyle = vg; c.fillRect(0, 0, W, H);
   // teleport beam, the player's arrow, names, bubbles, emotes
