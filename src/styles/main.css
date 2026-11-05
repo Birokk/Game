@@ -3717,3 +3717,9 @@ button.pt-slot:hover{border-color:#fff}
 .cp-card.on{border-color:transparent;background:linear-gradient(rgba(30,16,52,.95),rgba(30,16,52,.95)) padding-box,var(--cry-grad) border-box;box-shadow:0 0 18px var(--cry-glow)}
 .cp-card .cp-ok{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--cry-grad);color:var(--cry-ink)}
 .cp-card .cp-ok svg{width:16px;height:16px}
+/* black hole screen transition (38-transition.js) */
+.bh{position:fixed;inset:0;z-index:9000;pointer-events:auto;overflow:hidden}
+.bh i{position:absolute;left:50%;top:50%;width:320vmax;height:320vmax;border-radius:50%;transform:translate(-50%,-50%) scale(0);will-change:transform}
+.bh-disc{background:conic-gradient(from 0deg,rgba(255,110,199,.95),rgba(168,85,247,.9),rgba(120,200,255,.85),rgba(255,180,230,.95),rgba(168,85,247,.9),rgba(255,110,199,.95));
+  -webkit-mask:radial-gradient(circle,transparent 0 44%,#000 47%,#000 52%,rgba(0,0,0,.5) 58%,transparent 66%);mask:radial-gradient(circle,transparent 0 44%,#000 47%,#000 52%,rgba(0,0,0,.5) 58%,transparent 66%);filter:blur(6px)}
+.bh-core{background:radial-gradient(circle,#000 0 44%,#05000c 47%,rgba(20,0,40,.85) 50%,transparent 54%);box-shadow:none}

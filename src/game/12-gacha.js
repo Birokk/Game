@@ -290,7 +290,7 @@ function renderSummon() {
   // a hero with uploaded art fills the screen; chibis stand in a lineup
   const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
-    return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.kind === 'feat' && !I.skins ? (I.step ? '<br>Step-Up' : '<br>Summon') : ''}</b>${dotFor(k)}</button>`; };
+    return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}"><small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.feat && !I.skins ? (I.step ? '<br>Step-Up' : '<br>Summon') : ''}</b>${dotFor(k)}</button>`; };
   const what = B.skins ? 'outfit' : B.mems ? 'memory' : 'character';
   smEl.className = 'sx r5';
   smEl.innerHTML = `<div class="sx-word">${B.word}</div>
