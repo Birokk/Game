@@ -1,0 +1,371 @@
+/* ==========================================================================
+   UI refresh (loaded after main.css). Look only: no rules here change what anything does.
+   Ideas taken from modern gacha HUDs (clean hairlines, diamond ornaments, icon docks,
+   readable labels, snappy screen transitions) in the game's own crystal palette.
+   The character screen (.cs) is deliberately left exactly as it was: every shared
+   rule below that could reach it is scoped with :not(.cs *).
+   ========================================================================== */
+:root{
+  --u2-rim:rgba(232,214,255,.22);
+  --u2-rim-hi:rgba(250,230,255,.62);
+  --u2-panel:linear-gradient(180deg,rgba(28,21,58,.62),rgba(10,8,26,.8));
+  --u2-hair:linear-gradient(90deg,transparent,rgba(255,228,246,.8) 18%,rgba(200,162,255,.8) 50%,rgba(148,184,255,.8) 82%,transparent);
+  --u2-ease:cubic-bezier(.2,.8,.2,1);
+  --u2-ring:linear-gradient(160deg,#ffe4f6,#d8b6ff 40%,rgba(148,184,255,.75) 72%,rgba(255,255,255,.4));
+}
+
+/* ---------- global polish ---------- */
+:where(:not(.cs):not(.cs *)){scrollbar-width:thin;scrollbar-color:rgba(206,176,255,.45) transparent}
+/* press feedback on the main tappable things */
+:is(.btn,.dq-btn,.inv-x,.sx-pull,.evp-item,.dq-tab,.mb2-go):not(.cs *):active{transform:scale(.96)}
+.btn.gold:not(.cs *):hover{filter:brightness(1.05) saturate(1.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 26px rgba(190,150,255,.62)}
+.btn.ghost:not(.cs *):hover{border-color:var(--u2-rim-hi)}
+/* red notification diamonds: a little calmer and cleaner */
+.dot-n:not(.cs *){background:radial-gradient(circle at 35% 30%,#ffa293,#ff3b30 58%,#cf1d2b);border-color:#fff;box-shadow:0 0 0 1px rgba(110,0,12,.35),0 0 6px rgba(255,70,60,.65)}
+
+/* toasts: slim glass banner with a crystal diamond */
+.toast{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 20px 11px 16px;border-radius:14px;
+  background:linear-gradient(180deg,rgba(32,24,64,.92),rgba(14,10,30,.94));border:1px solid rgba(232,214,255,.3);
+  box-shadow:0 14px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1);animation:u2Toast .35s var(--u2-ease)}
+.toast::before{content:"";width:8px;height:8px;flex:none;transform:rotate(45deg);background:linear-gradient(135deg,#ffe4f6,#c8a2ff 55%,#94b8ff);box-shadow:0 0 10px var(--cry-glow)}
+.toast.err::before{background:#ff6b81;box-shadow:0 0 10px #ff6b81}
+@keyframes u2Toast{from{opacity:0;transform:translate(-50%,12px)}}
+
+/* full-screen screens slide in softly instead of popping (they are created on open, so this plays once) */
+.mall,.evp,.inv,.fm,.setx,.ccd{animation:u2Screen .32s var(--u2-ease) both}
+@keyframes u2Screen{from{opacity:0;transform:scale(1.012)}to{opacity:1;transform:none}}
+
+/* ---------- window / screen headers ---------- */
+.inv-title:not(.cs *){background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.03));border:1px solid rgba(232,214,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.22)}
+.inv-title:not(.cs *)::after{content:"";width:6px;height:6px;margin-left:4px;flex:none;transform:rotate(45deg);background:linear-gradient(135deg,#ffe4f6,#c8a2ff 55%,#94b8ff);box-shadow:0 0 8px rgba(200,162,255,.85)}
+.inv-title h2:not(.cs *),.evp-head h2{text-shadow:0 0 18px rgba(200,162,255,.4),0 2px 4px rgba(0,0,0,.5)}
+.inv-badge:not(.cs *){background:radial-gradient(circle at 35% 25%,#4a3a72,#1a1430 72%) padding-box,conic-gradient(from 210deg,#ffe4f6,#c8a2ff,#94b8ff,#f5afe8,#ffe4f6) border-box;border:2px solid transparent;box-shadow:0 0 14px rgba(200,162,255,.32);color:#fff}
+.inv-x:not(.cs *){transition:border-color .2s,box-shadow .2s,background .2s,transform .15s}
+.inv-x:not(.cs *) .ic{transition:transform .35s var(--u2-ease)}
+.inv-x:not(.cs *):hover{border-color:#f0d2ff;background:rgba(36,26,62,.92);box-shadow:0 0 0 3px rgba(200,162,255,.16),0 0 16px rgba(200,162,255,.45)}
+.inv-x:not(.cs *):hover .ic{transform:rotate(90deg)}
+
+/* ==========================================================================
+   Home screen
+   ========================================================================== */
+/* round HUD icons: dark crystal orbs with a pink → lavender → ice rim */
+.menu .ev .evo{background:radial-gradient(120% 90% at 30% 12%,rgba(255,255,255,.2),transparent 55%) padding-box,linear-gradient(180deg,rgba(32,24,66,.6),rgba(10,8,26,.72)) padding-box,var(--u2-ring) border-box;
+  border:1.5px solid transparent;box-shadow:0 6px 16px rgba(0,0,0,.35),inset 0 0 14px rgba(200,162,255,.16);transition:transform .25s var(--u2-ease),box-shadow .25s}
+.menu .ev:hover .evo{transform:translateY(-2px);box-shadow:0 0 0 3px rgba(245,175,232,.16),0 0 22px var(--cry-glow),0 8px 18px rgba(0,0,0,.35)}
+.menu .ev:active .evo{transform:scale(.93)}
+.menu .ev .evo .ic{width:24px;height:24px;filter:drop-shadow(0 0 6px rgba(200,162,255,.55))}
+.menu .ev .el{letter-spacing:.05em}
+.menu .ev time{color:#ffc9f0;text-shadow:0 0 8px rgba(245,175,232,.55),0 1px 2px rgba(0,0,0,.9)}
+.menu .hm-more.on .evo{box-shadow:0 0 0 3px rgba(255,255,255,.85),0 0 22px var(--cry-glow),0 6px 16px rgba(0,0,0,.35)}
+.menu .hm-drop{background:linear-gradient(180deg,rgba(30,22,62,.72),rgba(12,10,30,.82));border:1px solid var(--u2-rim);box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.1)}
+.menu .hm-drop::after{content:"";position:absolute;left:14%;right:14%;top:-1px;height:1px;background:var(--u2-hair);pointer-events:none}
+
+/* small top buttons (mail, settings, admin, wallpaper, hide UI) share the orb rim */
+.menu .rbtn,.menu .tool .tc{background:linear-gradient(180deg,rgba(32,24,66,.55),rgba(10,8,26,.68)) padding-box,var(--u2-ring) border-box;border:1.5px solid transparent;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.menu .rbtn:hover,.menu .tool:hover .tc{box-shadow:0 0 16px var(--cry-glow),0 4px 12px rgba(0,0,0,.3)}
+.menu .rbtn:active,.menu .tool:active .tc{transform:scale(.93)}
+
+/* currencies: one consistent capsule style */
+.menu .cur{height:36px;background:linear-gradient(180deg,rgba(28,21,58,.62),rgba(10,8,26,.74));border:1px solid var(--u2-rim);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 6px 16px rgba(0,0,0,.25);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.menu .cur b{text-shadow:0 1px 2px rgba(0,0,0,.6)}
+
+/* world chat ticker: glass strip with a crystal hairline */
+.menu .ticker{background:linear-gradient(90deg,rgba(24,18,50,.72),rgba(10,8,26,.3));box-shadow:inset 1px 0 0 rgba(232,214,255,.35)}
+
+/* bottom dock: icon tiles (diamond frames) with labels, centred between the gates and Summon */
+.menu .hm-tabs{left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 2 * (var(--sl) + 262px));bottom:calc(12px + var(--sb));
+  display:flex;align-items:stretch;justify-content:center;gap:2px;padding:7px 8px 6px;border-radius:22px;
+  background:var(--u2-panel);border:1px solid var(--u2-rim);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);
+  box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1)}
+.menu .hm-tabs::before{content:"";position:absolute;left:16%;right:16%;top:-1px;height:1px;background:var(--u2-hair);pointer-events:none}
+.menu .hm-tabs::after{content:"";position:absolute;left:50%;top:-4px;width:7px;height:7px;margin-left:-3.5px;transform:rotate(45deg);background:linear-gradient(135deg,#fff,#d8b6ff);box-shadow:0 0 8px #c8a2ff;pointer-events:none}
+.menu .tabb{flex:none;width:96px;min-width:0;display:grid;justify-items:center;align-content:start;gap:5px;padding:5px 4px 4px;border-radius:16px;font-size:12px;letter-spacing:.05em;line-height:1.15;color:#f1e8ff;transition:background .2s,color .2s}
+.menu .tabb+.tabb::before{top:24%;bottom:30%;background:linear-gradient(transparent,rgba(232,214,255,.3),transparent)}
+.menu .tabb .tbi{position:relative;width:40px;height:40px;display:grid;place-items:center}
+.menu .tabb .tbi::before{content:"";position:absolute;inset:5px;border-radius:9px;transform:rotate(45deg);background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.03));border:1px solid rgba(232,214,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 10px rgba(0,0,0,.25);transition:background .25s,border-color .25s,box-shadow .25s,transform .25s var(--u2-ease)}
+.menu .tabb .tbi .ic{position:relative;width:20px;height:20px;transition:color .2s}
+.menu .tabb .tbl{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu .tabb:hover{background:rgba(255,255,255,.07);color:#fff}
+.menu .tabb:hover .tbi::before{background:var(--cry-grad);border-color:var(--cry-edge);box-shadow:0 0 16px var(--cry-glow);transform:rotate(45deg) scale(1.06)}
+.menu .tabb:hover .tbi .ic{color:var(--cry-ink)}
+.menu .tabb:active .tbi::before{transform:rotate(45deg) scale(.92)}
+.menu .tabb .dot-n{top:4px;right:calc(50% - 24px)}
+
+/* Summon: a soft crystal halo behind the big button */
+.menu .summon2{box-shadow:inset 0 2px 0 rgba(255,255,255,.75),inset 0 -4px 0 rgba(90,60,160,.18),0 0 0 1px rgba(255,255,255,.35),0 12px 36px var(--cry-glow)}
+.menu .summon2:active{transform:scale(.97)}
+.menu .lim-time{background:linear-gradient(90deg,rgba(24,18,50,.75),rgba(10,8,26,.6));border:1px solid var(--u2-rim);color:#ffc9f0}
+
+@media (max-width:1240px){.menu .tabb{width:82px;font-size:10.5px;letter-spacing:.02em}.menu .cur{min-width:0}}
+/* small windows: the top-right row wraps instead of running into the name and tools */
+@media (max-width:1150px){.menu .tabb{width:70px;font-size:9px;letter-spacing:0}}
+@media (min-width:821px) and (max-width:1240px){
+  .menu .hm-tr{max-width:calc(100% - 360px);gap:6px}
+  .menu .currencies{gap:6px}
+  .menu .cur{height:34px;gap:6px;padding:3px 3px 3px 8px;font-size:13px}
+  .menu .cur .cic{width:18px;height:18px}
+  .menu .cur .plus{width:22px;height:22px}
+  .menu .rbtn{width:40px;height:40px}
+  .menu .tool{font-size:0;gap:0}
+  .menu .tool .tc{width:40px;height:40px}
+}
+@media (min-width:821px) and (max-width:1100px){.menu .ticker{display:none}}
+/* phones and small windows: the dock spans the bottom, gates and Summon sit above it */
+@media (max-width:1000px){
+  .menu .hm-tabs{left:var(--sl);right:var(--sr);width:auto;max-width:none;margin:0;bottom:calc(8px + var(--sb));padding:5px 4px 4px;justify-content:space-between;border-radius:18px}
+  .menu .tabb{flex:1 1 0;width:auto;padding:3px 1px 2px;gap:3px;font-size:10.5px;letter-spacing:0}
+  .menu .tabb .tbi{width:34px;height:34px}
+  .menu .tabb .tbi::before{inset:4px;border-radius:8px}
+  .menu .tabb .tbi .ic{width:17px;height:17px}
+  .menu .tabb .dot-n{top:1px;right:calc(50% - 20px)}
+  .menu .portal,.menu .hm-br{bottom:calc(80px + var(--sb))}
+}
+@media (max-width:560px){.menu .tabb{font-size:9px}}
+@media (max-width:399px){.menu .tabb{font-size:8px;letter-spacing:-.02em}}
+/* portrait phones: currencies sit just under the name; Summon and the gates never touch */
+@media (max-width:820px) and (orientation:portrait){
+  .menu .hm-tr{top:calc(80px + var(--st))}
+  .menu .cur{height:32px}
+}
+@media (max-width:440px) and (orientation:portrait){
+  .menu .summon2{height:56px;padding:0 16px 0 6px;gap:10px}
+  .menu .summon2 .so{width:40px;height:40px}
+  .menu .summon2 .st b{font-size:22px}
+  .menu .lim-time{font-size:10.5px}
+}
+@media (max-width:380px) and (orientation:portrait){
+  .menu .portal{width:76px;height:92px}
+  .menu .portal.raidgate{left:calc(var(--sl) + 84px)}
+  .menu .portal .plbl{font-size:10px}
+  .menu .lim-time{font-size:9.5px;padding:2px 8px}
+}
+@media (min-width:821px) and (max-width:940px){.menu .hm-right{top:calc(150px + var(--st))}}
+
+/* phones held sideways (short screens): everything smaller so nothing overlaps */
+@media (max-height:500px) and (orientation:landscape){
+  .menu .hm-tl{top:calc(6px + var(--st));gap:6px}
+  .menu .hm-me{gap:8px;padding:1px 8px 1px 1px}
+  .menu .hm-me .avf{--s:40px!important}
+  .menu .hm-me .avf{margin:2px}
+  .menu .hm-me .lvb{min-width:20px;height:17px;font-size:10px;right:-3px;bottom:-3px}
+  .menu .hm-name{font-size:15px}
+  .menu .hm-id .ttl{font-size:10px;padding:0 8px}
+  .menu .hm-tools{margin-left:0;gap:6px}
+  .menu .tool{font-size:0;gap:0}
+  .menu .tool .tc{width:34px;height:34px}
+  .menu .tool .tc .ic{width:17px;height:17px}
+  .menu .hm-tr{top:calc(8px + var(--st));left:auto;right:var(--sr);gap:6px;flex-wrap:nowrap;justify-content:flex-end}
+  .menu .currencies{gap:5px;flex-wrap:nowrap!important}
+  .menu .cur{min-width:0;height:30px;padding:2px 3px 2px 8px;gap:5px;font-size:12px}
+  .menu .cur .cic{width:16px;height:16px}
+  .menu .cur .plus{width:22px;height:22px}
+  .menu .cur[data-k=tickets],.menu .cur[data-k=wishes]{display:none}
+  .menu .rbtn{width:34px;height:34px}
+  .menu .rbtn .ic{width:17px;height:17px}
+  .menu .ticker{display:none}
+  .menu .hm-left{top:calc(54px + var(--st));gap:6px}
+  .menu .sx-tab.promo-tab{width:184px;height:56px;border-width:2px}
+  .menu .sx-tab.promo-tab b{font-size:15px;left:9px;bottom:6px}
+  .menu .sx-tab.promo-tab small{font-size:8px;left:9px;top:5px;letter-spacing:.08em}
+  .menu .ev-grid{grid-template-columns:repeat(3,64px);gap:4px}
+  .menu .ev{width:64px;font-size:9px;letter-spacing:0}
+  .menu .ev .el{white-space:normal}
+  .menu .ev .evo{width:42px;height:42px}
+  .menu .ev .evo .ic{width:20px;height:20px}
+  .menu .ev .el{margin-top:3px}
+  .menu .ev time{font-size:10px}
+  .menu .ev .dot-n{top:0;right:5px}
+  .menu .hm-right{top:calc(54px + var(--st));right:var(--sr);grid-template-columns:repeat(4,64px);gap:4px}
+  .menu .hm-drop{grid-template-columns:repeat(3,70px);top:calc(100% + 8px);right:-4px;padding:9px 6px 7px;gap:6px 2px}
+  .menu .hm-drop::before{top:-7px;right:24px;transform:rotate(45deg)}
+  .menu .hm-drop .ev .evo{width:38px;height:38px}
+  .menu .hm-drop .el{font-size:8.5px;letter-spacing:0}
+  .menu .portal{width:70px;height:84px;bottom:calc(8px + var(--sb));border-radius:36px 36px 12px 12px}
+  .menu .portal.raidgate{left:calc(var(--sl) + 78px)}
+  .menu .portal .plbl{font-size:9px;height:22px;white-space:nowrap;letter-spacing:0}
+  .menu .g-arch{inset:5px 5px 22px;border-radius:32px 32px 5px 5px}
+  .menu .g-lan{width:9px;height:12px}
+  .menu .hm-tabs{left:0;right:0;width:max-content;margin:0 auto;max-width:calc(100% - 2 * (var(--sl) + 172px));bottom:calc(6px + var(--sb));padding:4px 5px 3px;gap:1px;border-radius:16px;justify-content:center}
+  .menu .tabb{flex:none;width:64px;gap:2px;padding:3px 2px 2px;font-size:8.5px;letter-spacing:0}
+  .menu .tabb .tbi{width:30px;height:30px}
+  .menu .tabb .tbi::before{inset:4px;border-radius:7px}
+  .menu .tabb .tbi .ic{width:15px;height:15px}
+  .menu .tabb .dot-n{top:0;right:calc(50% - 19px)}
+  .menu .hm-br{bottom:calc(8px + var(--sb));gap:4px}
+  .menu .summon2{height:50px;padding:0 18px 0 7px;gap:8px}
+  .menu .summon2 .so{width:38px;height:38px}
+  .menu .summon2 .so .ic{width:20px;height:20px}
+  .menu .summon2 .st b{font-size:21px}
+  .menu .summon2 .dot-n{top:6px;right:12px}
+  .menu .lim-time{font-size:9.5px;padding:2px 8px}
+}
+@media (max-height:500px) and (orientation:landscape) and (max-width:760px){
+  .menu .hm-id .ttl{display:none}
+  .menu .tabb{width:58px;font-size:8px}
+}
+@media (max-height:500px) and (orientation:landscape) and (max-width:700px){
+  .menu .currencies,.menu .hm-tr{gap:4px}
+  .menu .cur{padding-left:6px;gap:4px;font-size:11px}
+  .menu .cur .plus{width:20px;height:20px}
+  .menu .rbtn,.menu .tool .tc{width:32px;height:32px}
+  .menu .hm-name{font-size:14px}
+  .menu .tabb{width:44px}
+  .menu .tabb .tbl{display:none}
+}
+
+/* ==========================================================================
+   Events
+   ========================================================================== */
+.evp-side{background:var(--u2-panel);border:1px solid var(--u2-rim);box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
+.evp-item{transition:border-color .2s,background .2s,transform .15s,box-shadow .2s}
+.evp-item:hover{border-color:rgba(232,214,255,.35)}
+.evp-item.on{border-color:#f5afe8;background:linear-gradient(90deg,rgba(245,175,232,.22),rgba(200,162,255,.1) 60%,rgba(30,22,52,.9));box-shadow:0 0 0 3px rgba(245,175,232,.16),0 0 18px rgba(200,162,255,.25)}
+.evp-head{border:1px solid rgba(232,214,255,.16);box-shadow:0 8px 22px rgba(0,0,0,.25)}
+/* the 7 Daily Login days all fit on wide boards; narrow boards still scroll */
+.tl{container-type:inline-size}
+@container (min-width:720px){
+  .tl-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;overflow:visible;padding:4px 0 6px}
+  .tl-day{min-width:0}
+}
+/* sideways phones: list on the left, the event scrolls on the right */
+@media (max-height:500px) and (orientation:landscape){
+  .evp-head{top:calc(6px + env(safe-area-inset-top,0px));padding:2px 18px 2px 2px}
+  .evp-head .inv-badge{width:36px;height:36px}
+  .evp-head h2{font-size:19px}
+  .evp-x{top:calc(6px + env(safe-area-inset-top,0px))}
+  .evp-x.inv-x,.evp-x .inv-x{width:38px;height:38px}
+  .evp-cur{top:calc(8px + env(safe-area-inset-top,0px));right:64px}
+  .evp-side{left:10px;right:auto;top:calc(54px + env(safe-area-inset-top,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:190px;height:auto;display:grid;grid-template-rows:auto 1fr;grid-template-columns:none;align-items:stretch;padding:6px;gap:6px}
+  .evp-pill{display:flex;font-size:11px;padding:3px 10px 3px 6px}
+  .evp-list{display:grid;overflow-y:auto;overflow-x:hidden;gap:6px}
+  .evp-item{padding:6px 8px;gap:8px;border-radius:12px}
+  .evp-item b{font-size:13px}
+  .evp-ic{width:28px;height:28px}
+  .evp-main,.evp-main.cal,.evp-main.tlm,.evp-main.tlm.nochar{left:212px;right:12px;width:auto;top:calc(54px + env(safe-area-inset-top,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));overflow-y:auto;overflow-x:hidden;justify-content:flex-start;align-items:stretch;gap:6px}
+  .evp-title{font-size:26px;text-align:left}
+  .evp-time{font-size:13px;padding:3px 12px 3px 8px;align-self:flex-start}
+  .evp-sub{font-size:14px;margin:0}
+  .tl-char{display:none}
+  .tl{margin:0;padding:10px;gap:6px}
+  .tl-day{flex-basis:100px}
+  .tl-body{padding:8px}
+  .tl-rw{width:min(100%,62px)}
+  .tl-hd{padding:4px 8px;font-size:13px}
+  .tl-ft{padding:3px 0;font-size:11px}
+  .tl-count,.tl-dates{font-size:13px}
+}
+
+/* ==========================================================================
+   Quests (and Pearl Honor missions, same cards)
+   ========================================================================== */
+.dq-pbar{display:block;width:76%;height:5px;margin-top:-4px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.dq-pbar i{display:block;height:100%;border-radius:inherit;background:var(--cry-grad-h);box-shadow:0 0 8px var(--cry-glow);transition:width .5s ease}
+.dq-card.got .dq-pbar i{background:linear-gradient(90deg,#b8f7e6,#4ee6c8)}
+.dq-face{transition:border-color .2s,box-shadow .2s,transform .2s var(--u2-ease)}
+.dq-card:hover .dq-face{border-color:rgba(232,214,255,.3)}
+.dq-top{position:relative}
+.dq-top::before{content:"";position:absolute;left:12%;right:12%;top:-1px;height:1px;background:var(--u2-hair);pointer-events:none}
+@media (max-height:500px) and (orientation:landscape){
+  .dq{height:calc(100dvh - 64px);gap:6px}
+  .dq-tab{padding:4px 18px;font-size:13px}
+  .dq-top{flex-direction:row;align-items:center;padding:6px 14px 2px;gap:10px}
+  .dq-pts>.cic{width:34px;height:34px}
+  .dq-pts b{font-size:26px}
+  .dq-pts small{font-size:10px}
+  .dq-track{flex:1;margin:0 20px 0 4px;height:52px}
+  .dq-bar{top:20px}
+  .dq-dot{width:30px;height:30px}
+  .dq-dot .ic{width:15px;height:15px}
+  .dq-m{font-size:12px}
+  .dq-list{padding:8px;gap:8px}
+  .dq-card{flex-basis:168px;gap:6px}
+  .dq-face{padding:6px 8px;gap:3px;border-radius:16px}
+  .dq-disc{display:none}
+  .dq-pt{font-size:17px;padding:1px 10px}
+  .dq-pt .cic{width:18px;height:18px}
+  .dq-name{font-size:12.5px;min-height:0}
+  .dq-prog{font-size:15px}
+  .dq-pbar{margin-top:0}
+  .dq-btn{min-width:110px;padding:6px 14px;font-size:13px}
+  .dq-foot .btn{height:34px;padding:0 14px}
+  .dq-refresh{padding:5px 12px;font-size:12px}
+}
+
+/* ==========================================================================
+   Summon screen
+   ========================================================================== */
+.sx-tab{transition:transform .25s var(--u2-ease),border-color .2s,box-shadow .2s}
+.sx-rb .c{background:radial-gradient(120% 90% at 30% 12%,rgba(255,255,255,.22),transparent 55%) padding-box,linear-gradient(180deg,rgba(32,24,66,.6),rgba(10,8,26,.72)) padding-box,var(--u2-ring) border-box;border:1.5px solid transparent;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.sx-rb:hover .c{box-shadow:0 0 18px var(--cry-glow),0 6px 16px rgba(0,0,0,.35)}
+.sx-rule{background:var(--u2-hair)}
+/* sideways phones: banner list scrolls, buttons get smaller, nothing overlaps */
+@media (max-height:500px) and (orientation:landscape){
+  .sx-top{top:calc(6px + var(--st));gap:8px}
+  .sx .cs-back{height:34px;padding:0 14px 0 8px;font-size:15px}
+  .sx .cs-help{width:34px;height:34px;font-size:17px}
+  .sx-cur{top:calc(6px + var(--st));left:auto;right:var(--sr);gap:6px}
+  .sx-cur .cur{min-width:0;height:30px;padding:2px 3px 2px 8px;font-size:12px}
+  .sx-tabs{display:grid;top:calc(50px + var(--st));bottom:calc(74px + var(--sb));right:auto;gap:6px;overflow-y:auto;overflow-x:hidden;padding:2px 4px 2px 0;align-content:start;scrollbar-width:none}
+  .sx-tab{width:172px;height:48px;flex:none;border-width:2px}
+  .sx-tab b{font-size:13px;left:8px;bottom:5px;max-width:120px}
+  .sx-tab small{font-size:7.5px;left:8px;top:4px;letter-spacing:.08em}
+  .sx-tab .dot-n{top:4px;right:6px}
+  .sx-title{top:calc(50px + var(--st));left:auto;right:var(--sr);max-width:min(380px,48vw);gap:2px}
+  .sx-title h2{font-size:24px}
+  .sx-title p{font-size:12px}
+  .sx-title .lim-time,.sx-title .chip{font-size:10px}
+  .sx-line{left:16%;right:10%;top:12%;bottom:70px}
+  .sx-rule{bottom:calc(64px + var(--sb))}
+  .sx-bl{bottom:calc(6px + var(--sb));gap:8px}
+  .sx-rb{font-size:10px}
+  .sx-rb .c{width:36px;height:36px}
+  .sx-rb .c .ic{width:17px;height:17px}
+  .sx-skip{left:auto;right:var(--sr);transform:none;bottom:calc(72px + var(--sb));font-size:12px;gap:6px}
+  .sx-skip i{width:18px;height:18px}
+  .sx-br{left:auto;right:var(--sr);bottom:calc(10px + var(--sb));gap:8px}
+  .sx-pull{flex:none;min-width:132px;height:42px;padding:0 14px;font-size:15px;gap:5px;white-space:nowrap;flex-wrap:nowrap}
+  .sx-pull .cost{font-size:12px;gap:3px}
+  .sx-pull .cost .cic{width:15px;height:15px}
+  .sx-note{display:none}
+}
+
+/* ==========================================================================
+   Short screens (phones held sideways): compact window headers everywhere
+   ========================================================================== */
+@media (max-height:500px) and (orientation:landscape){
+  .modal-back.is-wide{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+  .modal.wide .m-body{padding-top:8px}
+  :is(.m-head,.inv-top,.mall-top,.setx-top) .inv-badge:not(.cs *){width:36px;height:36px}
+  :is(.m-head,.inv-top,.mall-top,.setx-top) .inv-title h2:not(.cs *){font-size:19px}
+  :is(.m-head,.inv-top,.mall-top,.setx-top,.evp) .inv-x:not(.cs *){width:38px;height:38px}
+}
+
+/* ==========================================================================
+   Selection states share one crystal look (events list, shop sidebar, mail, banners)
+   ========================================================================== */
+.evp-head::after{content:"";width:6px;height:6px;margin-left:2px;flex:none;transform:rotate(45deg);background:linear-gradient(135deg,#ffe4f6,#c8a2ff 55%,#94b8ff);box-shadow:0 0 8px rgba(200,162,255,.85)}
+.mall-side{background:var(--u2-panel);border-color:var(--u2-rim);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.ml-row{transition:background .2s,border-color .2s,box-shadow .2s}
+.ml-row.on{border-color:#f5afe8;box-shadow:0 0 0 3px rgba(245,175,232,.18),0 0 18px rgba(200,162,255,.28),0 4px 14px rgba(0,0,0,.4)}
+.ml-row.on::before{background:linear-gradient(180deg,#ffe4f6,#c8a2ff,#94b8ff)}
+.ml-row.new .ml-env{color:#ffc9f0;box-shadow:0 0 0 2px rgba(245,175,232,.55)}
+.sx-tab.on{border-color:#f5c4ff;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 22px var(--cry-glow)}
+/* medium windows (profile, VIP, spin…): a thin crystal line along the top edge */
+.modal:not(.wide){position:relative}
+.modal:not(.wide)::before{content:"";position:absolute;left:10%;right:10%;top:0;height:1px;z-index:3;background:var(--u2-hair);pointer-events:none}
+/* sideways phones: screens that used to clip their content now scroll */
+@media (max-height:500px) and (orientation:landscape){
+  .mall-main.hot .mall-body{overflow-y:auto}
+  .mall-side{gap:6px;padding:8px}
+  .mall-side .evp-item{padding:6px 10px}
+  .ml{grid-template-columns:minmax(220px,38%) 1fr;gap:16px}
+  .ml-list{gap:8px}
+  .ml-row{padding:6px 12px 6px 6px;gap:10px}
+  .ml-env{width:38px;height:38px}
+  .ml-t b{font-size:14px}
+  .ml-t small{font-size:12px}
+  .ml-right{display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:4px}
+  .ml-body{flex:none;overflow:visible;min-height:0;font-size:14px}
+  .rk-list{max-height:calc(100dvh - 220px)}
+}
+@media (prefers-reduced-motion:reduce){.mall,.evp,.inv,.fm,.setx,.ccd,.toast{animation:none}}

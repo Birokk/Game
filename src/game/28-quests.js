@@ -119,7 +119,7 @@ function renderQuests() {
       <div class="dq-face"><span class="dq-disc">${got ? `<span class="dq-check">${icon('check')}</span>` : icon('shell')}</span>
         <span class="dq-pt">${curIcon('qpt')}+${q.pts}</span>
         <p class="dq-name">${esc(q.name)}</p>
-        <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b></div>
+        <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b><span class="dq-pbar" aria-hidden="true"><i style="width:${Math.min(100, p / q.need * 100)}%"></i></span></div>
       ${got ? '<span class="dq-btn done">Fulfilled</span>' : can ? `<button class="dq-btn claim" data-qc="${q.id}">Claim</button>` : q.go ? `<button class="dq-btn go" data-qgo="${q.go}">Go</button>` : '<span class="dq-btn">In progress</span>'}
     </div>`; }).join('');
   const readyQ = L.filter(q => qCan(q, set)).map(q => q.id), readyM = QUEST_MS.filter(m => qmCan(m, set));

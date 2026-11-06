@@ -190,7 +190,7 @@ function renderHonor(jump) {
         <div class="dq-face"><span class="dq-disc">${done ? `<span class="dq-check">${icon('check')}</span>` : icon('shell')}</span>
           <span class="dq-pt">${curIcon('honor')}+${fmt(q.xp)}</span>
           <p class="dq-name">${esc(q.name)}</p>
-          <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b></div>
+          <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b><span class="dq-pbar" aria-hidden="true"><i style="width:${Math.min(100, p / q.need * 100)}%"></i></span></div>
         ${done ? '<span class="dq-btn done">Fulfilled</span>' : can ? '<button class="dq-btn claim" data-bpmc="1">Claim</button>' : q.go ? `<button class="dq-btn go" data-bpgo="${q.go}">Go</button>` : '<span class="dq-btn">In progress</span>'}
       </div>`; }).join('');
     body = `<div class="dq bp-dq">
