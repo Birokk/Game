@@ -104,15 +104,15 @@ const fmtDur2 = ms => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.fl
 /* label positions in % of a 16:9 stage (the wallpaper covers the screen at 16:9, so labels stay on their buildings);
    the admin can move them (admin → Farm) to match their own wallpaper: S.farmLayout[id] = {x, y} */
 const FARM_POS = { crops: { x: 25, y: 80 }, inn: { x: 52, y: 46 }, market: { x: 79, y: 74 }, pub: { x: 21, y: 47 }, fountain: { x: 50, y: 62 } };
-const farmPos = id => ({ ...(FARM_POS[id] || (String(id).startsWith('c:') ? campPosDef(id) : expPosDef(id))), ...((S.farmLayout || {})[id] || {}) });   // 'x:<area>' = Expedition labels
+const farmPos = id => ({ ...(FARM_POS[id] || (String(id).startsWith('c:') ? campPosDef(id) : /^hr?:/.test(String(id)) ? housePosDef(id) : String(id).startsWith('g:') ? guildPosDef(id) : expPosDef(id))), ...((S.farmLayout || {})[id] || {}) });   // 'x:<area>' = Expedition labels
 let fmEl = null, fmSel = null, farmTimer = null;
 function openFarm(sel) {
   farmTick(); closeModal();
   if (!fmEl) { fmEl = document.createElement('div'); fmEl.className = 'fm'; fmEl.setAttribute('role', 'dialog'); fmEl.setAttribute('aria-label', 'Base'); document.body.appendChild(fmEl); }
-  fmView = sel === 'expedition' ? 'exp' : sel === 'camp' ? 'camp' : 'base'; fmSel = sel === 'expedition' || sel === 'camp' ? null : sel || null; exPick = null; campPick = [];
+  fmView = sel === 'expedition' ? 'exp' : sel === 'camp' ? 'camp' : sel === 'house' ? 'house' : sel === 'guild' ? 'guild' : 'base'; fmSel = sel === 'expedition' || sel === 'camp' || sel === 'house' || sel === 'guild' ? null : sel || null; housePick = -1; houseIn = null; roomSel = -1; exPick = null; campPick = [];
   expBackSeen = EXP_AREAS.filter(a => expDone(a.id)).map(a => a.id).join(); campBackSeen = CAMP_PLACES.filter(p => campDone(p.id)).map(p => p.id).join(); renderFarm();
   clearInterval(farmTimer);
-  farmTimer = setInterval(() => { if (!fmEl) return clearInterval(farmTimer); if (fmView === 'exp') { farmTick(); updateExpLive(); return; } if (fmView === 'camp') { farmTick(); updateCampLive(); return; } if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
+  farmTimer = setInterval(() => { if (!fmEl) return clearInterval(farmTimer); if (fmView === 'exp') { farmTick(); updateExpLive(); return; } if (fmView === 'camp') { farmTick(); updateCampLive(); return; } if (fmView === 'house') { farmTick(); updateHouseLive(); return; } if (fmView === 'guild') { farmTick(); return; } if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
 }
 function closeFarm() { if (fmEl) { fmEl.remove(); fmEl = null; } clearInterval(farmTimer); renderMenu(); }
 function farmBg() { const bg = MEDIA.get('farm:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : `<div class="fm-bg">${farmTownSVG()}</div>`; }
@@ -133,6 +133,8 @@ function renderFarm() {
   const keepX = fmScrollX();
   if (fmView === 'exp') { renderExpedition(); return fmScrollBack(keepX); }
   if (fmView === 'camp') { renderCamp(); return fmScrollBack(keepX); }
+  if (fmView === 'house') { renderHouse(); return fmScrollBack(keepX); }
+  if (fmView === 'guild') { renderGuild(); return fmScrollBack(keepX); }
   const totals = FARM_DEFS.filter(d => farmOf(d.id).lv).map(d => `${fmtDay(farmDaily(d.id))} ${farmIc(d.id)}`).join(' · ') || 'Nothing built yet';
   fmEl.innerHTML = `<div class="fm-scroll"><div class="fm-stage">${farmBg()}
       ${FARM_DEFS.map(d => { const p = farmPos(d.id), stt = farmStatus(d.id), f = farmOf(d.id), st = farmWhole(d.id);
@@ -290,6 +292,7 @@ function farmSVG(id, lv, bare) {
 }
 
 /* ---------- admin → Farm: the town wallpaper and where each building's label sits on it ---------- */
+let hsAdmIn = 'h1';   // admin → Base: which house's inside is being edited
 function renderFarmTab() {
   const p = $('#adPanel'); if (!p) return;
   const bg = MEDIA.get('farm:bg');
@@ -310,6 +313,26 @@ function renderFarmTab() {
       ${CAMP_PLACES.map(c => { const q = farmPos('c:' + c.id); return `<span class="fm-dot" data-fmdrag="c:${c.id}" style="left:${q.x}%;top:${q.y}%;--fc:${c.col}">${esc(c.name)}</span>`; }).join('')}</div>
     <div class="fm-sliders">${CAMP_PLACES.map(c => { const q = farmPos('c:' + c.id); return `<div class="fm-sl" style="--fc:${c.col}"><b>${esc(c.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="c:${c.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="c:${c.id}"></label></div>`; }).join('')}</div>
+    <div><h3>Guild</h3><p class="tiny">The guild screen (home Guild button). Upload its wallpaper (1920×1080 best; without one a dark gradient) and drag the Hall, Shop and Rewards labels.</p></div>
+    <div class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('guild:bg') ? 'Replace' : 'Upload'} guild wallpaper<input type="file" accept="image/*" class="sr" id="gdBgUp"></label>${MEDIA.get('guild:bg') ? '<button class="btn ghost sm" id="gdBgDel">Remove wallpaper</button>' : ''}</div>
+    <div class="fm-adprev" id="gdPrev">${MEDIA.get('guild:bg') ? `<img src="${MEDIA.get('guild:bg')}" alt="">` : '<div class="fm-bg gd-bg"></div>'}
+      ${GUILD_SPOTS.map(c => { const q = farmPos('g:' + c.id); return `<span class="fm-dot" data-fmdrag="g:${c.id}" style="left:${q.x}%;top:${q.y}%;--fc:${c.col}">${esc(c.name)}</span>`; }).join('')}</div>
+    <div class="fm-sliders">${GUILD_SPOTS.map(c => { const q = farmPos('g:' + c.id); return `<div class="fm-sl" style="--fc:${c.col}"><b>${esc(c.name)}</b>
+      <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="g:${c.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="g:${c.id}"></label></div>`; }).join('')}</div>
+    <div><h3>House</h3><p class="tiny">The House tab (its own button on the home screen). Upload the wallpaper (1920×1080 best, black without one) and a picture for each house (PNG with a transparent background works best). Drag each house on the preview, and set how wide its picture is.</p></div>
+    <div class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('house:bg') ? 'Replace' : 'Upload'} House wallpaper<input type="file" accept="image/*" class="sr" id="hsBgUp"></label>${MEDIA.get('house:bg') ? '<button class="btn ghost sm" id="hsBgDel">Remove wallpaper</button>' : ''}<button class="btn ghost sm" id="hsOpen">Open the House tab</button></div>
+    <div class="fm-adprev" id="hsPrev">${MEDIA.get('house:bg') ? `<img src="${MEDIA.get('house:bg')}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+      ${HOME_HOUSES.map(h => { const q = farmPos('h:' + h.id), img = MEDIA.get('house:' + h.id); return `<span class="fm-dot hs-dot" data-fmdrag="h:${h.id}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col};--hw:${houseW(h.id)}">${img ? `<img src="${img}" alt="">` : ''}<span class="hs-dn">${esc(h.name)}</span></span>`; }).join('')}</div>
+    <div class="fm-sliders">${HOME_HOUSES.map(h => { const q = farmPos('h:' + h.id), img = MEDIA.get('house:' + h.id); return `<div class="fm-sl hs-sl" style="--fc:${h.col}"><b>${esc(h.name)}</b>
+      <span class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}${img ? 'Replace' : 'Upload'} picture<input type="file" accept="image/*" class="sr" data-hsup="${h.id}"></label>${img ? `<button class="btn ghost sm" data-hsdel="${h.id}">Remove</button>` : ''}</span>
+      <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="h:${h.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="h:${h.id}"></label><label>Width <input type="range" min="6" max="45" step=".5" value="${houseW(h.id)}" data-hsw="${h.id}"></label></div>`; }).join('')}</div>
+    <div><h3>Inside the houses</h3><p class="tiny">Tapping an owned house takes the player inside it. Pick a house, upload its inside wallpaper (1920×1080 best, black without one) and drag each room's card to where the character should stand.</p></div>
+    <div class="row chips">${HOME_HOUSES.map(h => `<button class="chip ${hsAdmIn === h.id ? 'on' : ''}" data-hsin="${h.id}">${esc(h.name)} · ${h.slots}</button>`).join('')}</div>
+    ${(() => { const h = houseOf(hsAdmIn), bg = MEDIA.get('house:in:' + h.id); return `<div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} inside wallpaper<input type="file" accept="image/*" class="sr" id="hiUp"></label>${bg ? '<button class="btn ghost sm" id="hiDel">Remove</button>' : ''}</div>
+    <div class="fm-adprev" id="hiPrev">${bg ? `<img src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+      ${Array.from({ length: h.slots }, (_, i) => { const k = `hr:${h.id}:${i}`, q = farmPos(k); return `<span class="fm-dot hr-dot" data-fmdrag="${k}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col}"><i></i><span class="hs-dn">Room ${i + 1}</span></span>`; }).join('')}</div>
+    <div class="fm-sliders">${Array.from({ length: h.slots }, (_, i) => { const k = `hr:${h.id}:${i}`, q = farmPos(k); return `<div class="fm-sl" style="--fc:${h.col}"><b>Room ${i + 1}</b>
+      <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${k}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${k}"></label></div>`; }).join('')}</div>`; })()}
   </div>`;
   const setPos = (id, x, y, rerender) => {
     S.farmLayout = { ...(S.farmLayout || {}), [id]: { x: Math.round(clamp(x, 2, 98) * 2) / 2, y: Math.round(clamp(y, 4, 96) * 2) / 2 } };
@@ -327,4 +350,15 @@ function renderFarmTab() {
   const del = $('#fmDel'); if (del) del.onclick = async () => { await mediaDel('farm:bg'); renderFarmTab(); toast('Back to the default town.'); };
   $('#fmResetPos').onclick = () => { S.farmLayout = {}; persist(); renderFarmTab(); };
   $('#fmOpen').onclick = () => { closeModal(); openFarm(); };
+  $('#hsOpen').onclick = () => { closeModal(); openFarm('house'); };
+  $('#gdBgUp').onchange = async ev => { try { if (await mediaSet('guild:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Guild wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const gbd = $('#gdBgDel'); if (gbd) gbd.onclick = async () => { await mediaDel('guild:bg'); renderFarmTab(); };
+  p.querySelectorAll('[data-hsin]').forEach(b => b.onclick = () => { hsAdmIn = b.dataset.hsin; renderFarmTab(); });
+  $('#hiUp').onchange = async ev => { try { if (await mediaSet('house:in:' + hsAdmIn, await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Inside wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const hid = $('#hiDel'); if (hid) hid.onclick = async () => { await mediaDel('house:in:' + hsAdmIn); renderFarmTab(); };
+  $('#hsBgUp').onchange = async ev => { try { if (await mediaSet('house:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('House wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const hbd = $('#hsBgDel'); if (hbd) hbd.onclick = async () => { await mediaDel('house:bg'); renderFarmTab(); };
+  p.querySelectorAll('[data-hsup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('house:' + i.dataset.hsup, await resizeImage(ev.target.files[0], 900, 'image/png'))) { renderFarmTab(); toast('House picture saved.'); } } catch (e) { toast(e.message, true); } });
+  p.querySelectorAll('[data-hsdel]').forEach(b => b.onclick = async () => { await mediaDel('house:' + b.dataset.hsdel); renderFarmTab(); });
+  p.querySelectorAll('[data-hsw]').forEach(i => i.oninput = () => { const id = i.dataset.hsw; S.farmLayout = { ...(S.farmLayout || {}), ['hs:' + id]: { w: +i.value } }; const d = p.querySelector(`[data-fmdrag="h:${id}"]`); if (d) d.style.setProperty('--hw', +i.value); persist(); });
 }

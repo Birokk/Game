@@ -8,7 +8,7 @@
    the Moonlit Halo avatar frame, the Pearl Honor namecard and +10 levels at once. Real payments aren't connected:
    while TOPUP_FREE is on they are free test buttons (and still give VIP EXP).
    State S.bp {season, xp, tier: 0 | 1 Coral Tide | 2 Moon Tide (ids glory / crown kept for saves), free: [levels], paid: [levels], wk: {key, xp}};
-   missions S.bpq (daily) / S.bpwq (weekly), same shape as S.quests / S.wquests. Rewards are placeholders for now. */
+   missions S.bpq (daily) / S.bpwq (weekly), same shape as S.quests / S.wquests. Rewards: BP_MILES / BP_FIVE / BP_CYCLE. The track emblems are icon slots bp0 / bp1 / bp2 (admin → Art & icons). */
 const BP_EPOCH = new Date(2026, 9, 12), BP_WEEKS = 8, BP_MAX = 80, BP_LV_XP = 800, BP_WEEK_CAP = 8000, BP_LV_PEARLS = 3;
 const BP_NAMES = { free: 'Pearl Gift', paid: 'Coral Tide' };
 const BP_OFFERS = [
@@ -71,18 +71,21 @@ function bpGain(n, capped = true) {
   if (bpLv() > before) setTimeout(() => toast(`Pearl Honor level ${bpLv()}!`), 300);
   return add;
 }
-/* rewards per level (placeholders): one item per level and track, {currency: amount} */
+/* rewards per level: one item per level and track, {reward key: amount}. Every 10th level is a milestone (bigger column,
+   BP_MILES), every 5th gives tickets, the other levels cycle through four everyday rewards (BP_CYCLE, by level % 4). */
+const BP_MILES = {
+  free: { 10: { tickets: 2 }, 20: { cfssr: 5 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { wishes: 5 }, 80: { eggur: 1 } },
+  paid: { 10: { pearls: 30 }, 20: { memtk: 1 }, 30: { pearls: 40 }, 40: { cfur: 10 }, 50: { eggur: 2 }, 60: { memtk: 1 }, 70: { pearls: 60 }, 80: { ursel: 1 } }
+};
+const BP_FIVE = { free: { wishes: 1 }, paid: { tickets: 2 } };
+const BP_CYCLE = {
+  free: [{ dust: 30 }, { coins: 4000 }, { bottles: 1 }, { fragssr: 2 }],
+  paid: [{ cfssr: 3 }, { pearls: 5 }, { starlight: 8 }, { cfur: 1 }]
+};
 function bpReward(lv, track) {
-  if (track === 'free') {
-    if (lv % 10 === 0) return { tickets: 1 };
-    if (lv % 5 === 0) return { wishes: 1 };
-    if (lv % 2) return { coins: 3000 };
-    return lv % 4 === 2 ? { bottles: 1 } : { dust: 20 };
-  }
-  if (lv === 40 || lv === BP_MAX) return { memtk: 1 };
-  if (lv % 10 === 0) return { pearls: 30 };
-  if (lv % 5 === 0) return { tickets: 2 };
-  return lv % 2 ? { pearls: 5 } : { starlight: 5 };
+  if (lv % 10 === 0) return BP_MILES[track][lv];
+  if (lv % 5 === 0) return BP_FIVE[track];
+  return BP_CYCLE[track][lv % 4];
 }
 /* a reward as a square inventory card in its rarity colours (REW_R), amount under it */
 const bpItem = (k, n, extra = '', cls = '', attrs = '') => `<button type="button" class="inv-cell bp-sq r${REW_R[k] || 4} ${cls}" ${attrs} title="${fmt(n)} ${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}"><span class="inv-pic">${curIcon(k)}${extra}</span><b>${fmt(n)}</b></button>`;
@@ -91,7 +94,12 @@ const bpClaimable = () => { const out = []; for (let lv = 1; lv <= bpLv(); lv++)
 const bpMissionsReady = () => Object.keys(BP_SETS).some(set => BP_SETS[set].list.some(q => qCan(q, set)));
 const bpReady = () => bpClaimable().length > 0 || bpMissionsReady();
 function bpGrant(got) {
-  Object.entries(got).forEach(([k, n]) => { if (k === 'exp') gainExp(n); else S.wallet[k] = (S.wallet[k] || 0) + n; });
+  Object.entries(got).forEach(([k, n]) => {
+    if (k === 'exp') gainExp(n);
+    else if (k === 'fragssr' || k === 'fragur') S.pets.frags[k.slice(4)] = (S.pets.frags[k.slice(4)] || 0) + n;   // egg fragments
+    else if (k === 'eggur' || k === 'eggssr') for (let i = 0; i < n; i++) S.pets.eggs.push(k.slice(3));   // whole eggs
+    else S.wallet[k] = (S.wallet[k] || 0) + n;
+  });
 }
 function bpClaimAll() {
   const list = bpClaimable(); if (!list.length) return;
@@ -137,7 +145,7 @@ function bpBuyLevels() {
 }
 
 /* emblems (gift box for the free track, a medal for the paid ones) */
-const bpEmblem = tier => tier ? `<svg viewBox="0 0 64 64" class="bp-svg" aria-hidden="true"><defs><linearGradient id="bpE${tier}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".4" stop-color="#f5afe8"/><stop offset=".72" stop-color="#c8a2ff"/><stop offset="1" stop-color="#94b8ff"/></linearGradient></defs>
+const bpEmblem = tier => customIcon('bp' + tier) ? `<img class="bp-svg bp-cimg" src="${customIcon('bp' + tier)}" alt="">` : tier ? `<svg viewBox="0 0 64 64" class="bp-svg" aria-hidden="true"><defs><linearGradient id="bpE${tier}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".4" stop-color="#f5afe8"/><stop offset=".72" stop-color="#c8a2ff"/><stop offset="1" stop-color="#94b8ff"/></linearGradient></defs>
   <path d="M20 4h24l-4 18H24z" fill="${tier === 2 ? '#ff7ac8' : '#8f7bff'}" opacity=".85"/><circle cx="32" cy="38" r="20" fill="url(#bpE${tier})" stroke="#fff" stroke-width="2"/><circle cx="32" cy="38" r="14" fill="none" stroke="#2b1855" stroke-width="1.4" opacity=".35"/>
   ${tier === 2 ? '<path d="M36 27a11 11 0 1 0 6 19 9 9 0 1 1-6-19z" fill="#fff" stroke="#2b1855" stroke-width="1.2" stroke-linejoin="round"/><circle cx="40" cy="31" r="1.4" fill="#fff"/><circle cx="44" cy="37" r="1" fill="#fff"/>' : '<circle cx="32" cy="38" r="7" fill="#fff"/><circle cx="29.5" cy="35.5" r="2.2" fill="#f5afe8"/>'}</svg>`
   : `<svg viewBox="0 0 64 64" class="bp-svg" aria-hidden="true"><rect x="12" y="26" width="40" height="28" rx="4" fill="none" stroke="#fff" stroke-width="2.4"/><path d="M8 26h48M32 26v28" stroke="#fff" stroke-width="2.4"/><path d="M32 26c-4-9-15-11-15-4 0 4 9 4 15 4zm0 0c4-9 15-11 15-4 0 4-9 4-15 4z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M50 8l1.4 3.2 3.2 1.4-3.2 1.4L50 17.2 48.6 14l-3.2-1.4 3.2-1.4z" fill="#fff"/></svg>`;
@@ -182,7 +190,7 @@ function renderHonor(jump) {
         <div class="dq-face"><span class="dq-disc">${done ? `<span class="dq-check">${icon('check')}</span>` : icon('shell')}</span>
           <span class="dq-pt">${curIcon('honor')}+${fmt(q.xp)}</span>
           <p class="dq-name">${esc(q.name)}</p>
-          <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b></div>
+          <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b><span class="dq-pbar" aria-hidden="true"><i style="width:${Math.min(100, p / q.need * 100)}%"></i></span></div>
         ${done ? '<span class="dq-btn done">Fulfilled</span>' : can ? '<button class="dq-btn claim" data-bpmc="1">Claim</button>' : q.go ? `<button class="dq-btn go" data-bpgo="${q.go}">Go</button>` : '<span class="dq-btn">In progress</span>'}
       </div>`; }).join('');
     body = `<div class="dq bp-dq">
@@ -197,7 +205,7 @@ function renderHonor(jump) {
     </div>`;
   } else {
     const card = o => { const owned = st.tier >= o.tier, upg = st.tier === 1 && o.tier === 2, usd = upg ? (parseFloat(o.usd) - parseFloat(BP_OFFERS[0].usd)).toFixed(2) : o.usd;
-      const sample = [1, 2, 5, 10, 40, 80].map(l => bpReward(l, 'paid'));
+      const sample = [1, 2, 3, 5, 20, 80].map(l => bpReward(l, 'paid'));
       return `<div class="bp-offer t${o.tier}"><div class="bp-ofl"><span class="bp-emb big">${bpEmblem(o.tier)}</span><b>${o.name}</b></div>
         <div class="bp-ofr"><span class="lbl-sm">Get now</span>
           <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => bpItem(k, n)).join('')}<span class="inv-cell bp-sq r5"><span class="inv-pic bp-avpic">${avatarHTML(40, avatarEntry(), 'crown')}</span><b>Frame</b></span><span class="inv-cell bp-sq r5"><span class="inv-pic"><span class="nc nc-honor"></span></span><b>Namecard</b></span>` : '<span class="tiny">The Coral Tide track on all 80 levels</span>'}</div>

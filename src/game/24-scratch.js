@@ -52,7 +52,7 @@ function buyScratch() {
 }
 function finishScratch() {
   const c = scratchState().card; if (!c || c.done) return;
-  c.done = true; if (c.prize) S.wallet.pearls += c.prize;
+  c.done = true; if (c.prize) { S.wallet.pearls += c.prize; statAdd('scrwin'); }
   persist(); renderMenu(); renderEvents();
   toast(c.prize ? `Three ${SCR_KEYS[c.win]}s! You won ${c.prize} pearl${c.prize === 1 ? '' : 's'}.` : 'No match this time.');
 }

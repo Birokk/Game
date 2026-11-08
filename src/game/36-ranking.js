@@ -86,7 +86,7 @@ function renderRanking() {
   const av = p => p.me ? `<span class="rk-av">${avatarHTML(44)}</span>` : `<span class="rk-av bot" style="--h:${p.hue}">${esc(p.name[0])}</span>`;
   const row = (p, i) => `<div class="rk-row ${p.me ? 'me' : ''} ${i < 3 ? 'top top' + (i + 1) : i < 10 ? 'top10' : ''}">
     <span class="rk-n">${i < 10 ? `<i><b>${i + 1}</b></i>` : i + 1}</span>${av(p)}
-    <span class="rk-who"><span class="rk-nm"><b class="vipn vn-${p.vip ? vipGrade(p.vip).toLowerCase() : '0'}">${esc(p.name)}</b>${p.me ? '<small>(you)</small>' : ''}${rankTitleOf(p)}</span><small>Lv ${p.lv} · UID ${p.uid}</small></span>
+    <span class="rk-who"><span class="rk-nm">${rankGuildTag(p)}<b class="vipn vn-${p.vip ? vipGrade(p.vip).toLowerCase() : '0'}">${esc(p.name)}</b>${p.me ? '<small>(you)</small>' : ''}${rankTitleOf(p)}</span><small>Lv ${p.lv} · UID ${p.uid}</small></span>
     ${T.id === 'char' ? `<span class="rk-char">${p.char ? `${thumbImg(p.char, 'rk-cimg')}<span><b>${esc(p.char.name)}</b>${gradeTag(csGrade(p.best))}</span>` : '<small>No character yet</small>'}</span>` : '<span></span>'}
     <span class="rk-val">${T.id === 'vip' ? vipBadge(p.vip, 'sm') : ''}<b>${T.show(p)}</b><small>${T.unit}</small></span></div>`;
   root.innerHTML = `<div class="rk">
@@ -121,11 +121,8 @@ const rankHasPlace = p => RANK_REW_BOARDS.some(([b]) => rankHas(b, p));
   TITLES.push({ id: 'rk-' + p, name: RANK_PLACE[p], cls: `t-rk${p}`, need: 'rkt' + p, rank: true });
 });
 const rankTitle = p => TITLES.find(t => t.id === 'rk-' + p);
-RANK_REW_BOARDS.forEach(([b, theme, label]) => [1, 2, 3].forEach(p => {
-  const id = `rk-${b}-${p}`, need = 'rk' + b + p;
-  UNLOCK[need] = [() => rankHas(b, p), `Finish ${RANK_ORD[p]} in the ${label} ranking (worn for 7 days)`];
-  CARDS.push({ id, name: `${theme} Crest · ${RANK_METAL[p]}`, cls: `nc-rk nc-rkp${p} nc-rkb-${b}`, need, premium: p === 1 });
-}));
+/* three namecards only, one per place, held like the titles: be that place in any ranking (rk-1 / rk-2 / rk-3; older per-board ids map to these in cardBG) */
+[1, 2, 3].forEach(p => CARDS.push({ id: 'rk-' + p, name: `${RANK_PLACE[p]} Crest · ${RANK_METAL[p]}`, cls: `nc-rk nc-rkp${p}`, need: 'rkt' + p, premium: p === 1 }));
 const rankResetTxt = () => { const s = Math.max(0, weekStart().getTime() + 7 * 864e5 - Date.now()) / 1000, d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600); return d ? `${d}d ${h}h` : `${h}h ${Math.floor(s % 3600 / 60)}m`; };
 const prevWeekKey = () => { const m = weekStart(); return dayKey(new Date(m.getFullYear(), m.getMonth(), m.getDate() - 7)); };
 /* everyone's order on every board (names; you are '@me'). past = use last week's hours (settling), else this week's */
@@ -143,7 +140,7 @@ function rankTitleOf(p) {
   if (!rankStandCache || rankStandCache.wk !== playWeek()) rankStandCache = { wk: playWeek(), s: rankStandings(false) };
   const best = Math.min(...RANK_REW_BOARDS.map(([b]) => { const i = rankStandCache.s[b].indexOf(p.name); return i >= 0 && i < 3 ? i + 1 : 9; }));
   if (best <= 3) return titleHTML(rankTitle(best));
-  const base = TITLES.filter(t => !t.rank && t.need !== 'mbtitle');
+  const base = TITLES.filter(t => !t.rank && !t.vip && t.need !== 'mbtitle');
   return titleHTML(base[Math.floor(seeded('rankttl:' + p.name)() * base.length)]);
 }
 function rankSettle(force) {
@@ -153,9 +150,9 @@ function rankSettle(force) {
   const stand = rankStandings(!force), places = {};
   RANK_TABS.forEach(T => { const i = stand[T.id].indexOf('@me'); places[T.id] = i >= 0 ? i + 1 : null; });
   S.rankRew = { wk, places };
-  const won = RANK_REW_BOARDS.filter(([b]) => places[b] && places[b] <= 3).map(([b, theme, label]) => `${label} ${RANK_ORD[places[b]]}: namecard "${theme} Crest · ${RANK_METAL[places[b]]}"`);
-  const topP = Math.min(...RANK_REW_BOARDS.map(([b]) => places[b] && places[b] <= 3 ? places[b] : 9));
-  if (topP <= 3) won.unshift(`Title "${RANK_PLACE[topP]}" (your best place: ${RANK_ORD[topP]})`);
+  const got = [...new Set(RANK_REW_BOARDS.map(([b]) => places[b]).filter(p => p && p <= 3))].sort();
+  const won = RANK_REW_BOARDS.filter(([b]) => places[b] && places[b] <= 3).map(([b, , label]) => `${label}: ${RANK_ORD[places[b]]}`);
+  got.forEach(p => won.push(`Title "${RANK_PLACE[p]}" and namecard "${RANK_PLACE[p]} Crest · ${RANK_METAL[p]}" (${RANK_ORD[p]} place)`));
   const pearls = RANK_HOURS_PEARLS(places.hours);
   sendMail({ id: 'rank-' + wk + (force ? '-' + Date.now().toString(36) : ''), from: 'Ranking', title: 'Weekly ranking results',
     body: `Your places: ${RANK_TABS.map(T => `${T.label} #${places[T.id] || '-'}`).join(' · ')}.\n${won.length ? `Yours to wear for the next 7 days (equip them in Profile settings):\n${won.join('\n')}` : 'No title or namecard this week. Reach the top 3 of a ranking to earn one.'}${pearls ? `\nHours played #${places.hours}: ${pearls} pearls attached.` : ''}`,

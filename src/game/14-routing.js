@@ -9,8 +9,14 @@ document.addEventListener('click', e => {
   else if (k === 'wallpaper') openWallpaper();
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('character');
+  else if (k === 'deck') openDeck();
+  else if (k === 'clash') openQuickMatch();
   else if (k === 'pets') openPets();
   else if (k === 'farm') openFarm();
+  else if (k === 'house') openFarm('house');
+  else if (k === 'guild') openFarm('guild');
+  else if (k === 'friends') openFriends();
+  else if (k === 'offer') openOffer(t.dataset.offer);
   else if (k === 'raids') openRaids();
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();
@@ -23,6 +29,7 @@ document.addEventListener('click', e => {
   else if (k === 'honor') openHonor();
   else if (k === 'spin') openSpin();
   else if (k === 'ach') openAch();
+  else if (k === 'fuse') openFuse();
   else if (k === 'quests') openQuests();
   else if (k === 'redeem') openRedeem();
   else if (k === 'buytickets') openBuyTickets(t.dataset.tkbk);

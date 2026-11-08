@@ -9,7 +9,7 @@ const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3
 function openAdmin(tab) {
   adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
   openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Base</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="art">Art &amp; icons</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
+      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="offers">Offers</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Base</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="art">Art &amp; icons</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
     </div><div id="adPanel"></div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
     renderAdminTab();
@@ -19,6 +19,7 @@ function renderAdminTab() {
   document.querySelectorAll('[data-adtab]').forEach(b => b.classList.toggle('on', b.dataset.adtab === adminTab));
   if (adminTab === 'icons') return renderIconsTab();
   if (adminTab === 'banners') return renderBannersTab();
+  if (adminTab === 'offers') return renderOffersTab();
   if (adminTab === 'wallet') return renderWalletTab();
   if (adminTab === 'title') return renderTitleTab();
   if (adminTab === 'mr') return renderMRTab();
@@ -98,6 +99,7 @@ function renderPoolTab() {
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
+          <label class="field" id="adAttrWrap"><span>Card attribute (Card Clash playstyle)</span><select class="input" id="adAttr"><option value="">None yet</option>${Object.entries(CC_STYLES).map(([k, [n]]) => `<option value="${k}">${n}</option>`).join('')}</select><small class="tiny">The same five attributes as the cards. Shown on the character's Card Clash leader card; it will matter for later features.</small></label>
           <div class="field" id="adSigMemWrap"><span>Signature memories (memories that feature this character)</span><div class="row" id="adSigMem" style="gap:6px;flex-wrap:wrap"></div><small class="tiny">Tap to toggle. Equipping one of them gives the character +500 CS.</small></div>
           <label class="field" id="adSigWrap"><span>Signature clothing set (UR characters)</span><select class="input" id="adSig"></select><small class="tiny">Wearing all 6 pieces of it gives +1,000 CS and the Signature Style badge.</small></label>
           <label class="switch" id="adFeatWrap">Featured UR on the limited banner<input type="checkbox" id="adFeat"><i></i></label>
@@ -154,6 +156,7 @@ function fillAdminForm(entry) {
   const sets = {}; (S.clothes || []).forEach(x => { if (x.set && !sets[x.set]) sets[x.set] = x; });
   $('#adSig').innerHTML = '<option value="">None</option>' + Object.values(sets).sort((a, b) => b.rarity - a.rarity).map(x => `<option value="${esc(x.set)}">${esc(clothSetName(x))} (${CRN[x.rarity] || ''})</option>`).join('');
   $('#adSig').value = entry && entry.sigSet && sets[entry.sigSet] ? entry.sigSet : '';
+  $('#adAttr').value = entry && entry.ccStyle && CC_STYLES[entry.ccStyle] ? entry.ccStyle : '';
   adminSigMems = [...((entry && entry.sigMems) || [])];
   const drawSigMem = () => { $('#adSigMem').innerHTML = (S.memories || []).length ? S.memories.slice().sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).map(m => `<button type="button" class="chip ${adminSigMems.includes(m.id) ? 'on' : ''}" data-sigmem="${esc(m.id)}">${rtag(m.rarity)} ${esc(m.name)}</button>`).join('') : '<span class="tiny">No memories yet (admin → Memories).</span>';
     $('#adSigMem').querySelectorAll('[data-sigmem]').forEach(b => b.onclick = () => { const id = b.dataset.sigmem, i = adminSigMems.indexOf(id); if (i >= 0) adminSigMems.splice(i, 1); else adminSigMems.push(id); drawSigMem(); }); };
@@ -223,7 +226,7 @@ function adminPreview() {
   const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
   $('#adSigWrap').hidden = r !== 5 || $('#adType').value !== 'character';
-  $('#adSigMemWrap').hidden = $('#adType').value !== 'character';
+  $('#adSigMemWrap').hidden = $('#adAttrWrap').hidden = $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
@@ -234,7 +237,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null, ccStyle: type === 'character' ? ($('#adAttr').value || null) : null };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;
@@ -395,7 +398,23 @@ function showReset() {
 function renderBannersTab() {
   const urs = S.pool.filter(e => e.rarity === 5 && !e.mc && e.type !== 'skin' && e.type !== 'pet').sort((a, b) => a.name.localeCompare(b.name));
   const std = standardURs(), f = limitedUR(), gl = S.gacha.limited;
+  S.banners.beginner = { name: BANNER_DEFAULT_NAME.beginner, picks: [], ...(S.banners.beginner || {}) };
+  S.banners.stepup = { name: BANNER_DEFAULT_NAME.stepup, featured: null, ver: 0, ...(S.banners.stepup || {}) };
+  const chars = urCharsAll().sort((a, b) => a.name.localeCompare(b.name)), bp = S.banners.beginner.picks, sf = stepFeat();
   $('#adPanel').innerHTML = `<div class="admin">
+    <section class="stack" style="align-content:start">
+      <div><h3>Beginner Wish</h3><p class="tiny">${BEGIN_PULLS} pulls per player, ×10 only, 20% off (${BEGIN_TK} Standard tickets or ${BEGIN_PEARLS} pearls). No UR character before pull ${BEGIN_PULLS} (UR memories can still drop); pull ${BEGIN_PULLS} gives one of these 3 UR characters at random. The tab disappears once a player finishes it.</p></div>
+      <label class="field"><span>Banner name</span><input class="input" id="bnBgName" maxlength="30" value="${esc(bannerName('beginner'))}"></label>
+      <div class="two">${[0, 1, 2].map(i => `<label class="field"><span>UR ${i + 1}</span><select class="input" data-bgpick="${i}"><option value="">None</option>${chars.map(u => `<option value="${esc(u.id)}" ${bp[i] === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>`).join('')}</div>
+    </section>
+    <section class="stack" style="align-content:start">
+      <div><h3>Step-Up</h3><p class="tiny">7 steps of ×10, paid in pearls (${STEP_COST.join(', ')}), characters only. Step 1 has half the UR rate, step 5 1.5×; step 4 always holds 1 UR memory and step 7 always holds the rate-up character. Each step gives gold (${STEP_GOLD.map(n => fmt(n)).join(', ')}). Picking a new rate-up character starts everyone's steps again.</p></div>
+      <div class="two">
+        <label class="field"><span>Banner name</span><input class="input" id="bnSuName" maxlength="30" value="${esc(bannerName('stepup'))}"></label>
+        <label class="field"><span>Rate-up UR</span><select class="input" id="bnSuFeat"><option value="">None</option>${chars.map(u => `<option value="${esc(u.id)}" ${u.id === S.banners.stepup.featured ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>
+      </div>
+      <div class="row"><span class="tiny">${sf ? `Your progress: step ${Math.min(stepIdx() + 1, STEP_N)} of ${STEP_N}${stepDone() ? ' (all done)' : ''}` : 'No rate-up character yet.'}</span><button class="btn ghost sm" id="bnSuRestart">Restart the steps for everyone</button></div>
+    </section>
     <section class="stack" style="align-content:start">
       <div><h3>Limited banner</h3><p class="tiny">One featured UR. Win the 50/50 and you get it; lose and you get a random UR from the permanent banner, and the next UR is guaranteed to be the featured one.</p></div>
       <div class="two">
@@ -416,6 +435,11 @@ function renderBannersTab() {
       <p class="tiny">All ${pullableSSRs().length} pullable SSRs appear on the Limited, Weekly and Permanent banners.</p>
     </section>
     <section class="stack" style="align-content:start">
+      <div><h3>UR selector</h3><p class="tiny">The permanent banner's milestones give a random permanent UR at 100, 200, 400 and 500 pulls and a UR selector at 300 and 600, where the player chooses one of these characters. Tap to switch them on; with none chosen, every permanent UR character is offered.</p></div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">${chars.map(u => { const on = (S.banners.standard.sel || []).includes(u.id); return `<button type="button" class="chip ${on ? 'on' : ''}" data-selur="${esc(u.id)}">${on ? '✓ ' : ''}${esc(u.name)}</button>`; }).join('') || '<span class="tiny">No UR characters yet.</span>'}</div>
+      <span class="tiny">${(S.banners.standard.sel || []).length ? `${selPool().length} character${selPool().length === 1 ? '' : 's'} in the selector` : 'Selector offers every permanent UR character'}</span>
+    </section>
+    <section class="stack" style="align-content:start">
       <div><h3>Weekly banner</h3><p class="tiny">Every Monday (00:00 UTC) it features a random pullable UR character, the same for every player, never the limited banner's UR and never the same two weeks in a row. Same 50/50 rules as the limited banner, with its own pity.</p></div>
       <label class="field"><span>Banner name</span><input class="input" id="bnWkName" maxlength="30" value="${esc(bannerName('weekly'))}"></label>
       <div class="hist">${[0, 1, 2, 3].map(i => { const u = weeklyUR(weekIndex() + i), d = new Date(WEEK_EPOCH + (weekIndex() + i) * WEEK_MS);
@@ -431,6 +455,12 @@ function renderBannersTab() {
       <p class="tiny">${pullableSkins(5).length} UR and ${pullableSkins(4).length} SSR outfits are on this banner.</p>
     </section>
   </div>`;
+  document.querySelectorAll('[data-selur]').forEach(b => b.onclick = () => { const id = b.dataset.selur, cur = S.banners.standard.sel || []; S.banners.standard.sel = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]; persist(); renderBannersTab(); });
+  $('#bnBgName').oninput = e => { S.banners.beginner.name = e.target.value.trim() || BANNER_DEFAULT_NAME.beginner; persist(); };
+  document.querySelectorAll('[data-bgpick]').forEach(sel => sel.onchange = () => { const p = [...(S.banners.beginner.picks || [])]; p[+sel.dataset.bgpick] = sel.value || null; S.banners.beginner.picks = p.slice(0, 3); persist(); renderMenu(); });
+  $('#bnSuName').oninput = e => { S.banners.stepup.name = e.target.value.trim() || BANNER_DEFAULT_NAME.stepup; persist(); };
+  $('#bnSuFeat').onchange = e => { S.banners.stepup.featured = e.target.value || null; persist(); renderMenu(); renderBannersTab(); toast(e.target.value ? `${findEntry(e.target.value).name} is the Step-Up rate-up. Steps start again from 1.` : 'The Step-Up has no rate-up character.'); };
+  $('#bnSuRestart').onclick = () => { S.banners.stepup.ver = (S.banners.stepup.ver || 0) + 1; persist(); renderMenu(); renderBannersTab(); toast('Step-Up restarted: everyone is back on step 1.'); };
   $('#bnWkName').oninput = e => { S.banners.weekly.name = e.target.value.trim() || BANNER_DEFAULT_NAME.weekly; persist(); };
   $('#bnSkName').oninput = e => { S.banners.skins.name = e.target.value.trim() || BANNER_DEFAULT_NAME.skins; persist(); };
   $('#bnSkEnd').onchange = e => { S.banners.skins.end = e.target.value || null; persist(); };
@@ -705,7 +735,7 @@ function renderWalletTab() {
     <form class="three" id="wForm">${CUR_KEYS.map(k => `<label class="field"><span>${k}</span><input class="input" type="number" min="0" step="1" id="w_${k}" value="${S.wallet[k]}"></label>`).join('')}</form>
     <div class="row"><button class="btn mint sm" id="wSave">Save wallet</button><button class="btn ghost sm" id="wAdd">${curIcon('pearls')}Add 300 pearls</button><button class="btn ghost sm" id="wStam">${curIcon('stamina')}Spend 60 stamina</button><button class="btn ghost sm" id="wFill">Refill stamina</button><button class="btn ghost sm" id="wLogin">Reset daily login</button><button class="btn ghost sm" id="wSpin">Reset daily spin</button></div>
     <div><h3>Bond &amp; marriage</h3><p class="tiny">Test helpers. Rings are also editable in the wallet above.</p></div>
-    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wPass">Memberships: end both</button><button class="btn ghost sm" id="wCamp">Camp: bring everyone back</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn ghost sm" id="wVip">${curIcon('vip')}+1,000 VIP EXP</button><button class="btn ghost sm" id="wVipDay">VIP: claim again today</button><button class="btn ghost sm" id="wVipReset">Reset VIP</button><button class="btn ghost sm" id="wNameTk">${curIcon('nametk')}+1 name change ticket</button><button class="btn ghost sm" id="wNameCd">Clear name change cooldown</button><button class="btn ghost sm" id="wRankSettle">Rankings: settle the week now</button><button class="btn ghost sm" id="wRankClear">Rankings: remove weekly rewards</button><button class="btn ghost sm" id="wTopFirst">Top Up: reset first-purchase bonus</button><button class="btn ghost sm" id="wBpXp">Honor: +1 level</button><button class="btn ghost sm" id="wBpWk">Honor: reset weekly EXP limit</button><button class="btn ghost sm" id="wBpReset">Honor: reset season progress</button><button class="btn ghost sm" id="wMwTitle">Max Winner title: unlock / remove</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
+    <div class="row"><button class="btn ghost sm" id="wRings">${curIcon('rings')}Add 5 rings</button><button class="btn ghost sm" id="wScratch">${scrIcon('star')}Reset scratch cards</button><button class="btn ghost sm" id="wGifts">${curIcon('gplush')}Add 5 of each gift</button><button class="btn ghost sm" id="wBond">Max bond for owned characters</button><button class="btn ghost sm" id="wMC">Reset main character choice</button><button class="btn ghost sm" id="wMCcd">Clear MC switch cooldown</button><button class="btn ghost sm" id="wFarmDone">Farm: finish upgrades</button><button class="btn ghost sm" id="wFarmFill">Farm: fill storage</button><button class="btn ghost sm" id="wFarmReset">Farm: reset</button><button class="btn ghost sm" id="wExpd">Expeditions: bring everyone back</button><button class="btn ghost sm" id="wPass">Memberships: end both</button><button class="btn ghost sm" id="wCamp">Camp: bring everyone back</button><button class="btn ghost sm" id="wGuildPts">+100 guild points</button><button class="btn ghost sm" id="wGuildDay">Guild: daily reward, quests and shop again</button><button class="btn ghost sm" id="wGuildXp">Guild: +5,000 guild EXP</button><button class="btn ghost sm" id="wGuildReset">Guild: leave / reset</button><button class="btn ghost sm" id="wHouseFill">House: fill storage</button><button class="btn ghost sm" id="wHouseReset">House: reset (houses and residents)</button><button class="btn ghost sm" id="wExp">${curIcon('exp')}+1,000 EXP</button><button class="btn ghost sm" id="wLvReset">Reset level and level rewards</button><button class="btn ghost sm" id="wVip">${curIcon('vip')}+1,000 VIP EXP</button><button class="btn ghost sm" id="wVipDay">VIP: claim again today</button><button class="btn ghost sm" id="wVipReset">Reset VIP</button><button class="btn ghost sm" id="wNameTk">${curIcon('nametk')}+1 name change ticket</button><button class="btn ghost sm" id="wNameCd">Clear name change cooldown</button><button class="btn ghost sm" id="wRankSettle">Rankings: settle the week now</button><button class="btn ghost sm" id="wRankClear">Rankings: remove weekly rewards</button><button class="btn ghost sm" id="wTopFirst">Top Up: reset first-purchase bonus</button><button class="btn ghost sm" id="wBpXp">Honor: +1 level</button><button class="btn ghost sm" id="wBpWk">Honor: reset weekly EXP limit</button><button class="btn ghost sm" id="wBpReset">Honor: reset season progress</button><button class="btn ghost sm" id="wMwTitle">Max Winner title: unlock / remove</button><button class="btn ghost sm" id="wCcSkins">Card Clash: own all board skins / remove them</button><button class="btn ghost sm" id="wSpecial">Reset Beginner Wish and Step-Up progress</button><button class="btn ghost sm" id="wPts">+200 summon points (every banner)</button><button class="btn ghost sm" id="wFrags">+120 UR and SSR character fragments</button><button class="btn ghost sm" id="wSel">+1 UR selector</button><button class="btn ghost sm" id="wMiles">Permanent milestones: reset</button><button class="btn danger sm" id="wBondReset">Reset all bonds and marriages</button></div>
     <div><h3>Summons</h3></div>
     <div class="statgrid">
       <div class="stat r5"><span class="lbl-sm">Limited UR pity</span><b>${gl.pity5} / ${HARD_PITY}</b></div>
@@ -731,6 +761,12 @@ function renderWalletTab() {
   $('#wFarmFill').onclick = () => { FARM_DEFS.forEach(d => { const f = farmOf(d.id); f.acc = farmCap(d.id); f.t = Date.now(); }); persist(); renderMenu(); toast('Farm storage filled.'); };
   $('#wBpXp').onclick = () => { bpGain(BP_LV_XP, false); persist(); renderMenu(); toast(`Pearl Honor level ${bpLv()}.`); };
   $('#wBpWk').onclick = () => { bpState().wk.xp = 0; persist(); toast('Weekly Honor EXP limit reset.'); };
+  $('#wFrags').onclick = () => { S.wallet.cfur = (S.wallet.cfur || 0) + 120; S.wallet.cfssr = (S.wallet.cfssr || 0) + 120; persist(); renderMenu(); toast('+120 UR and SSR character fragments.'); };
+  $('#wSel').onclick = () => { S.wallet.ursel = (S.wallet.ursel || 0) + 1; persist(); renderMenu(); toast('+1 UR selector (Bag → Summon).'); };
+  $('#wMiles').onclick = () => { S.gacha.standard.miles = []; S.gacha.standard.mile = false; persist(); refreshSummon(); toast('Permanent milestones can be claimed again.'); };
+  $('#wPts').onclick = () => { const P = ptState(); P.perm += 200; PT_FEAT.forEach(k => { if (P[k].key) P[k].n += 200; }); persist(); refreshSummon(); toast('+200 summon points on every banner.'); };
+  $('#wSpecial').onclick = () => { S.gacha.beginner = { pity5: 0, pity4: 0, total: 0 }; S.gacha.stepup = { pity5: 0, pity4: 0, guarantee: false, total: 0, step: 0, key: stepKey() }; persist(); renderMenu(); refreshSummon(); toast('Beginner Wish and Step-Up are back at the start.'); };
+  $('#wCcSkins').onclick = () => { const sv = ccSave(), all = (sv.skins || []).length >= CC_SKIN_BUY.length; sv.skins = all ? [] : CC_SKIN_BUY.map(k => k.id); if (all) sv.skin = 'default'; persist(); toast(all ? 'Board skins removed.' : 'Every board skin unlocked.'); };
   $('#wMwTitle').onclick = () => { S.unlocks = S.unlocks || []; const has = S.unlocks.includes('max-win'); S.unlocks = has ? S.unlocks.filter(x => x !== 'max-win') : [...S.unlocks, 'max-win']; if (has && S.profile.title === 'maxwinner') S.profile.title = 'newcomer'; persist(); renderMenu(); toast(has ? 'Max Winner title removed.' : 'Max Winner title unlocked.'); };
   $('#wBpReset').onclick = () => { S.bp = null; S.bpq = null; S.bpwq = null; S.unlocks = (S.unlocks || []).filter(x => x !== 'bp-crown'); bpState(); persist(); renderMenu(); toast('Pearl Honor reset: level 1, free track, missions cleared.'); };
   $('#wTopFirst').onclick = () => { S.topupFirst = []; persist(); toast('Every Top Up pack gives its first-purchase ×2 again.'); };
@@ -745,6 +781,12 @@ function renderWalletTab() {
   $('#wLvReset').onclick = () => { S.player.xp = 0; S.lvClaimed = []; persist(); renderMenu(); toast('Level reset to 1.'); };
   $('#wScratch').onclick = () => { S.scratch = { day: dayKey(), n: 0, card: null }; persist(); if (evEl) renderEvents(); toast(`Scratch cards reset: ${SCRATCH_DAILY} cards available again today.`); };
   $('#wFarmReset').onclick = () => { S.farm = {}; persist(); renderMenu(); toast('Farm reset.'); };
+  $('#wGuildPts').onclick = () => { S.wallet.gpts = (S.wallet.gpts || 0) + 100; persist(); renderMenu(); toast('+100 guild points.'); };
+  $('#wGuildDay').onclick = () => { const g = guildState(); g.day = null; g.shop = null; g.q = null; persist(); renderMenu(); toast('Guild daily reward, quests and shop are back.'); };
+  $('#wGuildXp').onclick = () => { const g = guildState(); if (!g.id) { toast('Join or create a guild first.'); return; } g.xp = (g.xp || 0) + 5000; persist(); renderMenu(); toast(`+5,000 guild EXP · guild level ${guildLv()}`); };
+  $('#wGuildReset').onclick = () => { S.guild = { id: null }; persist(); renderMenu(); toast('Guild state reset.'); };
+  $('#wHouseFill').onclick = () => { houseState(); HOME_HOUSES.forEach(h => houseRooms(h.id).forEach(r => { if (r) { r.acc = HOUSE_BOND; r.t = Date.now(); } })); persist(); renderMenu(); toast('Every resident has a full day of bond stored.'); };
+  $('#wHouseReset').onclick = () => { S.house = { own: [], rooms: {} }; persist(); renderMenu(); toast('Houses and residents reset.'); };
   $('#wCamp').onclick = () => { Object.values(S.camp || {}).forEach(c => { c.ends = Date.now() - 1; }); persist(); renderMenu(); toast('Every camp team is back.'); };
   $('#wPass').onclick = () => { S.member = {}; S.memberDay = {}; persist(); renderMenu(); renderStamina(); toast('Both memberships ended.'); };
   $('#wExpd').onclick = () => { Object.values(S.expd || {}).forEach(e => { e.ends = Date.now() - 1; }); persist(); renderMenu(); toast('Every expedition is back.'); };

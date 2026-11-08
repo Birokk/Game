@@ -15,7 +15,7 @@ function openModal({ title, ic, body, wide, small, kind, onMount }) {
   if (onMount) onMount(back.querySelector('.m-body'));
   back.querySelector('[data-close]').focus({ preventScroll: true });
 }
-function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; refreshCharacters(); } }
+function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; document.querySelectorAll(".pfpick").forEach(x => x.remove()); refreshCharacters(); } }
 
 const PLACEHOLDERS = {
   friends: ['Friends', 'friends', 'Friend list, invites, and meeting up with friends in the plaza.'],
@@ -144,13 +144,18 @@ function renderSettings() {
 }
 
 /* wallpaper picker */
-function openWallpaper() {
+function openWallpaper(tab) {
+  wpTab = tab === 'mem' ? 'mem' : 'arts';
   openModal({ title: 'Wallpaper', ic: 'image', wide: true, kind: 'wallpaper', body: '<div id="wpRoot"></div>', onMount: renderWallpaperPicker });
 }
+/* tabs: Splash arts (characters / skins) and Memories (every owned memory with art; its id works as a wallpaper id) */
+let wpTab = 'arts';
+const memWpChoices = () => (S.memories || []).filter(m => owns(m.id) && artFrom(m.img)).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+  .map(m => ({ id: m.id, e: memEntry(m.id), a: ASC.find(x => x.k === 'base'), open: true }));
 function renderWallpaperPicker() {
   const root = $('#wpRoot'); if (!root) return;
   // every art is its own choice: the base splash art, then the 3★ and 6★ splash arts (locked until those stars)
-  const opts = artChoices(), ownedList = opts;
+  const mems = memWpChoices(), opts = wpTab === 'mem' ? mems : artChoices(), ownedList = opts;
   const list = wpList();
   const tile = o => {
     if (!o) { const on = !list.length; return `<button class="wpt ${on ? 'on' : ''}" data-wp="" aria-pressed="${on}"><span class="mini"></span><span class="lab">Pearl Tide (default)</span>${on ? `<span class="chk">${icon('check')}</span>` : ''}</button>`; }
@@ -160,9 +165,13 @@ function renderWallpaperPicker() {
       ${o.a.k !== 'base' ? `<span class="wpt-star">${o.a.label}</span>` : ''}${o.open ? '' : `<span class="wpt-lock">${icon('lock')}<small>${o.a.stars}★</small></span>`}
       <span class="lab">${esc(wpName(w))}</span>${on ? `<span class="chk">${n}</span>` : ''}</button>`;
   };
-  root.innerHTML = `<p class="tiny" style="margin-bottom:14px">Pick up to ${WP_MAX} wallpapers (${list.length}/${WP_MAX} chosen); tap again to remove one. Each splash art is its own wallpaper: the base art and the 3★ / 6★ arts once unlocked, whatever the character has equipped. With two or more, tap once on an empty part of the main screen to show arrows and switch between them. Pearl Tide clears the list.</p>
+  const tabs = `<div class="tabs wp-tabs">${[['arts', 'Splash arts'], ['mem', `Memories <span class="wp-tn">${mems.length}</span>`]].map(([k, l]) => `<button class="tab ${wpTab === k ? 'on' : ''}" data-wptab="${k}">${l}</button>`).join('')}</div>`;
+  root.innerHTML = `${tabs}<p class="tiny" style="margin-bottom:14px">${wpTab === 'mem' ? `Every memory you own can be a wallpaper too. They share the ${WP_MAX} wallpaper slots with splash arts (${list.length}/${WP_MAX} chosen); tap again to remove one.</p>
+    <div class="wpgrid mem">${mems.map(tile).join('')}</div>
+    ${mems.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any memories with art yet. <button class="link" data-open="summon">Go to the Memory Wish</button></div>`}` : `Pick up to ${WP_MAX} wallpapers (${list.length}/${WP_MAX} chosen); tap again to remove one. Each splash art is its own wallpaper: the base art and the 3★ / 6★ arts once unlocked, whatever the character has equipped. With two or more, tap once on an empty part of the main screen to show arrows and switch between them. Pearl Tide clears the list.</p>
     <div class="wpgrid">${tile(null)}${opts.map(tile).join('')}</div>
-    ${ownedList.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>`}`;
+    ${ownedList.length ? '' : `<div class="empty" style="margin-top:14px">You don't own any characters yet. <button class="link" data-open="summon">Go to the banner</button></div>`}`}`;
+  root.querySelectorAll('[data-wptab]').forEach(b => b.onclick = () => { wpTab = b.dataset.wptab; renderWallpaperPicker(); });
   root.querySelectorAll('[data-wp]').forEach(b => b.onclick = () => {
     const id = b.dataset.wp, cur = wpList();
     if (b.dataset.lock) { toast(`This splash art unlocks at ${b.dataset.lock} stars.`); return; }
@@ -195,10 +204,18 @@ function adminArtRows() {
       + setRow('UR memory ticket icon', `<span class="set-exp">${curIcon('memtk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="memtk"></label>${customIcon('memtk') ? '<button type="button" class="sx-btn" data-iconreset="memtk">Default</button>' : ''}`, 'From the Prism Membership; used from the Bag for a random UR memory')
       + setRow('Camp wallpaper', `<span class="set-wp">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setCampBg"></label>${MEDIA.get('camp:bg') ? btn('setCampBgDel', 'Default') : ''}`, 'Behind the Base\'s Camp tab (1920×1080 best). Default: black')
       + setRow('Expedition wallpaper', `<span class="set-wp">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpBg"></label>${MEDIA.get('exp:bg') ? btn('setExpBgDel', 'Default') : ''}`, 'Behind the Base\'s Expedition tab (1920×1080 best). Default: black')
+      + setRow('Daily spin art', `<span class="set-wp">${MEDIA.get('spin:art') ? `<img src="${MEDIA.get('spin:art')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setSpinArt"></label>${MEDIA.get('spin:art') ? btn('setSpinArtDel', 'Default') : ''}`, 'The picture on the left of the Daily spin window (portrait, ~600×720)')
       + `<div class="sx-row sx-block"><span class="sx-l">Summon background<small>Your art behind the summon animation</small></span><div class="sx-c">${pullBgHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">Double UR wallpapers<small>Left and right, split on the diagonal after the sphere turns UR when a pull holds 2+ URs</small></span><div class="sx-c">${dblArtsHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">Max Win wallpaper<small>Behind the red SSS sphere at the end of a Max Win (default: a pulled UR's art)</small></span><div class="sx-c">${mwBgHTML()}</div></div>`
       + `<div class="sx-row sx-block"><span class="sx-l">SSR → UR upgrade wallpaper<small>Slides in when an SSR turns into a UR (1% of SSR pulls)</small></span><div class="sx-c">${upArtsHTML()}</div></div>`
+    + [['bp0', 'Pearl Honor: Pearl Gift icon', 'The free track emblem in Pearl Honor'], ['bp1', 'Pearl Honor: Coral Tide icon', 'The paid track emblem and the Coral Tide offer card'], ['bp2', 'Pearl Honor: Moon Tide icon', 'The Moon Tide offer card ($19.99)']].map(([k, l, d]) => setRow(l, `<span class="set-exp">${bpEmblem(+k[2])}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="${k}"></label>${customIcon(k) ? `<button type="button" class="sx-btn" data-iconreset="${k}">Default</button>` : ''}`, d)).join('')
+    + setRow('Guild points icon', `<span class="set-exp">${curIcon('gpts')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="gpts"></label>${customIcon('gpts') ? '<button type="button" class="sx-btn" data-iconreset="gpts">Default</button>' : ''}`, 'Earned from the guild daily reward, spent in the Guild Shop')
+    + setRow('Banner points icon', `<span class="set-exp">${curIcon('spt')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="spt"></label>${customIcon('spt') ? '<button type="button" class="sx-btn" data-iconreset="spt">Default</button>' : ''}`, 'Summon points of the Limited, Weekly and Outfit banners')
+    + setRow('Permanent points icon', `<span class="set-exp">${curIcon('sptp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="sptp"></label>${customIcon('sptp') ? '<button type="button" class="sx-btn" data-iconreset="sptp">Default</button>' : ''}`, 'Permanent summon points (Permanent and Memory banners)')
+    + setRow('UR selector icon', `<span class="set-exp">${curIcon('ursel')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="ursel"></label>${customIcon('ursel') ? '<button type="button" class="sx-btn" data-iconreset="ursel">Default</button>' : ''}`, 'The UR selector from the permanent banner milestones (300 and 600 pulls)')
+    + setRow('UR character fragment icon', `<span class="set-exp">${curIcon('cfur')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="cfur"></label>${customIcon('cfur') ? '<button type="button" class="sx-btn" data-iconreset="cfur">Default</button>' : ''}`, 'Dropped by summons; 60 = random UR, 120 = chosen UR')
+    + setRow('SSR character fragment icon', `<span class="set-exp">${curIcon('cfssr')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="cfssr"></label>${customIcon('cfssr') ? '<button type="button" class="sx-btn" data-iconreset="cfssr">Default</button>' : ''}`, 'Dropped by summons; 60 = random SSR, 120 = chosen SSR')
     + setRow('Name change ticket icon', `<span class="set-exp">${curIcon('nametk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="nametk"></label>${customIcon('nametk') ? '<button type="button" class="sx-btn" data-iconreset="nametk">Default</button>' : ''}`, 'The ticket used to change a player name (shop, Bag, rewards)');
 }
 function bindAdminArt(root, rerender) {
@@ -206,6 +223,8 @@ function bindAdminArt(root, rerender) {
   const eu = on('setExpUp'); if (eu) eu.onchange = async () => { try { if (await mediaSet('icon:exp', await resizeImage(eu.files[0], 128))) { rerender(); toast('EXP icon updated.'); } } catch (e) { toast(e.message, true); } };
   const xb = on('setExpBg'); if (xb) xb.onchange = async () => { try { if (await mediaSet('exp:bg', await resizeImage(xb.files[0], 1920, 'image/jpeg'))) { rerender(); renderFarm(); toast('Expedition wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const cb = on('setCampBg'); if (cb) cb.onchange = async () => { try { if (await mediaSet('camp:bg', await resizeImage(cb.files[0], 1920, 'image/jpeg'))) { rerender(); renderFarm(); toast('Camp wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
+  const sa = on('setSpinArt'); if (sa) sa.onchange = async () => { try { if (await mediaSet('spin:art', await resizeImage(sa.files[0], 900, 'image/jpeg'))) { rerender(); toast('Daily spin art saved.'); } } catch (e) { toast(e.message, true); } };
+  const sd = on('setSpinArtDel'); if (sd) sd.onclick = async () => { await mediaDel('spin:art'); rerender(); };
   const cd = on('setCampBgDel'); if (cd) cd.onclick = async () => { await mediaDel('camp:bg'); rerender(); renderFarm(); toast('Camp wallpaper back to black.'); };
   const xd = on('setExpBgDel'); if (xd) xd.onclick = async () => { await mediaDel('exp:bg'); rerender(); renderFarm(); toast('Expedition wallpaper back to black.'); };
   bindUpArts(rerender); bindDblArts(rerender); bindPullBg(rerender); bindMwBg(rerender);

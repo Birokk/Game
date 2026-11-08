@@ -25,16 +25,16 @@ const VIP_LVREW = [null,
 const VIP_PRIVS = [
   [1, 'Base production +5%'], [1, 'Expedition gold +5%'],
   [2, '+1 scratch card per day'], [2, 'Max stamina +10'],
-  [3, '+1 Daily Spin per day'], [3, 'Raids: Clear ×10 button'],
+  [3, 'Exclusive title: Tidecaller', 1], [3, '+1 Daily Spin per day'], [3, 'Raids: Clear ×10 button'],
   [4, 'Base production +10% (replaces +5%)'], [4, 'VIP name colour in world chat'],
   [5, 'Expeditions take 1 hour less'], [5, '+1 free daily pull on the Limited banner'],
-  [6, 'Exclusive avatar frame: Pearl Regalia'], [6, 'Max stamina +20 (replaces +10)'],
+  [6, 'Exclusive avatar frame: Pearl Regalia', 1], [6, 'Max stamina +20 (replaces +10)'],
   [7, 'Camp brings back 1 extra piece'], [7, 'Base production +15% (replaces +10%)'],
-  [8, 'Exclusive namecard: Abyssal Pearl'], [8, 'Mystery Fountain wishes 10% cheaper'],
+  [8, 'Exclusive namecard: Abyssal Pearl', 1], [8, 'Mystery Fountain wishes 10% cheaper'],
   [9, 'Eggs hatch 20% faster'], [9, '+2 Daily Spins per day (replaces +1)'],
-  [10, 'Exclusive title: Ocean Monarch'], [10, 'Raids: +10% chance of a second drop'],
-  [11, 'Expedition rewards +20%'], [11, 'Pearl Honor levels cost 2 pearls'],
-  [12, 'Exclusive animated frame: Tide Emperor'], [12, 'Base production +25% (replaces +15%)']
+  [10, 'Exclusive title: Ocean Monarch', 1], [10, 'Raids: +10% chance of a second drop'],
+  [11, 'Exclusive namecard: Emperor\'s Tide', 1], [11, 'Expedition rewards +20%'], [11, 'Pearl Honor levels cost 2 pearls'],
+  [12, 'Exclusive animated frame: Tide Emperor', 1], [12, 'Base production +25% (replaces +15%)']
 ];
 const vipGot = lv => (vipState().got || []).includes(lv);
 const vipLvReady = () => { const L = vipLv(); for (let i = 1; i <= L; i++) if (!vipGot(i)) return true; return false; };
@@ -85,8 +85,8 @@ function renderVip() {
     </div>
     <div class="vipx-right">
       <span class="vipx-pill big">Privileges</span>
-      <ul class="vipx-privs">${privs.map(([l, t]) => `<li>${l === v ? '<span class="vipx-new">NEW</span>' : '<span class="vipx-dot"></span>'}<span>${esc(t)}</span></li>`).join('')}</ul>
-      <p class="vipx-soon">${icon('info')}Privileges are planned and arrive in a future update. For now every level gives its daily reward and one-time reward.</p>
+      <ul class="vipx-privs">${privs.map(([l, t, on]) => `<li class="${on ? 'on' : ''}">${l === v ? '<span class="vipx-new">NEW</span>' : '<span class="vipx-dot"></span>'}<span>${esc(t)}</span>${on ? `<span class="vipx-act">${vipLv() >= l ? 'Unlocked' : 'Active'}</span>` : ''}</li>`).join('')}</ul>
+      <p class="vipx-soon">${icon('info')}Titles, frames and namecards are real: equip them in Profile settings once you reach the level. The other privileges arrive in a future update.</p>
       <div class="vipx-reward"><span class="vipx-rl">Reward</span><div class="vipx-items">${Object.entries(lr).map(([k, n]) => bpItem(k, n)).join('')}</div>
         ${got ? '<span class="vipx-stamp">Claimed</span>' : canL ? `<button class="btn gold" id="vipLvGo">Claim</button>` : `<span class="vipx-lock">${icon('lock')}Reach VIP ${v}<small>${fmt(need - xp)} VIP EXP to go</small></span>`}</div>
     </div>
@@ -102,3 +102,9 @@ function renderVip() {
 }
 CUR_SVG.vip = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="vipG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe4f6"/><stop offset=".5" stop-color="#c8a2ff"/><stop offset="1" stop-color="#94b8ff"/></linearGradient></defs><path d="M3 8l4.5 3.5L12 4l4.5 7.5L21 8l-2 11H5z" fill="url(#vipG)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 15.5h8" stroke="#2b1855" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></svg>';
 if (!ICONS.crown) ICONS.crown = '<path d="M3 8l4.5 3.5L12 4l4.5 7.5L21 8l-2 11H5z"/>';
+
+/* ---------- VIP cosmetics (equip in Profile settings): glowing titles, frames and namecards, unlocked by reaching the level ---------- */
+[3, 6, 8, 10, 11, 12].forEach(l => { UNLOCK['vip' + l] = [() => vipLv() >= l, `Reach VIP ${l}`]; });
+TITLES.push({ id: 'vip-tide', name: 'Tidecaller', cls: 't-vtide', need: 'vip3', vip: true }, { id: 'vip-monarch', name: 'Ocean Monarch', cls: 't-vmonarch', need: 'vip10', vip: true });
+FRAMES.push({ id: 'vregalia', name: 'Pearl Regalia', need: 'vip6', premium: true, vip: true }, { id: 'vemperor', name: 'Tide Emperor', need: 'vip12', premium: true, vip: true });
+CARDS.push({ id: 'vabyss', name: 'Abyssal Pearl', need: 'vip8', premium: true, vip: true }, { id: 'vempire', name: 'Emperor\'s Tide', need: 'vip11', premium: true, vip: true });

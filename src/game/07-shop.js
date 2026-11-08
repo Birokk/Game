@@ -5,9 +5,9 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
-const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency']];
+const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency'], ['points', 'star', 'Summon Points'], ['board', 'cards', 'Card Clash']];
 /* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
-const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium'], ['memories', 'Memories']], PREM_PRICE = 720, PREM_LIMIT = 1;
+const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium'], ['memories', 'Memories'], ['frags', 'Fragments']], PREM_PRICE = 720, PREM_LIMIT = 1;
 const MEMX_PRICE = 300;   // Exchange → Memories: any UR memory for 300 Corals, once per memory per account (S.memEx = [ids])
 const memExUsed = id => (S.memEx || []).includes(id);
 let exSub = 'corals';
@@ -18,12 +18,82 @@ const TOPUP = [[6, '0.99'], [30, '4.99'], [98, '14.99'], [198, '29.99'], [328, '
 /* bonus pearls: the first purchase of each pack is doubled, later ones give +10%; the $0.99 pack has no bonus (S.topupFirst = [pack indices bought]) */
 const topupBonus = i => { const [n, usd] = TOPUP[i]; if (usd === '0.99') return { n: 0, first: false }; const first = !(S.topupFirst || []).includes(i); return { n: first ? n : Math.round(n * .1), first }; };
 const TOPUP_FREE = true;   // testing: Top Up packs are free (no real payments yet)
+/* Top Up → Daily / Weekly / Monthly packs: a free gift every reset plus paid bundles that beat the base 6 pearls per $1
+   (PEARLS_PER_USD) and add character fragments, UR memory tickets and stamina bottles. Each pack can be bought `limit`
+   times per reset (daily = local midnight, weekly = Monday, monthly = the 1st). State S.packs[kind] = {key, got: {id: n}}. */
+const PEARLS_PER_USD = 6;
+/* rough pearl value of each pack item, for the "+N% value" tag (pearls 1:1; a stamina bottle ≈ a pearl refill; fragments from
+   60 = a random character; a UR memory ticket ≈ a UR memory on the Memory Wish) */
+const PACK_VAL = { pearls: 1, coins: 1 / 2000, bottles: 1.5, cfssr: 1, cfur: 2.5, memtk: 60, tickets: 3, wishes: 3 };
+const packWorth = items => Object.entries(items).reduce((t, [k, n]) => t + (PACK_VAL[k] || 0) * n, 0);
+const PACKS = {
+  daily: { label: 'Daily', key: () => dayKey(), list: [
+    { id: 'free', name: 'Daily Gift', usd: 0, items: { coins: 1000, bottles: 1 } },
+    { id: 'd1', name: 'Morning Pearls', usd: 0.99, limit: 1, items: { pearls: 7, bottles: 1 } },
+    { id: 'd2', name: 'Lantern Bundle', usd: 2.99, limit: 1, items: { pearls: 20, cfssr: 1, bottles: 1 } },
+    { id: 'd3', name: 'Tide Bundle', usd: 4.99, limit: 1, items: { pearls: 34, cfssr: 2, bottles: 2 } },
+    { id: 'd4', name: 'Pearl Chest', usd: 9.99, limit: 1, items: { pearls: 70, cfur: 1, cfssr: 2, bottles: 3 } }] },
+  weekly: { label: 'Weekly', key: () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dayKey(d); }, list: [
+    { id: 'free', name: 'Weekly Gift', usd: 0, items: { pearls: 3, cfssr: 1, bottles: 1 } },
+    { id: 'w1', name: 'Week Starter', usd: 4.99, limit: 1, items: { pearls: 33, cfssr: 2, bottles: 2 } },
+    { id: 'w2', name: 'Explorer Pack', usd: 9.99, limit: 1, items: { pearls: 68, cfur: 1, cfssr: 3, bottles: 3 } },
+    { id: 'w3', name: 'Voyager Pack', usd: 19.99, limit: 1, items: { pearls: 140, cfur: 2, cfssr: 4, bottles: 5 } },
+    { id: 'w4', name: "Captain's Hoard", usd: 49.99, limit: 1, items: { pearls: 360, memtk: 1, cfur: 4, cfssr: 6, bottles: 8 } }] },
+  monthly: { label: 'Monthly', key: () => monthKey(), list: [
+    { id: 'free', name: 'Monthly Gift', usd: 0, items: { pearls: 10, cfur: 1, bottles: 2 } },
+    { id: 'm1', name: 'Moon Pack', usd: 9.99, limit: 1, items: { pearls: 68, cfur: 1, cfssr: 3, bottles: 4 } },
+    { id: 'm2', name: 'Tidal Treasure', usd: 29.99, limit: 1, items: { pearls: 210, cfur: 3, cfssr: 5, bottles: 8 } },
+    { id: 'm3', name: 'Starlit Vault', usd: 49.99, limit: 1, items: { pearls: 360, memtk: 1, cfur: 5, cfssr: 8, bottles: 10 } },
+    { id: 'm4', name: 'Sovereign Trove', usd: 99.99, limit: 1, items: { pearls: 750, memtk: 2, cfur: 10, cfssr: 15, bottles: 15 } }] } };
+const TOP_SUBS = [['pearls', 'Pearls'], ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']];
+let topSub = 'pearls';
+function packState(kind) { S.packs = S.packs || {}; const k = PACKS[kind].key(); if (!S.packs[kind] || S.packs[kind].key !== k) S.packs[kind] = { key: k, got: {} }; return S.packs[kind]; }
+const packLeft = (kind, pk) => (pk.usd ? pk.limit || 1 : 1) - (packState(kind).got[pk.id] || 0);
+const packFreeReady = kind => packLeft(kind, PACKS[kind].list[0]) > 0;
+const packsReady = () => ['daily', 'weekly', 'monthly'].some(packFreeReady);
+function packResetTxt(kind) {
+  const n = new Date(); let r;
+  if (kind === 'daily') { r = new Date(n); r.setHours(24, 0, 0, 0); }
+  else if (kind === 'weekly') { r = new Date(n); r.setHours(0, 0, 0, 0); r.setDate(r.getDate() + (8 - r.getDay()) % 7 || 7); }
+  else r = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+  return `Resets in ${dhLeft(r - n)}`;
+}
+function packsHTML(kind) {
+  const P = PACKS[kind];
+  return `<div class="pk-head"><span class="pk-reset">${icon('clock')}${packResetTxt(kind)}</span></div>
+    <div class="pk-grid">${P.list.map(pk => { const left = packLeft(kind, pk), worth = packWorth(pk.items), val = pk.usd ? Math.round(worth / (pk.usd * PEARLS_PER_USD) * 100 - 100) : 0;
+      return `<div class="pk ${pk.usd ? '' : 'free'} ${left > 0 ? '' : 'out'}">
+        <div class="pk-top"><b>${esc(pk.name)}</b>${pk.usd ? `<span class="pk-val" title="${esc(`Estimated worth of everything in the pack: about ${Math.round(worth)} pearls, against ${Math.round(pk.usd * PEARLS_PER_USD)} pearls for the same price`)}">+${val}% value</span>` : '<span class="pk-val free">FREE</span>'}</div>
+        <div class="pk-items">${Object.entries(pk.items).map(([k, n]) => bpItem(k, n)).join('')}</div>
+        <div class="pk-ft"><span class="tiny">${pk.usd ? `Worth ≈ ${fmt(Math.round(worth))} pearls · ${left} / ${pk.limit || 1} left · +${fmt(Math.round(pk.usd * VIP_PER_USD))} VIP EXP` : left > 0 ? 'Claim once per reset' : 'Claimed · come back after the reset'}</span>
+          ${left <= 0 ? `<button class="mall-buy" disabled>${pk.usd ? 'Sold out' : 'Claimed'}</button>` : pk.usd ? (TOPUP_FREE ? `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">$${pk.usd} · Free test</button>` : `<button class="mall-buy" disabled>$${pk.usd} · Soon</button>`) : `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">Claim</button>`}</div></div>`; }).join('')}</div>`;
+}
+function buyPack(kind, id) {
+  const pk = PACKS[kind].list.find(x => x.id === id); if (!pk || packLeft(kind, pk) <= 0) return;
+  if (pk.usd && !TOPUP_FREE) return;
+  const st = packState(kind); st.got[id] = (st.got[id] || 0) + 1;
+  Object.entries(pk.items).forEach(([k, n]) => { S.wallet[k] = (S.wallet[k] || 0) + n; });
+  const got = { ...pk.items }; if (pk.usd) { vipFromUsd(pk.usd); got.vip = Math.round(pk.usd * VIP_PER_USD); }
+  persist(); renderMenu(); refreshSummon(); renderShop();
+  showRewards(pk.name, got, pk.usd ? `${PACKS[kind].label} pack · $${pk.usd}${TOPUP_FREE ? ' · free while testing' : ''}` : `${PACKS[kind].label} free gift`);
+}
+/* the VIP bar on top of Top Up → Pearls (after the owner's reference): shield with the VIP level, rank name, VIP EXP toward the next level, Privileges */
+function vipShopBar() {
+  const lv = vipLv(), xp = vipState().xp, next = VIP_XP[lv], pct = next ? Math.min(100, xp / next * 100) : 100;
+  return `<div class="vsb"><span class="vsb-plate"></span><span class="vsb-crest"><svg viewBox="0 0 110 34" aria-hidden="true"><circle cx="55" cy="30" r="7"/><path d="M55 4v14M41 8l7 12M69 8l-7 12M30 16l12 8M80 16l-12 8M22 28h14M74 28h14"/></svg></span><span class="vsb-sh"><b>${lv}</b></span>
+    <span class="vsb-mid"><span class="vsb-rank">${esc(VIP_RANKS[lv] || 'Guest')}</span><span class="vsb-xp">${curIcon('vip')}<span class="vsb-bar"><i style="width:${pct}%"></i><em>${next ? `${fmt(xp)} / ${fmt(next)}` : `${fmt(xp)} · max level`}</em></span></span></span>
+    <button class="vsb-btn" data-open="vip">Privileges${vipReady() ? '<span class="dot-n"></span>' : ''}</button></div>`;
+}
 let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
 const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
 function openShop(tab) {
   closeModal();
   if (tab === 'monthly' || tab === 'dust') { tab = 'exchange'; exSub = 'seaweeds'; }   // monthly pulls live in the Seaweeds exchange
+  if (tab && tab.startsWith('points')) tab = 'points';
+  else if (['daily', 'weekly', 'monthly'].includes(tab)) { topSub = tab; tab = 'topup'; }
+  else if (tab === 'frags') { tab = 'exchange'; exSub = 'frags'; }
+  else if (tab === 'backs' || tab === 'boards') { ccShopSub = tab; tab = 'board'; }
   else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
   if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
@@ -38,7 +108,7 @@ function renderShop() {
   const item = (id, ic, name, sub, price, cur, extra = '', r = 4) => `<div class="mall-item ${extra}"><span class="mall-ic r${r}">${curIcon(ic)}</span><b>${name}</b><span class="tiny">${sub}</span>
     <button class="mall-buy ${W[cur] >= price && !extra.includes('soldout') ? 'ok' : ''}" data-buy="${id}" ${extra.includes('soldout') ? 'disabled' : ''}>${extra.includes('soldout') ? 'Sold out' : `${curIcon(cur)}${fmt(price)}`}</button></div>`;
   const tab = SHOP_TABS.find(t => t[0] === shopTab);
-  let strip = shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
+  let strip = shopTab === 'topup' ? TOP_SUBS.map(([k, l]) => `<button class="mall-pill ${k === topSub ? 'on' : ''}" data-topsub="${k}">${l}${k !== 'pearls' && packFreeReady(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('') : shopTab === 'exchange' ? EX_SUBS.map(([k, l]) => `<button class="mall-pill ${k === exSub ? 'on' : ''}" data-exsub="${k}">${l}</button>`).join('') : `<span class="mall-pill on">${tab[2]}</span>`, body = '', bg = '';
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
     const e = hotSub === 'skins' && shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
@@ -55,13 +125,17 @@ function renderShop() {
       <div class="mall-skins">${list.map(x => { const par = findEntry(x.parent), own = owns(x.id);
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
-  } else if (shopTab === 'topup') {
-    body = `<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
+  } else if (shopTab === 'topup' && topSub !== 'pearls') body = packsHTML(topSub);
+  else if (shopTab === 'topup') {
+    body = `${vipShopBar()}${offerShopBanners()}<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>
       <div class="mall-grid">${TOPUP.map(([n, usd], i) => `<div class="mall-item topup"><span class="mall-ic big raw">${topupIcon(i)}</span><b>${fmt(n)} pearls</b>${(() => { const bo = topupBonus(i); return bo.n ? `<span class="tu-bonus ${bo.first ? 'first' : ''}">${bo.first ? 'First purchase ×2' : '+10% bonus'} · +${fmt(bo.n)}</span>` : '<span class="tu-bonus none">No bonus</span>'; })()}<span class="tiny">$${usd}${TOPUP_FREE ? ' · free while testing' : ''}</span><span class="mall-vipx">+${fmt(Math.round(parseFloat(usd) * VIP_PER_USD))} VIP EXP</span>${TOPUP_FREE ? `<button class="mall-buy ok" data-topup="${i}">Free · test</button>` : `<button class="mall-buy" disabled>$${usd} · Soon</button>`}</div>`).join('')}</div>`;
   } else if (shopTab === 'pearl') {
     body = `<p class="tiny">Spend pearls on summon tickets, marriage rings and name change tickets.</p>
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}${item('pn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_PEARLS, 'pearls', '', 4)}</div>`;
-  } else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
+  } else if (shopTab === 'points') body = ptShopHTML();
+  else if (shopTab === 'board') { strip = ccShopStrip(); body = ccShopSub === 'backs' ? ccBackShopHTML() : ccSkinShopHTML(); }
+  else if (shopTab === 'exchange' && exSub === 'frags') body = fragShopHTML();
+  else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
     <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}${item('sn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_CORALS, 'starlight', '', 4)}</div>`;
   else if (shopTab === 'exchange' && exSub === 'memories') { const urs = (S.memories || []).filter(m => +m.rarity === 5).sort((a, b) => memExUsed(a.id) - memExUsed(b.id) || a.name.localeCompare(b.name));
     body = `<div class="mall-limit"><b>Limit: 1 per memory per account</b><span>${urs.filter(m => memExUsed(m.id)).length} / ${urs.length} UR memories exchanged</span></div><p class="tiny">Trade ${MEMX_PRICE} Corals for a copy (0★) of any UR memory. Each memory can be exchanged once.</p>
@@ -84,8 +158,8 @@ function renderShop() {
     <div class="mall-grid">${Object.entries(DUST_GIFTS).map(([k, p], i) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust', '', 3 + i)).join('')}</div>`;
   shopEl.innerHTML = `<div class="mall-word">SHOP</div>
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
-      <div class="inv-cur">${['pearls', 'starlight', 'dust'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(W[k])}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
-    <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b></button>`).join('')}</aside>
+      <div class="inv-cur">${(shopTab === 'points' ? ['spt', 'sptp', 'pearls'] : shopTab === 'exchange' && exSub === 'frags' ? ['cfssr', 'cfur', 'pearls'] : ['pearls', 'starlight', 'dust']).map(k => `<div class="cur">${curIcon(k)}<b>${fmt(k === 'spt' ? PT_FEAT.reduce((a, b) => a + ptOf(b), 0) : k === 'sptp' ? ptOf('perm') : W[k] || 0)}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
+    <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b>${k === 'topup' && packsReady() ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</aside>
     <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && hotSub === 'pass' ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
     <p class="mall-foot">Please spend responsibly.</p>`;
   $('#shopClose').onclick = closeShop;
@@ -99,9 +173,70 @@ function renderShop() {
     S.wallet.pearls += n + bo.n; if (bo.first) S.topupFirst = [...(S.topupFirst || []), i];
     const vx = Math.round(parseFloat(usd) * VIP_PER_USD); vipFromUsd(usd); persist(); renderMenu(); refreshSummon(); renderShop();
     showRewards('Top Up', { pearls: n + bo.n, vip: vx }, `${fmt(n)} pearls${bo.n ? ` + ${fmt(bo.n)} bonus (${bo.first ? 'first purchase ×2' : '+10%'})` : ''} · free while testing`); });
+  shopEl.querySelectorAll('[data-topsub]').forEach(b => b.onclick = () => { topSub = b.dataset.topsub; renderShop(); });
+  shopEl.querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.pack.split('|'); buyPack(k, id); });
   shopEl.querySelectorAll('[data-exsub]').forEach(b => b.onclick = () => { exSub = b.dataset.exsub; renderShop(); });
+  shopEl.querySelectorAll('[data-frag]').forEach(b => b.onclick = () => fragBuy(b.dataset.frag));
+  shopEl.querySelectorAll('[data-ptbuy]').forEach(b => b.onclick = () => { const [src, id] = b.dataset.ptbuy.split('|'); confirmPtBuy(src, id); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
   shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
+  if (shopTab === 'board') { ccSkinBind(shopEl, renderShop); ccBackBind(shopEl, renderShop); shopEl.querySelectorAll('[data-ccsub]').forEach(b => b.onclick = () => { ccShopSub = b.dataset.ccsub; renderShop(); }); }
+}
+/* Shop → Summon Points: a featured banner's page (its featured UR / outfit for PT_PRICE of that banner's points) or the
+   Permanent shop (3 UR characters + 3 UR memories this month, 1 of each per month) */
+function ptCard(e, src, done) {
+  const P = ptOf(src), ok = !done && P >= PT_PRICE, mem = e.type === 'memory', m = mem && memOf(e.id);
+  const pic = mem ? `<span class="mall-mem-art mem-fr mst0">${artFrom(m.img) ? `<img src="${artFrom(m.img)}" alt="">` : icon('memory')}</span>` : `<img src="${baseCard(e)}" alt="" ${baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>`;
+  const sub = mem ? `Owned ×${S.owned[e.id] || 0}` : e.type === 'skin' ? (owns(e.id) ? 'Owned' : (findEntry(e.parent) || {}).name || 'Outfit') : owns(e.id) ? starRow(starsOf(e.id), -1, e) : 'Not owned yet';
+  return `<div class="${mem ? 'mall-mem' : 'mall-skin'} r${e.rarity}">${pic}${rtag(e.rarity)}<span class="mall-skin-nm"><b>${esc(e.name)}</b><small>${sub}</small></span>
+    ${done ? `<button class="mall-buy" disabled>${src === 'perm' ? '1/1 this month' : 'Owned'}</button>` : `<button class="mall-buy ${ok ? 'ok' : ''}" data-ptbuy="${src}|${esc(e.id)}">${curIcon(src === 'perm' ? 'sptp' : 'spt')}${fmt(PT_PRICE)}</button>`}</div>`;
+}
+function ptShopHTML() {
+  const P = ptState(), { chars, mems } = permShopPicks(), got = id => P.buy.ids.includes(id);
+  const head = (name, k, n, note) => `<h3 class="mall-h pt-h">${name}<span class="pt-bal">${curIcon(k)}${fmt(n)}</span><small>${note}</small></h3>`;
+  const ban = bk => { const B = bannerInfo(bk), f = B.feat, what = bk === 'skins' ? 'outfit' : 'character';
+    return `${head(`${esc(bannerName(bk))}${f ? ` · ${esc(f.name)}` : ''}`, 'spt', ptOf(bk), `1 point per pull here · ${PT_PRICE} = 1 copy`)}
+      ${f ? `<div class="mall-skins">${ptCard(f, bk, bk === 'skins' && owns(f.id))}</div>` : `<p class="tiny">No featured ${what} right now: pulls here give Permanent points.</p>`}`; };
+  return `${PT_FEAT.map(ban).join('')}
+    ${head('Permanent', 'sptp', P.perm, `Permanent and Memory pulls + leftover banner points · new picks on the 1st (${nextMonthIn()}) · 1 of each per month`)}
+    ${chars.length ? `<div class="mall-skins">${chars.map(e => ptCard(e, 'perm', got(e.id))).join('')}</div>` : '<p class="tiny">No UR characters in the game yet.</p>'}
+    ${mems.length ? `<div class="mall-mems">${mems.map(e => ptCard(e, 'perm', got(e.id))).join('')}</div>` : '<p class="tiny">No UR memories in the game yet.</p>'}`;
+}
+/* Exchange → Fragments: 60 for a random character of that rarity, 120 for one you choose */
+function fragShopHTML() {
+  const W = S.wallet, row = (r, k, lbl) => { const have = W[k] || 0, n = fragChars(r).length;
+    return `<h3 class="mall-h pt-h">${lbl} character fragments<span class="pt-bal">${curIcon(k)}${fmt(have)}</span><small>${n} ${lbl} character${n === 1 ? '' : 's'} in the game</small></h3>
+      <div class="mall-grid">
+        <div class="mall-item"><span class="mall-ic r${r}">${curIcon(k)}</span><b>Random ${lbl} character</b><span class="tiny">One copy of a random ${lbl} character</span><button class="mall-buy ${have >= CF_RANDOM && n ? 'ok' : ''}" data-frag="${k}|rand">${curIcon(k)}${CF_RANDOM}</button></div>
+        <div class="mall-item"><span class="mall-ic r${r}">${curIcon(k)}</span><b>Choose a ${lbl} character</b><span class="tiny">One copy of the ${lbl} character you pick</span><button class="mall-buy ${have >= CF_PICK && n ? 'ok' : ''}" data-frag="${k}|pick">${curIcon(k)}${CF_PICK}</button></div>
+      </div>`; };
+  return `<p class="tiny">Every summon drops character fragments (at least 1 UR and 2 SSR on every ×10).</p>${row(5, 'cfur', 'UR')}${row(4, 'cfssr', 'SSR')}`;
+}
+function fragBuy(code) {
+  const [k, how] = code.split('|'), r = k === 'cfur' ? 5 : 4, lbl = r === 5 ? 'UR' : 'SSR', cost = how === 'pick' ? CF_PICK : CF_RANDOM, list = fragChars(r);
+  if (!list.length) { toast(`There are no ${lbl} characters yet.`); return; }
+  if ((S.wallet[k] || 0) < cost) { toast(`You need ${cost} ${lbl} fragments. You have ${fmt(S.wallet[k] || 0)}.`); return; }
+  if (how === 'pick') return openCharPicker({ title: `Choose a ${lbl} character`, note: `${CF_PICK} ${lbl} fragments for one copy of the character you pick.`, list, btn: `${curIcon(k)}${CF_PICK}`, onPick: e => { if ((S.wallet[k] || 0) < cost) return; S.wallet[k] -= cost; giftChar(e); } });
+  openModal({ title: 'Fragment exchange', ic: 'shop', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${CF_RANDOM} ${lbl} fragments</b> on a random ${lbl} character?</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="fgNo">Cancel</button><button class="btn gold" id="fgYes">Exchange · ${curIcon(k)}${CF_RANDOM}</button></div></div>`,
+    onMount: () => { $('#fgNo').onclick = closeModal; $('#fgYes').onclick = () => { if ((S.wallet[k] || 0) < cost) return; closeModal(); S.wallet[k] -= cost; giftChar(rpick(list)); }; } });
+}
+function confirmPtBuy(src, id) {
+  const e = findEntry(id), P = ptState(); if (!e) return;
+  const have = src === 'perm' ? P.perm : (P[src] || {}).n || 0;
+  if (src === 'perm' && P.buy.ids.includes(id)) { toast(`You already got ${e.name} this month.`); return; }
+  if (e.type === 'skin' && owns(id)) { toast(`You already own ${e.name}.`); return; }
+  if (have < PT_PRICE) { toast(`You need ${PT_PRICE} points. You have ${fmt(have)}.`); return; }
+  openModal({ title: 'Summon points', ic: 'star', small: true, body: `<div class="stack" style="justify-items:center;text-align:center">
+    <p class="desc">Spend <b>${PT_PRICE} ${src === 'perm' ? 'Permanent' : esc(bannerName(src))} points</b> on a copy of <b>${esc(e.name)}</b>?${src === 'perm' ? ' You can get each one once this month.' : ''}</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="ptNo">Cancel</button><button class="btn gold" id="ptYes">Exchange · ${curIcon('spt')}${PT_PRICE}</button></div></div>`,
+    onMount: () => { $('#ptNo').onclick = closeModal; $('#ptYes').onclick = () => {
+      closeModal(); if (src === 'perm') { P.perm -= PT_PRICE; P.buy.ids.push(id); } else P[src].n -= PT_PRICE;
+      const res = { kind: 'entry', id, rarity: +e.rarity, ...grantEntry(e) };
+      if (e.type === 'character') { res.starlight = (res.maxed ? STARLIGHT_MAX : STARLIGHT)[+e.rarity] || 0; S.wallet.starlight += res.starlight; }
+      persist(); renderMenu(); refreshCharacters(); refreshSummon(); renderShop();
+      showPull([res], 1, src === 'perm' ? 'standard' : src, { preview: true, exchange: true, direct: true }); }; } });
 }
 function confirmMemEx(id) {
   const m = memOf(id); if (!m || +m.rarity !== 5) return;
@@ -141,21 +276,80 @@ function buyShop(id) {
 }
 
 /* ---------- achievements: each pays 1 pearl once ---------- */
-const ACH_PEARLS = 1;
+const ACH_PEARLS = 1, ACH_LONG_PEARLS = 50;   // pearls per achievement; the five long ones give 50
 const ownedOf = t => S.pool.filter(e => e.type === t && owns(e.id));
-const totalPulls = () => S.gacha.limited.total + S.gacha.standard.total;
+const totalPulls = () => Object.values(S.gacha || {}).reduce((t, g) => t + ((g && g.total) || 0), 0);   // every banner
+/* lifetime counters for achievements: S.stats {days, lastDay, gift, stamina, summon, fountain, gold, raid, base, scrwin, expd} */
+const statState = () => (S.stats = S.stats || {});
+function statAdd(k, n = 1) { const st = statState(); st[k] = (st[k] || 0) + n; }
+const stat = k => statState()[k] || 0;
+const ownChars = () => ownedOf('character'), maxOf = arr => arr.length ? Math.max(...arr) : 0;
+const charsAt = f => ownChars().filter(f).length;
+const fullSetWorn = () => Object.values(S.wear || {}).some(w => { const ids = Object.values(w || {}).filter(Boolean); if (ids.length < 6) return false; const sets = ids.map(id => (clothOf(id) || {}).set); return sets[0] && sets.every(x => x === sets[0]); });
+/* achievements: `long` = the five that take a long time (50 pearls each), everything else ACH_PEARLS */
 const ACH = [
   { id: 'pull1', name: 'First Wish', desc: 'Summon once', n: () => totalPulls(), goal: 1 },
   { id: 'pull100', name: 'Star Gazer', desc: 'Summon 100 times', n: () => totalPulls(), goal: 100 },
-  { id: 'char1', name: 'New Friend', desc: 'Own a character', n: () => ownedOf('character').length, goal: 1 },
-  { id: 'char3', name: 'Growing Circle', desc: 'Own 3 characters', n: () => ownedOf('character').length, goal: 3 },
-  { id: 'ur', name: 'Lucky Star', desc: 'Own a UR character', n: () => ownedOf('character').filter(e => e.rarity === 5).length, goal: 1 },
-  { id: 'star6', name: 'Shining Bright', desc: `Raise a character to ${MAX_STARS} stars`, n: () => Math.max(0, ...ownedOf('character').map(e => starsOf(e.id))), goal: MAX_STARS },
-  { id: 'pet', name: 'Egg Whisperer', desc: 'Hatch a pet', n: () => ownedOf('pet').length, goal: 1 },
+  { id: 'pull500', name: 'Wish Upon Wish', desc: 'Summon 500 times', n: () => totalPulls(), goal: 500 },
+  { id: 'pull1000', name: 'Thousand Lanterns', desc: 'Summon 1,000 times', n: () => totalPulls(), goal: 1000 },
+  { id: 'pull10000', name: 'Ten Thousand Wishes', desc: 'Summon 10,000 times', n: () => totalPulls(), goal: 10000, long: true },
+  { id: 'maxwin', name: 'Jackpot', desc: 'Get a Max Win', n: () => (S.unlocks || []).includes('max-win') ? 1 : 0, goal: 1 },
+  { id: 'login7', name: 'Regular', desc: 'Log in on 7 different days', n: () => stat('days'), goal: 7 },
+  { id: 'login30', name: 'Familiar Face', desc: 'Log in on 30 different days', n: () => stat('days'), goal: 30 },
+  { id: 'login100', name: 'Lantern Keeper', desc: 'Log in on 100 different days', n: () => stat('days'), goal: 100 },
+  { id: 'login365', name: 'A Year of Lanterns', desc: 'Log in on 365 different days', n: () => stat('days'), goal: 365, long: true },
+  { id: 'char1', name: 'New Friend', desc: 'Own a character', n: () => ownChars().length, goal: 1 },
+  { id: 'char3', name: 'Growing Circle', desc: 'Own 3 characters', n: () => ownChars().length, goal: 3 },
+  { id: 'char5', name: 'Full Table', desc: 'Own 5 characters', n: () => ownChars().length, goal: 5 },
+  { id: 'char10', name: 'Grand Gathering', desc: 'Own 10 characters', n: () => ownChars().length, goal: 10 },
+  { id: 'ur', name: 'Lucky Star', desc: 'Own a UR character', n: () => charsAt(e => e.rarity === 5), goal: 1 },
+  { id: 'ur3', name: 'Constellation', desc: 'Own 3 UR characters', n: () => charsAt(e => e.rarity === 5), goal: 3 },
+  { id: 'ur5', name: 'Galaxy', desc: 'Own 5 UR characters', n: () => charsAt(e => e.rarity === 5), goal: 5 },
+  { id: 'star6', name: 'Shining Bright', desc: `Raise a character to ${MAX_STARS} stars`, n: () => maxOf(ownChars().map(e => starsOf(e.id))), goal: MAX_STARS },
+  { id: 'star6x3', name: 'Three Suns', desc: `Raise 3 characters to ${MAX_STARS} stars`, n: () => charsAt(e => starsOf(e.id) >= MAX_STARS), goal: 3 },
+  { id: 'sss', name: 'Unrivalled', desc: 'Raise a character to grade SSS', n: () => charsAt(e => csGrade(gradeScore(e)) === 'SSS'), goal: 1 },
+  { id: 'urplus', name: 'Beyond the Stars', desc: 'Raise a character to UR+ or SSR+', n: () => charsAt(e => urPlus(e)), goal: 1 },
+  { id: 'cs100k', name: 'Rising Power', desc: 'Reach 100,000 Total CS', n: () => ownChars().reduce((t, e) => t + charScore(e), 0), goal: 100000 },
+  { id: 'cs1m', name: 'Living Legend', desc: 'Reach 1,000,000 Total CS', n: () => ownChars().reduce((t, e) => t + charScore(e), 0), goal: 1000000, long: true },
+  { id: 'bond5', name: 'Heart to Heart', desc: 'Reach bond level 5 with anyone', n: () => maxOf(S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 5 },
+  { id: 'bond10', name: 'Soulbound', desc: 'Reach bond level 10 with anyone', n: () => maxOf(S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 10 },
+  { id: 'wed', name: 'Eternal Promise', desc: 'Marry a character', n: () => Object.values(S.bond || {}).filter(b => b && b.married).length, goal: 1 },
+  { id: 'bond10x10', name: 'Heart of the Plaza', desc: 'Reach bond level 10 with 10 characters', n: () => charsAt(e => bondLv(e.id) >= BOND_MAX), goal: 10, long: true },
+  { id: 'gift50', name: 'Generous', desc: 'Give 50 gifts', n: () => stat('gift'), goal: 50 },
   { id: 'skin', name: 'Fashionista', desc: 'Own a skin', n: () => ownedOf('skin').length, goal: 1 },
-  { id: 'bond5', name: 'Heart to Heart', desc: 'Reach bond level 5 with anyone', n: () => Math.max(0, ...S.pool.filter(e => e.type === 'character').map(e => bondLv(e.id))), goal: 5 },
+  { id: 'skin5', name: 'Trendsetter', desc: 'Own 5 skins', n: () => ownedOf('skin').length, goal: 5 },
+  { id: 'skin10', name: 'Runway Star', desc: 'Own 10 skins', n: () => ownedOf('skin').length, goal: 10 },
+  { id: 'pet', name: 'Egg Whisperer', desc: 'Hatch a pet', n: () => ownedOf('pet').length, goal: 1 },
+  { id: 'pet3', name: 'Little Zoo', desc: 'Own 3 different pets', n: () => ownedOf('pet').length, goal: 3 },
+  { id: 'pet6', name: 'Menagerie', desc: 'Own 6 different pets', n: () => ownedOf('pet').length, goal: 6 },
+  { id: 'petsss', name: 'Best in Show', desc: 'Raise a pet to grade SSS', n: () => maxOf(Object.values(S.petGr || {})) >= 8 ? 1 : 0, goal: 1 },
+  { id: 'mem5', name: 'Scrapbook', desc: 'Own 5 different memories', n: () => (S.memories || []).filter(m => owns(m.id)).length, goal: 5 },
+  { id: 'memur', name: 'Treasured Moment', desc: 'Own a UR memory', n: () => (S.memories || []).filter(m => +m.rarity === 5 && owns(m.id)).length, goal: 1 },
+  { id: 'mem3', name: 'Polished Memory', desc: 'Raise a memory to 3 stars', n: () => maxOf(Object.values(S.memSt || {}).flat()), goal: 3 },
+  { id: 'cloth50', name: 'Walk-in Closet', desc: 'Own 50 clothing pieces', n: () => wardCount(), goal: 50 },
+  { id: 'fullset', name: 'Dressed to Impress', desc: 'Dress a character in a full 6-piece set', n: () => fullSetWorn() ? 1 : 0, goal: 1 },
+  { id: 'lv10', name: 'Getting Started', desc: 'Reach player level 10', n: () => playerLv().lv, goal: 10 },
+  { id: 'lv30', name: 'Seasoned', desc: 'Reach player level 30', n: () => playerLv().lv, goal: 30 },
+  { id: 'lv60', name: 'Plaza Veteran', desc: 'Reach player level 60', n: () => playerLv().lv, goal: 60 },
+  { id: 'vip1', name: 'Patron', desc: 'Reach VIP 1', n: () => vipLv(), goal: 1 },
+  { id: 'vip5', name: 'Noble Patron', desc: 'Reach VIP 5', n: () => vipLv(), goal: 5 },
+  { id: 'raid10', name: 'Dungeon Crawler', desc: 'Clear raids 10 times', n: () => stat('raid'), goal: 10 },
+  { id: 'raid100', name: 'Raid Regular', desc: 'Clear raids 100 times', n: () => stat('raid'), goal: 100 },
+  { id: 'raid5000', name: 'Grand Raider', desc: 'Clear raids 5,000 times', n: () => stat('raid'), goal: 5000, long: true },
+  { id: 'stam5k', name: 'Tireless', desc: 'Spend 5,000 stamina', n: () => stat('stamina'), goal: 5000 },
+  { id: 'gold1m', name: 'Big Spender', desc: 'Spend 1,000,000 gold', n: () => stat('gold'), goal: 1000000 },
+  { id: 'wish30', name: 'Wishful', desc: 'Make 30 wishes at a fountain', n: () => stat('fountain'), goal: 30 },
+  { id: 'scr10', name: 'Lucky Scratcher', desc: 'Win 10 scratch cards', n: () => stat('scrwin'), goal: 10 },
+  { id: 'exp10', name: 'Explorer', desc: 'Bring back 10 expeditions', n: () => stat('expd'), goal: 10 },
+  { id: 'farm4', name: 'Thriving Base', desc: 'Build all four Base buildings', n: () => FARM_DEFS.filter(d => farmOf(d.id).lv > 0).length, goal: 4 },
+  { id: 'farm7', name: 'Master Builder', desc: 'Raise a Base building to level 7', n: () => maxOf(FARM_DEFS.map(d => farmOf(d.id).lv)), goal: 7 },
+  { id: 'house1', name: 'Homeowner', desc: 'Buy a house', n: () => ((S.house || {}).own || []).length, goal: 1 },
+  { id: 'house5', name: 'Estate', desc: 'Own all five houses', n: () => ((S.house || {}).own || []).length, goal: 5 },
+  { id: 'guild', name: 'Better Together', desc: 'Join or create a guild', n: () => (S.guild && S.guild.id) ? 1 : 0, goal: 1 },
+  { id: 'friend5', name: 'Social Butterfly', desc: 'Have 5 friends', n: () => ((S.friends || {}).list || []).length, goal: 5 },
+  { id: 'bp30', name: 'Honored', desc: 'Reach Pearl Honor level 30', n: () => bpLv(), goal: 30 },
   { id: 'spin', name: 'Wheel of Fortune', desc: 'Spin the daily wheel', n: () => S.spin.last ? 1 : 0, goal: 1 }
-].map(a => ({ ...a, ok: () => a.n() >= a.goal }));
+].map(a => ({ ...a, pearls: a.long ? ACH_LONG_PEARLS : ACH_PEARLS, ok: () => a.n() >= a.goal }));
 function openAch() {
   openModal({ title: 'Achievements', ic: 'trophy', wide: true, kind: 'ach', body: '<div id="achRoot"></div>', onMount: renderAch });
 }
@@ -163,12 +357,12 @@ function renderAch() {
   const root = $('#achRoot'); if (!root) return;
   const done = S.ach.length, ready = ACH.filter(a => a.ok() && !S.ach.includes(a.id));
   root.innerHTML = `<div class="stack">
-    <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.length * ACH_PEARLS)}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
+    <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.reduce((t, a) => t + a.pearls, 0))}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
     <div class="ach-list">${ACH.map(a => { const got = S.ach.includes(a.id), ok = a.ok(), v = Math.min(a.goal, a.n());
       return `<div class="ach ${got ? 'got' : ok ? 'ready' : ''}"><span class="ach-ic">${icon(got ? 'check' : 'trophy')}</span>
-        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${got ? '' : expTag(EXP.ach)}</div>
-        ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(ACH_PEARLS)}</button>`}</div>`; }).join('')}</div></div>`;
-  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += ACH_PEARLS; gainExp(EXP.ach); } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
+        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}${a.long ? ' <em class="ach-long">Legendary</em>' : ''}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${got ? '' : expTag(EXP.ach)}</div>
+        ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(a.pearls)}</button>`}</div>`; }).join('')}</div></div>`;
+  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += (ACH.find(a => a.id === id) || {}).pearls || ACH_PEARLS; gainExp(EXP.ach); } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
   root.querySelectorAll('[data-ach]').forEach(b => b.onclick = () => claim([b.dataset.ach]));
   const all = $('#achAll'); if (all) all.onclick = () => claim(ready.map(a => a.id));
 }

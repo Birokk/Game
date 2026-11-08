@@ -137,6 +137,9 @@ const ICONS = {
   eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeOff:'<path d="M9.9 5.7A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-2.6 3.4M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5a9 9 0 0 0 5.4-1.8M9.9 9.9a3 3 0 0 0 4.2 4.2M3.5 3.5l17 17"/>',
   chat:'<path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4.5 3.5V17.5H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/><path d="M8 11.5h.01M12 11.5h.01M16 11.5h.01"/>',
+  book:'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v14H6.5A1.5 1.5 0 0 0 5 18.5z"/><path d="M5 18.5A1.5 1.5 0 0 0 6.5 20H19"/><path d="M9 7.5h6"/>',
+  crown:'<path d="M4 17L3 7l5 4 4-6 4 6 5-4-1 10z"/><path d="M4 20.5h16"/>',
+  cards:'<rect x="4" y="4" width="11.5" height="16.5" rx="2"/><path d="M15.5 5.6l1.9-.1a2 2 0 0 1 2.1 1.9l.6 11a2 2 0 0 1-1.9 2.1l-2.7.2"/><path d="M9.75 8.5l2.5 3.75-2.5 3.75-2.5-3.75z"/>',
   home:'<path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V19a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V9.5"/>',
   heart:'<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
   info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/>',
@@ -202,7 +205,7 @@ const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_U
    - the player save: everything else (wallet, owned, bond, settings, ...)
    Locally both go to localStorage; with the cloud on, the save syncs per account and content comes from the server. */
 const KEY = 'prismplaza.v1', CONTENT_KEY = 'prismplaza.content.v1';
-const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts', 'mystery'];
+const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts', 'mystery', 'offers'];
 const splitState = st => { const save = {}, content = {}; for (const [k, v] of Object.entries(st)) (CONTENT_KEYS.includes(k) ? content : save)[k] = v; return { save, content }; };
 const CLOUD_CONFIGURED = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 /* the cloud connection; 16-backend.js fills it in when Supabase is configured, otherwise everything stays local */
@@ -220,8 +223,8 @@ function sampleState() {
     featuredId: 'aria',
     wallpaper: null,
     owned: {},
-    banners: { limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, memories: { name: 'Memory Wish' }, standard: { name: 'Pearl Wish' } },
-    gacha: { limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, memories: { pity5: 0, pity4: 0, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
+    banners: { beginner: { name: 'Beginner Wish', picks: [] }, stepup: { name: 'Step-Up Summon', featured: null, ver: 0 }, limited: { name: 'Limited Banner', end: '2026-11-11' }, weekly: { name: 'Weekly Spotlight' }, skins: { name: 'Outfit Wish', featured: null, end: null }, memories: { name: 'Memory Wish' }, standard: { name: 'Pearl Wish' } },
+    gacha: { beginner: { pity5: 0, pity4: 0, total: 0 }, stepup: { pity5: 0, pity4: 0, guarantee: false, total: 0, step: 0, key: '' }, limited: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, weekly: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, skins: { pity5: 0, pity4: 0, guarantee: false, total: 0 }, memories: { pity5: 0, pity4: 0, total: 0 }, standard: { pity5: 0, pity4: 0, total: 0 }, history: [] },
     mailClaimed: [],
     bond: {},
     monthly: { key: null, limited: 0, standard: 0 },
@@ -235,7 +238,7 @@ function sampleState() {
     stamina: { v: 240, t: Date.now() },
     login: { last: null, streak: 0 },
     pets: { frags: { ssr: 0, ur: 0 }, eggs: [], inc: [null, null, null] },
-    profile: { avatar: null, frame: 'simple', title: 'newcomer', card: 'pearl', showcase: [null, null, null, null], uid: 100000 + Math.floor(Math.random() * 900000) },
+    profile: { avatar: null, frame: 'simple', title: 'newcomer', card: 'pearl', showcase: [null, null, null, null, null], uid: 100000 + Math.floor(Math.random() * 900000) },
     pool: [
       { id:'aria', type:'character', name:'Aria', rarity:5, parent:null, art:null, pullable:true, sample:true,
         desc:'A starlight idol who sings the plaza awake every morning.', look:{ hair:'#ffcf4a', style:1, skin:'#ffe0c7', shirt:'#ff7eb6', pants:'#ffffff' } },
@@ -286,7 +289,7 @@ let S = (() => {
         s.owned = d.owned || {};
         s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.clothes = d.clothes || []; s.wear = d.wear || {}; s.memories = d.memories || []; s.memEq = d.memEq || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
-        s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase) || s.profile.showcase.length !== 4) s.profile.showcase = [null, null, null, null];
+        s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase)) s.profile.showcase = []; s.profile.showcase = Array.from({ length: 5 }, (_, i) => s.profile.showcase[i] || null);
         s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
@@ -317,6 +320,7 @@ function persist() {
 function applyContent(c) {
   for (const k of CONTENT_KEYS) if (c[k] !== undefined) S[k] = c[k];
   if (!S.media) S.media = {};
+  const fb = sampleState().banners; S.banners = S.banners || {}; for (const k of Object.keys(fb)) S.banners[k] = { ...fb[k], ...(S.banners[k] || {}) };   // new banners (Beginner Wish, Step-Up) in older content
   ensureMC();
   lastContentJSON = JSON.stringify(splitState(S).content);
   localStorage.setItem(CONTENT_KEY, lastContentJSON);

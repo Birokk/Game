@@ -42,17 +42,22 @@ function renderMenu() {
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Standard tickets: 1 pull on the permanent banner']].map(([k, l]) =>
-    `<div class="cur" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
+    `<div class="cur" data-k="${k}" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
-  $('#sumDot').hidden = !BANNER_KEYS.some(k => canPull(10, k) || freeReady(k));
-  $('#evDot').hidden = !loginReady();
+  $('#sumDot').hidden = !bannerKeys().some(k => canPull(10, k) || freeReady(k));
+  if (booted) { const st = statState(); if (st.lastDay !== dayKey()) { st.lastDay = dayKey(); st.days = (st.days || 0) + 1; persist(); } }   // login days (achievements)
+  $('#evDot').hidden = !loginReady() && !msignReady();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
   if (booted && typeof rankSettle === 'function') rankSettle();
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
+  $('#houseDot').hidden = !houseReady();
+  $('#guildDot').hidden = !guildReady();
+  $('#frDot').hidden = !frReady();
+  { const lo = liveOffers(); $('#hmOffer').hidden = !lo.length; if (lo.length) { $('#offerName').textContent = lo.length > 1 ? `Offers · ${lo.length}` : lo[0].name; $('#offerTime').textContent = offerLeftTxt(lo[0]); } }
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();
@@ -63,6 +68,7 @@ function renderMenu() {
       <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
   $('#limTime').innerHTML = `${icon('clock')}Limited ends in ${shortLeft()}`;
+  $('#moreDot').hidden = ![...document.querySelectorAll('#hmDrop .dot-n')].some(d => !d.hidden);   // the Menu button lights when anything inside it does
   applyWallpaper();
 }
 
@@ -105,6 +111,14 @@ function tickWorld() {
   el.classList.remove('fresh'); void el.offsetWidth; el.classList.add('fresh');
 }
 $('#ticker').onclick = () => setMenu(false);
+
+/* home Menu: a dropdown with the less-used round icons (Shop, Bag, Ranking, Level, Achievements, Fusion, Friends, Team, Redeem);
+   Daily Spin, Events, Quests and Honor stay on screen. Closes on an outside tap, Esc or after picking something. */
+function setHmDrop(open) { const d = $('#hmDrop'); d.hidden = !open; $('#hmMore').setAttribute('aria-expanded', open); $('#hmMore').classList.toggle('on', open); }
+$('#hmMore').onclick = e => { e.stopPropagation(); setHmDrop($('#hmDrop').hidden); };
+$('#hmDrop').addEventListener('click', e => { if (e.target.closest('[data-open]')) setHmDrop(false); });
+document.addEventListener('click', e => { if (!$('#hmDrop').hidden && !e.target.closest('#hmDrop, #hmMore')) setHmDrop(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#hmDrop').hidden) setHmDrop(false); });
 
 /* hide every menu element and keep only the wallpaper; any tap brings it back */
 let uiHidden = false;
@@ -247,7 +261,7 @@ function setMC(k, switching) {
 const LOAD_TIPS = [
   'Every duplicate adds a star. At 3★ and 6★ some characters reveal new splash art.',
   'Losing the 50/50 on the limited banner guarantees the featured UR next time.',
-  'Eggs hide around the plaza. Walk into one to catch it.',
+  'Tap your home wallpaper three times for some bond with that character, three times a day.',
   'Give gifts to raise bond. At bond level 10 you can propose with a ring.',
   'Spin the daily wheel for a 1% chance at a marriage ring.',
   'Tap your avatar to change your title, frame and namecard.',
@@ -259,24 +273,44 @@ function loadingArt() {
   const arts = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && mediaArt(e)).map(mediaArt);   // fallback: uploaded character art
   return arts.length ? { src: rpick(arts), fit: 'contain' } : null;
 }
-function showLoading(done) {
+/* loading screen. Without opts it runs a short timed bar (sign-in). With opts.run (an async function given set(0..1))
+   the bar follows the real work, never goes back, finishes only once run() is done, and stays up at least opts.min ms */
+function showLoading(done, opts = {}) {
   const art = loadingArt(), el = document.createElement('div');
   el.className = 'loading';
   el.innerHTML = `${art ? `${art.fit === 'contain' ? `<img class="cs-blur" src="${art.src}" alt="">` : ''}<img class="ld-img ${art.fit}" src="${art.src}" alt="">` : '<div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div></div>'}
     <div class="ld-shade"></div><div class="ld-logo">Blank: Project</div>
-    <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(LOAD_TIPS))}</p>
-      <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">Loading</span><span class="ld-pct">0%</span></div>
+    <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(opts.tips || LOAD_TIPS))}</p>
+      <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">${esc(opts.label || 'Loading')}</span><span class="ld-pct">0%</span></div>
       <div class="ld-bar"><i></i></div></div>`;
   document.body.appendChild(el);
-  const bar = el.querySelector('.ld-bar i'), pct = el.querySelector('.ld-pct'), t0 = performance.now(), dur = 2300 + Math.random() * 700;
+  const bar = el.querySelector('.ld-bar i'), pct = el.querySelector('.ld-pct'), t0 = performance.now();
+  const finish = () => { el.querySelector('.ld-txt').textContent = 'Ready'; setTimeout(() => { el.classList.add('out'); done && done(); setTimeout(() => el.remove(), 500); }, 250); };
+  if (!opts.run) {
+    const dur = 2300 + Math.random() * 700;
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), v = Math.round((1 - Math.pow(1 - k, 2.2)) * 100);
+      bar.style.width = v + '%'; pct.textContent = v + '%';
+      if (k < 1) return requestAnimationFrame(step);
+      finish();
+    };
+    requestAnimationFrame(step);
+    return el;
+  }
+  let target = 0, shown = 0, over = false; const min = opts.min || 900;
+  const set = v => { target = Math.max(target, Math.min(1, v)); };
   const step = now => {
-    const k = Math.min(1, (now - t0) / dur), v = Math.round((1 - Math.pow(1 - k, 2.2)) * 100);
-    bar.style.width = v + '%'; pct.textContent = v + '%';
-    if (k < 1) return requestAnimationFrame(step);
-    el.querySelector('.ld-txt').textContent = 'Ready';
-    setTimeout(() => { el.classList.add('out'); done && done(); setTimeout(() => el.remove(), 500); }, 250);
+    const cap = over ? 1 : Math.min(target, .97), timeCap = over ? 1 : Math.min(.97, (now - t0) / min);
+    shown += (Math.min(cap, Math.max(timeCap * .35, cap)) - shown) * .18;
+    if (over && now - t0 >= min && shown > .995) shown = 1;
+    const v = Math.round(shown * 100); bar.style.width = v + '%'; pct.textContent = v + '%';
+    if (shown < 1) return requestAnimationFrame(step);
+    finish();
   };
   requestAnimationFrame(step);
+  // let the screen paint first, then do the work under it
+  setTimeout(() => Promise.resolve().then(() => opts.run(set)).catch(e => { console.error(e); }).finally(() => { target = 1; over = true; }), 60);
+  return el;
 }
 
 /* new outfit popup: shown after buying a skin */

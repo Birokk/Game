@@ -15,7 +15,7 @@ const QUESTS = [
 ];
 ICONS.shell = '<path d="M12 20.5L4 9.6Q4.3 6.9 6.5 6.1Q7.4 4.1 9.2 4.1Q10.4 2.7 12 3.4Q13.6 2.7 14.8 4.1Q16.6 4.1 17.5 6.1Q19.7 6.9 20 9.6Z"/><path d="M12 20.5L6.5 6.1M12 20.5L9.2 4.1M12 20.5V3.4M12 20.5l2.8-16.4M12 20.5l5.5-14.4"/><path d="M9.6 19.6L8.4 21.4h7.2l-1.2-1.8"/>';
 const QUEST_MAX = 100, QUEST_MS = [20, 40, 60, 80, 100];
-const QUEST_CHAR_BANNERS = ['limited', 'weekly', 'standard'];   // "character banner" summons
+const QUEST_CHAR_BANNERS = ['limited', 'weekly', 'standard', 'beginner', 'stepup'];   // "character banner" summons
 const WQUESTS = [
   { id: 'login', name: 'Log in on 5 days', need: 5, pts: 20 },
   { id: 'gift', name: 'Send 10 gifts', need: 10, pts: 20, go: 'characters' },
@@ -57,9 +57,11 @@ const Q_SETS = { daily: { list: QUESTS, title: 'Daily', next: () => { const n = 
   weekly: { list: WQUESTS, title: 'Weekly', next: () => { const m = weekStart(); return new Date(m.getFullYear(), m.getMonth(), m.getDate() + 7); } } };
 function questAdd(id, n = 1) {
   if (!(n > 0)) return;
+  statAdd(id, n);   // lifetime totals for the achievements
   const sets = { ...Q_SETS, ...BP_SETS };   // the Pearl Honor missions count the same actions
   for (const set of Object.keys(sets)) { const q = sets[set].list.find(x => x.id === id); if (!q) continue;
     const st = qState(set); st.p[id] = Math.min(q.need, (st.p[id] || 0) + n); }
+  guildQuestAdd(id, n);   // guild quests count the same actions (41-guild.js)
 }
 const qProg = (q, set = 'daily') => Math.min(q.need, qState(set).p[q.id] || 0);
 const qDone = (q, set = 'daily') => qState(set).done.includes(q.id);
@@ -118,7 +120,7 @@ function renderQuests() {
       <div class="dq-face"><span class="dq-disc">${got ? `<span class="dq-check">${icon('check')}</span>` : icon('shell')}</span>
         <span class="dq-pt">${curIcon('qpt')}+${q.pts}</span>
         <p class="dq-name">${esc(q.name)}</p>
-        <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b></div>
+        <b class="dq-prog">${fmt(p)} / ${fmt(q.need)}</b><span class="dq-pbar" aria-hidden="true"><i style="width:${Math.min(100, p / q.need * 100)}%"></i></span></div>
       ${got ? '<span class="dq-btn done">Fulfilled</span>' : can ? `<button class="dq-btn claim" data-qc="${q.id}">Claim</button>` : q.go ? `<button class="dq-btn go" data-qgo="${q.go}">Go</button>` : '<span class="dq-btn">In progress</span>'}
     </div>`; }).join('');
   const readyQ = L.filter(q => qCan(q, set)).map(q => q.id), readyM = QUEST_MS.filter(m => qmCan(m, set));
