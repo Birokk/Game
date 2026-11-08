@@ -62,6 +62,7 @@ function ccFxFrame(now) {
   }
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   if (motes < 44 && Math.random() < .3) ccMote(false);
+  ccSkFrame(now);   // the board skins' own particles (50-clash-skins.js)
 }
 const ccPx = o => { if (ccP.g) ccP.list.push(o); };
 /* a burst of sparks; o: {n, c (colour or list), sp (speed), g (gravity), r, life, k, up} */

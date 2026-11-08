@@ -50,6 +50,7 @@ function renderDeck() {
   ccdEl.innerHTML = `<div class="ccd-bg"></div>
     <header class="ccd-head"><div class="inv-title"><span class="inv-badge">${CC_IC}</span><h2 class="ts">Deck</h2></div>
       <span class="ccd-rec" title="Quick match record">${icon('trophy')}<b>${sv.stats.w}</b> W · <b>${sv.stats.l}</b> L · <b>${sv.stats.d}</b> D</span>
+      <button class="btn ghost ccd-help" id="ccdSkin" title="Your half of the table wears this skin">${ccSkinIco(ccMySkin(), 'ccd-skic')}Board skin</button>
       <button class="btn ghost ccd-help" id="ccdHelp">${icon('info')}How to play</button>
       <button class="btn gold ccd-play" id="ccdPlay">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="ccdClose" aria-label="Close">${icon('close')}</button></header>
@@ -86,6 +87,7 @@ function renderDeck() {
   one('#ccdClose').onclick = closeDeck;
   one('#ccdPlay').onclick = openQuickMatch;
   one('#ccdHelp').onclick = () => ccRules(0);
+  one('#ccdSkin').onclick = () => ccSkinPicker();
   $$('[data-deck]').forEach(b => b.onclick = () => { sv.sel = b.dataset.deck; persist(); renderDeck(); });
   $$('[data-f]').forEach(b => b.onclick = () => { const k = b.dataset.f; ccdF[k] = k === 'ap' ? +b.dataset.v : b.dataset.v; renderDeck(); });
   const q = one('#ccdQ'); q.oninput = () => { ccdF.q = q.value; clearTimeout(q._t); q._t = setTimeout(() => { renderDeck(); const n = ccdEl && ccdEl.querySelector('#ccdQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
@@ -124,11 +126,13 @@ function openQuickMatch() {
     <div class="ccq-decks">${ccAllDecks().map(d => { const v = ccValidateDeck(d.cards).ok; return `<button class="ccq-dk ${d.id === sv.sel ? 'on' : ''}" data-qdeck="${d.id}" ${v ? '' : 'disabled'}><span>${d.preset ? icon('lock') : CC_IC}</span><b>${esc(d.name)}</b><small>${v ? 'Ready' : `${d.cards.length}/30`}</small></button>`; }).join('')}</div>
     <div class="ccq-row"><label class="ccd-lbl" for="ccqSeed">Match seed</label><input id="ccqSeed" class="ccq-seed" inputmode="numeric" value="${ccQmSeed}"><button class="btn ghost" id="ccqDice">New seed</button></div>
     <p class="tiny">The same seed and the same moves always replay the same match, handy for reporting a bug. Who goes first is decided by the seed.</p>
+    <p class="tiny ccq-skin">${ccSkinIco(ccMySkin(), 'ccq-skic')}Your board skin: <b>${esc(ccSkinOf(ccMySkin()).name)}</b> · <button class="ccq-help" id="ccqSkin">Change</button> · the bot plays on a random skin.</p>
     <p class="tiny">New to Card Clash? <button class="ccq-help" id="ccqHelp">Read How to play</button> · every win gives +1 pearl.</p>
     <button class="btn gold ccq-go" id="ccqGo">${icon('bolt')}Start match</button></div>`,
     onMount: b => {
       b.querySelectorAll('[data-qdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.qdeck; persist(); b.querySelectorAll('[data-qdeck]').forEach(y => y.classList.toggle('on', y === x)); if (ccdEl) renderDeck(); });
       b.querySelector('#ccqHelp').onclick = () => ccRules(0);
+      b.querySelector('#ccqSkin').onclick = () => ccSkinPicker(openQuickMatch);
       b.querySelector('#ccqDice').onclick = () => { b.querySelector('#ccqSeed').value = Math.floor(Math.random() * 1e9); };
       b.querySelector('#ccqGo').onclick = () => {
         const d = ccDeck(sv.sel); if (!ccValidateDeck(d.cards).ok) return toast('Pick a deck with 30 cards', true);
@@ -158,7 +162,8 @@ function startClash(deck, seed) {
   ccStop(); closeModal();
   const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = foes.length ? foes[(seed >>> 0) % foes.length] : null;
   const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', foe ? foe.name : 'Bot']);
-  const m = ccM = { G, foe, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
+  ccSkReset();
+  const m = ccM = { G, foe, skins: [ccMySkin(), ccBotSkin(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
   showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
@@ -352,8 +357,9 @@ function ccHalfHTML(G, p, keyset) {
   const slot = (l, r) => { const u = P.board[l][r], k = `${p}${l}${r}`; return `<div class="cc-slot ${r === 0 ? 'front' : 'back'} ${keyset.has('s' + k) ? 'tgt' : ''}" data-slot="${k}">${u ? ccUnitHTML(G, u, keyset) : `<i class="cc-slot-rune"></i><span class="cc-slot-l">${r === 0 ? 'Front' : 'Back'}</span>`}</div>`; };
   const traps = `<div class="cc-traps">${[0, 1, 2].map(l => { const c = P.traps[l], k = `${p}${l}`; return `<div class="cc-trap ${c ? 'set' : ''} ${keyset.has('t' + k) ? 'tgt' : ''}" data-trap="${k}" ${c && p === 0 ? `data-peek="c${c.id}"` : ''} title="${c ? (p === 0 ? esc(ccDef(c.id).name + ': ' + ccDef(c.id).text) : 'A face-down trap') : `${CC_LANES[l]} lane trap slot`}">${c ? (p === 0 ? `<span class="cc-trap-c st-${ccDef(c.id).style}">${ccIco(c.id, 'cce')}<b>${esc(ccDef(c.id).name)}</b></span>` : '<span class="cc-trap-c back"></span>') : '<i class="cc-trap-rune"></i>'}</div>`; }).join('')}</div>`;
   const rowsHTML = `<div class="cc-rows">${rows.map(r => `<div class="cc-row ${r === 0 ? 'front' : 'back'}">${[0, 1, 2].map(l => slot(l, r)).join('')}</div>`).join('')}</div>`;
-  // each half is its own piece (stone wall + field) so a board skin can replace one player's side; data-skin picks it
-  return `<div class="cc-half ${p === 0 ? 'me' : 'op'}" data-skin="default"><div class="cc-field"><i class="cc-crest">${ccIco(p === 0 ? 'crystal' : 'bot')}</i><i class="cc-lanediv l1"></i><i class="cc-lanediv l2"></i></div><i class="cc-runes"></i><i class="cc-sheen"></i>${p === 1 ? traps + rowsHTML : rowsHTML + traps}</div>`;
+  // each half is its own piece: data-bs is the board skin its player equipped (50-clash-skins.js, styles in clash.css)
+  const bs = ccHalfSkin(p);
+  return `<div class="cc-half ${p === 0 ? 'me' : 'op'}" data-bs="${bs}">${ccSkinDeco(bs)}<div class="cc-field"><i class="cc-crest">${ccSkinCrest(bs, p)}</i><i class="cc-lanediv l1"></i><i class="cc-lanediv l2"></i></div><i class="cc-runes"></i><i class="cc-sheen"></i>${p === 1 ? traps + rowsHTML : rowsHTML + traps}</div>`;
 }
 /* the bot's portrait: the random character it plays as (else a hooded figure) */
 const ccFoeAva = () => ccM && ccM.foe ? `<span class="ccm-foe">${baseThumb(ccM.foe)}</span>` : `<span class="ccm-bot">${ccIco('bot')}</span>`;
@@ -392,6 +398,8 @@ function ccRender(snap) {
     <div class="ccm-act"></div>
     ${ccM.log ? `<div class="ccm-log"><b>Match log</b><ol>${G.log.slice(-40).reverse().map(l => `<li class="k-${l.k} p${l.p}">${esc(l.t)}</li>`).join('')}</ol></div>` : ''}
     ${G.phase === 'choice' && G.pending.p === 0 ? `<div class="ccm-choice"><b>Seer: keep one card</b><p>The other goes back on top of your deck.</p><div>${G.pending.opts.map(o => { const c = me.deck.find(x => x.iid === o); return `<button class="ccm-ch" data-choice="${o}">${ccCardHTML(c.id, { tip: false })}</button>`; }).join('')}</div></div>` : ''}`;
+  ui.style.setProperty('--ccT', (performance.now() / 1000).toFixed(2) + 's');   // looping board animations continue across redraws
+  ccSkAttach();
   ccM.el.classList.toggle('aiming', !!selCard && my); ccRenderTurn(); ccPeekRender(); ccActRender(keyset, selCard);
   if (snap) ccM.animEnd = performance.now() + ccAnim(snap);
 }
