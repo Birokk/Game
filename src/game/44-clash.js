@@ -110,6 +110,27 @@ const CC_SPELL_T = {
   'SUP-S01': 'enemy', 'SUP-S02': 'hero', 'SUP-S03': 'friend', 'SUP-S04': 'none'
 };
 const CC_CFG = { hp: 20, deck: 30, copies: 2, hand0: 5, handMax: 8, ap: 4, ap2: 6, overtime: 20, rounds: 40, overflow: 2 };
+/* battle events: a match can start under one of these (decided by the seed, so a replay gets the same one); G.ev = key or null.
+   The engine reads them where they apply: AP and draw at the start of a turn, ATK in ccAtk, spell damage, armor on summon,
+   move cost, the Overtime round. */
+const CC_EVENTS = {
+  rain: { name: 'Rainstorm', short: '5 AP a turn', text: 'Rain feeds the leylines: both players get 5 AP every turn instead of 4 (7 instead of 6 on the second player\'s first turn).' },
+  bloodmoon: { name: 'Blood Moon', short: 'Units +1 ATK', text: 'A red moon stirs every warrior: all units attack with +1 ATK.' },
+  surge: { name: 'Arcane Surge', short: 'Spells +1 damage', text: 'Wild magic in the air: every spell deals 1 more damage.' },
+  wind: { name: 'Tailwind', short: 'Free moves', text: 'A strong wind at everyone\'s back: moving a unit costs no AP (still once per unit each turn).' },
+  starfall: { name: 'Starfall', short: 'Draw 3 a turn', text: 'Falling stars bring visions: both players draw 3 cards a turn instead of 2 (2 instead of 1 on the very first turn).' },
+  sanctuary: { name: 'Sacred Ground', short: 'Units enter with Armor', text: 'Blessed earth shields the brave: every unit enters the board with Armor 1.' },
+  heat: { name: 'Scorching Sun', short: 'Overtime from R12', text: 'The heat wears everyone down: Overtime starts in round 12 instead of round 20.' }
+};
+const CC_EV_KEYS = Object.keys(CC_EVENTS), CC_EV_CHANCE = .6;
+/* the seed decides: 60% of matches get an event, each event equally likely (a hash of the seed, the match RNG is untouched) */
+function ccPickEvent(seed) {
+  const h = s => { s = Math.imul((s ^ s >>> 16) >>> 0, 0x45D9F3B); s = Math.imul((s ^ s >>> 16) >>> 0, 0x45D9F3B); return ((s ^ s >>> 16) >>> 0) / 4294967296; };
+  const a = h((seed >>> 0) ^ 0x5EED1E57), b = h(((seed >>> 0) + 0x9E3779B9) >>> 0);
+  return a < CC_EV_CHANCE ? CC_EV_KEYS[Math.floor(b * CC_EV_KEYS.length)] : null;
+}
+const ccOT = G => G.ev === 'heat' ? 12 : CC_CFG.overtime;
+const ccApBase = (G, p) => (G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap) + (G.ev === 'rain' ? 1 : 0);
 /* the three ready-made starter decks from the design document (15 names × 2) */
 const CC_N2ID = Object.fromEntries(CC_CARDS.map(c => [c.name, c.id]));
 const ccPreset = names => names.flatMap(n => [CC_N2ID[n], CC_N2ID[n]]);
@@ -132,12 +153,13 @@ function ccValidateDeck(ids) {
 function ccRand(G) { G.rng = (G.rng + 0x6D2B79F5) >>> 0; let t = G.rng; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 function ccShuffle(G, a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(ccRand(G) * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
-function ccCreateMatch(seed, deckA, deckB, names) {
-  const G = { seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now() };
+function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
+  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now() };
   G.players = [deckA, deckB].map((d, p) => ({ hp: CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
   G.players.forEach(P => ccShuffle(G, P.deck));
   G.first = G.active = ccRand(G) < 0.5 ? 0 : 1;
   G.players.forEach((P, p) => ccDraw(G, p, CC_CFG.hand0, true));
+  if (G.ev) ccLog(G, `Battle event: ${CC_EVENTS[G.ev].name} (${CC_EVENTS[G.ev].short})`, 'sys');
   ccLog(G, `${G.names[G.first]} goes first`, 'sys');
   ccBeginTurn(G);
   return G;
@@ -155,6 +177,7 @@ function ccAtk(G, u) {
   const o = G.players[u.owner].board[u.lane][1 - u.row];
   if (o && CC_BANNER.has(o.id)) a++;
   if (o && o.eq && o.eq.id === 'SUP-E02') a++;
+  if (G.ev === 'bloodmoon') a++;
   if (G.active === u.owner && u.moved && ccDef(u.id).style === 'mobility' && (CC_HASTE.has(u.id) || CC_FREEMOVE.has(u.id) || CC_FLANK.has(u.id))) a++;
   return a;
 }
@@ -198,7 +221,7 @@ function ccDraw(G, p, n, quiet) {
 
 function ccBeginTurn(G) {
   const p = G.active, P = G.players[p]; G.turnNo++;
-  P.ap = G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap;
+  P.ap = ccApBase(G, p);
   ccLog(G, `Round ${G.round} · ${G.names[p]}’s turn`, 'turn', p);
   for (const u of ccUnits(G, p)) { u.attacked = false; u.moveUsed = false; u.moved = false; u.rc = false; u.dagger = false; u.stunNow = u.stunNext; u.stunNext = false; }
   for (const u of ccUnits(G, p)) if (u.poison > 0) { u.hp -= 2; u.poison--; ccFx(G, u.iid, 'dmg', 2); ccLog(G, `Poison deals 2 to ${ccDef(u.id).name}`, 'dmg', p); ccEnrage(G, u); }
@@ -209,9 +232,9 @@ function ccBeginTurn(G) {
     if (u.id === 'SUP-U01' || u.id === 'SUP-U02') { const t = ccMostDamaged([P.board[u.lane][1 - u.row]].filter(Boolean)); if (t) ccHeal(G, t, 1); }
     if (u.id === 'SUP-U04') { const t = ccMostDamaged(ccUnits(G, p)); if (t) ccHeal(G, t, 1); }
   }
-  if (G.round >= CC_CFG.overtime) { const us = ccUnits(G, p); for (const u of us) { u.hp -= 1; ccFx(G, u.iid, 'dmg', 1); ccEnrage(G, u); } if (us.length) ccLog(G, `Overtime: each of ${G.names[p]}’s units loses 1 HP`, 'dmg', p); }
+  if (G.round >= ccOT(G)) { const us = ccUnits(G, p); for (const u of us) { u.hp -= 1; ccFx(G, u.iid, 'dmg', 1); ccEnrage(G, u); } if (us.length) ccLog(G, `Overtime: each of ${G.names[p]}’s units loses 1 HP`, 'dmg', p); }
   ccDeaths(G);
-  ccDraw(G, p, G.round === 1 && p === G.first ? 1 : 2);
+  ccDraw(G, p, (G.round === 1 && p === G.first ? 1 : 2) + (G.ev === 'starfall' ? 1 : 0));
   ccCheck(G);
 }
 function ccEndTurn(G) {
@@ -234,7 +257,7 @@ function ccCanAttack(G, u) {
   return true;
 }
 function ccMoveDests(G, u) { const B = G.players[u.owner].board, out = []; for (const [l, r] of [[u.lane - 1, u.row], [u.lane + 1, u.row], [u.lane, 1 - u.row]]) if (l >= 0 && l < 3 && !B[l][r]) out.push([l, r]); return out; }
-function ccMoveCost(u) { return CC_FREEMOVE.has(u.id) || (u.eq && u.eq.id === 'MOB-E01') || u.dagger ? 0 : 1; }
+function ccMoveCost(u, G) { return G && G.ev === 'wind' || CC_FREEMOVE.has(u.id) || (u.eq && u.eq.id === 'MOB-E01') || u.dagger ? 0 : 1; }
 function ccPlace(G, u, l, r) { const B = G.players[u.owner].board; if (B[u.lane] && B[u.lane][u.row] === u) B[u.lane][u.row] = null; u.lane = l; u.row = r; B[l][r] = u; }
 /* entry traps: the enemy's face-down trap in the lane the unit just entered */
 function ccEnter(G, u) {
@@ -291,7 +314,7 @@ function ccSummon(G, P, a) {
   if (a.row === 1 && d.range !== 'ranged') return 'Melee units go in the front row';
   if (P.ap < d.ap) return 'Not enough AP';
   P.ap -= d.ap; ccTakeHand(P, c.iid);
-  const u = { iid: c.iid, id: c.id, card: c, owner: P.p, lane: a.lane, row: a.row, hp: d.hp, hpUp: 0, up: 0, down: 0, armor: CC_ARMORED.has(c.id) ? 1 : 0, poison: 0, stunNow: false, stunNext: false, summoned: G.turnNo, attacked: false, moveUsed: false, moved: false, eq: null, enraged: false, rc: false, dagger: false, sid: ++G.sid };
+  const u = { iid: c.iid, id: c.id, card: c, owner: P.p, lane: a.lane, row: a.row, hp: d.hp, hpUp: 0, up: 0, down: 0, armor: CC_ARMORED.has(c.id) || G.ev === 'sanctuary' ? 1 : 0, poison: 0, stunNow: false, stunNext: false, summoned: G.turnNo, attacked: false, moveUsed: false, moved: false, eq: null, enraged: false, rc: false, dagger: false, sid: ++G.sid };
   P.board[a.lane][a.row] = u; ccFx(G, u.iid, 'summon', 0);
   ccLog(G, `${G.names[P.p]} summons ${d.name} (${d.ap} AP)`, 'play', P.p);
   ccEnter(G, u);
@@ -364,7 +387,7 @@ function ccMove(G, P, a) {
   if (!u || u.owner !== P.p) return 'Pick one of your units';
   if (u.moveUsed) return 'This unit already moved this turn';
   if (!ccMoveDests(G, u).some(([l, r]) => l === a.lane && r === a.row)) return 'Units move one slot left, right, or between front and back';
-  const cost = ccMoveCost(u);
+  const cost = ccMoveCost(u, G);
   if (P.ap < cost) return 'Not enough AP';
   P.ap -= cost; u.moveUsed = true; u.moved = true; u.dagger = false;
   const lc = u.lane !== a.lane;
@@ -410,7 +433,7 @@ function ccSpell(G, P, a) {
   if (tu && tu.owner === e) { const tr = E.traps[tu.lane]; if (tr && (tr.id === 'DEF-T01' || tr.id === 'CON-T01')) cancel = tu.lane; }
   if (c.id === 'CON-S04') for (let l = 0; l < 3; l++) { const tr = E.traps[l]; if (tr && tr.id === 'CON-T01' && E.board[l][0]) { cancel = l; break; } }
   if (cancel >= 0) { const tr = E.traps[cancel]; E.traps[cancel] = null; E.disc.push(tr); P.disc.push(c); ccFx(G, 'trap' + e + cancel, 'trap', 0); ccLog(G, `Trap! ${G.names[e]}’s ${ccDef(tr.id).name} cancels ${d.name}`, 'trap', e); return null; }
-  const sdmg = (u, n) => { let x = n + ccSpellBonus(G, p) - ccArm(u); if (u.id === 'DEF-U07') x -= 1; return ccDamage(G, u, Math.max(0, x)); };
+  const sdmg = (u, n) => { let x = n + ccSpellBonus(G, p) + (G.ev === 'surge' ? 1 : 0) - ccArm(u); if (u.id === 'DEF-U07') x -= 1; return ccDamage(G, u, Math.max(0, x)); };
   switch (c.id) {
     case 'AGG-S01': tu.up += 2; ccFx(G, tu.iid, 'buff', 0); break;
     case 'AGG-S02': sdmg(tu, 4); break;
@@ -453,7 +476,7 @@ function ccLegal(G) {
   }
   for (const u of mine) {
     if (P.ap >= 1 && ccCanAttack(G, u)) out.push({ k: 'attack', u: u.iid });
-    if (!u.moveUsed && P.ap >= ccMoveCost(u)) for (const [l, r] of ccMoveDests(G, u)) out.push({ k: 'move', u: u.iid, lane: l, row: r });
+    if (!u.moveUsed && P.ap >= ccMoveCost(u, G)) for (const [l, r] of ccMoveDests(G, u)) out.push({ k: 'move', u: u.iid, lane: l, row: r });
   }
   out.push({ k: 'end' });
   return out;

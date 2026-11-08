@@ -513,8 +513,8 @@ b.ccd-dname{border:0}
 .ccx-intro{position:absolute;inset:0;z-index:20;overflow:hidden;pointer-events:auto}
 .cci-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 48%,rgba(60,36,110,.85),rgba(6,4,12,.97) 70%);animation:fade .3s}
 .cci-side{position:absolute;top:0;bottom:0;width:62%;overflow:hidden}
-.cci-side.me{left:0;clip-path:polygon(0 0,100% 0,72% 100%,0 100%);animation:cciL .55s cubic-bezier(.2,.9,.2,1) both}
-.cci-side.op{right:0;clip-path:polygon(28% 0,100% 0,100% 100%,0 100%);animation:cciR .55s cubic-bezier(.2,.9,.2,1) both}
+.cci-side.me{left:0;clip-path:polygon(0 0,94.52% 0,66.77% 100%,0 100%);animation:cciL .55s cubic-bezier(.2,.9,.2,1) both}
+.cci-side.op{right:0;clip-path:polygon(33.23% 0,100% 0,100% 100%,5.48% 100%);animation:cciR .55s cubic-bezier(.2,.9,.2,1) both}
 @keyframes cciL{from{transform:translateX(-100%)}}@keyframes cciR{from{transform:translateX(100%)}}
 .cci-side.me .cci-art{background:radial-gradient(ellipse at 40% 50%,rgba(160,120,255,.5),transparent 70%),linear-gradient(135deg,#2a1d55,#0c0820)}
 .cci-side.op .cci-art{background:radial-gradient(ellipse at 60% 50%,rgba(255,70,100,.45),transparent 70%),linear-gradient(225deg,#4a0f1e,#12040a)}
@@ -1006,3 +1006,143 @@ b.ccd-dname{border:0}
 .ccm .ccb-flow,.ccm .ccb.turn-op .ccb-flow{background:linear-gradient(180deg,var(--ccsT,#ff5a78) 0 34%,#fff 50%,var(--ccsB,#c9a6ff) 66% 100%);box-shadow:none;
   -webkit-mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
 @media (prefers-reduced-motion:reduce){.ccm-sky>i,.ccm-seam::after,.ccm-seam i{animation:none!important}.ccsk-envc{display:none}}
+
+/* ==========================================================================
+   Leaders, battle events, match rewards (51-clash-extra.js)
+   ========================================================================== */
+/* leader cards: the profile showcase card at 76%, under the bot's plaque and above yours */
+.ccm-lead{position:absolute;left:67px;width:196px;transform:scale(.76);transform-origin:0 0;z-index:4;pointer-events:auto}
+.ccm-lead.op{top:126px}.ccm-lead.me{top:436px}
+.ccl-card{display:block;width:196px;color:#fff;cursor:default;box-shadow:0 14px 30px rgba(0,0,0,.6)}
+.ccl-card:hover{transform:none}
+.ccm-lead.op .ccl-card{box-shadow:0 0 0 2px rgba(255,110,130,.35),0 14px 30px rgba(0,0,0,.6),0 0 26px rgba(255,70,100,.25)}
+.ccm-lead.me .ccl-card{box-shadow:0 0 0 2px rgba(201,166,255,.4),0 14px 30px rgba(0,0,0,.6),0 0 26px rgba(170,140,255,.28)}
+.ccl-tag{position:absolute;left:50%;top:-13px;transform:translateX(-50%);padding:3px 14px;border-radius:99px;font-family:var(--display);font-size:13px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;z-index:3;
+  color:var(--cry-ink);background:var(--cry-grad);box-shadow:0 0 14px var(--cry-glow),0 3px 8px rgba(0,0,0,.5)}
+.ccm-lead.op .ccl-tag{color:#fff;background:linear-gradient(90deg,#ff7a92,#c2304f);box-shadow:0 0 14px rgba(255,80,110,.6)}
+.ccl-attr{position:absolute;right:8px;bottom:60px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;z-index:2;
+  background:radial-gradient(circle at 40% 30%,color-mix(in srgb,var(--cs) 55%,#1a1428),#0d0a16);box-shadow:0 0 0 2px color-mix(in srgb,var(--cs) 80%,#fff),0 0 12px var(--cs)}
+.ccl-attr .cci{width:22px;height:22px;fill:#fff}
+/* the battle event chip beside the round medallion */
+.ccm-ev{position:absolute;left:10px;top:356px;width:198px;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:16px;z-index:5;cursor:help;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--ec) 16%,#151022),#0b0814);border:1px solid color-mix(in srgb,var(--ec) 55%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--ec) 30%,transparent),0 8px 18px rgba(0,0,0,.55)}
+.ccm-ev-ic{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ec);background:radial-gradient(circle,color-mix(in srgb,var(--ec) 22%,#120d1e),#0a0712);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ec) 70%,transparent),0 0 14px color-mix(in srgb,var(--ec) 50%,transparent);animation:ccEvPulse 3s ease-in-out infinite}
+.ccm-ev-ic .ccev-ic{width:28px;height:28px;filter:drop-shadow(0 0 4px var(--ec))}
+.ccm-ev-t{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+.ccm-ev-t small{font-family:var(--display);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,236,200,.6)}
+.ccm-ev-t b{font-family:var(--display);font-weight:400;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccm-ev-t i{font-style:normal;font-family:var(--read);font-size:12px;color:color-mix(in srgb,var(--ec) 70%,#fff)}
+@keyframes ccEvPulse{50%{box-shadow:inset 0 0 0 1.5px var(--ec),0 0 22px var(--ec)}}
+/* the reveal after the VS intro */
+.ccx-ev{position:absolute;inset:0;z-index:20;display:grid;place-items:center;pointer-events:auto}
+.cce-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,color-mix(in srgb,var(--ec) 22%,rgba(10,6,20,.6)),rgba(4,3,10,.82) 70%);animation:fade .3s}
+.cce-rays{position:absolute;left:50%;top:44%;width:1200px;height:1200px;margin:-600px 0 0 -600px;opacity:.35;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--ec) 50%,transparent) 0 5deg,transparent 5deg 15deg);-webkit-mask:radial-gradient(circle,#000 10%,transparent 60%);mask:radial-gradient(circle,#000 10%,transparent 60%);animation:ccSpin 24s linear infinite,fade .5s}
+.cce-box{position:relative;width:620px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;animation:cceIn .55s cubic-bezier(.2,1.3,.4,1) both}
+.cce-ic{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;color:var(--ec);margin-bottom:6px;
+  background:radial-gradient(circle at 40% 30%,color-mix(in srgb,var(--ec) 30%,#1d1530),#0a0712 70%);box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--ec) 80%,#fff),0 0 0 8px rgba(10,6,20,.6),0 0 60px var(--ec)}
+.cce-ic .ccev-ic{width:92px;height:92px;filter:drop-shadow(0 0 12px var(--ec))}
+.cce-box small{font-family:var(--display);font-size:18px;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,236,200,.8)}
+.cce-box b{font-family:var(--display);font-weight:400;font-size:72px;line-height:1;font-style:italic;color:#fff;text-shadow:0 0 24px var(--ec),0 0 50px var(--ec),0 4px 12px rgba(0,0,0,.8)}
+.cce-box p{margin:6px 0 0;max-width:560px;font-family:var(--read);font-size:22px;line-height:1.4;color:#f3ecff;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+@keyframes cceIn{from{opacity:0;transform:translateY(-60px) scale(.8)}}
+.ccx-ev.out{animation:fade .4s reverse forwards}
+/* rewards in the results box */
+.ccm-rews{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:2px 0 12px}
+.ccm-rw{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
+.ccm-rw .cic{width:22px;height:22px}
+.ccm-rw b{font-family:var(--display);font-size:18px;color:#ffe9b0}
+.ccm-rw small{font-family:var(--read);font-size:12.5px;color:rgba(240,232,255,.75)}
+.ccm-rw.pearl{background:var(--cry-grad);border-color:transparent}.ccm-rw.pearl b,.ccm-rw.pearl small{color:var(--cry-ink)}
+.ccm-rw.gear{border-radius:16px;padding:6px 14px 6px 6px;--rc:#5aa9ff}
+.ccm-rw.gear.r4{--rc:#ffa654}.ccm-rw.gear.r5{--rc:#c38bff}
+.ccm-rw-pic{position:relative;width:54px;height:54px;border-radius:12px;overflow:hidden;flex:none;background:radial-gradient(circle,color-mix(in srgb,var(--rc) 40%,#141024),#0b0814);box-shadow:inset 0 0 0 2px var(--rc),0 0 14px color-mix(in srgb,var(--rc) 50%,transparent)}
+.ccm-rw.gear.r5 .ccm-rw-pic{box-shadow:inset 0 0 0 2px #fff6,0 0 16px rgba(200,140,255,.7);background:radial-gradient(circle,rgba(200,140,255,.45),#0b0814) padding-box}
+.ccm-rw-pic img{width:100%;height:100%;object-fit:contain}
+.ccm-rw-new{position:absolute;left:2px;top:2px;padding:0 4px;border-radius:5px;font:700 9px/14px var(--read);font-style:normal;color:#2b1855;background:#b8ffde}
+.ccm-rw-txt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.ccm-rw-txt b{font-size:14px;color:#fff;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccm-rw.none{opacity:.8}
+/* the leader box on the Deck screen */
+.ccd-lead{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.ccd-lead-row{display:flex;gap:12px;align-items:center}
+.ccd-lead-card{position:relative;flex:none;width:86px;height:115px}
+.ccd-lead-card .ccl-card{transform:scale(.44);transform-origin:0 0;box-shadow:none}
+.ccd-lead-info{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ccd-lead-info b{font-family:var(--display);font-weight:400;font-size:16px;color:#fff}
+.ccd-lead-info .btn svg{width:15px;height:15px}
+/* Quick match: this seed's event; the rules book pages */
+.ccq-ev{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ccq-evt{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 4px;border-radius:99px;color:var(--ec);background:color-mix(in srgb,var(--ec) 14%,rgba(0,0,0,.3));border:1px solid color-mix(in srgb,var(--ec) 50%,transparent)}
+.ccq-evt .ccev-ic{width:18px;height:18px}.ccq-evt b{font-family:var(--display);font-weight:400;color:#fff}
+.ccr-evfig{align-items:stretch}
+.ccr-evs{display:grid;gap:7px;width:100%}
+.ccr-ev{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:12px;background:color-mix(in srgb,var(--ec) 8%,rgba(255,255,255,.03));border:1px solid color-mix(in srgb,var(--ec) 35%,transparent)}
+.ccr-ev-ic{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ec);background:#0d0a16;box-shadow:inset 0 0 0 1.5px var(--ec)}
+.ccr-ev-ic .ccev-ic{width:22px;height:22px}
+.ccr-ev b{display:block;font-family:var(--display);font-weight:400;font-size:14px;color:#fff}
+.ccr-ev small{display:block;font-family:var(--read);font-size:12px;line-height:1.3;color:rgba(235,226,250,.75)}
+.ccr-leadfig{flex-direction:column;gap:18px}
+.ccr-lead{position:relative;width:150px;height:200px}.ccr-lead .ccl-card{transform:scale(.765);transform-origin:0 0}
+.ccr-rews{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+
+/* ---- battle event weather in the hall ---- */
+.ccm-wx{position:absolute;inset:0;pointer-events:none}
+.ccm-wx>i{position:absolute;inset:0}
+.ccm-wx[data-ev=rain]{background:linear-gradient(180deg,rgba(30,60,110,.38),rgba(12,22,48,.28))}
+.ccm-wx[data-ev=rain]>i{background:rgba(220,235,255,.9);opacity:0;animation:ccWxFlash 9s linear infinite}
+@keyframes ccWxFlash{0%,90%,100%{opacity:0}91%{opacity:.22}92%{opacity:0}93.5%{opacity:.14}95%{opacity:0}}
+.ccm-wx[data-ev=bloodmoon]{background:radial-gradient(ellipse 70% 60% at 50% 50%,transparent 40%,rgba(90,0,14,.35)),rgba(120,0,24,.12)}
+.ccm-wx[data-ev=bloodmoon]>i{width:170px;height:170px;inset:155px 85px auto auto;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,#ffb1a4,#e2303f 40%,#7a0a18 72%,#3a0408);box-shadow:0 0 60px rgba(255,40,60,.7),0 0 160px rgba(255,30,50,.4);animation:ccMoon 6s ease-in-out infinite}
+@keyframes ccMoon{50%{box-shadow:0 0 80px rgba(255,40,60,.85),0 0 200px rgba(255,30,50,.5)}}
+.ccm-wx[data-ev=surge]{background:radial-gradient(ellipse 40% 30% at 22% 24%,rgba(180,100,255,.28),transparent 70%),radial-gradient(ellipse 38% 28% at 80% 76%,rgba(255,100,220,.22),transparent 70%);mix-blend-mode:screen;animation:ccAurora 12s ease-in-out infinite alternate}
+@keyframes ccAurora{to{filter:hue-rotate(40deg)}}
+.ccm-wx[data-ev=wind]{background:linear-gradient(90deg,rgba(160,255,230,.06),transparent 40%,rgba(160,255,230,.05))}
+.ccm-wx[data-ev=starfall]{background:radial-gradient(circle,#fff 0 1px,transparent 1.6px) 0 0/110px 90px,radial-gradient(circle,#ffe9b0 0 1px,transparent 1.6px) 50px 40px/160px 120px,linear-gradient(180deg,rgba(20,24,60,.35),transparent 55%);
+  -webkit-mask:linear-gradient(#000 0 30%,transparent 62%,#000 75%);mask:linear-gradient(#000 0 30%,transparent 62%,#000 75%);animation:ccTwinkle 3s ease-in-out infinite}
+@keyframes ccTwinkle{50%{opacity:.6}}
+.ccm-wx[data-ev=sanctuary]{background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(255,220,140,.22),transparent 70%)}
+.ccm-wx[data-ev=sanctuary]>i{left:50%;top:-30%;width:2000px;height:1400px;inset:-30% auto auto 50%;margin-left:-1000px;background:repeating-conic-gradient(from 160deg at 50% 0%,rgba(255,225,150,.12) 0 3deg,transparent 3deg 11deg);-webkit-mask:linear-gradient(#000,transparent 70%);mask:linear-gradient(#000,transparent 70%);animation:ccRays2 30s ease-in-out infinite alternate}
+@keyframes ccRays2{to{transform:rotate(6deg)}}
+.ccm-wx[data-ev=heat]{background:linear-gradient(0deg,rgba(255,120,40,.26),transparent 55%),linear-gradient(180deg,rgba(255,170,80,.12),transparent 40%);animation:ccLavaTint 4s ease-in-out infinite}
+@keyframes ccLavaTint{50%{opacity:.75}}
+.ccm-wxc{position:absolute;inset:0;width:1600px;height:900px;z-index:25;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.ccm-wx,.ccm-wx>i,.ccm-ev-ic,.cce-rays{animation:none!important}.ccm-wxc{display:none}}
+
+/* ---- more hall scenery: the default hall, trunks, a koi pond, lava falls and river, neon signs ---- */
+:root{
+  --ccs-default-sky:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cg id='b'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e8dcff'/%3E%3Cstop offset='.45' stop-color='%239f7cff'/%3E%3Cstop offset='1' stop-color='%233a2380'/%3E%3C/linearGradient%3E%3ClinearGradient id='d' x1='1' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23b9a2ff'/%3E%3Cstop offset='1' stop-color='%23241654'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M44 520L49 295L62 220L70 310Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M70 310L62 220L92 304L96 520L70 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M49 295L62 220' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M22 520L26 370L26 320L40 380Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M40 380L26 320L55 376L58 520L40 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M26 370L26 320' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M90 520L94 348L120 290L110 359Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M110 359L120 290L127 354L130 520L110 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M94 348L120 290' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M136 520L139 408L156 370L150 415Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M150 415L156 370L162 412L164 520L150 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M139 408L156 370' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M6 520L9 422L14 390L20 429Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M20 429L14 390L32 426L34 520L20 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M9 422L14 390' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M178 520L180 438L198 410L190 443Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M190 443L198 410L200 441L202 520L190 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M180 438L198 410' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M240 520L242 452L246 430L250 457Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M250 457L246 430L258 455L260 520L250 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M242 452L246 430' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cpath d='M291 520L293 475L304 460L300 478Z' fill='url(%23c)' opacity='.92'/%3E%3Cpath d='M300 478L304 460L308 477L309 520L300 520Z' fill='url(%23d)' opacity='.92'/%3E%3Cpath d='M293 475L304 460' stroke='%23fff' stroke-width='1.2' opacity='.7'/%3E%3Cellipse cx='110' cy='520' rx='170' ry='26' fill='%23120c26'/%3E%3Cpath d='M0 512Q110 490 240 514' fill='none' stroke='%23c9a6ff' stroke-width='2' opacity='.5'/%3E%3Crect x='40' y='506' width='10' height='3' rx='1.5' fill='%23e2d0ff' opacity='.7'/%3E%3Crect x='70' y='506' width='6' height='3' rx='1.5' fill='%23e2d0ff' opacity='.7'/%3E%3Crect x='130' y='506' width='12' height='3' rx='1.5' fill='%23e2d0ff' opacity='.7'/%3E%3Crect x='180' y='506' width='8' height='3' rx='1.5' fill='%23e2d0ff' opacity='.7'/%3E%3C/g%3E%3C/defs%3E%3Csvg y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='translate(60 -580)'/%3E%3C/svg%3E%3Csvg x='100%25' y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='scale(-1 1) translate(60 -580)'/%3E%3C/svg%3E%3C/svg%3E");
+  --ccs-forest-trunks:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cg id='b'%3E%3Cpath d='M30 520C12 500 24 480 34 460L38 -400H92L96 460C106 480 118 500 100 520Z' fill='%230f2a1a'/%3E%3Cpath d='M51 -400V440' stroke='%232a5a3a' stroke-width='2' opacity='.5'/%3E%3Cpath d='M79 -380V400' stroke='%23081a10' stroke-width='3' opacity='.5'/%3E%3Cellipse cx='65' cy='240' rx='15' ry='10' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='65' cy='257' rx='15' ry='10' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='65' cy='309' rx='15' ry='10' fill='%230a1a10' opacity='.7'/%3E%3Cpath d='M34 370q-24 10 -30 40' fill='none' stroke='%233f8a4a' stroke-width='3' stroke-linecap='round' opacity='.6'/%3E%3Cpath d='M150 520C132 500 144 480 154 460L158 -400H188L192 460C202 480 214 500 196 520Z' fill='%23123120'/%3E%3Cpath d='M164 -400V440' stroke='%232a5a3a' stroke-width='2' opacity='.5'/%3E%3Cpath d='M182 -380V400' stroke='%23081a10' stroke-width='3' opacity='.5'/%3E%3Cellipse cx='173' cy='158' rx='10' ry='6' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='173' cy='263' rx='10' ry='6' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='173' cy='329' rx='10' ry='6' fill='%230a1a10' opacity='.7'/%3E%3Cpath d='M154 370q-24 10 -30 40' fill='none' stroke='%233f8a4a' stroke-width='3' stroke-linecap='round' opacity='.6'/%3E%3Cpath d='M240 520C222 500 234 480 244 460L248 -400H266L270 460C280 480 292 500 274 520Z' fill='%23163826'/%3E%3Cpath d='M250 -400V440' stroke='%232a5a3a' stroke-width='2' opacity='.5'/%3E%3Cpath d='M264 -380V400' stroke='%23081a10' stroke-width='3' opacity='.5'/%3E%3Cellipse cx='257' cy='334' rx='7' ry='5' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='257' cy='132' rx='7' ry='5' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='257' cy='262' rx='7' ry='5' fill='%230a1a10' opacity='.7'/%3E%3Cpath d='M244 370q-24 10 -30 40' fill='none' stroke='%233f8a4a' stroke-width='3' stroke-linecap='round' opacity='.6'/%3E%3Cpath d='M320 520C302 500 314 480 324 460L328 -400H338L342 460C352 480 364 500 346 520Z' fill='%231a3f2b'/%3E%3Cpath d='M328 -400V440' stroke='%232a5a3a' stroke-width='2' opacity='.5'/%3E%3Cpath d='M338 -380V400' stroke='%23081a10' stroke-width='3' opacity='.5'/%3E%3Cellipse cx='333' cy='253' rx='6' ry='4' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='333' cy='221' rx='6' ry='4' fill='%230a1a10' opacity='.7'/%3E%3Cellipse cx='333' cy='351' rx='6' ry='4' fill='%230a1a10' opacity='.7'/%3E%3Cpath d='M324 370q-24 10 -30 40' fill='none' stroke='%233f8a4a' stroke-width='3' stroke-linecap='round' opacity='.6'/%3E%3C/g%3E%3C/defs%3E%3Csvg y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='translate(60 -580)'/%3E%3C/svg%3E%3Csvg x='100%25' y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='scale(-1 1) translate(60 -580)'/%3E%3C/svg%3E%3C/svg%3E");
+  --ccs-sakura-pond:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cg id='b'%3E%3Cg transform='translate(0 -62)'%3E%3Cellipse cx='200' cy='474' rx='150' ry='44' fill='%232a1a40'/%3E%3Cellipse cx='200' cy='472' rx='140' ry='38' fill='%233b2a64'/%3E%3Cellipse cx='200' cy='468' rx='120' ry='28' fill='%234a3a7a' opacity='.6'/%3E%3Cpath d='M70 468q60-14 120-6' fill='none' stroke='%23ffd9ea' stroke-width='1.5' opacity='.35'/%3E%3Cpath d='M220 484q50 6 90-4' fill='none' stroke='%23ffd9ea' stroke-width='1.2' opacity='.25'/%3E%3Cpath d='M110 462m-14 0a14 7.7 0 1 0 28 0a14 7.7 0 1 0 -28 0' fill='%233f8a5a'/%3E%3Cpath d='M110 462L124 457.8' stroke='%232a5a3a' stroke-width='2'/%3E%3Cpath d='M280 480m-12 0a12 6.6 0 1 0 24 0a12 6.6 0 1 0 -24 0' fill='%233f8a5a'/%3E%3Cpath d='M280 480L292 476.4' stroke='%232a5a3a' stroke-width='2'/%3E%3Cpath d='M250 454m-9 0a9 5.0 0 1 0 18 0a9 5.0 0 1 0 -18 0' fill='%233f8a5a'/%3E%3Cpath d='M250 454L259 451.3' stroke='%232a5a3a' stroke-width='2'/%3E%3Cpath d='M150 488m-10 0a10 5.5 0 1 0 20 0a10 5.5 0 1 0 -20 0' fill='%233f8a5a'/%3E%3Cpath d='M150 488L160 485.0' stroke='%232a5a3a' stroke-width='2'/%3E%3Ccircle cx='260' cy='452' r='4' fill='%23ffc0da'/%3E%3Ccircle cx='112' cy='460' r='3.5' fill='%23fff0f6'/%3E%3Cellipse cx='0' cy='506' rx='26' ry='10.9' fill='%234a3a52'/%3E%3Cellipse cx='0' cy='504' rx='20.8' ry='7.8' fill='%236a5a72'/%3E%3Cellipse cx='40' cy='514' rx='20' ry='8.4' fill='%234a3a52'/%3E%3Cellipse cx='40' cy='512' rx='16.0' ry='6.0' fill='%236a5a72'/%3E%3Cellipse cx='360' cy='510' rx='22' ry='9.2' fill='%234a3a52'/%3E%3Cellipse cx='360' cy='508' rx='17.6' ry='6.6' fill='%236a5a72'/%3E%3Cellipse cx='395' cy='496' rx='16' ry='6.7' fill='%234a3a52'/%3E%3Cellipse cx='395' cy='494' rx='12.8' ry='4.8' fill='%236a5a72'/%3E%3C/g%3E%3C/g%3E%3C/defs%3E%3Csvg y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='translate(60 -580)'/%3E%3C/svg%3E%3Csvg x='100%25' y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='scale(-1 1) translate(60 -580)'/%3E%3C/svg%3E%3C/svg%3E");
+  --ccs-cyber-signs:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cg id='b'%3E%3Crect x='53' y='360' width='4' height='160' fill='%231a1d40'/%3E%3Crect x='20' y='250' width='70' height='110' rx='6' fill='%230b0d26' stroke='%23ff2bd6' stroke-width='3'/%3E%3Crect x='26' y='256' width='58' height='98' rx='3' fill='none' stroke='%23ff2bd6' stroke-width='1' opacity='.5'/%3E%3Cpath d='M38 270h34M55 264v14' stroke='%23ff2bd6' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M38 292h34M55 286v14' stroke='%23ff2bd6' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M38 314h34M55 308v14' stroke='%23ff2bd6' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M38 336h34M55 330v14' stroke='%23ff2bd6' stroke-width='3' stroke-linecap='round'/%3E%3Crect x='178' y='354' width='4' height='166' fill='%231a1d40'/%3E%3Crect x='120' y='300' width='120' height='54' rx='6' fill='%230b0d26' stroke='%2329f0ff' stroke-width='3'/%3E%3Crect x='126' y='306' width='108' height='42' rx='3' fill='none' stroke='%2329f0ff' stroke-width='1' opacity='.5'/%3E%3Cpath d='M134 327l12-12 12 12-12 12zM168 318h56M168 332h40M168 340h24' stroke='%2329f0ff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Crect x='298' y='400' width='4' height='120' fill='%231a1d40'/%3E%3Crect x='270' y='340' width='60' height='60' rx='6' fill='%230b0d26' stroke='%23ffe14d' stroke-width='3'/%3E%3Crect x='276' y='346' width='48' height='48' rx='3' fill='none' stroke='%23ffe14d' stroke-width='1' opacity='.5'/%3E%3Ccircle cx='300' cy='370' r='18' fill='none' stroke='%23ffe14d' stroke-width='4'/%3E%3Cpath d='M300 353v34' stroke='%23ffe14d' stroke-width='3'/%3E%3C/g%3E%3C/defs%3E%3Csvg y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='translate(60 -580)'/%3E%3C/svg%3E%3Csvg x='100%25' y='100%25' overflow='visible'%3E%3Cuse href='%23b' transform='scale(-1 1) translate(60 -580)'/%3E%3C/svg%3E%3C/svg%3E");
+}
+
+.ccm-sky>.sk4{z-index:0}.ccm-sky>.sk1{z-index:1}.ccm-sky>.sk2,.ccm-sky>.sk5{z-index:2}.ccm-sky>.sk3{z-index:3}
+/* default (arcane): violet crystal clusters by the walls, drifting shards, the original hall shows through */
+.ccm-sky[data-bs=default]{background:none}
+.ccm-sky[data-bs=default] .sk1{background:var(--ccs-default-sky) 0 0/100% 100% no-repeat;filter:drop-shadow(0 0 14px rgba(170,130,255,.45));animation:ccCrys 5s ease-in-out infinite}
+.ccm-sky[data-bs=default] .sk2{background:radial-gradient(circle,rgba(230,215,255,.9) 0 1.4px,transparent 2px) 30px 40px/150px 120px,radial-gradient(circle,rgba(180,150,255,.7) 0 1px,transparent 1.8px) 80px 10px/210px 160px;-webkit-mask:linear-gradient(90deg,#000 0 22%,transparent 30% 70%,#000 78%);mask:linear-gradient(90deg,#000 0 22%,transparent 30% 70%,#000 78%);animation:ccShards 14s linear infinite}
+.ccm-sky[data-bs=default] .sk3{background:radial-gradient(ellipse 22% 30% at 8% 100%,rgba(160,120,255,.3),transparent 70%),radial-gradient(ellipse 22% 30% at 92% 100%,rgba(160,120,255,.3),transparent 70%)}
+.ccm-sky[data-bs=default] .sk4,.ccm-sky[data-bs=default] .sk5{display:none}
+@keyframes ccCrys{50%{filter:drop-shadow(0 0 22px rgba(190,150,255,.7))}}
+@keyframes ccShards{to{background-position:30px -80px,80px -150px}}
+/* forest: tall misty trunks behind the ferns */
+.ccm-sky[data-bs=forest] .sk4{background:var(--ccs-forest-trunks) 0 0/100% 100% no-repeat;opacity:.9;filter:blur(.5px)}
+.ccm-sky[data-bs=forest] .sk5{background:radial-gradient(ellipse 18% 8% at 10% 70%,rgba(200,255,210,.1),transparent 70%),radial-gradient(ellipse 16% 7% at 90% 60%,rgba(200,255,210,.08),transparent 70%);animation:ccskMist 34s ease-in-out infinite alternate-reverse}
+/* sakura: a koi pond on each side */
+.ccm-sky[data-bs=sakura] .sk4{background:var(--ccs-sakura-pond) 0 0/100% 100% no-repeat}
+.ccm-sky[data-bs=sakura] .sk5::before,.ccm-sky[data-bs=sakura] .sk5::after{content:"";position:absolute;bottom:164px;width:30px;height:14px;margin-left:-15px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 14'%3E%3Cpath d='M2 7C6 1 18 1 24 7C18 13 6 13 2 7z' fill='%23fff4ea'/%3E%3Cpath d='M8 4c3 1 4 4 2 6c4 0 8-2 9-4c-3-2-7-3-11-2z' fill='%23ff6a2a'/%3E%3Cpath d='M23 7l6-5-2 5 2 5z' fill='%23ff8a4a'/%3E%3Ccircle cx='6' cy='6' r='.9' fill='%23222'/%3E%3C/svg%3E") center/contain no-repeat;animation:ccKoi 11s linear infinite;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.ccm-sky[data-bs=sakura] .sk5::before{left:260px}
+.ccm-sky[data-bs=sakura] .sk5::after{left:calc(100% - 260px);animation-direction:reverse;animation-delay:-4s}
+@keyframes ccKoi{0%{transform:translate(70px,0) rotate(90deg)}12.5%{transform:translate(50px,14px) rotate(135deg)}25%{transform:translate(0,20px) rotate(180deg)}37.5%{transform:translate(-50px,14px) rotate(225deg)}50%{transform:translate(-70px,0) rotate(270deg)}62.5%{transform:translate(-50px,-14px) rotate(315deg)}75%{transform:translate(0,-20px) rotate(360deg)}87.5%{transform:translate(50px,-14px) rotate(405deg)}100%{transform:translate(70px,0) rotate(450deg)}}
+/* inferno: a lava river at the far edge and lava falls down the big spires */
+.ccm-sky[data-bs=inferno] .sk4{top:auto;bottom:48px;height:64px;background:repeating-linear-gradient(100deg,#ff3d00 0,#ffb347 40px,#ff6a1f 80px,#ff3d00 120px);background-size:240px 100%;filter:blur(1.5px) saturate(1.2);opacity:.85;-webkit-mask:linear-gradient(transparent,#000 40%);mask:linear-gradient(transparent,#000 40%);animation:ccLavaRiver 6s linear infinite}
+.ccm-sky[data-bs=inferno] .sk5::before,.ccm-sky[data-bs=inferno] .sk5::after{content:"";position:absolute;bottom:90px;width:12px;height:250px;border-radius:6px;background:repeating-linear-gradient(180deg,#ffd27a 0 8px,#ff7a1a 8px 22px,#ff3d00 22px 34px);box-shadow:0 0 18px rgba(255,100,20,.8);-webkit-mask:linear-gradient(transparent,#000 15%,#000 85%,transparent);mask:linear-gradient(transparent,#000 15%,#000 85%,transparent);animation:ccLavaFall 1.4s linear infinite}
+.ccm-sky[data-bs=inferno] .sk5::before{left:124px}.ccm-sky[data-bs=inferno] .sk5::after{right:124px}
+@keyframes ccLavaRiver{to{background-position:240px 0}}
+@keyframes ccLavaFall{to{background-position:0 34px}}
+/* cyber: neon signs on poles, flickering */
+.ccm-sky[data-bs=cyber] .sk4{background:var(--ccs-cyber-signs) 0 0/100% 100% no-repeat;filter:drop-shadow(0 0 8px rgba(255,43,214,.5)) drop-shadow(0 0 6px rgba(41,240,255,.4));animation:ccSign 5s steps(1) infinite}
+.ccm-sky[data-bs=cyber] .sk5{display:none}
+@keyframes ccSign{0%,40%,44%,100%{opacity:1}42%{opacity:.35}43%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.ccm-sky>i,.ccm-sky>i::before,.ccm-sky>i::after{animation:none!important}}

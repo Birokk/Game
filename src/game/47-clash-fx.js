@@ -301,7 +301,7 @@ function ccReveal(a, done) {
 /* the duel intro: you on the left, the bot on the right, a slashing VS, then who goes first */
 function ccIntro(done) {
   const L = ccLayer(); if (!L) return done();
-  const G = ccM.G, w = avatarEntry() || wallpaperInfo(), art = !!w && wpHasArt(w), src = w ? wpSrc(w) : portrait(S.player.look, 4);
+  const G = ccM.G, le = ccM.leader, lart = le && mediaArt(le), w = lart ? null : avatarEntry() || wallpaperInfo(), art = !!lart || (!!w && wpHasArt(w)), src = lart || (w ? wpSrc(w) : portrait(S.player.look, 4));   // your deck's leader, else your avatar
   const foe = ccM.foe, foeArt = foe && baseArt(foe);
   const el = document.createElement('div'); el.className = 'ccx-intro';
   el.innerHTML = `<i class="cci-bg"></i>

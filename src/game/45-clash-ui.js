@@ -71,6 +71,7 @@ function renderDeck() {
     <aside class="ccd-deck">
       <div class="ccd-dhead">${ro ? `<b class="ccd-dname">${esc(deck.name)}</b>` : `<input class="ccd-dname" id="ccdName" maxlength="24" value="${esc(deck.name)}" aria-label="Deck name">`}
         <span class="ccd-cnt ${v.ok ? 'ok' : cards.length > 30 ? 'bad' : ''}">${cards.length}/30</span></div>
+      ${ccLeaderBox(deck.id)}
       <div class="ccd-comp">${['unit', 'spell', 'trap', 'equipment'].map(t => `<span><b>${byType(t)}</b>${CC_TYPES[t]}${t === 'equipment' ? '' : 's'}</span>`).join('')}</div>
       <div class="ccd-bar">${Object.keys(CC_STYLES).map(s => bySt(s) ? `<i style="flex:${bySt(s)};--cs:${CC_STYLES[s][1]}" title="${CC_STYLES[s][0]} ${bySt(s)}"></i>` : '').join('') || '<i class="none"></i>'}</div>
       <div class="ccd-list">${uniq.map(id => { const d = ccDef(id); return `<button class="ccd-li" data-rem="${id}" style="--cs:${CC_STYLES[d.style][1]}" title="${esc(d.text)}">${ccIco(id, 'ccd-li-em')}<span class="ccd-li-ap"><span>${d.ap}</span></span><b>${esc(d.name)}</b><small>${CC_TYPES[d.type]}</small><span class="ccd-li-n">×${ccCount(cards, id)}</span>${ro ? '' : `<span class="ccd-li-x">${icon('close')}</span>`}</button>`; }).join('') || '<p class="tiny">Empty deck. Add 30 cards from the left.</p>'}</div>
@@ -88,6 +89,7 @@ function renderDeck() {
   one('#ccdPlay').onclick = openQuickMatch;
   one('#ccdHelp').onclick = () => ccRules(0);
   one('#ccdSkin').onclick = () => ccSkinPicker();
+  one('#ccdLead').onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
   $$('[data-deck]').forEach(b => b.onclick = () => { sv.sel = b.dataset.deck; persist(); renderDeck(); });
   $$('[data-f]').forEach(b => b.onclick = () => { const k = b.dataset.f; ccdF[k] = k === 'ap' ? +b.dataset.v : b.dataset.v; renderDeck(); });
   const q = one('#ccdQ'); q.oninput = () => { ccdF.q = q.value; clearTimeout(q._t); q._t = setTimeout(() => { renderDeck(); const n = ccdEl && ccdEl.querySelector('#ccdQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
@@ -125,7 +127,8 @@ function openQuickMatch() {
     <span class="ccd-lbl">Your deck</span>
     <div class="ccq-decks">${ccAllDecks().map(d => { const v = ccValidateDeck(d.cards).ok; return `<button class="ccq-dk ${d.id === sv.sel ? 'on' : ''}" data-qdeck="${d.id}" ${v ? '' : 'disabled'}><span>${d.preset ? icon('lock') : CC_IC}</span><b>${esc(d.name)}</b><small>${v ? 'Ready' : `${d.cards.length}/30`}</small></button>`; }).join('')}</div>
     <div class="ccq-row"><label class="ccd-lbl" for="ccqSeed">Match seed</label><input id="ccqSeed" class="ccq-seed" inputmode="numeric" value="${ccQmSeed}"><button class="btn ghost" id="ccqDice">New seed</button></div>
-    <p class="tiny">The same seed and the same moves always replay the same match, handy for reporting a bug. Who goes first is decided by the seed.</p>
+    <p class="tiny ccq-ev" id="ccqEv"></p>
+    <p class="tiny">The same seed and the same moves always replay the same match, handy for reporting a bug. Who goes first and the battle event are decided by the seed.</p>
     <p class="tiny ccq-skin">${ccSkinIco(ccMySkin(), 'ccq-skic')}Your board skin: <b>${esc(ccSkinOf(ccMySkin()).name)}</b> · <button class="ccq-help" id="ccqSkin">Change</button> · the bot plays on a random skin.</p>
     <p class="tiny">New to Card Clash? <button class="ccq-help" id="ccqHelp">Read How to play</button> · every win gives +1 pearl.</p>
     <button class="btn gold ccq-go" id="ccqGo">${icon('bolt')}Start match</button></div>`,
@@ -133,7 +136,10 @@ function openQuickMatch() {
       b.querySelectorAll('[data-qdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.qdeck; persist(); b.querySelectorAll('[data-qdeck]').forEach(y => y.classList.toggle('on', y === x)); if (ccdEl) renderDeck(); });
       b.querySelector('#ccqHelp').onclick = () => ccRules(0);
       b.querySelector('#ccqSkin').onclick = () => ccSkinPicker(openQuickMatch);
-      b.querySelector('#ccqDice').onclick = () => { b.querySelector('#ccqSeed').value = Math.floor(Math.random() * 1e9); };
+      const evLine = () => { const sd = (parseInt(b.querySelector('#ccqSeed').value, 10) || 0) >>> 0, k = ccPickEvent(sd), E = k && CC_EVENTS[k];
+        b.querySelector('#ccqEv').innerHTML = E ? `<span class="ccq-evt" style="--ec:${ccEvCol(k)}">${ccEvIco(k)}<b>${esc(E.name)}</b></span> ${esc(E.text)}` : 'Battle event: none for this seed (clear skies). 60% of matches start with one.'; };
+      evLine(); b.querySelector('#ccqSeed').oninput = evLine;
+      b.querySelector('#ccqDice').onclick = () => { b.querySelector('#ccqSeed').value = Math.floor(Math.random() * 1e9); evLine(); };
       b.querySelector('#ccqGo').onclick = () => {
         const d = ccDeck(sv.sel); if (!ccValidateDeck(d.cards).ok) return toast('Pick a deck with 30 cards', true);
         const seed = (parseInt(b.querySelector('#ccqSeed').value, 10) || 0) >>> 0;
@@ -163,8 +169,8 @@ function startClash(deck, seed) {
   const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = foes.length ? foes[(seed >>> 0) % foes.length] : null;
   const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', foe ? foe.name : 'Bot']);
   ccSkReset();
-  const m = ccM = { G, foe, skins: [ccMySkin(), ccBotSkin(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
-  showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
+  const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), ccBotSkin(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
+  showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => ccEventReveal(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); })); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
     const el = document.createElement('div'); el.className = 'ccm'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Card Clash match');
@@ -322,8 +328,8 @@ const CC_SLASH_MIN = 2;
 function ccSlash(n) {
   if (!ccM) return;
   const stage = ccM.el.querySelector('.ccm-stage'); stage.querySelectorAll('.ccsl').forEach(x => x.remove());
-  const w = avatarEntry() || wallpaperInfo(), art = !!w && wpHasArt(w);
-  const src = w ? wpSrc(w) : portrait(S.player.look, 4), name = w ? w.e.name : (S.player.name || 'You');
+  const le = ccM.leader, lart = le && mediaArt(le), w = lart ? null : avatarEntry() || wallpaperInfo(), art = !!lart || (!!w && wpHasArt(w));
+  const src = lart || (w ? wpSrc(w) : portrait(S.player.look, 4)), name = le ? le.name : w ? w.e.name : (S.player.name || 'You');
   const el = document.createElement('div'); el.className = 'ccsl';
   el.innerHTML = `<i class="ccsl-flash"></i><div class="ccsl-move"><div class="ccsl-panel"><img src="${src}" alt="" class="${art ? '' : 'chibi'}"><i class="ccsl-lines"></i><i class="ccsl-shade"></i></div>
     <div class="ccsl-edgew"><i class="ccsl-edge"></i></div><div class="ccsl-txt"><small>${esc(name)}</small><b>\u2212${n}</b><em>${n >= 5 ? 'Crushing blow' : 'Direct hit'}</em></div></div>`;
@@ -367,7 +373,7 @@ function ccRender(snap) {
   if (!ccM) return;
   const G = ccM.G, me = G.players[0], op = G.players[1], keyset = ccTargets(), my = ccMyTurn();
   const ui = ccM.el.querySelector('.ccm-ui');
-  const ap = (P, p) => { const max = Math.max(P.ap, G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
+  const ap = (P, p) => { const max = Math.max(P.ap, ccApBase(G, p)); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
   const hero = p => { const P = G.players[p]; return `<div class="ccm-hero ${p ? 'op' : 'me'} ${keyset.has('h' + p) ? 'tgt' : ''} ${G.active === p ? 'act' : ''}" data-hero="${p}">
       <span class="ccm-ava">${p === 0 ? avatarHTML(58) : ccFoeAva()}</span>
       <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : 'Bot · mirror'}</small></span>
@@ -376,17 +382,20 @@ function ccRender(snap) {
   const legal = my && G.phase === 'main' ? ccLegal(G) : [];
   const n = me.hand.length, handHTML = me.hand.map((c, i) => { const d = ccDef(c.id), playable = d.ap <= me.ap && legal.some(a => a.iid === c.iid), mid = (n - 1) / 2, rot = (i - mid) * 3.2, dy = Math.pow(Math.abs(i - mid), 1.6) * 4;
     return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
-  const ot = G.round >= CC_CFG.overtime;
+  const ot = G.round >= ccOT(G);
   ui.innerHTML = `
     <div class="ccm-tools"><button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button><button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
     <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML()}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
+    ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
+    ${ccM.leader ? `<div class="ccm-lead me" title="${esc(ccM.leader.name + ': your leader (no skill yet)')}">${ccLeaderCard(ccM.leader)}<span class="ccl-tag">Leader</span></div>` : ''}
+    ${ccEventChip(G)}
     <div class="ccb ${G.active === 1 ? 'turn-op' : ''}">
       <i class="ccb-rim"><i class="ccb-stud t"></i><i class="ccb-stud b"></i><i class="ccb-stud l"></i><i class="ccb-stud r"></i></i>
       <span class="ccb-torch tl"></span><span class="ccb-torch tr"></span><span class="ccb-torch bl"></span><span class="ccb-torch br"></span>
       ${ccHalfHTML(G, 1, keyset)}
       <div class="ccb-line"><span class="ccb-flow"></span><i class="ccb-gem l0"></i><i class="ccb-gem l1"></i><i class="ccb-gem l2"></i>
-        <div class="ccb-crest ${ot ? 'ot' : ''}" title="${ot ? 'Overtime: every unit loses 1 HP at the start of its owner’s turn' : `Overtime starts in round ${CC_CFG.overtime}`}"><small>${ot ? 'Overtime' : 'Round'}</small><b>${G.round}</b><small>of ${CC_CFG.rounds}</small></div>
+        <div class="ccb-crest ${ot ? 'ot' : ''}" title="${ot ? 'Overtime: every unit loses 1 HP at the start of its owner’s turn' : `Overtime starts in round ${ccOT(G)}`}"><small>${ot ? 'Overtime' : 'Round'}</small><b>${G.round}</b><small>of ${CC_CFG.rounds}</small></div>
         <div class="ccb-orbwrap">${ap(op, 1)}<div id="ccOrb"></div>${ap(me, 0)}</div>
       </div>
       ${ccHalfHTML(G, 0, keyset)}
@@ -443,7 +452,7 @@ function ccActRender(keyset, selCard) {
     let why = '';
     if (!atk) why = u.attacked ? 'Already attacked this turn.' : u.stunNow ? 'Stunned this turn.' : u.row === 1 && d.range !== 'ranged' ? 'Melee units can’t attack from the Back row.' : u.summoned === G.turnNo ? 'Just summoned: it can attack next turn.' : G.players[0].ap < 1 ? 'No AP left.' : '';
     const pv = atk ? ccPreview(G, u.iid) : null;
-    html = `<p><b>${esc(d.name)}</b>${pv ? `<br>${pv}` : why ? `<br>${why}` : ''}${moves ? `<br><span class="tiny">Move: tap a glowing slot (${ccMoveCost(u) ? '1 AP' : 'free'})</span>` : u.moveUsed ? '<br><span class="tiny">Already moved this turn.</span>' : ''}</p>
+    html = `<p><b>${esc(d.name)}</b>${pv ? `<br>${pv}` : why ? `<br>${why}` : ''}${moves ? `<br><span class="tiny">Move: tap a glowing slot (${ccMoveCost(u, G) ? '1 AP' : 'free'})</span>` : u.moveUsed ? '<br><span class="tiny">Already moved this turn.</span>' : ''}</p>
       <div>${atk ? `<button class="btn gold" id="ccAtk">Attack · 1 AP</button>` : ''}<button class="btn ghost" id="ccCancel">Cancel</button></div>`;
   }
   box.innerHTML = html; box.classList.toggle('on', !!html);
@@ -462,7 +471,7 @@ function ccPreview(G, iid) {
 function ccEndScreen() {
   if (!ccM) return;
   const G = ccM.G, sv = ccSave();
-  if (!ccM.done) { ccM.done = true; if (G.winner === 0) { sv.stats.w++; S.wallet.pearls = (S.wallet.pearls || 0) + CC_WIN_PEARLS; ccM.reward = CC_WIN_PEARLS; } else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; persist(); }
+  if (!ccM.done) { ccM.done = true; if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; ccM.rewards = ccGrantRewards(G.winner); persist(); renderMenu(); }
   const res = G.winner === 0 ? ['Victory', 'win'] : G.winner === 1 ? ['Defeat', 'lose'] : ['Draw', 'draw'];
   const ms = Date.now() - G.started, mm = Math.floor(ms / 60000), ss = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
   const crack = res[1] === 'lose' ? `<svg class="ccf-crack" viewBox="0 0 1600 900" preserveAspectRatio="none">${Array.from({ length: 9 }, (_, i) => { const a = i / 9 * 6.283 + .3; let x = 800, y = 450, d = `M${x} ${y}`; for (let k = 0; k < 7; k++) { x += Math.cos(a + Math.sin(k * 2.1 + i) * .5) * (60 + k * 22); y += Math.sin(a + Math.cos(k * 1.7 + i) * .5) * (40 + k * 14); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return `<path d="${d}" style="--d:${i * .05}s"/>`; }).join('')}</svg>` : '';
@@ -471,7 +480,7 @@ function ccEndScreen() {
     <div class="ccf-mid"><div class="ccf-emblem"><svg viewBox="0 0 24 24"><path d="${res[1] === 'win' ? 'M5 16L3 6l5.5 4L12 4l3.5 6L21 6l-2 10zm0 2h14v2H5z' : res[1] === 'lose' ? 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5zm-1.2 4l1.4 4.2-2.6 1.6 3.4 6.2-.8-4.8 2.4-1.4L13 6z' : CC_GLYPH.defense}"/></svg></div>
       <h1 class="ccf-t" data-t="${res[0]}">${res[0]}</h1>
       <div class="ccm-endbox"><p>${esc(G.reason)}</p>
-      ${ccM.reward ? `<div class="ccm-rew">${curIcon('pearls')}<b>+${ccM.reward}</b><span>pearl for the win</span></div>` : ''}
+      ${ccRewardsHTML(ccM.rewards)}
       <div class="ccm-endst"><span>Rounds<b>${Math.min(G.round, CC_CFG.rounds)}</b></span><span>Turns<b>${G.turnNo}</b></span><span>Time<b>${mm}:${ss}</b></span><span>Your HP<b>${Math.max(0, G.players[0].hp)}</b></span></div>
       <p class="tiny">Deck: ${esc(ccM.deck.name)} (mirror) · seed ${G.seed} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
       <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch</button><button class="btn ghost" id="ccBack">Back to Deck</button></div></div></div>`;

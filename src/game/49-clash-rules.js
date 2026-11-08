@@ -114,6 +114,17 @@ const CC_RULES = [
     <div class="ccr-txt"><h3>Keeping matches fair and finite</h3>
       <p>Buffs and debuffs have caps, and heroes can heal at most <b>1 HP per round</b>, so protecting your hero with units matters more than healing it.</p>
       <p>From <b>round ${CC_CFG.overtime}</b> the match is in <b>Overtime</b>: at the start of each player's turn every one of their units loses 1 HP. After round ${CC_CFG.rounds} the match ends in a draw.</p></div>` },
+  { t: 'Battle events', ic: 'sparkle', h: () => `
+    <div class="ccr-fig ccr-evfig">${ccEventsRulesHTML()}</div>
+    <div class="ccr-txt"><h3>Some matches start under a battle event</h3>
+      <p>When a match starts there is a <b>60% chance</b> of a battle event. It is announced right after the VS screen and shown beside the round medallion for the whole match. It changes the rules for <b>both</b> players, so plan around it.</p>
+      <p>The match seed decides the event, so the same seed always gives the same one. Quick match shows the event for the seed you picked.</p></div>` },
+  { t: 'Leaders & rewards', ic: 'crown', h: () => `
+    <div class="ccr-fig ccr-leadfig">${(() => { const e = ccLeaderOf(ccSave().sel); return e ? `<div class="ccr-lead">${ccLeaderCard(e)}<span class="ccl-tag">Leader</span></div>` : ''; })()}<div class="ccr-rews"><span class="ccm-rw">${curIcon('coins')}<b>+${fmt(CC_GOLD.win)}</b><small>win</small></span><span class="ccm-rw">${curIcon('coins')}<b>+${fmt(CC_GOLD.draw)}</b><small>draw</small></span><span class="ccm-rw">${curIcon('coins')}<b>+${fmt(CC_GOLD.lose)}</b><small>loss</small></span><span class="ccm-rw pearl">${curIcon('pearls')}<b>+${CC_WIN_PEARLS}</b><small>win</small></span></div></div>
+    <div class="ccr-txt"><h3>Your leader</h3>
+      <p>Every deck has a <b>leader</b>: one of your characters, picked on the Deck screen (<b>Change leader</b>). Its showcase card, with its badges, grade, rarity and stars, stands beside your hero for the whole match, and it is the art you see on the VS screen and in big hits. Leaders have no skill yet.</p>
+      <h3>Rewards</h3>
+      <p>Every match gives gold: <b>${fmt(CC_GOLD.win)}</b> for a win, ${fmt(CC_GOLD.draw)} for a draw, ${fmt(CC_GOLD.lose)} for a loss. A win also gives <b>${CC_WIN_PEARLS} pearl</b> and <b>one clothing piece</b>, rolled exactly like a gear raid clear (UR 8%, SSR 20%, R 72%, 1.5% a 2★ UR piece). It needs a free wardrobe space.</p></div>` },
   { t: 'Auto play', ic: 'bolt', h: () => `
     <div class="ccr-fig ccr-autofig"><span class="ccm-auto on">${icon('bolt')}<b>Auto</b><i>On</i></span><p>Tap <b>Auto</b> in the top right of the match to let the game play your turns. Tap it again (or Stop auto play) to take over.</p></div>
     <div class="ccr-txt"><h3>Let the game play for you</h3>

@@ -99,6 +99,7 @@ function renderPoolTab() {
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
+          <label class="field" id="adAttrWrap"><span>Card attribute (Card Clash playstyle)</span><select class="input" id="adAttr"><option value="">None yet</option>${Object.entries(CC_STYLES).map(([k, [n]]) => `<option value="${k}">${n}</option>`).join('')}</select><small class="tiny">The same five attributes as the cards. Shown on the character's Card Clash leader card; it will matter for later features.</small></label>
           <div class="field" id="adSigMemWrap"><span>Signature memories (memories that feature this character)</span><div class="row" id="adSigMem" style="gap:6px;flex-wrap:wrap"></div><small class="tiny">Tap to toggle. Equipping one of them gives the character +500 CS.</small></div>
           <label class="field" id="adSigWrap"><span>Signature clothing set (UR characters)</span><select class="input" id="adSig"></select><small class="tiny">Wearing all 6 pieces of it gives +1,000 CS and the Signature Style badge.</small></label>
           <label class="switch" id="adFeatWrap">Featured UR on the limited banner<input type="checkbox" id="adFeat"><i></i></label>
@@ -155,6 +156,7 @@ function fillAdminForm(entry) {
   const sets = {}; (S.clothes || []).forEach(x => { if (x.set && !sets[x.set]) sets[x.set] = x; });
   $('#adSig').innerHTML = '<option value="">None</option>' + Object.values(sets).sort((a, b) => b.rarity - a.rarity).map(x => `<option value="${esc(x.set)}">${esc(clothSetName(x))} (${CRN[x.rarity] || ''})</option>`).join('');
   $('#adSig').value = entry && entry.sigSet && sets[entry.sigSet] ? entry.sigSet : '';
+  $('#adAttr').value = entry && entry.ccStyle && CC_STYLES[entry.ccStyle] ? entry.ccStyle : '';
   adminSigMems = [...((entry && entry.sigMems) || [])];
   const drawSigMem = () => { $('#adSigMem').innerHTML = (S.memories || []).length ? S.memories.slice().sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name)).map(m => `<button type="button" class="chip ${adminSigMems.includes(m.id) ? 'on' : ''}" data-sigmem="${esc(m.id)}">${rtag(m.rarity)} ${esc(m.name)}</button>`).join('') : '<span class="tiny">No memories yet (admin → Memories).</span>';
     $('#adSigMem').querySelectorAll('[data-sigmem]').forEach(b => b.onclick = () => { const id = b.dataset.sigmem, i = adminSigMems.indexOf(id); if (i >= 0) adminSigMems.splice(i, 1); else adminSigMems.push(id); drawSigMem(); }); };
@@ -224,7 +226,7 @@ function adminPreview() {
   const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
   $('#adSigWrap').hidden = r !== 5 || $('#adType').value !== 'character';
-  $('#adSigMemWrap').hidden = $('#adType').value !== 'character';
+  $('#adSigMemWrap').hidden = $('#adAttrWrap').hidden = $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
@@ -235,7 +237,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null, ccStyle: type === 'character' ? ($('#adAttr').value || null) : null };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;

@@ -2,7 +2,7 @@
    Tabs (round icons, FR_TABS): Friends (list), Search (by player ID or name), Requests (received + sent), Find players
    (random suggestions with Refresh). Up to FR_MAX friends. There is no friends server yet: the other players are the
    game's practice players (the Ranking's 30 + the practice guilds' members, frPool), each with a seeded profile
-   (frProfile: avatar art, frame, title, namecard, status, last online, owned characters with CS, showcase of their 4 best,
+   (frProfile: avatar art, frame, title, namecard, status, last online, owned characters with CS, showcase of their 5 best,
    stats, guild). A request you send is accepted a minute later (FR_ACCEPT_MS); 2 practice players send you a request
    every day. Tapping a player's avatar opens their profile (openFrProfile) with stats and showcased characters.
    State S.friends {list: [uid], sent: [{uid, t}], recv: {day, list: [uid], done: [uid]}, seed} (player save). */
@@ -39,7 +39,7 @@ function frProfile(p) {
   const cs = p.cs || Object.fromEntries(chars.map(c => [c.id, botCharCS({ name: p.name, skill: p.skill }, c)]).filter(([, n]) => n));
   const owned = Object.entries(cs).map(([id, n]) => ({ e: findEntry(id), cs: n })).filter(x => x.e).sort((a, b) => b.cs - a.cs);
   const mems = S.memories || [];
-  const show = owned.slice(0, 4).map(x => ({ ...x, st: Math.min(6, Math.floor(r() * 7 * (.4 + p.skill * .8))), mem: mems.length && r() < .9 ? { m: mems[Math.floor(r() * mems.length)], st: Math.min(3, Math.floor(r() * 4 * (.3 + p.skill))) } : null }));   // each showcased character's equipped memory
+  const show = owned.slice(0, 5).map(x => ({ ...x, st: Math.min(6, Math.floor(r() * 7 * (.4 + p.skill * .8))), mem: mems.length && r() < .9 ? { m: mems[Math.floor(r() * mems.length)], st: Math.min(3, Math.floor(r() * 4 * (.3 + p.skill))) } : null }));   // each showcased character's equipped memory
   const titles = TITLES.filter(t => !t.rank && !t.vip && t.id !== 'maxwinner'), cards = CARDS.filter(k => !String(k.id).startsWith('rk-') && !k.vip);
   const fav = show[0] && show[0].e, artCard = fav && baseArt(fav) && r() < .45;
   const mins = Math.floor(Math.pow(r(), 2) * 60 * 72);
@@ -119,7 +119,7 @@ function renderFriends() {
   const rf = $('#frRefresh'); if (rf) rf.onclick = () => { f.seed++; persist(); renderFriends(); };
 }
 
-/* a player's profile: namecard, avatar, name, title, guild, stats and their 4 showcased characters */
+/* a player's profile: namecard, avatar, name, title, guild, stats and their 5 showcased characters */
 function openFrProfile(uid) {
   const p = frByUid(uid); if (!p) return;
   const fp = frProfile(p), friend = frIsFriend(uid);
