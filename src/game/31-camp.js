@@ -40,6 +40,27 @@ function sendCamp(id) {
   campPick = []; persist(); renderFarm();
   toast(`${chars.map(c => (findEntry(c) || {}).name).join(', ')} set off for the ${p.name}. Back in 24 hours.`);
 }
+/* Auto send best: fills every empty place at once. The Tournament gets the best free fighter (UR first, then the highest
+   CS: a UR wins 2★ pieces twice as often); the Tavern and Central rewards don't depend on who goes, so they take the
+   remaining characters from the lowest rarity up, which keeps the URs free for the Tournament and Expeditions. */
+function autoSendCamp() {
+  const free = CAMP_PLACES.filter(p => !campOf(p.id) && (S.clothes || []).some(x => +x.rarity === p.rarity));
+  if (!CAMP_PLACES.some(p => !campOf(p.id))) { toast('Every place already has a team.'); return; }
+  let pool = expChars().filter(e => !busyWhere(e.id));
+  if (!pool.length) { toast(expChars().length ? 'Every character is already away.' : "You don't own any characters yet."); return; }
+  const best = (a, b) => b.rarity - a.rarity || charScore(b) - charScore(a) || a.name.localeCompare(b.name);
+  const now = Date.now(), d = { ...(S.camp || {}) }, sent = [];
+  free.forEach(p => {
+    const order = p.id === 'tournament' ? pool.slice().sort(best) : pool.slice().sort((a, b) => -best(a, b));
+    if (order.length < p.slots) return;
+    const chars = order.slice(0, p.slots).map(e => e.id);
+    d[p.id] = { chars, start: now, ends: now + CAMP_MS, drops: rollCamp(p, chars) };
+    pool = pool.filter(e => !chars.includes(e.id)); sent.push(p.name);
+  });
+  if (!sent.length) { toast('Not enough free characters for the places left.'); return; }
+  S.camp = d; campPick = []; fmSel = null; persist(); renderFarm();
+  toast(`${sent.length > 1 ? 'Teams' : 'A team'} sent to the ${sent.join(', ')}. Back in 24 hours.`);
+}
 function collectCamp(ids) {
   const got = [], ready = ids.filter(campDone), need = ready.reduce((t, id) => t + campOf(id).drops.length, 0);
   if (!ready.length) { toast('Nobody is back yet.'); return; }
@@ -92,11 +113,12 @@ function renderCamp() {
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Camp</h2>${infoBtn('camp', 'How the camp works')}<span class="fm-rate ts">${away} / ${CAMP_PLACES.length} busy · 24 h each</span></div>
     <div class="fm-cur"><div class="cur" title="Wardrobe">${icon('hanger')}<b>${fmt(wardCount())} / ${INV_CAP}</b></div>${['coins', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
     <button class="fm-switch right" id="fmSwitch" aria-label="Back to the Base"><b>Base</b>${icon('back')}</button>
-    <button class="btn gold fm-all" id="cpAll">${icon('gift')}Collect all</button>
+    <div class="fm-acts"><button class="btn ghost fm-auto" id="cpAuto" title="Fill every empty place: the best fighter goes to the Tournament, the rest to the Tavern and Central">${icon('send')}Auto send best</button><button class="btn gold fm-all" id="cpAll">${icon('gift')}Collect all</button></div>
     ${fmSel && campPlace(fmSel) ? `<aside class="fm-panel glass-deep" id="fmPanel">${campPanel(campPlace(fmSel))}</aside>` : ''}`;
   $('#fmBack').onclick = closeFarm;
   $('#fmSwitch').onclick = () => { fmView = 'base'; fmSel = null; renderFarm(); };
   $('#cpAll').onclick = () => collectCamp(CAMP_PLACES.map(p => p.id));
+  $('#cpAuto').onclick = autoSendCamp;
   fmEl.querySelectorAll('[data-cp]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.cp ? null : b.dataset.cp; campPick = []; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;

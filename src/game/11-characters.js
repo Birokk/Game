@@ -92,10 +92,9 @@ function renderCharacters() {
   csEl.className = `cs r${c.rarity}`;
   const tabs = [['home', 'home', 'Home'], ['skins', 'hanger', 'Skins'], ['wardrobe', 'wardrobe', 'Wardrobe'], ['memory', 'memory', 'Memory'], ['pet', 'paw', 'Pet'], ['bt', 'sparkle', 'Breakthrough'], ['pot', 'potential', 'Potential'], ['bond', 'heart', 'Bond'], ['info', 'info', 'Character Info']];
   const head = `<div class="cs-head">
-      <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
+      <div class="cs-elem ts"><span>${c.mc ? 'Main character' : TYPES[c.type]}</span>${csAttrHTML(c)}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
       ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity} ${urPlus(c) ? 'plus' : ''}">${RNAME[c.rarity]}${urPlus(c) ? '<i>+</i>' : ''}</span>` : ''}
-      ${csAttrHTML(c)}
     </div>
     <div class="cs-sep"></div>
     <div class="cs-traits">${starRow(st, -1, c)}

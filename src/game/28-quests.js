@@ -61,6 +61,7 @@ function questAdd(id, n = 1) {
   const sets = { ...Q_SETS, ...BP_SETS };   // the Pearl Honor missions count the same actions
   for (const set of Object.keys(sets)) { const q = sets[set].list.find(x => x.id === id); if (!q) continue;
     const st = qState(set); st.p[id] = Math.min(q.need, (st.p[id] || 0) + n); }
+  guildQuestAdd(id, n);   // guild quests count the same actions (41-guild.js)
 }
 const qProg = (q, set = 'daily') => Math.min(q.need, qState(set).p[q.id] || 0);
 const qDone = (q, set = 'daily') => qState(set).done.includes(q.id);

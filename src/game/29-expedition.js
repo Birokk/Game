@@ -43,6 +43,17 @@ function sendExpedition(areaId, charId) {
   exPick = null; persist(); renderFarm();
   toast(`${c.name} set off for the ${expArea(areaId).name}. Back in 12 hours.`);
 }
+/* Auto send best: every free place gets the best free character (UR first, then the highest CS), all at once */
+const expBestFree = () => expChars().filter(e => !busyWhere(e.id)).sort((a, b) => b.rarity - a.rarity || charScore(b) - charScore(a) || a.name.localeCompare(b.name));
+function autoSendExpeditions() {
+  const free = EXP_AREAS.filter(a => !expOf(a.id)), list = expBestFree(), sent = [];
+  if (!free.length) { toast('Every place already has someone exploring it.'); return; }
+  if (!list.length) { toast(expChars().length ? 'Every character is already away.' : "You don't own any characters yet."); return; }
+  const now = Date.now(), d = { ...(S.expd || {}) };
+  free.forEach((a, i) => { const c = list[i]; if (!c) return; d[a.id] = { char: c.id, start: now, ends: now + EXP_MS }; sent.push(c.name); });
+  S.expd = d; exPick = null; fmSel = null; persist(); renderFarm();
+  toast(`Sent ${sent.length}: ${sent.join(', ')}. Back in 12 hours.`);
+}
 const EXP_NAMES = { coins: 'gold', pearls: 'pearls', exp: 'EXP', tickets: 'Limited ticket', wishes: 'Standard ticket' };
 function collectExpeditions(ids) {
   const res = [];
@@ -88,11 +99,12 @@ function renderExpedition() {
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">Expedition</h2>${infoBtn('expedition', 'How expeditions work')}<span class="fm-rate ts">${away} / ${EXP_AREAS.length} away · 12 h each</span></div>
     <div class="fm-cur"><div class="cur" title="Stamina">${curIcon('stamina')}<b>${stamina()}</b></div>${['coins', 'pearls'].map(k => `<div class="cur" title="${k === 'coins' ? 'Gold coins' : 'Pearls'}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
     <button class="fm-switch left" id="fmSwitch" aria-label="Back to the Base">${icon('back')}<b>Base</b></button>
-    <button class="btn gold fm-all" id="exAll">${icon('gift')}Collect all</button>
+    <div class="fm-acts"><button class="btn ghost fm-auto" id="exAuto" title="Send your best free characters (UR first, then the highest CS) to every empty place">${icon('send')}Auto send best</button><button class="btn gold fm-all" id="exAll">${icon('gift')}Collect all</button></div>
     ${fmSel && expArea(fmSel) ? `<aside class="fm-panel glass-deep" id="fmPanel">${expPanel(expArea(fmSel))}</aside>` : ''}`;
   $('#fmBack').onclick = closeFarm;
   $('#fmSwitch').onclick = () => { fmView = 'base'; fmSel = null; renderFarm(); };
   $('#exAll').onclick = () => collectExpeditions(EXP_AREAS.map(a => a.id));
+  $('#exAuto').onclick = autoSendExpeditions;
   fmEl.querySelectorAll('[data-ex]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.ex ? null : b.dataset.ex; exPick = null; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;

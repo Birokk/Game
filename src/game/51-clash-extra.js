@@ -30,9 +30,36 @@ function ccEventReveal(done) {
   const c = ccEvCol(G.ev), el = document.createElement('div'); el.className = 'ccx-ev'; el.style.setProperty('--ec', c);
   el.innerHTML = `<i class="cce-bg"></i><i class="cce-rays"></i><div class="cce-box"><span class="cce-ic">${ccEvIco(G.ev)}</span><small>Battle event</small><b>${esc(E.name)}</b><p>${esc(E.text)}</p></div>`;
   L.appendChild(el);
-  ccLater(260, () => { ccGlow(800, 400, c, 360, 30); ccBurst(800, 400, { n: 60, c: [c, '#fff'], sp: 9, g: .03, life: 36 }); ccRing(800, 400, c, { r0: 30, r1: 420, w: 6, life: 30 }); });
+  ccLater(260, () => { ccGlow(800, 400, c, 360, 30); ccBurst(800, 400, { n: 60, c: [c, '#fff'], sp: 9, g: .03, life: 36 }); ccRing(800, 400, c, { r0: 30, r1: 420, w: 6, life: 30 }); ccWxStart(G.ev); });   // the weather starts with the reveal
   ccLater(2500, () => el.classList.add('out'));
   ccLater(2900, () => { el.remove(); done(); });
+}
+/* ---- coin flip: after the VS intro a coin decides who goes first (G.first comes from the match seed, the coin just
+   lands on it). Your face: crystal rim with your deck leader (else your avatar); the other face: crimson with the bot's
+   character. The coin is a stack of discs (the gold edge shows while it spins), tossed up, turning, landing, bouncing. */
+function ccCoinFlip(done) {
+  const G = ccM && ccM.G, L = ccLayer && ccLayer();
+  if (!G || !L) return done();
+  const meFirst = G.first === 0, le = ccM.leader, foe = ccM.foe;
+  const myPic = le ? thumbImg(le) : avatarHTML(150), foePic = foe ? baseThumb(foe) : ccIco('bot');
+  const end = 360 * 5 + (meFirst ? 0 : 180);   // five turns, then your face up or the bot's
+  const el = document.createElement('div'); el.className = `ccx-coin ${meFirst ? 'me' : 'op'}`;
+  el.innerHTML = `<i class="ccn-bg"></i>
+    <div class="ccn-title"><small>Coin flip</small><b>Who goes first?</b></div>
+    <div class="ccn-keys"><span class="ccn-key me"><i></i>You</span><span class="ccn-key op"><i></i>${esc(G.names[1])}</span></div>
+    <i class="ccn-glow"></i><i class="ccn-shadow"></i>
+    <div class="ccn-stage"><div class="ccn-toss"><div class="ccn-coin" style="--end:${end}deg">
+      ${Array.from({ length: 13 }, (_, i) => `<i class="ccn-rim" style="transform:translateZ(${i - 6}px)"></i>`).join('')}
+      <div class="ccn-face me"><span class="ccn-pic">${myPic}</span><span class="ccn-lbl">You</span></div>
+      <div class="ccn-face op"><span class="ccn-pic">${foePic}</span><span class="ccn-lbl">${esc(G.names[1])}</span></div>
+    </div></div></div>
+    <div class="ccn-res"><b>${meFirst ? 'You go first!' : `${esc(G.names[1])} goes first`}</b><small>${meFirst ? 'You draw 1 card on turn one, the bot gets 6 AP on its first turn' : 'You get 6 AP on your first turn to make up for it'}</small></div>`;
+  L.appendChild(el);
+  const c = meFirst ? ['#ffe3f6', '#e2bcff', '#bfe2ff', '#fff'] : ['#ff4d63', '#ffb3bd', '#ff8a9a', '#fff'];
+  ccLater(380, () => ccBurst(800, 440, { n: 18, c: ['#fff3c4', '#f3d98f'], sp: 5, g: .08, life: 22 }));   // the toss
+  ccLater(2060, () => { el.classList.add('done'); ccShake(6, 260); ccGlow(800, 436, c[1], 210, 22); ccBurst(800, 436, { n: 70, c, sp: 11, g: .05, life: 38 }); ccRing(800, 436, c[0], { r0: 90, r1: 420, w: 6, life: 30 }); });
+  ccLater(3500, () => el.classList.add('out'));
+  ccLater(3880, () => { el.remove(); done(); });
 }
 /* the rules book page */
 const ccEventsRulesHTML = () => `<div class="ccr-evs">${CC_EV_KEYS.map(k => { const E = CC_EVENTS[k]; return `<div class="ccr-ev" style="--ec:${ccEvCol(k)}"><span class="ccr-ev-ic">${ccEvIco(k)}</span><span><b>${esc(E.name)}</b><small>${esc(E.text)}</small></span></div>`; }).join('')}</div>`;
@@ -74,6 +101,7 @@ function ccGrantRewards(winner) {
   S.wallet.coins = (S.wallet.coins || 0) + out.gold;
   if (out.pearls) S.wallet.pearls = (S.wallet.pearls || 0) + out.pearls;
   if (k === 'win') {
+    questAdd('clash', 1);   // guild quest: win a Card Clash match
     if (wardFree() < 1) out.full = true;
     else {   // one piece, rolled like a gear raid clear (a random gear dungeon: its UR set, the shared R / SSR sets, 1.5% a 2★ UR)
       const d = rpick(RAIDS.filter(x => x.kind === 'gear')), ur = dungeonPieces(d, 5), st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d);

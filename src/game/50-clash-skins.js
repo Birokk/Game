@@ -101,24 +101,19 @@ function ccSkEnv() {
   const [me, op] = ccM.skins || ['default', 'default'], cm = ccSkinCol(me, 0), co = ccSkinCol(op, 1), st = ccM.el.style;
   st.setProperty('--ccsT', co[0]); st.setProperty('--ccsT2', co[1]); st.setProperty('--ccsB', cm[0]); st.setProperty('--ccsB2', cm[1]);
   const sky = (bs, side) => `<div class="ccm-sky ${side}" data-bs="${bs}"><i class="sk1"></i><i class="sk2"></i><i class="sk3"></i><i class="sk4"></i><i class="sk5"></i></div>`;
-  const ev = ccM.G && ccM.G.ev;   // a battle event also brings its weather to the hall (and rain / wind over the whole table)
+  const ev = ccM.G && ccM.G.ev;   // a battle event also brings its weather to the hall (its full-screen layer is 53-clash-weather.js)
   env.insertAdjacentHTML('beforeend', `${sky(op, 'op')}${sky(me, 'me')}${ev ? `<div class="ccm-wx" data-ev="${ev}"><i></i></div>` : ''}<div class="ccm-seam"><i class="w1"></i><i class="w2"></i></div><canvas class="ccsk-envc" width="1600" height="900"></canvas>`);
   const cv = env.querySelector('.ccsk-envc'), g = cv.getContext('2d');
   // the stage is 1600×900 and the middle line sits at y 400: the bot's side above it, yours below
   ccSkZone('env1', cv, g, 0, 0, 1600, 400, op, 1, true);
   ccSkZone('env0', cv, g, 0, 400, 1600, 500, me, 0, true);
   ccSkZone('seam', cv, g, 0, 372, 1600, 56, 'seam', 0, true, [co, cm]);
-  if (ev) {   // the event's weather plays over the whole screen, the table included: a tint / light layer and a particle canvas
-    const stage = ccM.el.querySelector('.ccm-stage');
-    stage.insertAdjacentHTML('beforeend', `<div class="ccm-wxo" data-ev="${ev}"></div><canvas class="ccm-wxc" width="1600" height="900"></canvas>`);
-    const tc = stage.querySelector('.ccm-wxc'); ccSkZone('wxTop', tc, tc.getContext('2d'), 0, 0, 1600, 900, 'ev:' + ev, 0, false);
-  }
 }
 
 /* ---- moving particles: zones on canvases. Each half of the board has its own canvas (1044×376, moved back into its
    half after every redraw); the hall has one canvas (1600×900, never redrawn) with a zone per side plus the seam ---- */
 const ccSk = { zones: [], glitch: {} };
-function ccSkReset() { ccSk.zones = []; ccSk.glitch = {}; ccSk.boltAt = 0; }
+function ccSkReset() { ccSk.zones = []; ccSk.glitch = {}; }
 function ccSkZone(id, cv, g, x0, y0, w, h, bs, p, env, cols) {
   let z = ccSk.zones.find(q => q.id === id);
   if (!z) { z = { id, parts: [] }; ccSk.zones.push(z); }
@@ -141,7 +136,7 @@ function ccSkAttach() {
     half.insertBefore(cv, half.querySelector('.cc-runes'));
   });
 }
-const CC_SK_N = { forest: 22, sakura: 30, inferno: 38, cyber: 30, seam: 34, 'ev:rain': 240, 'ev:wind': 28, 'ev:starfall': 34, 'ev:sanctuary': 50, 'ev:surge': 44, 'ev:heat': 40, 'ev:bloodmoon': 46 };
+const CC_SK_N = { forest: 22, sakura: 30, inferno: 38, cyber: 30, seam: 34 };
 const ccR = (a, b) => a + Math.random() * (b - a);
 /* the hall's zones put most particles beside the board, where they can be seen */
 const ccSkX = z => !z.env || Math.random() < .2 ? ccR(10, z.w - 10) : Math.random() < .5 ? ccR(0, 290) : ccR(1310, 1600);
@@ -162,26 +157,6 @@ function ccSkSpawn(z, anywhere) {
       L.push({ k: 'car', x: dir > 0 ? -40 : W + 40, y: (z.p ? 318 : 112) + ccR(-16, 16), vx: dir * ccR(2.5, 5.5), c: Math.random() < .5 ? '255,43,214' : '41,240,255' }); }
     else if (Math.random() < .7) { const col = z.env ? Math.round(ccSkX(z) / 32) * 32 : Math.floor(ccR(1, W / 32)) * 32; L.push({ k: 'rain', x: col, y: anywhere ? ccR(0, H) : -60, vy: ccR(1.6, 4.2), len: ccR(24, 70), c: Math.random() < .18 ? '#ff2bd6' : '#29f0ff' }); }
     else L.push({ k: 'bit', x: ccSkX(z), y: ccR(20, H - 20), vy: -ccR(.1, .35), s: ccR(3, 7), ph: ccR(0, 6.3), life: 1, dec: ccR(.002, .006), c: Math.random() < .35 ? '#ff2bd6' : '#29f0ff' });
-  } else if (bs === 'ev:rain') {   // battle event weather, over the whole screen: drops land and splash on the table
-    L.push({ k: 'drop', x: ccR(-60, W + 160), y: anywhere ? ccR(-40, H) : ccR(-90, -10), vx: -3.2, vy: ccR(17, 25), len: ccR(18, 40), a: ccR(.24, .5), ty: ccR(60, H + 40) });
-  } else if (bs === 'ev:wind') {
-    if (Math.random() < .7) L.push({ k: 'gust', x: anywhere ? ccR(-300, W) : ccR(-600, -150), y: ccR(30, H - 30), vx: ccR(10, 18), len: ccR(120, 280), amp: ccR(4, 14), ph: ccR(0, 6.3), a: ccR(.12, .3) });
-    else L.push({ k: 'leaf', x: anywhere ? ccR(0, W) : -20, y: ccR(10, H - 10), vx: ccR(3, 6.5), vy: ccR(-.5, .5), a: ccR(0, 6.3), va: ccR(-.08, .08), s: ccR(.8, 1.3), c: ['#6fbf62', '#8fbf4a', '#c9a24a', '#d98a3a'][Math.floor(ccR(0, 4))] });
-  } else if (bs === 'ev:starfall') {
-    if (L.filter(q => q.k === 'shoot').length < 4 && Math.random() < .25) L.push({ k: 'shoot', x: ccR(-200, W * .8), y: ccR(-40, H * .55), vx: ccR(9, 14), vy: ccR(3, 5.5), life: 1, dec: ccR(.009, .015), delay: anywhere ? ccR(0, 3000) : ccR(200, 1800) });
-    else L.push({ k: 'twinkle', x: ccR(10, W - 10), y: anywhere ? ccR(0, H) : -10, vy: ccR(.3, .9), s: ccR(2, 4.5), ph: ccR(0, 6.3), c: Math.random() < .5 ? '255,244,214' : '210,225,255' });
-  } else if (bs === 'ev:sanctuary') {
-    if (Math.random() < .75) L.push({ k: 'holy', x: ccSkX(z), y: anywhere ? ccR(0, H) : H + 10, vy: ccR(.35, .9), ph: ccR(0, 6.3), r: ccR(1.2, 3) });
-    else L.push({ k: 'twinkle', x: ccR(10, W - 10), y: ccR(0, H), vy: -ccR(.1, .3), s: ccR(2, 4), ph: ccR(0, 6.3), c: '255,226,150' });
-  } else if (bs === 'ev:surge') {
-    if (Math.random() < .12) L.push({ k: 'pulse', x: ccR(100, W - 100), y: ccR(80, H - 80), r: 4, life: 1, dec: ccR(.012, .02), c: Math.random() < .6 ? '201,155,255' : '255,150,230' });
-    else L.push({ k: 'glyph', x: ccSkX(z), y: ccR(40, H - 40), vy: ccR(.2, .6), a: ccR(0, 6.3), va: ccR(-.04, .04), s: ccR(3, 8), life: anywhere ? ccR(.3, 1) : 1, dec: ccR(.003, .007), c: Math.random() < .6 ? '201,155,255' : '255,150,230' });
-  } else if (bs === 'ev:heat') {
-    if (Math.random() < .35) L.push({ k: 'haze', x: ccSkX(z), y: anywhere ? ccR(0, H) : H + 30, vy: ccR(.5, 1.2), r: ccR(18, 42), ph: ccR(0, 6.3), life: 1, dec: ccR(.003, .006) });
-    else L.push({ k: 'ember', x: ccSkX(z), y: anywhere ? ccR(0, H) : H - ccR(0, 60), vx: ccR(-.25, .25), vy: -ccR(.5, 1.3), r: ccR(.9, 2.2), life: anywhere ? ccR(.2, 1) : 1, dec: ccR(.003, .007), ph: ccR(0, 6.3) });
-  } else if (bs === 'ev:bloodmoon') {
-    if (Math.random() < .55) L.push({ k: 'petal', x: anywhere ? ccR(0, W) : ccR(-40, W * .7), y: anywhere ? ccR(0, H) : -14, vx: ccR(.4, .9), vy: ccR(.35, .7), a: ccR(0, 6.3), va: ccR(-.03, .03), fl: ccR(.03, .07), ph: ccR(0, 6.3), s: ccR(.8, 1.3), c: ['#b3122a', '#d6233f', '#8a0c1e', '#e8455a'][Math.floor(ccR(0, 4))] });
-    else L.push({ k: 'ash', x: ccSkX(z), y: anywhere ? ccR(0, H) : -10, vx: ccR(-.2, .3), vy: ccR(.3, .8), r: ccR(1, 2.4), ph: ccR(0, 6.3) });
   } else if (bs === 'seam') {   // sparks of both sides' colours drifting along the middle line
     const top = Math.random() < .5, c = z.cols[top ? 0 : 1];
     L.push({ k: 'mix', x: ccSkX(z), y: H / 2 + (top ? -1 : 1) * ccR(2, 22), vx: ccR(.3, .9) * (Math.random() < .5 ? -1 : 1), ph: ccR(0, 6.3), r: ccR(1, 2.4), life: anywhere ? ccR(.3, 1) : 1, dec: ccR(.003, .008), c: c[Math.random() < .7 ? 0 : 1] });
@@ -198,74 +173,6 @@ function ccSkFrame(now) {
     for (let i = L.length - 1; i >= 0; i--) {
       const q = L[i];
       if (q.delay > 0) { q.delay -= 16; continue; }
-      if (q.k === 'drop') {   // rain streaks; each lands somewhere on the screen and splashes
-        q.x += q.vx; q.y += q.vy;
-        if (q.ty && q.y >= q.ty) { L[i] = { k: 'splash', x: q.x, y: q.ty, life: 1, dec: ccR(.05, .09), s: ccR(.7, 1.2) }; continue; }
-        if (q.y - q.len > H) { L.splice(i, 1); continue; }
-        g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(190,220,255,${q.a})`; g.lineWidth = 1.4;
-        g.beginPath(); g.moveTo(q.x, q.y); g.lineTo(q.x - q.vx * q.len / q.vy, q.y - q.len); g.stroke(); continue;
-      }
-      if (q.k === 'splash') {   // a raindrop's splash ring
-        q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
-        const rx = (2 + (1 - q.life) * 11) * q.s; g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(200,225,255,${(q.life * .55).toFixed(3)})`; g.lineWidth = 1.1;
-        g.beginPath(); g.ellipse(q.x, q.y, rx, rx * .34, 0, 0, 6.283); g.stroke();
-        if (q.life > .7) { g.fillStyle = `rgba(220,235,255,${(q.life * .6).toFixed(3)})`; g.fillRect(q.x - 1, q.y - 4 * (1 - q.life) * 4 - 2, 1.6, 1.6); }
-        continue;
-      }
-      if (q.k === 'bolt') {   // a lightning strike in the sky
-        q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
-        g.globalCompositeOperation = 'lighter'; g.lineJoin = 'round';
-        for (const [w, a] of [[9, .16], [3.5, .5], [1.4, 1]]) { g.strokeStyle = `rgba(225,235,255,${(a * q.life).toFixed(3)})`; g.lineWidth = w; g.beginPath(); q.pts.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); }
-        continue;
-      }
-      if (q.k === 'twinkle') {   // falling / floating little stars
-        q.y += q.vy; if (q.y > H + 10 || q.y < -10) { L.splice(i, 1); continue; }
-        const a = .35 + .6 * Math.max(0, Math.sin(t * 3 + q.ph)), s2 = q.s * (.7 + .5 * a);
-        g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(${q.c},${a.toFixed(3)})`;
-        g.beginPath(); g.moveTo(q.x, q.y - s2 * 2); g.lineTo(q.x + s2 * .35, q.y - s2 * .35); g.lineTo(q.x + s2 * 2, q.y); g.lineTo(q.x + s2 * .35, q.y + s2 * .35); g.lineTo(q.x, q.y + s2 * 2); g.lineTo(q.x - s2 * .35, q.y + s2 * .35); g.lineTo(q.x - s2 * 2, q.y); g.lineTo(q.x - s2 * .35, q.y - s2 * .35); g.fill(); continue;
-      }
-      if (q.k === 'pulse') {   // an arcane ring spreading out
-        q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
-        const r = 6 + (1 - q.life) * 120; g.globalCompositeOperation = 'lighter';
-        g.strokeStyle = `rgba(${q.c},${(q.life * .5).toFixed(3)})`; g.lineWidth = 2.5 * q.life + .5; g.beginPath(); g.arc(q.x, q.y, r, 0, 6.283); g.stroke();
-        g.strokeStyle = `rgba(255,255,255,${(q.life * .25).toFixed(3)})`; g.lineWidth = 1; g.beginPath(); g.arc(q.x, q.y, r * .7, 0, 6.283); g.stroke(); continue;
-      }
-      if (q.k === 'gust') {   // wind streaks rushing across
-        q.x += q.vx; if (q.x - q.len > W) { L.splice(i, 1); continue; }
-        g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(225,255,246,${q.a})`; g.lineWidth = 1.4; g.beginPath();
-        for (let k = 0; k <= 10; k++) { const xx = q.x - q.len + q.len * k / 10, yy = q.y + Math.sin(xx / 60 + q.ph + t * 2) * q.amp; k ? g.lineTo(xx, yy) : g.moveTo(xx, yy); }
-        g.stroke(); continue;
-      }
-      if (q.k === 'shoot') {   // a shooting star with its trail
-        q.x += q.vx; q.y += q.vy; q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
-        const tx = q.x - q.vx * 16, ty = q.y - q.vy * 16, gr = g.createLinearGradient(tx, ty, q.x, q.y);
-        gr.addColorStop(0, 'rgba(255,240,200,0)'); gr.addColorStop(1, `rgba(255,248,225,${(q.life * .9).toFixed(3)})`);
-        g.globalCompositeOperation = 'lighter'; g.strokeStyle = gr; g.lineWidth = 2.2; g.beginPath(); g.moveTo(tx, ty); g.lineTo(q.x, q.y); g.stroke();
-        g.fillStyle = `rgba(255,250,235,${q.life.toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, 2.4, 0, 6.283); g.fill(); continue;
-      }
-      if (q.k === 'holy') {   // golden motes rising
-        q.y -= q.vy; q.x += Math.sin(t + q.ph) * .2; if (q.y < -10) { L.splice(i, 1); continue; }
-        const a = .35 + .35 * Math.sin(t * 2 + q.ph); g.globalCompositeOperation = 'lighter';
-        g.fillStyle = `rgba(255,220,140,${(a * .3).toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r * 4, 0, 6.283); g.fill();
-        g.fillStyle = `rgba(255,240,190,${a.toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); continue;
-      }
-      if (q.k === 'glyph') {   // arcane star-sparks turning as they float up
-        q.y -= q.vy; q.a += q.va; q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
-        const a = Math.min(1, q.life * 1.6) * (.6 + .4 * Math.sin(t * 4 + q.a)), s2 = q.s;
-        g.globalCompositeOperation = 'lighter'; g.save(); g.translate(q.x, q.y); g.rotate(q.a); g.fillStyle = `rgba(${q.c},${a.toFixed(3)})`;
-        g.beginPath(); g.moveTo(0, -s2); g.lineTo(s2 * .25, -s2 * .25); g.lineTo(s2, 0); g.lineTo(s2 * .25, s2 * .25); g.lineTo(0, s2); g.lineTo(-s2 * .25, s2 * .25); g.lineTo(-s2, 0); g.lineTo(-s2 * .25, -s2 * .25); g.fill(); g.restore(); continue;
-      }
-      if (q.k === 'haze') {   // heat shimmer blobs rising
-        q.y -= q.vy; q.x += Math.sin(t * 1.5 + q.ph) * .4; q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
-        const gr = g.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.r); gr.addColorStop(0, `rgba(255,150,60,${(q.life * .12).toFixed(3)})`); gr.addColorStop(1, 'rgba(255,120,40,0)');
-        g.globalCompositeOperation = 'lighter'; g.fillStyle = gr; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); continue;
-      }
-      if (q.k === 'ash') {   // crimson ash under the blood moon
-        q.x += q.vx + Math.sin(t * 1.3 + q.ph) * .3; q.y += q.vy; if (q.y > H + 10) { L.splice(i, 1); continue; }
-        const a = .45 + .3 * Math.sin(t * 3 + q.ph); g.globalCompositeOperation = 'lighter';
-        g.fillStyle = `rgba(255,60,80,${(a * .25).toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r * 3.5, 0, 6.283); g.fill();
-        g.fillStyle = `rgba(255,120,130,${a.toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); continue;
-      }
       if (q.k === 'car') {   // a flying car: two headlights and a light trail
         q.x += q.vx; if (q.x < -60 || q.x > W + 60) { L.splice(i, 1); continue; }
         g.globalCompositeOperation = 'lighter'; const gr = g.createLinearGradient(q.x - q.vx * 12, 0, q.x, 0);
@@ -319,16 +226,6 @@ function ccSkFrame(now) {
         g.globalAlpha = a; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); g.globalAlpha = 1;
       }
     }
-    if (z.bs === 'ev:rain') {   // now and then lightning: a bolt in the sky and a flash over the whole screen
-      if (!ccSk.boltAt) ccSk.boltAt = now + ccR(2500, 5000);
-      else if (now > ccSk.boltAt) {
-        ccSk.boltAt = now + ccR(6000, 11000);
-        const x0 = Math.random() < .5 ? ccR(30, 260) : ccR(1340, 1570), pts = [[x0, -10]]; let x = x0, y = -10;
-        while (y < ccR(260, 520)) { x += ccR(-28, 28); y += ccR(26, 52); pts.push([x, y]); }
-        L.push({ k: 'bolt', pts, life: 1, dec: .07 });
-        const o = ccM && ccM.el && ccM.el.querySelector('.ccm-wxo'); if (o) { o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }
-      }
-    }
     if (z.bs === 'cyber') {   // now and then a glitch bar flickers across
       const gl = ccSk.glitch[z.id] || 0;
       if (now > gl) ccSk.glitch[z.id] = now + ccR(1800, 4200);
@@ -339,7 +236,6 @@ function ccSkFrame(now) {
       }
     }
     g.restore(); g.globalCompositeOperation = 'source-over';
-    if (z.bs.startsWith('ev:')) { const need = ccSkMax(z) - L.length, n = Math.min(need, z.bs === 'ev:rain' ? 9 : z.bs === 'ev:starfall' ? 1 : 2); for (let k = 0; k < n; k++) ccSkSpawn(z, false); }   // weather keeps its density
-    else if (L.length < ccSkMax(z) && Math.random() < (z.env ? .55 : .35)) ccSkSpawn(z, false);
+    if (L.length < ccSkMax(z) && Math.random() < (z.env ? .55 : .35)) ccSkSpawn(z, false);
   }
 }
