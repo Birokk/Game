@@ -259,8 +259,9 @@ function doPull(n, bk = curBanner, free = false) {
     if (!canPull(n, bk)) { toast(bk === 'stepup' ? `You need ${pearlNeed(n, bk)} pearls for this step.` : `You need ${tkNeed(n, bk)} ${TK_NAME[TK(bk)].toLowerCase()}${tkNeed(n, bk) > 1 ? 's' : ''} or ${pearlNeed(n, bk)} pearls for this pull.`); return; }
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
-  // Max Win: 0.1% of ×10 summons hold at least 5 URs (one of them upgraded from an SSR) and play every animation (not on the Beginner Wish or Step-Up)
-  const maxwin = n === 10 && !isSpecial(bk) && Math.random() < MAXWIN_CHANCE;
+  // Max Win: 0.1% of ×10 summons hold at least 5 URs (one of them upgraded from an SSR) and play every animation (not on the Beginner Wish or Step-Up);
+  // only possible from player level 10 with at least 100 summons already made (maxWinOpen)
+  const maxwin = n === 10 && !isSpecial(bk) && maxWinOpen() && Math.random() < MAXWIN_CHANCE;
   let bonus = 0, results;
   if (bk === 'stepup') { const sp = stepPull(); results = sp.out; bonus = sp.gold; }
   else results = (maxwin && maxWinResults(bk)) || Array.from({ length: n }, () => rollOne(bk));
@@ -699,6 +700,8 @@ function startPfx(canvas, tier) {
    Fakeout: now and then a UR pull stops at orange, a character wallpaper (admin → Summon animation, S.fakeArts) slides in,
    and the sphere transforms into UR. Never when hard pity guaranteed the UR. */
 const FAKEOUT_CHANCE = .3, DOUBLE_CHANCE = .5, MAXWIN_CHANCE = .001;
+const MAXWIN_LV = 10, MAXWIN_PULLS = 100;   // a Max Win can only happen from player level 10 and after 100 summons (every banner counts)
+const maxWinOpen = () => playerLv().lv >= MAXWIN_LV && totalPulls() >= MAXWIN_PULLS;
 function fakeArt() {
   const own = (S.fakeArts || []).map(k => MEDIA.get(k)).filter(Boolean);
   if (own.length) return rpick(own);

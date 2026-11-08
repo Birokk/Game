@@ -1,14 +1,14 @@
-/* ---------- Card Clash auto play: a planner that plays your side and wins ----------
-   Unlike the bot (which only sees its own cards and looks one action ahead), auto play reads the whole match:
-   the bot's hand, its face-down traps and the order of both decks (the engine is deterministic, so every
-   simulated move happens exactly like the real one). Each of your turns it searches whole sequences of
-   actions (a beam search over copies of the match), lets the bot answer each promising end position the way
-   the real bot would (its own policy, minus its small random noise), and keeps the plan whose position is best
-   after that answer. A won position always beats anything else, a draw counts almost as badly as a loss, and
-   the longer the match runs the more the enemy hero's HP weighs, so it never settles for the round-40 draw.
-   Pure functions on the match state: no DOM here (the UI in 45-clash-ui.js runs the plan). */
+/* ---------- Card Clash auto play: a good, fair player for your side ----------
+   It sees what a player sees: its own hand, the board and that a face-down trap is there, never the bot's hand, the
+   trap itself or either deck's order (it plans on ccRedact's copy, like the bot). Each of your turns it tries whole
+   sequences of actions (a beam search over copies of the match) and plays the ending its evaluation likes best; it
+   does not play the future forward. Now and then it slips and takes its second or third best line (`slip`, decided
+   by ccNoise from the match state, so the same seed and moves still replay the same match). When a hidden trap
+   changes the board, the rest of the turn is planned again. Against the bot it wins most matches, not all of them
+   (the owner asked for no 100% win rate; tested in Node, see CLAUDE.md). Pure functions, no DOM: the UI in
+   45-clash-ui.js runs the plan. */
 
-const CC_AUTO = { beam: 10, depth: 12, reply: 12, horizon: 16, lateExtra: 10, endExtra: 12 };
+const CC_AUTO = { beam: 6, depth: 10, reply: 6, horizon: 0, lateFrom: 22, lateHorizon: 10, slip: .15, slipTop: 4, noise: 30 };
 function ccAutoUnit(G, u) {
   const d = ccDef(u.id), atk = ccPermAtk(u), max = ccMaxHp(u);
   let v = atk * 1.7 + u.hp * 1.15 + (ccArm(u) ? 2.2 : 0) + (max - d.hp) * .2 + (u.eq ? .8 : 0);
@@ -58,11 +58,25 @@ function ccAutoEval(G, me) {
   return s;
 }
 const ccAutoKey = g => g.players.map(P => [P.hp, P.ap, P.hand.length, P.traps.map(t => t ? 1 : 0).join(''), P.board.flat().map(u => u ? `${u.iid}${u.lane}${u.row}.${u.hp}.${u.up}${u.attacked ? 'a' : ''}${u.moveUsed ? 'm' : ''}${u.eq ? 'e' : ''}` : '-').join(',')].join('|')).join('/') + g.phase;
-/* the real bot's answer: its noise comes from the match state (ccNoise), so this is exactly what it will do */
+/* the bot's answer to an ending (simulated with the bot's own policy on auto play's copy of the match) */
 function ccAutoReply(g, me) {
   let n = 0; while (g.phase !== 'over' && g.active !== me && n++ < 40) { const a = ccBotPick(g); if (ccApply(g, a)) ccApply(g, { k: 'end' }); }
   return g;
 }
+/* a few more rounds played forward with auto play's quick turns (only when `horizon` > 0) */
+function ccAutoRollout(g, me, rounds) {
+  const end = g.round + rounds; let n = 0;
+  while (g.phase !== 'over' && g.round < end && n++ < 300) {
+    if (g.active === me) {
+      const f = ccAutoTurn(g, me, 3, 10)[0];
+      for (const a of f ? f.seq : []) { if (ccApply(g, a) || g.phase === 'over') break; }
+      if (g.phase === 'choice' && g.active === me) ccApply(g, ccLegal(g)[0]);
+      if (g.phase === 'main' && g.active === me) ccApply(g, { k: 'end' });
+    } else ccAutoReply(g, me);
+  }
+  return g;
+}
+const ccAutoScore = (g, me) => g.phase === 'over' ? (g.winner === me ? 1e7 - g.turnNo * 1000 : g.winner === 'draw' ? -6e6 : -1e7 + g.turnNo * 1000) : ccAutoEval(g, me);
 /* every distinct way this turn could end (beam search over whole action sequences), best first by the evaluation */
 function ccAutoTurn(G, me, beam, depth) {
   let layer = [{ g: ccClone(G), seq: [] }];
@@ -89,77 +103,52 @@ function ccAutoTurn(G, me, beam, depth) {
   }
   return out;
 }
-/* the cheap version of a turn used inside simulations: the best ending by the evaluation alone */
-function ccAutoBase(G, me, bb = 3) { const f = ccAutoTurn(G, me, bb, 10)[0]; return f ? f.seq : []; }
-/* play the match forward exactly (auto play's cheap turns against the real bot) for up to `rounds` rounds */
-function ccAutoRollout(g, me, rounds, bb = 3) {
-  const end = g.round + rounds; let n = 0;
-  while (g.phase !== 'over' && g.round < end && n++ < 300) {
-    if (g.active === me) {
-      for (const a of ccAutoBase(g, me, bb)) { if (ccApply(g, a) || g.phase === 'over') break; }
-      if (g.phase === 'choice' && g.active === me) ccApply(g, ccLegal(g)[0]);
-      if (g.phase === 'main' && g.active === me) ccApply(g, { k: 'end' });
-    } else ccAutoReply(g, me);
-  }
-  return g;
-}
-const ccAutoScore = (g, me) => g.phase === 'over' ? (g.winner === me ? 1e7 - g.turnNo * 1000 : g.winner === 'draw' ? -6e6 - g.players[1 - me].hp * 5000 + g.players[me].hp * 50 : -1e7 + g.turnNo * 1000) : ccAutoEval(g, me);
-/* the plan for the rest of this turn: a list of actions ending with { k: 'end' } (or a winning action).
-   The most promising ways to end the turn (plus the cheap policy's own choice, so the result can only get
-   better) are each played forward exactly: the bot's answer, then auto play's cheap turns against the real bot,
-   for up to `o.horizon` rounds or to the end of the match. The plan whose future is best wins: a victory
-   (the sooner the better), else the best position, a draw only before a loss. */
+/* the plan for the rest of this turn: a list of actions ending with { k: 'end' } (or a winning action). Each action
+   carries `pre`, the position (as auto play sees it) it expects just before it: when the real board differs (a hidden
+   trap went off), the UI plans again. A generator so the browser can breathe between the simulated futures. */
 function* ccAutoPlanGen(G, o = CC_AUTO) {
   const me = G.active;
   if (G.phase === 'over') return [];
-  const endgame = G.round >= 33;   // a long stalemate: search much wider in the last rounds
-  const fin = ccAutoTurn(G, me, endgame ? o.beam * 2 : o.beam, o.depth);
-  if (fin[0] && fin[0].win) return fin[0].seq;
-  yield;
-  const cand = fin.slice(0, o.reply + (G.round >= 16 ? o.lateExtra || 0 : 0) + (G.round >= 30 ? o.endExtra || 0 : 0) + (endgame ? 20 : 0));
-  const base = ccAutoTurn(G, me, 3, 10)[0];
-  if (base && !cand.some(f => ccAutoKey(f.g) === ccAutoKey(base.g))) cand.push(base);
-  let best = null, bestS = -Infinity;
-  for (const f of cand) {
-    const g = ccClone(f.g); ccApply(g, { k: 'end' }); ccAutoReply(g, me);
-    ccAutoRollout(g, me, o.horizon);
-    const sc = ccAutoScore(g, me) + f.s * .01;
-    if (sc > bestS) { bestS = sc; best = f; }
-    yield;
-  }
-  // no win in sight: think much harder (rare, so it costs little overall): a wider search of this turn, and every
-  // future played out to the end with a stronger policy for auto play's later turns
-  if (bestS < 5e6 && o.deep !== false) {
-    const wide = ccAutoTurn(G, me, o.beam * 3, o.depth + 4), pool = best ? [best] : [];
-    for (const f of wide.slice(0, o.reply * 4).concat(cand)) if (!pool.some(x => ccAutoKey(x.g) === ccAutoKey(f.g))) pool.push(f);
-    yield;
-    let best2 = null, bestS2 = -Infinity;
-    for (const f of pool) {
-      if (best2 && o.until && performance.now() > o.until) break;   // in the browser: out of thinking time, keep the best so far
-      const g = ccClone(f.g); ccApply(g, { k: 'end' }); ccAutoReply(g, me);
-      ccAutoRollout(g, me, 40, 6);
-      const sc = ccAutoScore(g, me) + f.s * .01;
-      if (sc > bestS2) { bestS2 = sc; best2 = f; }
+  const seen = ccRedact(G, me), fin = ccAutoTurn(seen, me, o.beam, o.depth);
+  if (!fin.length) return [{ k: G.phase === 'choice' ? 'choice' : 'end', pick: G.phase === 'choice' ? G.pending.opts[0] : undefined }];
+  // a slip (`slip` of its turns): no look-ahead, one of its first few ideas instead of the best line
+  if (!fin[0].win && ccNoise(G, 4243 + me * 31) < o.slip) return ccAutoSeq(seen, fin[Math.floor(ccNoise(G, 977 + me) * Math.min(fin.length, o.slipTop || 4))]);
+  let ranked = fin;
+  if (!fin[0].win && o.reply) {   // the most promising endings are judged after the bot's answer and a few more rounds
+    const hz = G.round >= (o.lateFrom || 99) ? o.lateHorizon : o.horizon, sc = [];   // long matches: look further, so they don't stall into the round-40 draw
+    for (const f of fin.slice(0, o.reply)) {
       yield;
+      const g = ccClone(f.g); ccApply(g, { k: 'end' }); ccAutoReply(g, me); if (hz) ccAutoRollout(g, me, hz);
+      sc.push({ f, s: ccAutoScore(g, me) + f.s * .01 + (ccNoise(G, 7001 + sc.length) - .5) * (o.noise || 0) });   // `noise`: its judgement is not perfect
     }
-    if (best2) best = best2;
+    ranked = sc.sort((x, y) => y.s - x.s).map(x => x.f);
   }
-  return best ? best.seq.concat([{ k: 'end' }]) : [{ k: 'end' }];
+  return ccAutoSeq(seen, ranked[0]);
+}
+/* a chosen ending as a plan: its actions, each with the position expected before it, then End turn */
+function ccAutoSeq(seen, pick) {
+  const g = ccClone(seen), plan = [];
+  for (const a of pick.seq) { plan.push({ ...a, pre: ccAutoKey(g) }); if (ccApply(g, a) || g.phase === 'over') break; }
+  if (!pick.win) plan.push({ k: 'end', pre: ccAutoKey(g) });
+  return plan;
 }
 function ccAutoPlan(G, o = CC_AUTO) { const it = ccAutoPlanGen(G, o); let r; do r = it.next(); while (!r.done); return r.value; }
-/* the same plan without freezing the page: yields to the browser between the simulated futures */
+/* the same plan without freezing the page: yields to the browser every 12 ms */
 async function ccAutoPlanAsync(G, o = CC_AUTO, alive = () => true) {
-  const it = ccAutoPlanGen(ccClone(G), { ...o, until: performance.now() + (o.budget || 9000) }); let r, t = performance.now();
+  const it = ccAutoPlanGen(ccClone(G), o); let r, t = performance.now();
   for (;;) {
     r = it.next(); if (r.done) return r.value;
     if (performance.now() - t > 12) { await new Promise(res => setTimeout(res, 0)); if (!alive()) return null; t = performance.now(); }
   }
 }
-/* the next action for your side: keeps following the turn's plan while it stays legal, otherwise plans again */
+/* is this planned action still the right one: legal, and the board is what auto play expected */
+function ccAutoStill(G, a) {
+  if (!a) return false;
+  if (a.pre && a.pre !== ccAutoKey(ccRedact(G, G.active))) return false;
+  return a.k === 'end' ? G.phase === 'main' : !ccApply(ccClone(G), a);
+}
+/* the next action for your side: keeps following the turn's plan while it stays right, otherwise plans again */
 function ccAutoPick(G, plan) {
-  if (G.phase === 'choice') { const p = ccAutoPlan(G); return { a: p[0], plan: p.slice(1) }; }
-  let p = plan && plan.length ? plan : ccAutoPlan(G);
-  const ok = a => { if (a.k === 'end') return true; const g = ccClone(G); return !ccApply(g, a); };
-  if (!ok(p[0])) p = ccAutoPlan(G);
+  let p = plan && plan.length && ccAutoStill(G, plan[0]) ? plan : ccAutoPlan(G);
   return { a: p[0], plan: p.slice(1) };
 }

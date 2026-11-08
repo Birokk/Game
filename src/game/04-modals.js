@@ -91,7 +91,7 @@ function renderMail() {
 ICONS.audio = '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.5"/>';
 ICONS.user = '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>';
 const SET_TABS = [['graphics', 'image', 'Graphics'], ['audio', 'audio', 'Audio'], ['game', 'sparkle', 'Game'], ['account', 'user', 'Account']];   // admin-only art & icons live in admin → Art & icons
-const SET_DEFAULTS = { names: true, music: true, sfx: true, gfx: 'high', skipPull: false };
+const SET_DEFAULTS = { names: true, music: true, sfx: true, gfx: 'high', hmSize: 'large', skipPull: false };
 let setEl = null, setTab = 'graphics';
 const setRow = (label, ctl, sub = '') => `<div class="sx-row"><span class="sx-l">${label}${sub ? `<small>${sub}</small>` : ''}</span><span class="sx-c">${ctl}</span></div>`;
 const setSel = (key, val, opts) => `<label class="sx-sel"><select data-set="${key}" aria-label="${key}">${opts.map(([v, l]) => `<option value="${v}" ${String(val) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
@@ -110,6 +110,7 @@ function renderSettings() {
   const btn = (id, label, cls = '') => `<button type="button" class="sx-btn ${cls}" id="${id}">${label}</button>`;
   let rows = '';
   if (setTab === 'graphics') rows = setRow('Graphics quality', setSel('gfx', S.settings.gfx, [['high', 'High'], ['medium', 'Medium'], ['low', 'Low']]))
+    + setRow('Home screen size', setSel('hmSize', S.settings.hmSize || 'large', [['large', 'Large'], ['normal', 'Normal']]), 'Large draws the home screen buttons bigger on big screens')
     + setRow('Name tags in the plaza', setOnOff('names'), 'Show names above players and bots')
     + setRow('Graphics options', '<span class="sx-val">More coming soon</span>');
   else if (setTab === 'audio') rows = setRow('Music', setOnOff('music')) + setRow('Sound effects', setOnOff('sfx')) + setRow('Audio', '<span class="sx-val">Sound arrives in a later update</span>');
@@ -133,8 +134,8 @@ function renderSettings() {
   const on = id => setEl.querySelector('#' + id);
   on('setClose').onclick = closeSettings;
   setEl.querySelectorAll('[data-settab]').forEach(b => b.onclick = () => { setTab = b.dataset.settab; renderSettings(); });
-  setEl.querySelectorAll('[data-set]').forEach(sel => sel.onchange = () => { const k = sel.dataset.set; S.settings[k] = k === 'gfx' ? sel.value : sel.value === '1'; persist(); });
-  const df = on('setDefault'); if (df) df.onclick = () => { S.settings = { ...S.settings, ...SET_DEFAULTS }; persist(); renderSettings(); toast('Settings set back to default.'); };
+  setEl.querySelectorAll('[data-set]').forEach(sel => sel.onchange = () => { const k = sel.dataset.set; S.settings[k] = k === 'gfx' || k === 'hmSize' ? sel.value : sel.value === '1'; persist(); if (k === 'hmSize') hmZoom(); });
+  const df = on('setDefault'); if (df) df.onclick = () => { S.settings = { ...S.settings, ...SET_DEFAULTS }; persist(); hmZoom(); renderSettings(); toast('Settings set back to default.'); };
   const nm = on('setName'); if (nm) nm.onclick = () => openRename();
   const rd = on('setRedeem'); if (rd) rd.onclick = openRedeem;
   const tt = on('setTitle'); if (tt) tt.onclick = showTitle;

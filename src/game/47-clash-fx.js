@@ -309,7 +309,7 @@ function ccIntro(done) {
     <div class="cci-side op"><div class="cci-art">${foeArt ? `<img src="${foeArt}" alt="">` : foe ? `<span class="cci-ava foe">${baseThumb(foe)}</span>` : `<span class="cci-bot">${ccIco('bot')}</span>`}</div><div class="cci-name"><small>Bot · mirror deck</small><b>${esc(G.names[1])}</b></div></div>
     <i class="cci-cut"></i><b class="cci-vs">VS</b>`;   // who goes first is decided by the coin flip that follows (ccCoinFlip)
   L.appendChild(el);
-  ccLater(520, () => { ccShake(9, 420); ccGlow(800, 430, 'rgba(255,230,250,.95)', 420, 26); ccBurst(800, 430, { n: 90, c: ['#fff', '#ffd9f4', '#c9a6ff', '#ffe9b0'], sp: 13, g: .06, life: 40 }); ccRing(800, 430, '#ffe9fb', { r0: 40, r1: 520, w: 8, life: 34 }); });
+  ccLater(520, () => { ccShake(9, 420); ccGlow(800, 450, 'rgba(255,230,250,.95)', 420, 26); ccBurst(800, 450, { n: 90, c: ['#fff', '#ffd9f4', '#c9a6ff', '#ffe9b0'], sp: 13, g: .06, life: 40 }); ccRing(800, 450, '#ffe9fb', { r0: 40, r1: 520, w: 8, life: 34 }); });   // the burst comes out of the VS (centred at 800, 450)
   ccLater(2300, () => el.classList.add('out'));
   ccLater(2750, () => { el.remove(); done(); });
 }

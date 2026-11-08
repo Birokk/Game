@@ -35,7 +35,19 @@ const thumbImg = (e, cls = '') => {
 };
 /* banner portraits: the entry's own icon or base art, never the player's equipped outfit or star art */
 const baseThumb = (e, cls = '') => { const ic = artFrom(e.icon); return ic ? `<img src="${ic}" alt="" class="ico ${cls}">` : `<img src="${baseCard(e)}" alt="" class="${baseArt(e) ? 'art' : 'chibi'} ${cls}">`; };
+/* home screen size (the owner asked for a more zoomed-in home by default): every home HUD piece (.menu > .hm) gets CSS
+   zoom --hmz, growing with the screen (the 1366×768 look at 115%, scaled up) but always leaving at least a 1240×700
+   layout inside, so the normal desktop layout (no wrap, no overlap) still fits; max 160%. Phones and small windows
+   stay at 100% (they have their own compact layouts). Settings → Graphics → Home screen size: Large (default) / Normal. */
+function hmZoom() {
+  const m = document.getElementById('menu'); if (!m) return;
+  const W = innerWidth, H = innerHeight, big = (S.settings && S.settings.hmSize || 'large') === 'large';
+  const z = big && W >= 1240 && H >= 700 ? Math.max(1, Math.min(Math.min(W / 1366, H / 768) * 1.15, W / 1240, H / 700, 1.6)) : 1;
+  m.style.setProperty('--hmz', z.toFixed(3));
+}
+addEventListener('resize', hmZoom);
 function renderMenu() {
+  hmZoom();
   passDaily();   // a membership's daily reward goes to Mail once a day
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>` + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');

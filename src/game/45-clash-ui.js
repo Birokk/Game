@@ -297,15 +297,14 @@ function ccAutoSchedule() {
 async function ccAutoStep() {
   const m = ccM; if (!m || !ccSave().auto || m.autoBusy) return;
   const G = m.G; if (G.phase === 'over' || G.active !== 0 || m.busy || m.loading || m.intro) return;
-  const legal = a => a && (a.k === 'end' ? G.phase === 'main' : !ccApply(ccClone(G), a));
-  if (!m.autoPlan || !legal(m.autoPlan[0])) {
+  if (!m.autoPlan || !ccAutoStill(G, m.autoPlan[0])) {   // plan again when the next step is illegal or a hidden trap changed the board
     m.autoBusy = true; m.autoThinking = true; ccActRender(ccTargets(), null);
     const plan = await ccAutoPlanAsync(G, CC_AUTO, () => ccM === m && ccSave().auto);
     m.autoBusy = false; m.autoThinking = false;
     if (ccM !== m || !ccSave().auto) return;
-    m.autoPlan = plan && plan.length && legal(plan[0]) ? plan : [{ k: G.phase === 'choice' ? 'choice' : 'end', pick: G.phase === 'choice' ? G.pending.opts[0] : undefined }];
+    m.autoPlan = plan && plan.length && ccAutoStill(G, plan[0]) ? plan : [{ k: G.phase === 'choice' ? 'choice' : 'end', pick: G.phase === 'choice' ? G.pending.opts[0] : undefined }];
   }
-  const a = m.autoPlan[0]; m.autoPlan = m.autoPlan.slice(1); m.sel = null;
+  const { pre, ...a } = m.autoPlan[0]; m.autoPlan = m.autoPlan.slice(1); m.sel = null;
   if (G.active !== 0 || m.busy) return;
   ccDo(a, true);
 }
