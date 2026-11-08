@@ -81,62 +81,105 @@ function ccSkinPicker(back) {
     draw(); } });
 }
 
-/* ---- moving particles, one canvas per half (1044×376, the half's own coordinates) ---- */
-const ccSk = { cv: [null, null], g: [null, null], parts: [[], []], skin: [null, null], glitch: [0, 0] };
-const CC_SK_W = 1044, CC_SK_H = 376;
-function ccSkReset() { ccSk.cv = [null, null]; ccSk.g = [null, null]; ccSk.parts = [[], []]; ccSk.skin = [null, null]; }
+/* ---- the hall around the board: the top half of the screen wears the bot's skin, the bottom half yours ----
+   Each skinned side gets a scenery layer (.ccm-sky, art drawn for the bottom half and flipped for the top) that
+   fades into the other around the middle line, where a seam (.ccm-seam) blends both skins' colours. Colours come
+   from CC_SKIN_COL as CSS variables on the match (--ccsT / --ccsT2 = top = bot, --ccsB / --ccsB2 = bottom = you),
+   also used by the battle line. The env is built once per match, so this runs once (ccM.skEnv). */
+const CC_SKIN_COL = { default: ['#c9a6ff', '#8fb8ff'], forest: ['#9be07a', '#e9ff8a'], sakura: ['#ff9ec7', '#ffe0ec'], inferno: ['#ff6a1f', '#ffc04a'], cyber: ['#29f0ff', '#ff2bd6'] };
+const ccSkinCol = (bs, p) => bs === 'default' && p === 1 ? ['#ff5a78', '#ffb3c0'] : CC_SKIN_COL[bs] || CC_SKIN_COL.default;
+function ccSkEnv() {
+  if (!ccM || !ccM.el || ccM.skEnv) return;
+  const env = ccM.el.querySelector('.ccm-env'); if (!env) return;
+  ccM.skEnv = true;
+  const [me, op] = ccM.skins || ['default', 'default'], cm = ccSkinCol(me, 0), co = ccSkinCol(op, 1), st = ccM.el.style;
+  st.setProperty('--ccsT', co[0]); st.setProperty('--ccsT2', co[1]); st.setProperty('--ccsB', cm[0]); st.setProperty('--ccsB2', cm[1]);
+  const sky = (bs, side) => bs === 'default' ? '' : `<div class="ccm-sky ${side}" data-bs="${bs}"><i class="sk1"></i><i class="sk2"></i><i class="sk3"></i></div>`;
+  env.insertAdjacentHTML('beforeend', `${sky(op, 'op')}${sky(me, 'me')}<div class="ccm-seam"><i class="w1"></i><i class="w2"></i></div><canvas class="ccsk-envc" width="1600" height="900"></canvas>`);
+  const cv = env.querySelector('.ccsk-envc'), g = cv.getContext('2d');
+  // the stage is 1600×900 and the middle line sits at y 400: the bot's side above it, yours below
+  ccSkZone('env1', cv, g, 0, 0, 1600, 400, op, 1, true);
+  ccSkZone('env0', cv, g, 0, 400, 1600, 500, me, 0, true);
+  ccSkZone('seam', cv, g, 0, 372, 1600, 56, 'seam', 0, true, [co, cm]);
+}
+
+/* ---- moving particles: zones on canvases. Each half of the board has its own canvas (1044×376, moved back into its
+   half after every redraw); the hall has one canvas (1600×900, never redrawn) with a zone per side plus the seam ---- */
+const ccSk = { zones: [], glitch: {} };
+function ccSkReset() { ccSk.zones = []; ccSk.glitch = {}; }
+function ccSkZone(id, cv, g, x0, y0, w, h, bs, p, env, cols) {
+  let z = ccSk.zones.find(q => q.id === id);
+  if (!z) { z = { id, parts: [] }; ccSk.zones.push(z); }
+  const fresh = z.bs !== bs;
+  Object.assign(z, { cv, g, x0, y0, w, h, bs, p, env, cols });
+  if (fresh) { z.parts = []; if (bs !== 'default') for (let i = 0; i < 90; i++) ccSkSpawn(z, true); }
+  return z;
+}
 function ccSkAttach() {
   if (!ccM || !ccM.el) return;
+  ccSkEnv();
   [0, 1].forEach(p => {
     const half = ccM.el.querySelector(`.ccb .cc-half.${p ? 'op' : 'me'}`); if (!half) return;
-    const bs = half.dataset.bs;
-    if (bs === 'default') { ccSk.skin[p] = bs; ccSk.parts[p] = []; return; }
-    if (!ccSk.cv[p]) { const c = document.createElement('canvas'); c.className = 'ccsk-cv'; c.width = CC_SK_W; c.height = CC_SK_H; ccSk.cv[p] = c; ccSk.g[p] = c.getContext('2d'); }
-    if (ccSk.skin[p] !== bs) { ccSk.skin[p] = bs; ccSk.parts[p] = []; for (let i = 0; i < 60; i++) ccSkSpawn(p, true); }
-    half.insertBefore(ccSk.cv[p], half.querySelector('.cc-runes'));
+    const bs = half.dataset.bs, id = 'half' + p;
+    let z = ccSk.zones.find(q => q.id === id);
+    if (bs === 'default') { if (z) z.bs = 'default'; return; }
+    let cv = z && z.cv;
+    if (!cv) { cv = document.createElement('canvas'); cv.className = 'ccsk-cv'; cv.width = 1044; cv.height = 376; }
+    z = ccSkZone(id, cv, z && z.g || cv.getContext('2d'), 0, 0, 1044, 376, bs, p, false);
+    half.insertBefore(cv, half.querySelector('.cc-runes'));
   });
 }
-const CC_SK_N = { forest: 22, sakura: 30, inferno: 38, cyber: 30 };
+const CC_SK_N = { forest: 22, sakura: 30, inferno: 38, cyber: 30, seam: 34 };
 const ccR = (a, b) => a + Math.random() * (b - a);
-function ccSkSpawn(p, anywhere) {
-  const bs = ccSk.skin[p], L = ccSk.parts[p]; if (L.length >= CC_SK_N[bs]) return;
-  const outerY = p ? 0 : CC_SK_H;   // the half's outer edge (top for the bot, bottom for you)
+/* the hall's zones put most particles beside the board, where they can be seen */
+const ccSkX = z => !z.env || Math.random() < .2 ? ccR(10, z.w - 10) : Math.random() < .5 ? ccR(0, 290) : ccR(1310, 1600);
+const ccSkMax = z => Math.round((CC_SK_N[z.bs] || 0) * (z.env && z.bs !== 'seam' ? 1.7 : 1));
+function ccSkSpawn(z, anywhere) {
+  const bs = z.bs, L = z.parts; if (L.length >= ccSkMax(z)) return;
+  const W = z.w, H = z.h, outerY = z.p ? 0 : H;   // the outer edge: the top of the bot's side, the bottom of yours
   if (bs === 'forest') {
-    if (L.filter(q => q.k === 'leaf').length < 4 && Math.random() < .25) L.push({ k: 'leaf', x: anywhere ? ccR(0, CC_SK_W) : -20, y: ccR(10, CC_SK_H - 10), vx: ccR(.18, .4), vy: ccR(-.08, .08), a: ccR(0, 6.3), va: ccR(-.012, .012), s: ccR(.8, 1.3), c: ['#4f9e58', '#6fbf62', '#8fbf4a', '#c9a24a'][Math.floor(ccR(0, 4))] });
-    else L.push({ k: 'fly', x: ccR(20, CC_SK_W - 20), y: ccR(16, CC_SK_H - 16), ph: ccR(0, 6.3), sp: ccR(.4, .9), r: ccR(1.4, 2.6), bl: ccR(.8, 1.8) });
+    if (L.filter(q => q.k === 'leaf').length < (z.env ? 7 : 4) && Math.random() < .25) L.push({ k: 'leaf', x: anywhere ? ccSkX(z) : -20, y: ccR(10, H - 10), vx: ccR(.18, .4), vy: ccR(-.08, .08), a: ccR(0, 6.3), va: ccR(-.012, .012), s: ccR(.8, 1.3), c: ['#4f9e58', '#6fbf62', '#8fbf4a', '#c9a24a'][Math.floor(ccR(0, 4))] });
+    else L.push({ k: 'fly', x: ccSkX(z), y: ccR(16, H - 16), ph: ccR(0, 6.3), sp: ccR(.4, .9), r: ccR(1.4, 2.6), bl: ccR(.8, 1.8) });
   } else if (bs === 'sakura') {
-    L.push({ k: 'petal', x: anywhere ? ccR(0, CC_SK_W) : ccR(-40, CC_SK_W * .6), y: anywhere ? ccR(0, CC_SK_H) : -14, vx: ccR(.3, .75), vy: ccR(.22, .5), a: ccR(0, 6.3), va: ccR(-.03, .03), fl: ccR(.03, .07), ph: ccR(0, 6.3), s: ccR(.7, 1.25), c: ['#ffb7d5', '#ffc9de', '#ff9ec7', '#ffe0ec'][Math.floor(ccR(0, 4))] });
+    L.push({ k: 'petal', x: anywhere ? ccSkX(z) : z.env ? ccSkX(z) - 60 : ccR(-40, W * .6), y: anywhere ? ccR(0, H) : -14, vx: ccR(.3, .75), vy: ccR(.22, .5), a: ccR(0, 6.3), va: ccR(-.03, .03), fl: ccR(.03, .07), ph: ccR(0, 6.3), s: ccR(.7, 1.25) * (z.env ? 1.15 : 1), c: ['#ffb7d5', '#ffc9de', '#ff9ec7', '#ffe0ec'][Math.floor(ccR(0, 4))] });
   } else if (bs === 'inferno') {
     const fromEdge = !anywhere && Math.random() < .6;
-    L.push({ k: 'ember', x: ccR(10, CC_SK_W - 10), y: anywhere ? ccR(0, CC_SK_H) : fromEdge ? outerY + (p ? ccR(0, 40) : ccR(-40, 0)) : ccR(30, CC_SK_H - 30), vx: ccR(-.25, .25), vy: -ccR(.35, 1.1), r: ccR(.8, 2.4), life: anywhere ? ccR(.2, 1) : 1, dec: ccR(.0025, .007), ph: ccR(0, 6.3) });
+    L.push({ k: 'ember', x: ccSkX(z), y: anywhere ? ccR(0, H) : fromEdge ? outerY + (z.p ? ccR(0, 40) : ccR(-40, 0)) : ccR(30, H - 30), vx: ccR(-.25, .25), vy: -ccR(.35, 1.1), r: ccR(.8, 2.4), life: anywhere ? ccR(.2, 1) : 1, dec: ccR(.0025, .007), ph: ccR(0, 6.3) });
   } else if (bs === 'cyber') {
-    if (Math.random() < .7) { const col = Math.floor(ccR(1, CC_SK_W / 32)) * 32; L.push({ k: 'rain', x: col, y: anywhere ? ccR(0, CC_SK_H) : -60, vy: ccR(1.6, 4.2), len: ccR(24, 70), c: Math.random() < .18 ? '#ff2bd6' : '#29f0ff' }); }
-    else L.push({ k: 'bit', x: ccR(20, CC_SK_W - 20), y: ccR(20, CC_SK_H - 20), vy: -ccR(.1, .35), s: ccR(3, 7), ph: ccR(0, 6.3), life: 1, dec: ccR(.002, .006), c: Math.random() < .35 ? '#ff2bd6' : '#29f0ff' });
+    if (Math.random() < .7) { const col = z.env ? Math.round(ccSkX(z) / 32) * 32 : Math.floor(ccR(1, W / 32)) * 32; L.push({ k: 'rain', x: col, y: anywhere ? ccR(0, H) : -60, vy: ccR(1.6, 4.2), len: ccR(24, 70), c: Math.random() < .18 ? '#ff2bd6' : '#29f0ff' }); }
+    else L.push({ k: 'bit', x: ccSkX(z), y: ccR(20, H - 20), vy: -ccR(.1, .35), s: ccR(3, 7), ph: ccR(0, 6.3), life: 1, dec: ccR(.002, .006), c: Math.random() < .35 ? '#ff2bd6' : '#29f0ff' });
+  } else if (bs === 'seam') {   // sparks of both sides' colours drifting along the middle line
+    const top = Math.random() < .5, c = z.cols[top ? 0 : 1];
+    L.push({ k: 'mix', x: ccSkX(z), y: H / 2 + (top ? -1 : 1) * ccR(2, 22), vx: ccR(.3, .9) * (Math.random() < .5 ? -1 : 1), ph: ccR(0, 6.3), r: ccR(1, 2.4), life: anywhere ? ccR(.3, 1) : 1, dec: ccR(.003, .008), c: c[Math.random() < .7 ? 0 : 1] });
   }
 }
 function ccSkFrame(now) {
-  for (let p = 0; p < 2; p++) {
-    const g = ccSk.g[p], bs = ccSk.skin[p], L = ccSk.parts[p]; if (!g || !bs || bs === 'default' || !ccSk.cv[p].isConnected) continue;
-    g.clearRect(0, 0, CC_SK_W, CC_SK_H); const t = now / 1000;
+  const t = now / 1000, cleared = new Set();
+  for (const z of ccSk.zones) {
+    const g = z.g; if (!g || !z.bs || !z.cv.isConnected) continue;
+    if (!cleared.has(z.cv)) { cleared.add(z.cv); g.clearRect(0, 0, z.cv.width, z.cv.height); }
+    if (z.bs === 'default') continue;
+    const L = z.parts, W = z.w, H = z.h;
+    g.save(); if (z.env) { g.beginPath(); g.rect(z.x0, z.y0 - 24, W, H + 48); g.clip(); } g.translate(z.x0, z.y0);
     for (let i = L.length - 1; i >= 0; i--) {
       const q = L[i];
       if (q.k === 'fly') {   // fireflies wander and blink
         q.x += Math.cos(t * q.sp + q.ph) * .38; q.y += Math.sin(t * q.sp * 1.3 + q.ph * 2) * .26;
-        if (q.x < 8 || q.x > CC_SK_W - 8 || q.y < 8 || q.y > CC_SK_H - 8) { L.splice(i, 1); continue; }
-        const b = Math.max(0, Math.sin(t * q.bl + q.ph)); const a = .15 + b * b * .85;
+        if (q.x < 8 || q.x > W - 8 || q.y < 8 || q.y > H - 8) { L.splice(i, 1); continue; }
+        const b = Math.max(0, Math.sin(t * q.bl + q.ph)), a = .15 + b * b * .85;
         g.globalCompositeOperation = 'lighter';
         const gr = g.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.r * 7); gr.addColorStop(0, `rgba(233,255,138,${(a * .55).toFixed(3)})`); gr.addColorStop(1, 'rgba(160,255,120,0)');
         g.fillStyle = gr; g.beginPath(); g.arc(q.x, q.y, q.r * 7, 0, 6.283); g.fill();
         g.fillStyle = `rgba(250,255,200,${a.toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill();
       } else if (q.k === 'leaf') {   // a leaf drifting across on the breeze
         q.x += q.vx; q.y += q.vy + Math.sin(t * 1.4 + q.a) * .12; q.a += q.va;
-        if (q.x > CC_SK_W + 30) { L.splice(i, 1); continue; }
+        if (q.x > W + 30) { L.splice(i, 1); continue; }
         g.globalCompositeOperation = 'source-over'; g.save(); g.translate(q.x, q.y); g.rotate(q.a); g.scale(q.s * (.6 + .4 * Math.cos(t * 2 + q.a)), q.s);
         g.globalAlpha = .7; g.fillStyle = q.c; g.beginPath(); g.moveTo(-9, 0); g.bezierCurveTo(-4, -6, 4, -6, 9, 0); g.bezierCurveTo(4, 6, -4, 6, -9, 0); g.fill();
         g.strokeStyle = 'rgba(30,60,30,.6)'; g.lineWidth = .7; g.beginPath(); g.moveTo(-8, 0); g.lineTo(8, 0); g.stroke(); g.restore(); g.globalAlpha = 1;
       } else if (q.k === 'petal') {   // sakura petals tumbling down on the wind
         q.x += q.vx + Math.sin(t * 1.1 + q.ph) * .3; q.y += q.vy; q.a += q.va;
-        if (q.y > CC_SK_H + 16 || q.x > CC_SK_W + 20) { L.splice(i, 1); continue; }
+        if (q.y > H + 16 || q.x > W + 20) { L.splice(i, 1); continue; }
         g.globalCompositeOperation = 'source-over'; g.save(); g.translate(q.x, q.y); g.rotate(q.a); g.scale(q.s * Math.cos(t * q.fl * 60 + q.ph), q.s);
         g.globalAlpha = .88; g.fillStyle = q.c; g.beginPath(); g.moveTo(0, 7); g.bezierCurveTo(-6, 3, -6, -5, -2, -8); g.lineTo(0, -6); g.lineTo(2, -8); g.bezierCurveTo(6, -5, 6, 3, 0, 7); g.fill();
         g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(-1, -1, 1.4, 3.2, 0, 0, 6.283); g.fill(); g.restore(); g.globalAlpha = 1;
@@ -147,8 +190,8 @@ function ccSkFrame(now) {
         g.globalCompositeOperation = 'lighter';
         g.fillStyle = `rgba(${c},${(a * .3).toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r * 3.4, 0, 6.283); g.fill();
         g.fillStyle = `rgba(${c},${a.toFixed(3)})`; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill();
-      } else if (q.k === 'rain') {   // data rain running down the grid lines
-        q.y += q.vy; if (q.y - q.len > CC_SK_H) { L.splice(i, 1); continue; }
+      } else if (q.k === 'rain') {   // data rain running down
+        q.y += q.vy; if (q.y - q.len > H) { L.splice(i, 1); continue; }
         g.globalCompositeOperation = 'lighter'; const gr = g.createLinearGradient(0, q.y - q.len, 0, q.y);
         gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, q.c); g.globalAlpha = .55; g.strokeStyle = gr; g.lineWidth = 1.6;
         g.beginPath(); g.moveTo(q.x, q.y - q.len); g.lineTo(q.x, q.y); g.stroke();
@@ -157,17 +200,25 @@ function ccSkFrame(now) {
         q.y += q.vy; q.life -= q.dec; if (q.life <= 0) { L.splice(i, 1); continue; }
         g.globalCompositeOperation = 'lighter'; g.globalAlpha = Math.min(1, q.life * 2) * (Math.sin(t * 5 + q.ph) > -.2 ? .8 : .15);
         g.strokeStyle = q.c; g.lineWidth = 1.2; g.strokeRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s); g.globalAlpha = 1;
+      } else if (q.k === 'mix') {   // seam sparks
+        q.x += q.vx; q.y += Math.sin(t * 2.2 + q.ph) * .25; q.life -= q.dec;
+        if (q.life <= 0 || q.x < -10 || q.x > W + 10) { L.splice(i, 1); continue; }
+        const a = Math.min(1, q.life * 1.8) * (.6 + .4 * Math.sin(t * 6 + q.ph));
+        g.globalCompositeOperation = 'lighter'; g.fillStyle = q.c;
+        g.globalAlpha = a * .25; g.beginPath(); g.arc(q.x, q.y, q.r * 4, 0, 6.283); g.fill();
+        g.globalAlpha = a; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); g.globalAlpha = 1;
       }
     }
-    if (bs === 'cyber') {   // now and then a glitch bar flickers across
-      if (now > ccSk.glitch[p]) ccSk.glitch[p] = now + ccR(1800, 4200);
-      else if (ccSk.glitch[p] - now > 0 && ccSk.glitch[p] - now < 140) {
-        g.globalCompositeOperation = 'lighter'; g.globalAlpha = .28; const y = (ccSk.glitch[p] * 7) % CC_SK_H;
-        g.fillStyle = '#ff2bd6'; g.fillRect(((ccSk.glitch[p] * 13) % 600), y, 180 + (ccSk.glitch[p] % 220), 3);
-        g.fillStyle = '#29f0ff'; g.fillRect(((ccSk.glitch[p] * 13) % 600) + 8, y + 4, 120 + (ccSk.glitch[p] % 160), 2); g.globalAlpha = 1;
+    if (z.bs === 'cyber') {   // now and then a glitch bar flickers across
+      const gl = ccSk.glitch[z.id] || 0;
+      if (now > gl) ccSk.glitch[z.id] = now + ccR(1800, 4200);
+      else if (gl - now < 140) {
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = .28; const y = (gl * 7) % H, x = z.env ? (gl % 2 < 1 ? (gl * 13) % 220 : 1330 + (gl * 13) % 120) : (gl * 13) % 600;
+        g.fillStyle = '#ff2bd6'; g.fillRect(x, y, 180 + (gl % 120), 3);
+        g.fillStyle = '#29f0ff'; g.fillRect(x + 8, y + 4, 110 + (gl % 90), 2); g.globalAlpha = 1;
       }
     }
-    g.globalCompositeOperation = 'source-over';
-    if (L.length < CC_SK_N[bs] && Math.random() < .35) ccSkSpawn(p, false);
+    g.restore(); g.globalCompositeOperation = 'source-over';
+    if (L.length < ccSkMax(z) && Math.random() < (z.env ? .55 : .35)) ccSkSpawn(z, false);
   }
 }
