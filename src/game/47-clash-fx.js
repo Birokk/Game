@@ -301,10 +301,11 @@ function ccReveal(a, done) {
 function ccIntro(done) {
   const L = ccLayer(); if (!L) return done();
   const G = ccM.G, w = avatarEntry() || wallpaperInfo(), art = !!w && wpHasArt(w), src = w ? wpSrc(w) : portrait(S.player.look, 4);
+  const foe = ccM.foe, foeArt = foe && baseArt(foe);
   const el = document.createElement('div'); el.className = 'ccx-intro';
   el.innerHTML = `<i class="cci-bg"></i>
     <div class="cci-side me"><div class="cci-art">${art ? `<img src="${src}" alt="">` : `<span class="cci-ava">${avatarHTML(220)}</span>`}</div><div class="cci-name"><small>${esc(ccM.deck.name)}</small><b>${esc(G.names[0])}</b></div></div>
-    <div class="cci-side op"><div class="cci-art"><span class="cci-bot">${ccIco('bot')}</span></div><div class="cci-name"><small>Mirror deck</small><b>${esc(G.names[1])}</b></div></div>
+    <div class="cci-side op"><div class="cci-art">${foeArt ? `<img src="${foeArt}" alt="">` : foe ? `<span class="cci-ava foe">${baseThumb(foe)}</span>` : `<span class="cci-bot">${ccIco('bot')}</span>`}</div><div class="cci-name"><small>Bot · mirror deck</small><b>${esc(G.names[1])}</b></div></div>
     <i class="cci-cut"></i><b class="cci-vs">VS</b>
     <div class="cci-first"><span>${G.first === 0 ? 'You go first' : `${esc(G.names[1])} goes first`}</span></div>`;
   L.appendChild(el);

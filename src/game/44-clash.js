@@ -461,7 +461,13 @@ function ccLegal(G) {
 
 /* ---- the bot: an average player. One-step lookahead on a copy of the match where the enemy's face-down traps are
    removed (it never knows what they are, only that they exist), a simple board evaluation and a little noise. ---- */
-function ccClone(G) { const { log, fx, ...rest } = G; const c = structuredClone(rest); c.log = []; c.fx = []; return c; }
+/* a copy of the match for simulations (bot lookahead, previews, auto play). Card objects ({iid, id}) are never
+   changed by the engine, so they are shared; units, boards, hands and piles get their own copies. */
+function ccClone(G) {
+  const c = { ...G, log: [], fx: [], pending: G.pending ? { ...G.pending, opts: G.pending.opts.slice() } : null };
+  c.players = G.players.map(P => ({ ...P, hand: P.hand.slice(), deck: P.deck.slice(), disc: P.disc.slice(), traps: P.traps.slice(), board: P.board.map(l => [l[0] ? { ...l[0] } : null, l[1] ? { ...l[1] } : null]) }));
+  return c;
+}
 function ccRedact(G, me) { const c = ccClone(G); c.players[1 - me].traps = [null, null, null]; return c; }
 function ccUnitVal(G, u) {
   const d = ccDef(u.id), atk = ccPermAtk(u);
@@ -482,6 +488,9 @@ function ccEval(G, me) {
   if (P.hp <= 8) s -= (8 - P.hp) * 1.5;
   return s;
 }
+/* the bot's little randomness comes from the match itself (seed, turn, log position), not Math.random, so the same
+   seed and the same moves always replay exactly the same match */
+function ccNoise(G, i) { let h = (G.seed ^ Math.imul(G.turnNo + 1, 0x9E3779B1) ^ Math.imul(G.seq + 7, 0x85EBCA77) ^ Math.imul(i + 13, 0xC2B2AE3D)) >>> 0; h = Math.imul(h ^ h >>> 16, 0x7FEB352D); h = Math.imul(h ^ h >>> 15, 0x846CA68B); return ((h ^ h >>> 16) >>> 0) / 4294967296; }
 function ccBotPick(G) {
   const me = G.active, acts = ccLegal(G);
   if (G.phase === 'choice') { const P = G.players[me]; return acts.map(a => ({ a, v: ccDef(P.deck.find(c => c.iid === a.pick).id).ap })).sort((x, y) => y.v - x.v)[0].a; }
@@ -495,7 +504,7 @@ function ccBotPick(G) {
     if ((a.k === 'summon' || a.k === 'move') && O.traps[a.lane]) { const u = a.k === 'move' && ccFind(G, a.u); if (!u || u.lane !== a.lane) s -= 1.2; }
     if (a.k === 'attack') { const u = ccFind(G, a.u), hurt = g.fx.some(f => f.type === 'dmg' && (f.id === 'hero' + (1 - me) || (ccFind(base, f.id) || {}).owner === 1 - me)); s += hurt ? 1.1 : -1; if (O.traps[u.lane]) s -= 0.8; }
     if (a.k === 'trap') s += 1.6 + (G.players[1 - me].board[a.lane].some(Boolean) ? 0.4 : 0);
-    s += (Math.random() - 0.5) * 0.7;
+    s += (ccNoise(G, me * 977 + acts.indexOf(a)) - 0.5) * 0.7;
     if (s > bestS) { bestS = s; best = a; }
   }
   return best;
