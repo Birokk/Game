@@ -120,6 +120,6 @@ function ccDefs() {
 }
 const ccIco = (key, cls = '') => `<svg viewBox="0 0 512 512" class="cci ${cls}" aria-hidden="true"><path d="${CC_ICO[key] || ''}"/></svg>`;
 /* the back of a card (the bot's hand, face-down traps, the draw piles) */
-const ccBackHTML = (cls = '') => `<span class="ccbk ${cls}"><i class="ccbk-ring"></i>${ccIco('crystal', 'ccbk-em')}</span>`;
+const ccBackHTML = (cls = '', skin = 'default') => `<span class="ccbk ${cls}" data-cb="${skin}"><i class="ccbk-ring"></i>${ccBackEm(skin)}</span>`;   // skin: a card back (52-clash-backs.js)
 /* nothing heavy to prepare any more: the board is CSS, so this only makes sure the gradients exist */
 function ccArtPrewarm() { ccDefs(); }

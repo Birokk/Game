@@ -50,7 +50,7 @@ function renderDeck() {
   ccdEl.innerHTML = `<div class="ccd-bg"></div>
     <header class="ccd-head"><div class="inv-title"><span class="inv-badge">${CC_IC}</span><h2 class="ts">Deck</h2></div>
       <span class="ccd-rec" title="Quick match record">${icon('trophy')}<b>${sv.stats.w}</b> W · <b>${sv.stats.l}</b> L · <b>${sv.stats.d}</b> D</span>
-      <button class="btn ghost ccd-help" id="ccdSkin" title="Your half of the table wears this skin">${ccSkinIco(ccMySkin(), 'ccd-skic')}Board skin</button>
+      <button class="btn ghost ccd-help" id="ccdSkin" title="Board skins and card backs">${ccSkinIco(ccMySkin(), 'ccd-skic')}Skins</button>
       <button class="btn ghost ccd-help" id="ccdHelp">${icon('info')}How to play</button>
       <button class="btn gold ccd-play" id="ccdPlay">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="ccdClose" aria-label="Close">${icon('close')}</button></header>
@@ -129,7 +129,7 @@ function openQuickMatch() {
     <div class="ccq-row"><label class="ccd-lbl" for="ccqSeed">Match seed</label><input id="ccqSeed" class="ccq-seed" inputmode="numeric" value="${ccQmSeed}"><button class="btn ghost" id="ccqDice">New seed</button></div>
     <p class="tiny ccq-ev" id="ccqEv"></p>
     <p class="tiny">The same seed and the same moves always replay the same match, handy for reporting a bug. Who goes first and the battle event are decided by the seed.</p>
-    <p class="tiny ccq-skin">${ccSkinIco(ccMySkin(), 'ccq-skic')}Your board skin: <b>${esc(ccSkinOf(ccMySkin()).name)}</b> · <button class="ccq-help" id="ccqSkin">Change</button> · the bot plays on a random skin.</p>
+    <p class="tiny ccq-skin">${ccSkinIco(ccMySkin(), 'ccq-skic')}Board: <b>${esc(ccSkinOf(ccMySkin()).name)}</b> · card back: <b>${esc(ccBackOf(ccMyBack()).name)}</b> · <button class="ccq-help" id="ccqSkin">Change</button> · the bot gets random ones.</p>
     <p class="tiny">New to Card Clash? <button class="ccq-help" id="ccqHelp">Read How to play</button> · every win gives +1 pearl.</p>
     <button class="btn gold ccq-go" id="ccqGo">${icon('bolt')}Start match</button></div>`,
     onMount: b => {
@@ -169,7 +169,7 @@ function startClash(deck, seed) {
   const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = foes.length ? foes[(seed >>> 0) % foes.length] : null;
   const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', foe ? foe.name : 'Bot']);
   ccSkReset();
-  const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), ccBotSkin(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
+  const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), ccBotSkin(seed)], backs: [ccMyBack(), ccBotBack(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
   showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => ccEventReveal(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); })); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
@@ -225,6 +225,7 @@ function ccTargets() {
 function ccClick(e) {
   if (!ccM) return;
   const G = ccM.G, t = e.target;
+  const dz = t.closest('[data-disc]'); if (dz) return ccDiscardView(+dz.dataset.disc);
   const btn = t.closest('button[id]');
   if (btn) {
     const id = btn.id;
@@ -385,7 +386,7 @@ function ccRender(snap) {
   const ot = G.round >= ccOT(G);
   ui.innerHTML = `
     <div class="ccm-tools"><button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button><button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
-    <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML()}</span>`).join('')}<small>${op.hand.length}</small></div>
+    <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML('', ccBackSkin(1))}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
     ${ccM.leader ? `<div class="ccm-lead me" title="${esc(ccM.leader.name + ': your leader (no skill yet)')}">${ccLeaderCard(ccM.leader)}<span class="ccl-tag">Leader</span></div>` : ''}
@@ -400,8 +401,7 @@ function ccRender(snap) {
       </div>
       ${ccHalfHTML(G, 0, keyset)}
     </div>
-    <div class="ccm-piles op"><span title="Bot's draw deck">${ccBackHTML()}${op.deck.length}</span><span class="ccm-disc" title="Bot's discard pile">${icon('trash')}${op.disc.length}</span></div>
-    <div class="ccm-piles me"><span title="Your draw deck">${ccBackHTML()}${me.deck.length}</span><span class="ccm-disc" title="Your discard pile">${icon('trash')}${me.disc.length}</span></div>
+    ${ccSideHTML(G, 1)}${ccSideHTML(G, 0)}
     <div class="ccm-hand">${handHTML}</div>
     <div class="ccm-peek"></div>
     <div class="ccm-act"></div>
@@ -491,23 +491,28 @@ function ccEndScreen() {
   const add = (burst) => { const a = Math.random() * 6.283, sp = burst ? 3 + Math.random() * 9 : 0; P.push(win || draw
     ? { x: burst ? 800 : Math.random() * 1600, y: burst ? 330 : 920, vx: burst ? Math.cos(a) * sp : (Math.random() - .5) * 1.2, vy: burst ? Math.sin(a) * sp - 2 : -2 - Math.random() * 4, r: 1.5 + Math.random() * 3.5, life: 1, dec: .006 + Math.random() * .01, hue: draw ? 220 : 38 + Math.random() * 18, star: Math.random() < .3 }
     : { x: Math.random() * 1600, y: -20 + Math.random() * 300, vx: (Math.random() - .5) * 1.5, vy: .6 + Math.random() * 2.2, r: 1.5 + Math.random() * 3.5, life: 1, dec: .004 + Math.random() * .006, hue: Math.random() * 20, star: false }); };
-  for (let i = 0; i < (win ? 160 : 40); i++) add(win);
+  // light on purpose: the board underneath is frozen (.ccm.ended, its particle loop stopped), particles are capped and
+  // drawn as two plain circles (no canvas shadowBlur, which made this screen lag)
+  ccFxStop(); ccM.el.classList.add('ended');
+  for (let i = 0; i < (win ? 110 : 30); i++) add(win);
   let t0 = performance.now();
   const loop = now => {
     if (!box.isConnected) return;
     const t = now - t0; g.clearRect(0, 0, 1600, 900); g.globalCompositeOperation = 'lighter';
-    if (t < 9000 && P.length < 420) for (let i = 0; i < (win ? 5 : 4); i++) add(false);
-    if (win && t > 900 && t < 1000 && !box._b2) { box._b2 = 1; for (let i = 0; i < 120; i++) add(true); }
+    if (t < 7000 && P.length < 200) for (let i = 0; i < (win ? 3 : 2); i++) add(false);
+    if (win && t > 900 && t < 1000 && !box._b2) { box._b2 = 1; for (let i = 0; i < 80; i++) add(true); }
+    if (t > 7000 && !P.length) return;   // everything has settled: stop drawing
     for (let i = P.length - 1; i >= 0; i--) {
       const p = P[i]; p.x += p.vx; p.y += p.vy; p.life -= p.dec;
       if (win || draw) { p.vy += .04; p.vx *= .99; } else { p.vx += Math.sin((p.y + i) / 40) * .03; }
       if (p.life <= 0 || p.y > 940 || p.y < -60) { P.splice(i, 1); continue; }
-      const col = `hsla(${p.hue},100%,${win || draw ? 62 : 50}%,${Math.min(1, p.life * 1.4)})`;
-      g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 12;
+      const a = Math.min(1, p.life * 1.4), L = win || draw ? 62 : 50;
+      g.fillStyle = `hsla(${p.hue},100%,${L}%,${(a * .22).toFixed(3)})`; g.beginPath(); g.arc(p.x, p.y, p.r * 3.2, 0, 7); g.fill();   // the glow
+      g.fillStyle = `hsla(${p.hue},100%,${L + 8}%,${a.toFixed(3)})`;
       if (p.star) { g.save(); g.translate(p.x, p.y); g.rotate(t / 400 + i); g.beginPath(); for (let k = 0; k < 8; k++) { const rr = k % 2 ? p.r * .6 : p.r * 2.4; g.lineTo(Math.cos(k * .785) * rr, Math.sin(k * .785) * rr); } g.fill(); g.restore(); }
       else { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
     }
-    g.shadowBlur = 0; g.globalCompositeOperation = 'source-over';
+    g.globalCompositeOperation = 'source-over';
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);

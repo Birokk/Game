@@ -4400,3 +4400,12 @@ button.pt-slot:hover{border-color:#fff}
 @media (max-width:820px){.pf-show,.frp-show{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){.pf-show,.frp-show{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .frp-box{width:min(1080px,100%)}
+
+/* the character's Card Clash attribute beside the name on the character screen, and in Character Info */
+.cs-attr{display:inline-grid;place-items:center;flex:none;width:34px;height:34px;margin-left:8px;border-radius:50%;vertical-align:middle;cursor:help;
+  background:radial-gradient(circle at 40% 30%,color-mix(in srgb,var(--cs) 55%,#1a1428),#0d0a16);box-shadow:0 0 0 2px color-mix(in srgb,var(--cs) 80%,#fff),0 0 14px var(--cs)}
+.cs-attr .cci{width:20px;height:20px;fill:#fff;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+.cs-attr-in{display:inline-flex;align-items:center;gap:6px;color:var(--cs)}
+.cs-attr-in .cci{width:18px;height:18px;fill:var(--cs)}
+.cs-head .cs-attr{position:absolute;right:38px;top:62px;margin:0}
+@media (max-width:820px){.cs-head .cs-attr{top:46px;right:26px;width:28px;height:28px}.cs-head .cs-attr .cci{width:16px;height:16px}}

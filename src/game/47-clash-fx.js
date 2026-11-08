@@ -111,7 +111,7 @@ function ccGhost(html, r, cls = '') {
   g.style.cssText = `left:${r.x - r.w / 2}px;top:${r.y - r.h / 2}px;width:${r.w}px;height:${r.h}px`;
   g.innerHTML = html.replace(/ data-(u|peek|hand|hero|trap|slot)="[^"]*"/g, ''); L.appendChild(g); return g;
 }
-const ccCardGhost = (id, r, w = 176, face = true) => ccGhost(face ? ccCardHTML(id, { tip: false }).replace('class="ccc ', `style="--w:${w}px" class="ccc `) : `<span class="ccx-back" style="width:${w}px">${ccBackHTML()}</span>`, { x: r.x, y: r.y, w, h: w * 1.4 }, 'card');
+const ccCardGhost = (id, r, w = 176, face = true) => ccGhost(face ? ccCardHTML(id, { tip: false }).replace('class="ccc ', `style="--w:${w}px" class="ccc `) : `<span class="ccx-back" style="width:${w}px">${ccBackHTML('', ccBackSkin(1))}</span>`, { x: r.x, y: r.y, w, h: w * 1.4 }, 'card');
 const ccLater = (ms, fn) => { const m = ccM; setTimeout(() => { if (ccM && ccM === m) fn(); }, ms); };
 function ccNum(x, y, txt, cls, delay = 0) {
   ccLater(delay, () => { const L = ccLayer(); if (!L) return; const n = document.createElement('span'); n.className = 'ccx-num ' + cls; n.textContent = txt;

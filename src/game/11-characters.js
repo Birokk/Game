@@ -1,5 +1,7 @@
 /* ---------- character screen (full screen: roster, splash art, Home / Bond / Character info) ---------- */
 let wdSlot = 'hat', memSlot = 0;
+/* the character's Card Clash attribute (admin → Game pool → Card attribute): a round badge beside the name */
+const csAttrHTML = c => { const st = c.ccStyle && CC_STYLES[c.ccStyle]; return st ? `<span class="cs-attr" style="--cs:${st[1]}" tabindex="0" data-tip="${esc(`<b>Card attribute: ${st[0]}</b><span>Its Card Clash playstyle</span>`)}">${ccIco(c.ccStyle)}</span>` : ''; };
 let csEl = null, csId = null, csTab = 'home', csSkin = null, csView = false, csSkins = false, csShown = '';
 /* the roster: favourites first, then by CS (highest first), then rarity, the main character included (S.favs = [character ids]) */
 const isFav = id => (S.favs || []).includes(id);
@@ -93,6 +95,7 @@ function renderCharacters() {
       <div class="cs-elem ts">${c.mc ? 'Main character' : TYPES[c.type]}</div>
       <h2 class="cs-name ts">${esc(shown.name)}</h2>
       ${RNAME[c.rarity] ? `<span class="cs-badge r${c.rarity} ${urPlus(c) ? 'plus' : ''}">${RNAME[c.rarity]}${urPlus(c) ? '<i>+</i>' : ''}</span>` : ''}
+      ${csAttrHTML(c)}
     </div>
     <div class="cs-sep"></div>
     <div class="cs-traits">${starRow(st, -1, c)}
@@ -175,6 +178,7 @@ function renderCharacters() {
         <dt>Name</dt><dd>${esc(c.name)}</dd>
         <dt>Rarity</dt><dd>${rtag(c.rarity)}</dd>
         <dt>Type</dt><dd>${TYPES[c.type]}</dd>
+        <dt>Card attribute</dt><dd>${c.ccStyle && CC_STYLES[c.ccStyle] ? `<span class="cs-attr-in" style="--cs:${CC_STYLES[c.ccStyle][1]}">${ccIco(c.ccStyle)}${CC_STYLES[c.ccStyle][0]}</span>` : 'None yet'}</dd>
         <dt>Stars</dt><dd>${starRow(st, -1, c)}</dd>
         <dt>Bond</dt><dd>${bondTag(c.id, 'sm')}${bondOf(c.id).married ? ' · Married' : ''}</dd>
       </dl></div>

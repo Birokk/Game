@@ -5,7 +5,7 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
-const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency'], ['points', 'star', 'Summon Points'], ['board', 'cards', 'Board Skins']];
+const SHOP_TABS = [['hot', 'sparkle', 'Hot Picks'], ['skins', 'hanger', 'Outfit Shop'], ['topup', 'plus', 'Top Up'], ['pearl', 'gift', 'Pearl Shop'], ['exchange', 'shop', 'Exchange Currency'], ['points', 'star', 'Summon Points'], ['board', 'cards', 'Card Clash']];
 /* Exchange Currency sub-tabs: Corals, Seaweeds, Premium (Corals → a copy of an owned character, 720 each, 1 a month) */
 const EX_SUBS = [['corals', 'Corals'], ['seaweeds', 'Seaweeds'], ['premium', 'Premium'], ['memories', 'Memories'], ['frags', 'Fragments']], PREM_PRICE = 720, PREM_LIMIT = 1;
 const MEMX_PRICE = 300;   // Exchange → Memories: any UR memory for 300 Corals, once per memory per account (S.memEx = [ids])
@@ -93,6 +93,7 @@ function openShop(tab) {
   if (tab && tab.startsWith('points')) tab = 'points';
   else if (['daily', 'weekly', 'monthly'].includes(tab)) { topSub = tab; tab = 'topup'; }
   else if (tab === 'frags') { tab = 'exchange'; exSub = 'frags'; }
+  else if (tab === 'backs' || tab === 'boards') { ccShopSub = tab; tab = 'board'; }
   else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
   if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
@@ -132,7 +133,7 @@ function renderShop() {
     body = `<p class="tiny">Spend pearls on summon tickets, marriage rings and name change tickets.</p>
       <div class="mall-grid">${item('pt-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', TICKET_PEARLS, 'pearls', '', 5)}${item('pt-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', TICKET_PEARLS, 'pearls')}${item('pr-ring', 'rings', 'Marriage ring', `Propose at bond level ${BOND_MAX} · you have ${W.rings}`, RING_PRICE, 'pearls', '', 5)}${item('pn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_PEARLS, 'pearls', '', 4)}</div>`;
   } else if (shopTab === 'points') body = ptShopHTML();
-  else if (shopTab === 'board') body = ccSkinShopHTML();
+  else if (shopTab === 'board') { strip = ccShopStrip(); body = ccShopSub === 'backs' ? ccBackShopHTML() : ccSkinShopHTML(); }
   else if (shopTab === 'exchange' && exSub === 'frags') body = fragShopHTML();
   else if (shopTab === 'exchange' && exSub === 'corals') body = `<p class="tiny">Earn Corals from every character you pull: ${STARLIGHT[4]} for an SSR, ${STARLIGHT[5]} for a UR, and ${STARLIGHT_MAX[4]} / ${STARLIGHT_MAX[5]} once that character is already at max stars.</p>
     <div class="mall-grid">${item('st-tickets', 'tickets', 'Limited ticket', '1 pull on the Limited, Weekly or Outfit banner', SHOP_TICKET, 'starlight', '', 5)}${item('st-wishes', 'wishes', 'Standard ticket', '1 pull on the Permanent or Memory banner', SHOP_TICKET, 'starlight')}${item('sn-name', 'nametk', 'Name change ticket', `Change your name once (every 72 h) · you have ${W.nametk || 0}`, NAMETK_CORALS, 'starlight', '', 4)}</div>`;
@@ -179,7 +180,7 @@ function renderShop() {
   shopEl.querySelectorAll('[data-ptbuy]').forEach(b => b.onclick = () => { const [src, id] = b.dataset.ptbuy.split('|'); confirmPtBuy(src, id); });
   shopEl.querySelectorAll('[data-prem]').forEach(b => b.onclick = () => confirmPrem(b.dataset.prem));
   shopEl.querySelectorAll('[data-memx]').forEach(b => b.onclick = () => confirmMemEx(b.dataset.memx));
-  if (shopTab === 'board') ccSkinBind(shopEl, renderShop);
+  if (shopTab === 'board') { ccSkinBind(shopEl, renderShop); ccBackBind(shopEl, renderShop); shopEl.querySelectorAll('[data-ccsub]').forEach(b => b.onclick = () => { ccShopSub = b.dataset.ccsub; renderShop(); }); }
 }
 /* Shop → Summon Points: a featured banner's page (its featured UR / outfit for PT_PRICE of that banner's points) or the
    Permanent shop (3 UR characters + 3 UR memories this month, 1 of each per month) */
