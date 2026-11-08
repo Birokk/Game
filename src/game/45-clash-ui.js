@@ -12,17 +12,15 @@ const CC_GLYPH = {
   trap: 'M12 3l10 18H2zm0 6l-1 6h2zm0 8a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z',
   equipment: 'M6.5 3h11l4 6.5L12 22 2.5 9.5zM6 9.5h12'
 };
-const ccGlyph = d => `<svg viewBox="0 0 24 24" class="ccg"><path d="${CC_GLYPH[d.type === 'unit' ? d.style : d.type]}"/></svg>`;
-const ccStyleDot = st => `<svg viewBox="0 0 24 24" class="ccg-dot"><path d="${CC_GLYPH[st]}"/></svg>`;
+const ccStyleDot = st => ccIco(st, 'ccg-dot');
 function ccCardHTML(id, o = {}) {
-  const d = ccDef(id), st = CC_STYLES[d.style];
-  return `<div class="ccc ty-${d.type} ${o.cls || ''}" style="--cs:${st[1]}" ${o.attr || ''} title="${o.tip === false ? '' : esc(`${d.name} · ${CC_TYPES[d.type]} · ${st[0]}\n${d.text}\n${d.id}`)}">
-    <span class="ccc-cost">${d.ap}</span><span class="ccc-sty">${ccStyleDot(d.style)}</span>
-    <div class="ccc-art">${ccGlyph(d)}</div>
-    <b class="ccc-name">${esc(d.name)}</b>
-    <span class="ccc-type">${CC_TYPES[d.type]}${d.type === 'unit' ? ` · ${d.range === 'ranged' ? 'Ranged' : 'Melee'}` : ''}</span>
-    <p class="ccc-txt">${esc(d.text)}</p>
-    ${d.type === 'unit' ? `<span class="ccc-atk">${d.atk}</span><span class="ccc-hp">${d.hp}</span>` : ''}${o.extra || ''}</div>`;
+  const d = ccDef(id), st = CC_STYLES[d.style], unit = d.type === 'unit';
+  return `<div class="ccc ty-${d.type} st-${d.style} ${o.cls || ''}" style="--cs:${st[1]}" ${o.attr || ''} title="${o.tip === false ? '' : esc(`${d.name} · ${CC_TYPES[d.type]} · ${st[0]}\n${d.text}\n${d.id}`)}">
+    <div class="ccc-fr"><div class="ccc-art"><i class="ccc-rays"></i>${ccIco(d.id, 'cce')}<i class="ccc-vig"></i></div>
+      <div class="ccc-plate"><b class="ccc-name">${esc(d.name)}</b></div>
+      <span class="ccc-type">${ccIco(d.style, 'ccc-sti')}${CC_TYPES[d.type]}${unit ? ` · ${d.range === 'ranged' ? 'Ranged' : 'Melee'}` : ''}</span>
+      <p class="ccc-txt">${esc(d.text)}</p></div>
+    <span class="ccc-cost"><b>${d.ap}</b></span>${unit ? `<span class="ccc-atk"><b>${d.atk}</b></span><span class="ccc-hp"><b>${d.hp}</b></span>` : ''}<i class="ccc-shine"></i>${o.extra || ''}</div>`;
 }
 
 /* ---- saved decks (player save S.cc) ---- */
@@ -73,7 +71,7 @@ function renderDeck() {
         <span class="ccd-cnt ${v.ok ? 'ok' : cards.length > 30 ? 'bad' : ''}">${cards.length}/30</span></div>
       <div class="ccd-comp">${['unit', 'spell', 'trap', 'equipment'].map(t => `<span><b>${byType(t)}</b>${CC_TYPES[t]}${t === 'equipment' ? '' : 's'}</span>`).join('')}</div>
       <div class="ccd-bar">${Object.keys(CC_STYLES).map(s => bySt(s) ? `<i style="flex:${bySt(s)};--cs:${CC_STYLES[s][1]}" title="${CC_STYLES[s][0]} ${bySt(s)}"></i>` : '').join('') || '<i class="none"></i>'}</div>
-      <div class="ccd-list">${uniq.map(id => { const d = ccDef(id); return `<button class="ccd-li" data-rem="${id}" style="--cs:${CC_STYLES[d.style][1]}" title="${esc(d.text)}"><span class="ccd-li-ap">${d.ap}</span><b>${esc(d.name)}</b><small>${CC_TYPES[d.type]}</small><span class="ccd-li-n">×${ccCount(cards, id)}</span>${ro ? '' : `<span class="ccd-li-x">${icon('close')}</span>`}</button>`; }).join('') || '<p class="tiny">Empty deck. Add 30 cards from the left.</p>'}</div>
+      <div class="ccd-list">${uniq.map(id => { const d = ccDef(id); return `<button class="ccd-li" data-rem="${id}" style="--cs:${CC_STYLES[d.style][1]}" title="${esc(d.text)}">${ccIco(id, 'ccd-li-em')}<span class="ccd-li-ap"><span>${d.ap}</span></span><b>${esc(d.name)}</b><small>${CC_TYPES[d.type]}</small><span class="ccd-li-n">×${ccCount(cards, id)}</span>${ro ? '' : `<span class="ccd-li-x">${icon('close')}</span>`}</button>`; }).join('') || '<p class="tiny">Empty deck. Add 30 cards from the left.</p>'}</div>
       ${v.ok ? '<p class="ccd-ok">Ready to play</p>' : `<p class="ccd-err">${esc(v.errs[0] || '')}</p>`}
       <div class="ccd-acts">
         <button class="btn ghost" id="ccdCopy" ${sv.decks.length >= CC_DECK_MAX ? 'disabled' : ''}>${icon('copy')}${ro ? 'Copy to edit' : 'Duplicate'}</button>
@@ -155,27 +153,28 @@ function startClash(deck, seed) {
   ccStop(); closeModal();
   const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', 'Bot']);
   const m = ccM = { G, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
-  showLoading(() => { if (ccM !== m) return; m.loading = false; m.busy = false; ccFx0(); ccRender(); ccAfter(); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
+  showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
     const el = document.createElement('div'); el.className = 'ccm'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Card Clash match');
-    el.innerHTML = '<div class="ccm-stage"><canvas class="ccm-envc" width="1600" height="900"></canvas><div class="ccm-ui"></div></div>'; document.body.appendChild(el); m.el = el;
+    el.innerHTML = '<div class="ccm-stage"><div class="ccm-env"><i class="ccm-circle"></i><i class="ccm-circle c2"></i></div><div class="ccm-ui"></div><div class="ccx"></div><canvas class="ccm-fxc" width="1600" height="900"></canvas></div>';
+    document.body.appendChild(el); m.el = el; m.hide = new Set();
     m.onResize = () => ccFit(); addEventListener('resize', m.onResize); ccFit();
-    el.addEventListener('click', e => { if (ccM && !ccM.loading) ccClick(e); });
+    el.addEventListener('click', e => { if (ccM && !ccM.loading && !ccM.intro) ccClick(e); });
     el.addEventListener('mouseover', e => { if (!ccM) return; const t = e.target.closest('[data-peek]'), k = t ? t.dataset.peek : null; if (ccM.peekHover !== k) { ccM.peekHover = k; ccPeekRender(); } });
+    el.addEventListener('mousemove', e => { if (ccM) ccTilt(e); });
     el.addEventListener('mouseleave', () => { if (ccM) { ccM.peekHover = null; ccPeekRender(); } });
     m.onKey = e => { if (e.key === 'Escape' && ccM && !ccM.loading && !document.querySelector('.modal-back')) { if (ccM.sel) { ccM.sel = null; ccRender(); } } };
     addEventListener('keydown', m.onKey);
-    set(.08); await tick();
-    el.querySelector('.ccm-envc').getContext('2d').drawImage(ccEnvImage(), 0, 0); set(.32); await tick();
-    cctTiles(); set(.4); await tick();
-    ccRender(); set(.5); await tick();
-    await ccArtLoad(set, .5, .96);
+    set(.15); await tick();
+    ccDefs(); set(.3); await tick();
+    ccRender(); set(.6); await tick();
+    ccFxStart(el); set(.75); await tick();
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     set(1);
   } });
 }
-function ccStop() { if (!ccM) return; clearTimeout(ccM.timer); removeEventListener('resize', ccM.onResize); removeEventListener('keydown', ccM.onKey); if (ccM.el) ccM.el.remove(); ccM = null; }
+function ccStop() { if (!ccM) return; clearTimeout(ccM.timer); ccFxStop(); removeEventListener('resize', ccM.onResize); removeEventListener('keydown', ccM.onKey); if (ccM.el) ccM.el.remove(); ccM = null; }
 function ccFit() { if (!ccM) return; const s = Math.min(innerWidth / 1600, innerHeight / 900); ccM.el.style.setProperty('--s', s); }
 const ccFx0 = () => { if (ccM) ccM.G.fx = []; };
 const ccMyTurn = () => ccM && ccM.G.phase !== 'over' && ccM.G.active === 0 && !ccM.busy;
@@ -239,36 +238,46 @@ function ccClick(e) {
   if (ccM.sel) { ccM.sel = null; ccRender(); }
 }
 function ccDo(a) {
-  const G = ccM.G, before = ccRects();
+  const G = ccM.G, snap = ccSnap(a);
   const err = ccApply(G, a);
   if (err) { toast(err); return false; }
   ccM.sel = null;
   const hit = G.fx.filter(f => f.id === 'hero1' && f.type === 'dmg').reduce((t, f) => t + f.n, 0);
-  ccRender(before);
-  if (hit > CC_SLASH_MIN) ccSlash(hit);
-  ccAfter();
+  if (G.active === 1 || G.phase === 'over') ccM.busy = true;
+  ccRender(snap);
+  if (hit > CC_SLASH_MIN) { const m = ccM; setTimeout(() => { if (ccM === m) ccSlash(hit); }, ccM.impact || 0); }
+  ccAfter(true);
   return true;
 }
-function ccAfter() {
+/* after every action: the end screen, the bot's next move (waiting for the animations), or back to you */
+function ccAfter(rendered) {
   if (!ccM || ccM.loading) return;
-  const G = ccM.G;
+  const G = ccM.G, wait = Math.max(0, (ccM.animEnd || 0) - performance.now());
   if (G.phase === 'over') {
     ccM.busy = true; ccRender();
-    [0, 1].forEach(p => { if (G.players[p].hp <= 0) { const h = ccM.el.querySelector(`.ccm-hero[data-hero="${p}"]`); if (h) h.classList.add('fx-shatter'); } });
-    ccM.timer = setTimeout(ccEndScreen, 1300); return;
+    const m = ccM;
+    setTimeout(() => { if (ccM !== m) return; [0, 1].forEach(p => { if (G.players[p].hp <= 0) { const h = ccM.el.querySelector(`.ccm-hero[data-hero="${p}"]`); if (h) h.classList.add('fx-shatter'); } }); }, Math.max(0, wait - 300));
+    ccM.timer = setTimeout(ccEndScreen, Math.max(1300, wait + 900)); return;
   }
   if (G.active === 1) {
     ccM.busy = true; ccRenderTurn();
-    ccM.timer = setTimeout(() => {
-      if (!ccM || ccM.G !== G) return;
-      let a = ccBotPick(G);
-      const before = ccRects();
-      if (ccApply(G, a)) { a = { k: 'end' }; ccApply(G, a); }
-      ccRender(before); ccAfter();
-    }, G.phase === 'choice' ? 500 : 780);
+    ccM.timer = setTimeout(() => ccBotStep(G), G.phase === 'choice' ? 500 : Math.max(650, wait + 200));
     return;
   }
-  ccM.busy = false; ccRender();
+  ccM.busy = false; if (!rendered) ccRender();
+}
+/* one bot move: cards it plays are shown first (ccReveal), then applied and animated like yours */
+function ccBotStep(G) {
+  if (!ccM || ccM.G !== G) return;
+  let a = ccBotPick(G);
+  const go = src => {
+    if (!ccM || ccM.G !== G) return;
+    const snap = ccSnap(a, src);
+    if (ccApply(G, a)) { a = { k: 'end' }; snap.a = a; ccApply(G, a); }
+    if (G.active === 0 && G.phase !== 'over') ccM.busy = false;
+    ccRender(snap); ccAfter(true);
+  };
+  if (a && (a.k === 'summon' || a.k === 'spell' || a.k === 'equip' || a.k === 'trap')) ccReveal(a, go); else go(null);
 }
 
 /* big hit: when one of your actions deals more than 2 damage to the enemy hero, a diagonal slice slashes in from your side
@@ -295,33 +304,33 @@ function ccUnitHTML(G, u, keyset) {
   if (ccArm(u)) st.push(`<i class="s-arm" title="Armor 1">${CC_SHIELD}</i>`);
   if (u.poison) st.push(`<i class="s-poi" title="Poison: ${u.poison} more tick${u.poison > 1 ? 's' : ''}">${u.poison}</i>`);
   if (u.stunNow || u.stunNext) st.push(`<i class="s-stun" title="Stunned: can’t attack ${u.stunNow ? 'this turn' : 'next turn'}">Z</i>`);
-  if (u.eq) st.push(`<i class="s-eq" title="${esc(ccDef(u.eq.id).name)}: ${esc(ccDef(u.eq.id).text)}" style="--cs:${CC_STYLES[ccDef(u.eq.id).style][1]}"><svg viewBox="0 0 24 24"><path d="${CC_GLYPH.equipment}"/></svg></i>`);
+  if (u.eq) st.push(`<i class="s-eq" title="${esc(ccDef(u.eq.id).name)}: ${esc(ccDef(u.eq.id).text)}" style="--cs:${CC_STYLES[ccDef(u.eq.id).style][1]}">${ccIco(u.eq.id)}</i>`);
   if (CC_HASTE.has(u.id)) st.push('<i class="s-kw" title="Haste">H</i>');
   if (CC_FREEMOVE.has(u.id)) st.push('<i class="s-kw" title="Free Move">F</i>');
   if (CC_FLANK.has(u.id)) st.push('<i class="s-kw" title="Flank">K</i>');
   const sick = u.owner === G.active && u.summoned === G.turnNo && !ccCanAttack(G, u) && !u.attacked;
   const cls = [ccM.sel && sel.kind === 'unit' && sel.iid === u.iid ? 'sel' : '', can ? 'ready' : '', u.attacked && u.owner === G.active ? 'spent' : '', keyset.has('u' + u.iid) ? 'tgt' : '', sel && sel.first === u.iid ? 'sel' : '', sick ? 'sick' : '', u.row === 1 && d.range !== 'ranged' ? 'idle' : ''].join(' ');
-  return `<div class="ccu ${cls}" data-u="${u.iid}" data-peek="u${u.iid}" style="--cs:${CC_STYLES[d.style][1]}">
-    <div class="ccu-art">${ccGlyph(d)}</div><span class="ccu-cost">${d.ap}</span><b class="ccu-name">${esc(d.name)}</b>
-    <div class="ccu-st">${st.join('')}</div>${d.range === 'ranged' ? '<span class="ccu-rng" title="Ranged">R</span>' : ''}
-    <span class="ccu-atk ${atk > d.atk ? 'up' : atk < d.atk ? 'down' : ''}">${atk}</span><span class="ccu-hp ${u.hp < max ? 'hurt' : max > d.hp ? 'up' : ''}">${u.hp}</span></div>`;
+  return `<div class="ccu st-${d.style} ${cls}" data-u="${u.iid}" data-peek="u${u.iid}" style="--cs:${CC_STYLES[d.style][1]}${ccM.hide && ccM.hide.has(u.iid) ? ';visibility:hidden' : ''}">
+    <div class="ccu-fr"><div class="ccu-art"><i class="ccc-rays"></i>${ccIco(d.id, 'cce')}<i class="ccc-vig"></i></div><b class="ccu-name">${esc(d.name)}</b></div>
+    <div class="ccu-st">${st.join('')}</div>${d.range === 'ranged' ? `<span class="ccu-rng" title="Ranged">${ccIco('MOB-U04')}</span>` : ''}
+    <span class="ccu-atk ${atk > d.atk ? 'up' : atk < d.atk ? 'down' : ''}"><b>${atk}</b></span><span class="ccu-hp ${u.hp < max ? 'hurt' : max > d.hp ? 'up' : ''}"><b>${u.hp}</b></span></div>`;
 }
 const CC_SHIELD = '<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/></svg>';
 function ccHalfHTML(G, p, keyset) {
   const P = G.players[p], rows = p === 1 ? [1, 0] : [0, 1];
-  const slot = (l, r) => { const u = P.board[l][r], k = `${p}${l}${r}`; return `<div class="cc-slot ${r === 0 ? 'front' : 'back'} ${keyset.has('s' + k) ? 'tgt' : ''}" data-slot="${k}">${u ? ccUnitHTML(G, u, keyset) : `<span class="cc-slot-l">${r === 0 ? 'Front' : 'Back'}</span>`}</div>`; };
-  const traps = `<div class="cc-traps">${[0, 1, 2].map(l => { const c = P.traps[l], k = `${p}${l}`; return `<div class="cc-trap ${c ? 'set' : ''} ${keyset.has('t' + k) ? 'tgt' : ''}" data-trap="${k}" ${c && p === 0 ? `data-peek="c${c.id}"` : ''} title="${c ? (p === 0 ? esc(ccDef(c.id).name + ': ' + ccDef(c.id).text) : 'A face-down trap') : `${CC_LANES[l]} lane trap slot`}">${c ? (p === 0 ? `<span class="cc-trap-c" style="--cs:${CC_STYLES[ccDef(c.id).style][1]}">${ccGlyph(ccDef(c.id))}<b>${esc(ccDef(c.id).name)}</b></span>` : '<span class="cc-trap-c back"></span>') : '<i class="cc-trap-rune"></i>'}</div>`; }).join('')}</div>`;
+  const slot = (l, r) => { const u = P.board[l][r], k = `${p}${l}${r}`; return `<div class="cc-slot ${r === 0 ? 'front' : 'back'} ${keyset.has('s' + k) ? 'tgt' : ''}" data-slot="${k}">${u ? ccUnitHTML(G, u, keyset) : `<i class="cc-slot-rune"></i><span class="cc-slot-l">${r === 0 ? 'Front' : 'Back'}</span>`}</div>`; };
+  const traps = `<div class="cc-traps">${[0, 1, 2].map(l => { const c = P.traps[l], k = `${p}${l}`; return `<div class="cc-trap ${c ? 'set' : ''} ${keyset.has('t' + k) ? 'tgt' : ''}" data-trap="${k}" ${c && p === 0 ? `data-peek="c${c.id}"` : ''} title="${c ? (p === 0 ? esc(ccDef(c.id).name + ': ' + ccDef(c.id).text) : 'A face-down trap') : `${CC_LANES[l]} lane trap slot`}">${c ? (p === 0 ? `<span class="cc-trap-c st-${ccDef(c.id).style}">${ccIco(c.id, 'cce')}<b>${esc(ccDef(c.id).name)}</b></span>` : '<span class="cc-trap-c back"></span>') : '<i class="cc-trap-rune"></i>'}</div>`; }).join('')}</div>`;
   const rowsHTML = `<div class="cc-rows">${rows.map(r => `<div class="cc-row ${r === 0 ? 'front' : 'back'}">${[0, 1, 2].map(l => slot(l, r)).join('')}</div>`).join('')}</div>`;
   // each half is its own piece (stone wall + field) so a board skin can replace one player's side; data-skin picks it
   return `<div class="cc-half ${p === 0 ? 'me' : 'op'}" data-skin="default"><div class="cc-field"><i class="cc-lanediv l1"></i><i class="cc-lanediv l2"></i></div>${p === 1 ? traps + rowsHTML : rowsHTML + traps}</div>`;
 }
-function ccRender(before) {
+function ccRender(snap) {
   if (!ccM) return;
   const G = ccM.G, me = G.players[0], op = G.players[1], keyset = ccTargets(), my = ccMyTurn();
   const ui = ccM.el.querySelector('.ccm-ui');
   const ap = (P, p) => { const max = Math.max(P.ap, G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
   const hero = p => { const P = G.players[p]; return `<div class="ccm-hero ${p ? 'op' : 'me'} ${keyset.has('h' + p) ? 'tgt' : ''} ${G.active === p ? 'act' : ''}" data-hero="${p}">
-      <span class="ccm-ava">${p === 0 ? avatarHTML(64) : `<span class="ccm-bot">${CC_IC}</span>`}</span>
+      <span class="ccm-ava">${p === 0 ? avatarHTML(58) : `<span class="ccm-bot">${ccIco('bot')}</span>`}</span>
       <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : 'Same deck as you'}</small></span>
       <span class="ccm-gem ${p ? 'red' : 'blue'}"><b>${Math.max(0, P.hp)}</b></span></div>`; };
   const sel = ccM.sel, selCard = sel && sel.kind === 'hand' ? me.hand.find(c => c.iid === sel.iid) : null;
@@ -331,7 +340,7 @@ function ccRender(before) {
   const ot = G.round >= CC_CFG.overtime;
   ui.innerHTML = `
     <div class="ccm-tools"><button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
-    <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg"></span>`).join('')}<small>${op.hand.length}</small></div>
+    <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML()}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     <div class="ccb ${G.active === 1 ? 'turn-op' : ''}">
       <span class="ccb-torch tl"></span><span class="ccb-torch tr"></span><span class="ccb-torch bl"></span><span class="ccb-torch br"></span>
@@ -342,16 +351,15 @@ function ccRender(before) {
       </div>
       ${ccHalfHTML(G, 0, keyset)}
     </div>
-    <div class="ccm-piles op"><span title="Bot's draw deck">${icon('chars')}${op.deck.length}</span><span title="Bot's discard pile">${icon('trash')}${op.disc.length}</span></div>
-    <div class="ccm-piles me"><span title="Your draw deck">${icon('chars')}${me.deck.length}</span><span title="Your discard pile">${icon('trash')}${me.disc.length}</span></div>
+    <div class="ccm-piles op"><span title="Bot's draw deck">${ccBackHTML()}${op.deck.length}</span><span class="ccm-disc" title="Bot's discard pile">${icon('trash')}${op.disc.length}</span></div>
+    <div class="ccm-piles me"><span title="Your draw deck">${ccBackHTML()}${me.deck.length}</span><span class="ccm-disc" title="Your discard pile">${icon('trash')}${me.disc.length}</span></div>
     <div class="ccm-hand">${handHTML}</div>
     <div class="ccm-peek"></div>
     <div class="ccm-act"></div>
     ${ccM.log ? `<div class="ccm-log"><b>Match log</b><ol>${G.log.slice(-40).reverse().map(l => `<li class="k-${l.k} p${l.p}">${esc(l.t)}</li>`).join('')}</ol></div>` : ''}
     ${G.phase === 'choice' && G.pending.p === 0 ? `<div class="ccm-choice"><b>Seer: keep one card</b><p>The other goes back on top of your deck.</p><div>${G.pending.opts.map(o => { const c = me.deck.find(x => x.iid === o); return `<button class="ccm-ch" data-choice="${o}">${ccCardHTML(c.id, { tip: false })}</button>`; }).join('')}</div></div>` : ''}`;
   ccM.el.classList.toggle('aiming', !!selCard && my); ccRenderTurn(); ccPeekRender(); ccActRender(keyset, selCard);
-  ccArtEnsure();
-  if (before) ccPlayFx(before);
+  if (snap) ccM.animEnd = performance.now() + ccAnim(snap);
 }
 /* End Turn is the glowing orb at the right end of the battle line */
 function ccRenderTurn() {
@@ -406,27 +414,6 @@ function ccPreview(G, iid) {
   if (!tgt) return `Hits <b>${esc(G.names[1])}</b> directly for <b>${sum('hero1', 'dmg')}</b>.${warn}`;
   const dealt = sum(tgt.iid, 'dmg'), kill = g.fx.some(f => f.id === tgt.iid && f.type === 'die'), back = sum(iid, 'dmg'), dies = g.fx.some(f => f.id === iid && f.type === 'die'), over = sum('hero1', 'dmg');
   return `Hits <b>${esc(ccDef(tgt.id).name)}</b> for <b>${dealt}</b>${kill ? ' (destroys it)' : ''}. Takes <b>${back}</b> back${dies ? ' (dies)' : ''}.${over ? ` Overflow <b>${over}</b> to the hero.` : ''}${warn}`;
-}
-/* floating numbers and small animations after an action, placed from where things were before and are now */
-function ccRects() {
-  const m = {}; if (!ccM) return m;
-  const st = ccM.el.querySelector('.ccm-stage'), sr = st.getBoundingClientRect(), s = sr.width / 1600 || 1;
-  ccM.el.querySelectorAll('[data-u],[data-hero],[data-trap]').forEach(el => { const r = el.getBoundingClientRect(), k = el.dataset.u || (el.dataset.hero != null ? 'hero' + el.dataset.hero : 'trap' + el.dataset.trap); m[k] = { x: (r.left + r.width / 2 - sr.left) / s, y: (r.top + r.height / 2 - sr.top) / s }; });
-  return m;
-}
-function ccPlayFx(before) {
-  const G = ccM.G, fx = G.fx.splice(0), now = ccRects(), stage = ccM.el.querySelector('.ccm-stage');
-  const offs = {};
-  for (const f of fx) {
-    const el = f.id.startsWith('hero') ? stage.querySelector(`[data-hero="${f.id.slice(4)}"]`) : f.id.startsWith('trap') ? stage.querySelector(`[data-trap="${f.id.slice(4)}"]`) : stage.querySelector(`[data-u="${f.id}"]`);
-    if (el) { if (f.type === 'attack') { const u = ccFind(G, f.id); el.classList.add('fx-lunge'); if (u && u.owner === 1) el.classList.add('op'); } else { const c = { dmg: 'fx-hit', heal: 'fx-heal', summon: 'fx-in', buff: 'fx-buff', debuff: 'fx-hit', stun: 'fx-stun', poison: 'fx-poison', move: 'fx-in', spell: 'fx-spell', trap: 'fx-trap', set: 'fx-in' }[f.type]; if (c) el.classList.add(c); } }
-    const p = now[f.id] || before[f.id]; if (!p) continue;
-    const txt = { dmg: `−${f.n}`, heal: `+${f.n}`, die: 'Destroyed', stun: 'Stunned', poison: 'Poisoned', trap: 'Trap!', buff: 'Buff' }[f.type]; if (!txt) continue;
-    const o = offs[f.id] = (offs[f.id] || 0) + 1;
-    const fl = document.createElement('span'); fl.className = `ccm-float f-${f.type}`; fl.textContent = txt;
-    fl.style.left = p.x + 'px'; fl.style.top = (p.y - 10 - (o - 1) * 26) + 'px'; stage.appendChild(fl);
-    setTimeout(() => fl.remove(), 1300);
-  }
 }
 /* end of the match: the losing hero's gem shatters, then a golden victory or a red defeat animation with the results */
 function ccEndScreen() {
@@ -486,5 +473,5 @@ function ccRules() {
     <p><b>Attacking (1 AP, once per unit per turn):</b> a unit hits the enemy Front unit in its lane, else the Back unit, else the enemy hero. Both units hit each other at the same time, except a Ranged unit attacking from the Back takes nothing back from a Melee unit. Killing a unit pushes up to <b>2</b> leftover damage into the hero (overflow). New units can’t attack on the turn they arrive unless they have Haste, get Reckless Charge, or have Free Move / Light Boots and moved first (Dash).</p>
     <p><b>Moving (1 AP, once per unit per turn):</b> one slot left or right, or between Front and Back in the same lane. Free Move makes it cost 0.</p>
     <p><b>Traps</b> stay hidden until they trigger: when an enemy enters the lane, attacks from it, or casts a spell on a unit in it.</p>
-    <p><b>Limits:</b> Armor max 1, permanent ATK +2 / −2 (never below 1), max HP +3, player healing at most +1 HP per round. Poison deals 2 at the start of its owner’s turn. Stunned units can’t attack on their next turn. From round ${CC_CFG.overtime} every unit loses 1 HP at the start of its owner’s turn.</p></div>` });
+    <p><b>Limits:</b> Armor max 1, permanent ATK +2 / −2 (never below 1), max HP +3, player healing at most +1 HP per round. Poison deals 2 at the start of its owner’s turn. Stunned units can’t attack on their next turn. From round ${CC_CFG.overtime} every unit loses 1 HP at the start of its owner’s turn.</p><p class="ccr-credit">${CC_ICON_CREDIT}</p></div>` });
 }
