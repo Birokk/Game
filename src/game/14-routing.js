@@ -10,7 +10,7 @@ document.addEventListener('click', e => {
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('character');
   else if (k === 'deck') openDeck();
-  else if (k === 'clash') openQuickMatch();
+  else if (k === 'clash') openCampaign();   // the Card Battle gate opens the campaign (Quick match is one tap from there)
   else if (k === 'pets') openPets();
   else if (k === 'farm') openFarm();
   else if (k === 'house') openFarm('house');

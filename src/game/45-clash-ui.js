@@ -52,6 +52,7 @@ function renderDeck() {
       <span class="ccd-rec" title="Quick match record">${icon('trophy')}<b>${sv.stats.w}</b> W · <b>${sv.stats.l}</b> L · <b>${sv.stats.d}</b> D</span>
       <button class="btn ghost ccd-help" id="ccdSkin" title="Board skins and card backs">${ccSkinIco(ccMySkin(), 'ccd-skic')}Skins</button>
       <button class="btn ghost ccd-help" id="ccdHelp">${icon('info')}How to play</button>
+      <button class="btn ghost ccd-help" id="ccdCamp">${icon('map')}Campaign</button>
       <button class="btn gold ccd-play" id="ccdPlay">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="ccdClose" aria-label="Close">${icon('close')}</button></header>
     <aside class="ccd-side">
@@ -87,6 +88,7 @@ function renderDeck() {
   const $$ = s => ccdEl.querySelectorAll(s), one = s => ccdEl.querySelector(s);
   one('#ccdClose').onclick = closeDeck;
   one('#ccdPlay').onclick = openQuickMatch;
+  one('#ccdCamp').onclick = () => openCampaign();
   one('#ccdHelp').onclick = () => ccRules(0);
   one('#ccdSkin').onclick = () => ccSkinPicker();
   one('#ccdLead').onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
@@ -130,11 +132,12 @@ function openQuickMatch() {
     <p class="tiny ccq-ev" id="ccqEv"></p>
     <p class="tiny">The same seed and the same moves always replay the same match, handy for reporting a bug. Who goes first and the battle event are decided by the seed.</p>
     <p class="tiny ccq-skin">${ccSkinIco(ccMySkin(), 'ccq-skic')}Board: <b>${esc(ccSkinOf(ccMySkin()).name)}</b> · card back: <b>${esc(ccBackOf(ccMyBack()).name)}</b> · <button class="ccq-help" id="ccqSkin">Change</button> · the bot gets random ones.</p>
-    <p class="tiny">New to Card Clash? <button class="ccq-help" id="ccqHelp">Read How to play</button> · every win gives +1 pearl.</p>
+    <p class="tiny">New to Card Clash? <button class="ccq-help" id="ccqCamp">Play the tutorial campaign</button> or <button class="ccq-help" id="ccqHelp">read How to play</button> · every win gives +1 pearl.</p>
     <button class="btn gold ccq-go" id="ccqGo">${icon('bolt')}Start match</button></div>`,
     onMount: b => {
       b.querySelectorAll('[data-qdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.qdeck; persist(); b.querySelectorAll('[data-qdeck]').forEach(y => y.classList.toggle('on', y === x)); if (ccdEl) renderDeck(); });
       b.querySelector('#ccqHelp').onclick = () => ccRules(0);
+      b.querySelector('#ccqCamp').onclick = () => openCampaign();
       b.querySelector('#ccqSkin').onclick = () => ccSkinPicker(openQuickMatch);
       const evLine = () => { const sd = (parseInt(b.querySelector('#ccqSeed').value, 10) || 0) >>> 0, k = ccPickEvent(sd), E = k && CC_EVENTS[k];
         b.querySelector('#ccqEv').innerHTML = E ? `<span class="ccq-evt" style="--ec:${ccEvCol(k)}">${ccEvIco(k)}<b>${esc(E.name)}</b></span> ${esc(E.text)}` : 'Battle event: none for this seed (clear skies). 60% of matches start with one.'; };
@@ -164,12 +167,15 @@ const CC_TIPS = [
 ];
 /* starting a match: the loading screen covers everything while the board, the forest and the textures are built,
    and the match (and the bot) only starts once the board is revealed */
-function startClash(deck, seed) {
-  ccStop(); closeModal();
-  const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = foes.length ? foes[(seed >>> 0) % foes.length] : null;
-  const G = ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), [S.player.name || 'You', foe ? foe.name : 'Bot']);
+/* camp = a campaign stage (54-clash-campaign.js): its own match setup, the default board / back for the bot, a coach, stars */
+function startClash(deck, seed, camp) {
+  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; }   // the campaign map comes back after a stage (ccCampMap)
+  const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = camp && camp.dummy ? null : foes.length ? foes[(seed >>> 0) % foes.length] : null;
+  const names = [S.player.name || 'You', camp && camp.dummy ? camp.foeName : foe ? foe.name : 'Bot'];
+  const G = camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), names);
   ccSkReset();
-  const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), ccBotSkin(seed)], backs: [ccMyBack(), ccBotBack(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false };
+  const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), camp ? 'default' : ccBotSkin(seed)], backs: [ccMyBack(), camp ? 'default' : ccBotBack(seed)], deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false,
+    camp: camp ? { st: camp, cs: ccCampStats(), shown: new Set(), tip: null } : null };
   showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => ccCoinFlip(() => ccEventReveal(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }))); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
@@ -238,6 +244,11 @@ function ccClick(e) {
     if (id === 'ccAtk' || id === 'ccCast') { const a = ccTargets().get(id === 'ccAtk' ? 'attack' : 'cast'); if (a) ccDo(a); return; }
     if (id === 'ccRematch') { const d = ccM.deck; startClash(d, Math.floor(Math.random() * 1e9)); return; }
     if (id === 'ccBack') { ccStop(); if (!ccdEl) openDeck(); else renderDeck(); return; }
+    if (id === 'ccCampRetry') { ccCampStart(ccM.camp.st); return; }
+    if (id === 'ccCampNext') { const nx = ccCampNext(ccM.camp.st); if (nx) ccCampStart(nx); return; }
+    if (id === 'ccCampMap') { const sid = ccM.camp.st.id; ccStop(); openCampaign(sid); return; }
+    if (id === 'ccCoachOk') { ccCoachHide(true); return; }
+    if (id === 'ccCoachRules') { ccRules(ccM.camp.st.rules); return; }
   }
   const ch = t.closest('[data-choice]'); if (ch) { if (G.phase === 'choice' && G.pending.p === 0) ccDo({ k: 'choice', pick: ch.dataset.choice }); return; }
   const tg = ccTargets();
@@ -257,10 +268,11 @@ function ccClick(e) {
   if (ccM.sel) { ccM.sel = null; ccRender(); }
 }
 function ccDo(a, fromAuto) {
-  const G = ccM.G, snap = ccSnap(a);
+  const G = ccM.G, snap = ccSnap(a), note = ccM.camp && ccCampPre(G, a);
   if (!fromAuto) ccM.autoPlan = null;
   const err = ccApply(G, a);
   if (err) { toast(err); return false; }
+  if (ccM.camp) { if (a.k !== 'end') ccCampNote(ccM.camp.cs, G, note); ccCoachHide(false); }
   ccM.sel = null;
   const hit = G.fx.filter(f => f.id === 'hero1' && f.type === 'dmg').reduce((t, f) => t + f.n, 0);
   if (G.active === 1 || G.phase === 'over') ccM.busy = true;
@@ -273,6 +285,7 @@ function ccDo(a, fromAuto) {
 function ccAfter(rendered) {
   if (!ccM || ccM.loading) return;
   const G = ccM.G, wait = Math.max(0, (ccM.animEnd || 0) - performance.now());
+  if (ccM.camp) { ccCampScan(ccM.camp.cs, G); if (G.phase !== 'over' && G.active === 0) { const m = ccM; setTimeout(() => { if (ccM === m) ccCoachCheck(); }, wait + 250); } }
   if (G.phase === 'over') {
     ccM.busy = true; ccRender();
     const m = ccM;
@@ -288,20 +301,21 @@ function ccAfter(rendered) {
   ccAutoSchedule();
 }
 /* auto play (48-clash-auto.js plans the turn): one action at a time, waiting for each animation */
+const ccAutoOn = () => !!ccSave().auto && !(ccM && ccM.camp);   // no auto play in campaign stages
 function ccAutoSchedule() {
-  if (!ccM || !ccSave().auto || ccM.loading || ccM.intro) return;
+  if (!ccM || !ccAutoOn() || ccM.loading || ccM.intro) return;
   const G = ccM.G; if (G.phase === 'over' || G.active !== 0 || ccM.busy) return;
   clearTimeout(ccM.autoT);
   ccM.autoT = setTimeout(ccAutoStep, Math.max(420, (ccM.animEnd || 0) - performance.now() + 260));
 }
 async function ccAutoStep() {
-  const m = ccM; if (!m || !ccSave().auto || m.autoBusy) return;
+  const m = ccM; if (!m || !ccAutoOn() || m.autoBusy) return;
   const G = m.G; if (G.phase === 'over' || G.active !== 0 || m.busy || m.loading || m.intro) return;
   if (!m.autoPlan || !ccAutoStill(G, m.autoPlan[0])) {   // plan again when the next step is illegal or a hidden trap changed the board
     m.autoBusy = true; m.autoThinking = true; ccActRender(ccTargets(), null);
-    const plan = await ccAutoPlanAsync(G, CC_AUTO, () => ccM === m && ccSave().auto);
+    const plan = await ccAutoPlanAsync(G, CC_AUTO, () => ccM === m && ccAutoOn());
     m.autoBusy = false; m.autoThinking = false;
-    if (ccM !== m || !ccSave().auto) return;
+    if (ccM !== m || !ccAutoOn()) return;
     m.autoPlan = plan && plan.length && ccAutoStill(G, plan[0]) ? plan : [{ k: G.phase === 'choice' ? 'choice' : 'end', pick: G.phase === 'choice' ? G.pending.opts[0] : undefined }];
   }
   const { pre, ...a } = m.autoPlan[0]; m.autoPlan = m.autoPlan.slice(1); m.sel = null;
@@ -311,7 +325,7 @@ async function ccAutoStep() {
 /* one bot move: cards it plays are shown first (ccReveal), then applied and animated like yours */
 function ccBotStep(G) {
   if (!ccM || ccM.G !== G) return;
-  let a = ccBotPick(G);
+  let a = ccM.camp && ccM.camp.st.dummy ? { k: 'end' } : ccBotPick(G);   // the campaign's Training Dummy never acts
   const go = src => {
     if (!ccM || ccM.G !== G) return;
     const snap = ccSnap(a, src);
@@ -376,7 +390,7 @@ function ccRender(snap) {
   const ap = (P, p) => { const max = Math.max(P.ap, ccApBase(G, p)); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
   const hero = p => { const P = G.players[p]; return `<div class="ccm-hero ${p ? 'op' : 'me'} ${keyset.has('h' + p) ? 'tgt' : ''} ${G.active === p ? 'act' : ''}" data-hero="${p}">
       <span class="ccm-ava">${p === 0 ? avatarHTML(58) : ccFoeAva()}</span>
-      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : 'Bot · mirror'}</small></span>
+      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : ccM.camp ? (ccM.camp.st.dummy ? 'Never attacks' : 'Stage bot') : 'Bot · mirror'}</small></span>
       <span class="ccm-gem ${p ? 'red' : 'blue'}"><b>${Math.max(0, P.hp)}</b></span></div>`; };
   const sel = ccM.sel, selCard = sel && sel.kind === 'hand' ? me.hand.find(c => c.iid === sel.iid) : null;
   const legal = my && G.phase === 'main' ? ccLegal(G) : [];
@@ -384,7 +398,7 @@ function ccRender(snap) {
     return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
   const ot = G.round >= ccOT(G);
   ui.innerHTML = `
-    <div class="ccm-tools"><button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button><button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
+    <div class="ccm-tools">${ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon('map')}<b>Stage ${ccM.camp.st.id}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
     <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML('', ccBackSkin(1))}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
@@ -410,6 +424,7 @@ function ccRender(snap) {
   ccSkAttach();
   ccM.el.classList.toggle('aiming', !!selCard && my); ccRenderTurn(); ccPeekRender(); ccActRender(keyset, selCard);
   if (snap) ccM.animEnd = performance.now() + ccAnim(snap);
+  if (ccM.camp) ccCoachHL();
 }
 /* End Turn is the glowing orb at the right end of the battle line */
 function ccRenderTurn() {
@@ -419,6 +434,7 @@ function ccRenderTurn() {
   d.innerHTML = G.phase === 'over' ? '<button class="ccb-orb done" disabled><b>Match<br>over</b></button>'
     : G.active === 0 ? `<button class="ccb-orb ${idle ? 'hint' : ''}" id="ccEnd" ${can ? '' : 'disabled'} title="End your turn"><b>End<br>turn</b></button>`
     : '<button class="ccb-orb op" disabled><b>Enemy<br>turn</b><small class="ccm-think"><i></i><i></i><i></i></small></button>';
+  if (ccM.camp) ccCoachHL();
 }
 function ccPeekRender() {
   if (!ccM) return; const box = ccM.el.querySelector('.ccm-peek'); if (!box) return;
@@ -437,7 +453,7 @@ function ccActRender(keyset, selCard) {
   const G = ccM.G, sel = ccM.sel;
   let html = '';
   if (G.phase === 'over') html = '';
-  else if (ccSave().auto) html = `<p><b>Auto play is on</b><br>${ccM.autoThinking ? 'Planning the turn…' : G.active === 0 ? 'Playing your turn…' : 'Waiting for the bot…'}</p><div><button class="btn ghost" id="ccAutoOff">Stop auto play</button></div>`;
+  else if (ccAutoOn()) html = `<p><b>Auto play is on</b><br>${ccM.autoThinking ? 'Planning the turn…' : G.active === 0 ? 'Playing your turn…' : 'Waiting for the bot…'}</p><div><button class="btn ghost" id="ccAutoOff">Stop auto play</button></div>`;
   else if (!ccMyTurn()) html = `<p>${G.active === 1 ? 'The bot is playing…' : ''}</p>`;
   else if (!sel) html = `<p>Tap a card in your hand to play it, or one of your units to attack or move.</p>`;
   else if (selCard) {
@@ -470,7 +486,7 @@ function ccPreview(G, iid) {
 function ccEndScreen() {
   if (!ccM) return;
   const G = ccM.G, sv = ccSave();
-  if (!ccM.done) { ccM.done = true; if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; ccM.rewards = ccGrantRewards(G.winner); persist(); renderMenu(); }
+  if (!ccM.done) { ccM.done = true; ccCoachHide(false); if (ccM.camp) ccM.campRes = ccCampFinish(); else { if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; ccM.rewards = ccGrantRewards(G.winner); } persist(); renderMenu(); }
   const res = G.winner === 0 ? ['Victory', 'win'] : G.winner === 1 ? ['Defeat', 'lose'] : ['Draw', 'draw'];
   const ms = Date.now() - G.started, mm = Math.floor(ms / 60000), ss = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
   const crack = res[1] === 'lose' ? `<svg class="ccf-crack" viewBox="0 0 1600 900" preserveAspectRatio="none">${Array.from({ length: 9 }, (_, i) => { const a = i / 9 * 6.283 + .3; let x = 800, y = 450, d = `M${x} ${y}`; for (let k = 0; k < 7; k++) { x += Math.cos(a + Math.sin(k * 2.1 + i) * .5) * (60 + k * 22); y += Math.sin(a + Math.cos(k * 1.7 + i) * .5) * (40 + k * 14); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return `<path d="${d}" style="--d:${i * .05}s"/>`; }).join('')}</svg>` : '';
@@ -479,10 +495,10 @@ function ccEndScreen() {
     <div class="ccf-mid"><div class="ccf-emblem"><svg viewBox="0 0 24 24"><path d="${res[1] === 'win' ? 'M5 16L3 6l5.5 4L12 4l3.5 6L21 6l-2 10zm0 2h14v2H5z' : res[1] === 'lose' ? 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5zm-1.2 4l1.4 4.2-2.6 1.6 3.4 6.2-.8-4.8 2.4-1.4L13 6z' : CC_GLYPH.defense}"/></svg></div>
       <h1 class="ccf-t" data-t="${res[0]}">${res[0]}</h1>
       <div class="ccm-endbox"><p>${esc(G.reason)}</p>
-      ${ccRewardsHTML(ccM.rewards)}
+      ${ccM.camp ? ccCampEndHTML() : ccRewardsHTML(ccM.rewards)}
       <div class="ccm-endst"><span>Rounds<b>${Math.min(G.round, CC_CFG.rounds)}</b></span><span>Turns<b>${G.turnNo}</b></span><span>Time<b>${mm}:${ss}</b></span><span>Your HP<b>${Math.max(0, G.players[0].hp)}</b></span></div>
-      <p class="tiny">Deck: ${esc(ccM.deck.name)} (mirror) · seed ${G.seed} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
-      <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch</button><button class="btn ghost" id="ccBack">Back to Deck</button></div></div></div>`;
+      ${ccM.camp ? ccCampEndBtns() : `<p class="tiny">Deck: ${esc(ccM.deck.name)} (mirror) · seed ${G.seed} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
+      <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch</button><button class="btn ghost" id="ccBack">Back to Deck</button></div>`}</div></div>`;
   ccM.el.querySelector('.ccm-stage').appendChild(box);
   if (res[1] === 'lose') ccM.el.querySelector('.ccm-ui').classList.add('ccf-shake');
   // particles: gold sparks rising and bursting for a win, red embers and ash drifting for a loss
@@ -518,6 +534,13 @@ function ccEndScreen() {
 }
 function ccLeave() {
   if (!ccM) return;
+  if (ccM.camp) {   // a campaign stage: leaving just goes back to the map (no loss is counted)
+    const sid = ccM.camp.st.id;
+    if (ccM.G.phase === 'over') { ccStop(); openCampaign(sid); return; }
+    openModal({ title: 'Leave the stage?', ic: 'close', small: true, kind: 'ccleave', body: `<p>This match ends and no stars are earned. You can try the stage again any time.</p><div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-close2>Keep playing</button><button class="btn gold" id="ccLeaveGo">Leave</button></div>`,
+      onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { closeModal(); ccStop(); openCampaign(sid); }; } });
+    return;
+  }
   if (ccM.G.phase === 'over') { ccStop(); if (!ccdEl) openDeck(); return; }
   openModal({ title: 'Leave the match?', ic: 'close', small: true, kind: 'ccleave', body: `<p>Leaving now counts as a loss.</p><div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-close2>Keep playing</button><button class="btn gold" id="ccLeaveGo">Leave</button></div>`,
     onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { const sv = ccSave(); sv.stats.l++; persist(); closeModal(); ccStop(); if (!ccdEl) openDeck(); else renderDeck(); }; } });

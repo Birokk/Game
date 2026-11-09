@@ -153,12 +153,16 @@ function ccValidateDeck(ids) {
 function ccRand(G) { G.rng = (G.rng + 0x6D2B79F5) >>> 0; let t = G.rng; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 function ccShuffle(G, a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(ccRand(G) * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
+/* opts (all optional; the campaign uses them): ev = battle event key or null, first = 0 | 1 (else the seed decides),
+   hp = [your HP, bot HP] at the start, order = keep both decks in the given order (deck[0] is drawn first) instead of
+   shuffling, setup(G) = runs after the opening hands, before the first turn (place units / traps) */
 function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
   const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now() };
-  G.players = [deckA, deckB].map((d, p) => ({ hp: CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
-  G.players.forEach(P => ccShuffle(G, P.deck));
-  G.first = G.active = ccRand(G) < 0.5 ? 0 : 1;
+  G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
+  G.players.forEach(P => opts.order ? P.deck.reverse() : ccShuffle(G, P.deck));   // cards are drawn from the end of the array
+  G.first = G.active = opts.first === 0 || opts.first === 1 ? opts.first : ccRand(G) < 0.5 ? 0 : 1;
   G.players.forEach((P, p) => ccDraw(G, p, CC_CFG.hand0, true));
+  if (opts.setup) opts.setup(G);
   if (G.ev) ccLog(G, `Battle event: ${CC_EVENTS[G.ev].name} (${CC_EVENTS[G.ev].short})`, 'sys');
   ccLog(G, `${G.names[G.first]} goes first`, 'sys');
   ccBeginTurn(G);
