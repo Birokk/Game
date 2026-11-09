@@ -4448,3 +4448,13 @@ button.pt-slot:hover{border-color:#fff}
 .gq-perk svg{width:15px;height:15px;flex:none}.gq-perk.on svg{color:#b8ffde}
 .gd-lvt{font-style:normal;font-family:var(--display);font-size:11px;padding:1px 8px;margin-left:6px;border-radius:99px;background:var(--cry-grad);color:var(--cry-ink);vertical-align:middle}
 .gd-ref{align-self:flex-start}.gd-ref .cic{width:15px;height:15px}
+/* special offers: a character / outfit reward is its round icon (like the profile tab) with its rarity tag bottom right */
+.ofp-face{position:relative;width:58px;height:58px;align-self:center}
+.ofp-fc{position:absolute;inset:0;border-radius:50%;overflow:hidden;border:2px solid #e7b8ff;background:#1a1530;box-shadow:0 0 12px rgba(200,150,255,.35)}
+.ofp-fc.r5{border-color:#ff6ec7;box-shadow:0 0 14px rgba(255,110,199,.45)}.ofp-fc.r4{border-color:#ffc58a;box-shadow:0 0 12px rgba(255,197,138,.4)}.ofp-fc.r6{border-color:#ff7a92}
+.ofp-fc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.ofp-fc img.chibi{object-position:50% 50%;transform:scale(1.6);transform-origin:50% 56%}
+.ofp-rt{position:absolute;right:-6px;bottom:-3px;z-index:2;line-height:1}
+.ofp-rt .rtag{font-size:9px;padding:1px 5px;border-radius:5px}
+.ofp-it>.ofp-face{align-self:center}
+@media (max-width:620px){.ofp-face{width:46px;height:46px}}

@@ -1388,17 +1388,8 @@ b.ccd-dname{border:0}
 .cmp-nm{padding:4px 12px;border-radius:999px;background:rgba(10,8,22,.78);border:1px solid rgba(255,255,255,.14);font:400 14px var(--display);white-space:nowrap}
 .cmp-chest{position:absolute;right:18px;bottom:18px;z-index:4;display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border-radius:20px;max-width:min(470px,calc(100% - 36px));
   background:linear-gradient(135deg,rgba(40,26,80,.92),rgba(14,10,30,.92));border:1px solid rgba(255,230,160,.28);box-shadow:0 12px 26px rgba(0,0,0,.5)}
-.cmp-chest-ic{flex:none;width:64px;height:56px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
-.cmp-chest-ic svg{width:100%;height:100%}
-.cmp-chest-t{display:grid;gap:3px;min-width:0;flex:1}
-.cmp-chest-t small{font-size:12px;color:#d8c8ff;font-family:var(--read)}
-.cmp-chest-t b{font:400 16px var(--display);color:#ffe7a6}
-.cmp-bar{display:block;height:7px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
-.cmp-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#f3d98f,#ffe7a6);box-shadow:0 0 10px #ffd977}
 .cmp-chest.ready{animation:cmpChest 1.6s ease-in-out infinite}
-.cmp-chest.ready .cmp-chest-ic{animation:cmpBob 1.2s ease-in-out infinite}
 @keyframes cmpChest{50%{box-shadow:0 12px 26px rgba(0,0,0,.5),0 0 32px rgba(255,210,120,.7)}}
-@keyframes cmpBob{50%{transform:translateY(-4px) rotate(-3deg)}}
 .cmp-chest.got{opacity:.75}
 /* the stage panel */
 .cmp-side{position:relative;z-index:1;min-height:0;overflow:auto;border-radius:24px;background:linear-gradient(180deg,rgba(28,20,58,.9),rgba(12,9,26,.92));border:1px solid rgba(220,190,255,.22);box-shadow:0 20px 40px rgba(0,0,0,.45);padding:18px 18px 16px}
@@ -1454,13 +1445,13 @@ b.ccd-dname{border:0}
   .cmp-chtabs{display:none}
   .cmp-head{flex-wrap:nowrap;gap:8px}.cmp-head .inv-title h2{font-size:20px}.cmp-head .inv-badge{width:34px;height:34px}
   .cmp-banner{display:flex;align-items:center;gap:10px}.cmp-banner small{display:none}.cmp-total{margin-top:0}
-  .cmp-chest-t>small:first-child{display:none}.cmp-chest-t b{font-size:12px}.cmp-chest .btn{padding:5px 10px;font-size:11px}
+  .cmp-chest .btn{padding:5px 10px;font-size:11px}
   .cmp-med{width:52px;height:52px;font-size:14px;border-width:3px}.cmp-node.boss .cmp-med{width:62px;height:62px}.cmp-crown{top:-18px}.cmp-crown svg{width:22px;height:22px}
   .cmp-nm{font-size:10px;padding:2px 7px}.cmp-stars i{width:12px;height:12px}.cmp-node{gap:3px}
-  .cmp-chest{right:10px;bottom:10px;padding:6px 10px 6px 6px;gap:8px}.cmp-chest-ic{width:42px;height:36px}.cmp-chest-t b{font-size:13px}.cmp-chest-t small{font-size:10.5px}
+  .cmp-chest{right:10px;bottom:10px;padding:6px 10px 6px 6px;gap:8px}
   .cmp-side{padding:12px}.cmp-st{gap:7px}.cmp-st-nm{font-size:22px}.cmp-intro{font-size:12.5px}.cmp-goals li{padding:6px 10px;font-size:12.5px}
 }
-@media (prefers-reduced-motion:reduce){.cmp-mist,.cmp-node.new .cmp-med,.cmp-chest.ready,.cmp-chest.ready .cmp-chest-ic{animation:none}}
+@media (prefers-reduced-motion:reduce){.cmp-mist,.cmp-node.new .cmp-med,.cmp-chest.ready{animation:none}}
 
 /* in a stage: the stage chip (instead of Auto), the coach and what it points at */
 .ccm-campst{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:999px;background:rgba(10,8,22,.75);border:1px solid rgba(201,166,255,.4);font:400 16px var(--display);color:#fff;box-shadow:0 0 14px rgba(201,166,255,.3)}
@@ -1514,14 +1505,6 @@ b.ccd-dname{border:0}
 /* chapter tabs: locked ones dimmed, a red dot on another chapter with something to do */
 .cmp-cht{position:relative;cursor:pointer}.cmp-cht.lock{opacity:.75}.cmp-cht svg{width:13px;height:13px}
 .cmp-dot{position:absolute;right:-2px;top:-3px;width:10px;height:10px;border-radius:50%;background:#ff4d6a;box-shadow:0 0 8px #ff4d6a}
-/* star milestones on the reward bar */
-.cmp-bar{position:relative;overflow:visible}
-.cmp-bar>i{border-radius:99px}
-.cmp-mk{position:absolute;top:50%;transform:translate(-50%,-50%);min-width:22px;height:22px;padding:0 4px;border-radius:999px;display:grid;place-items:center;font:400 10.5px var(--display);font-style:normal;color:#e8dcff;background:#1a1236;border:1.5px solid rgba(255,230,160,.45)}
-.cmp-mk.ready{background:linear-gradient(135deg,#fff3c4,#f3d98f);color:#3a2408;border-color:#fff3c4;box-shadow:0 0 12px #ffd977;animation:cmpPulse 1.6s ease-in-out infinite}
-.cmp-mk.got{background:#3a2a10;border-color:#f3d98f}.cmp-mk svg{width:12px;height:12px;fill:#ffe7a6}
-.cmp-mk:last-child{transform:translate(-90%,-50%)}
-.cmp-chest-t .cmp-bar{margin:6px 0 4px}
 /* the battle event of a stage, in the stage panel */
 .cmp-ev{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--ec) 16%,#151022),#0b0814);border:1px solid color-mix(in srgb,var(--ec) 55%,transparent)}
 .cmp-ev-ic{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ec);background:#0a0712;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ec) 70%,transparent)}
@@ -1542,7 +1525,30 @@ b.ccd-dname{border:0}
 }
 /* short screens: a compact reward box (one line of text, the bar shows the stars) so the bottom row of stages stays free */
 @media (max-height:820px) and (orientation:landscape){
-  .cmp-chest{padding:8px 12px 8px 8px}.cmp-chest-t>small{display:none}.cmp-chest-t b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cmp-chest-ic{width:48px;height:42px}
+  .cmp-chest{padding:8px 12px 8px 8px}
 }
-@media (max-height:500px) and (orientation:landscape){.cmp-chest{padding:5px 8px 5px 6px}.cmp-chest-t b{font-size:11px}.cmp-chest-ic{width:34px;height:30px}.cmp-chest-t .cmp-bar{margin:9px 0 6px}.cmp-mk{min-width:18px;height:18px;font-size:9px}}
+@media (max-height:500px) and (orientation:landscape){.cmp-chest{padding:5px 8px 5px 6px}}
+/* campaign star rewards, built like the daily / weekly quest track: the star count, a bar and a gift box per milestone
+   (hover / tap shows the rewards with their icons, a reached one glows and claims on tap, claimed ones get a check) */
+.cmp-chest.dqx{--qt:#ffd977;width:min(580px,calc(100% - 36px));max-width:none;gap:12px;padding:10px 16px 4px 14px;align-items:center}
+.cmp-rw-pts{gap:8px}
+.cmp-rw-star{width:38px;height:38px;display:block;filter:drop-shadow(0 0 8px rgba(255,200,80,.6))}
+.cmp-rw-star svg{width:100%;height:100%;fill:#ffd977;stroke:#fff3c4;stroke-width:1}
+.cmp-rw-pts b{font:italic 400 34px/1 var(--display);color:#fff}
+.cmp-rw-pts small{font:italic 400 12px var(--display);color:#dfe6f5;margin-top:2px}
+.cmp-track{height:64px;margin:0 26px 0 10px}
+.cmp-track .dq-bar{top:19px}
+.cmp-track .dq-bar i{background:linear-gradient(90deg,#f3d98f,#ffe7a6);box-shadow:0 0 10px #ffd977}
+.cmp-track .dq-dot{width:38px;height:38px}
+.cmp-track .dq-m{font-size:13px}
+.cmp-chest.dqx .btn{flex:none}
+@media (max-height:820px) and (orientation:landscape){.cmp-chest.dqx{padding:6px 14px 2px 10px}.cmp-rw-star{width:30px;height:30px}.cmp-rw-pts b{font-size:26px}.cmp-track{height:56px}.cmp-track .dq-dot{width:32px;height:32px}.cmp-track .dq-bar{top:16px}}
+@media (max-height:500px) and (orientation:landscape){.cmp-chest.dqx{padding:3px 10px 0 8px;gap:8px}.cmp-rw-star{width:22px;height:22px}.cmp-rw-pts b{font-size:18px}.cmp-rw-pts small{font-size:9px}.cmp-track{height:44px;margin:0 18px 0 4px}.cmp-track .dq-dot{width:26px;height:26px}.cmp-track .dq-dot .ic{width:14px;height:14px}.cmp-track .dq-bar{top:12px;height:6px}.cmp-track .dq-m{font-size:10px}}
+@media (max-width:640px),(orientation:portrait){.cmp-chest.dqx{width:auto}}
+/* more chapters: the tabs shrink and scroll sideways instead of wrapping the header; "Coming soon" only on very wide screens */
+.cmp-chtabs{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}.cmp-chtabs::-webkit-scrollbar{display:none}
+.cmp-cht{flex:none;white-space:nowrap}
+@media (max-width:1800px){.cmp-cht.soon{display:none}}
+@media (max-width:1400px){.cmp-cht{padding:6px 12px;font-size:12.5px}}
+/* portrait: the climb's swaying line needs more room per stage */
+@media (max-width:640px),(orientation:portrait){.cmp-map.path-climb{height:calc(var(--cmpn,5) * 126px + 322px)}}

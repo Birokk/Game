@@ -32,6 +32,10 @@ const CC_CAMP_DECKS = {
   arcane: ['CON-U01', 'CON-U01', 'CON-U02', 'CON-U02', 'CON-U03', 'CON-U03', 'CON-U04', 'CON-U04', 'CON-U08', 'CON-U08', 'CON-U06', 'CON-U06', 'DEF-U01', 'DEF-U01', 'DEF-U02', 'DEF-U02', 'AGG-S02', 'AGG-S02', 'SUP-S01', 'SUP-S01', 'CON-S04', 'CON-S04', 'CON-S01', 'CON-S01', 'CON-S02', 'CON-S02', 'DEF-T01', 'DEF-T01', 'CON-T01', 'CON-T01'],
   traps: ['DEF-U03', 'DEF-U03', 'DEF-U01', 'DEF-U01', 'DEF-U08', 'DEF-U08', 'MOB-U04', 'MOB-U04', 'SUP-U08', 'SUP-U08', 'DEF-U06', 'DEF-U06', 'AGG-U05', 'AGG-U05', 'AGG-T02', 'AGG-T02', 'MOB-T01', 'MOB-T01', 'MOB-T02', 'MOB-T02', 'CON-T02', 'CON-T02', 'AGG-T01', 'AGG-T01', 'DEF-T02', 'DEF-T02', 'SUP-T02', 'SUP-T02', 'SUP-T01', 'SUP-T01'],
   fort: ['DEF-U03', 'DEF-U03', 'DEF-U01', 'DEF-U01', 'DEF-U08', 'DEF-U08', 'DEF-U07', 'DEF-U07', 'DEF-U02', 'DEF-U02', 'MOB-U04', 'MOB-U04', 'SUP-U08', 'SUP-U08', 'AGG-U05', 'AGG-U05', 'AGG-U01', 'AGG-U01', 'DEF-S03', 'DEF-S03', 'DEF-S01', 'DEF-S01', 'DEF-S02', 'DEF-S02', 'DEF-T02', 'DEF-T02', 'DEF-E01', 'DEF-E01', 'SUP-T01', 'SUP-T01'],
+  frost: ['CON-U02', 'CON-U02', 'CON-U03', 'CON-U03', 'CON-U06', 'CON-U06', 'CON-U01', 'CON-U01', 'DEF-U02', 'DEF-U02', 'DEF-U07', 'DEF-U07', 'DEF-U01', 'DEF-U01', 'CON-S02', 'CON-S02', 'CON-S03', 'CON-S03', 'CON-S01', 'CON-S01', 'SUP-S01', 'SUP-S01', 'CON-T02', 'CON-T02', 'MOB-T02', 'MOB-T02', 'CON-E01', 'CON-E01', 'CON-E02', 'CON-E02'],
+  storm: ['MOB-U01', 'MOB-U01', 'MOB-U06', 'MOB-U06', 'MOB-U03', 'MOB-U03', 'MOB-U07', 'MOB-U07', 'MOB-U05', 'MOB-U05', 'MOB-U04', 'MOB-U04', 'MOB-U08', 'MOB-U08', 'CON-U07', 'CON-U07', 'MOB-S03', 'MOB-S03', 'MOB-S01', 'MOB-S01', 'AGG-S02', 'AGG-S02', 'MOB-E02', 'MOB-E02', 'MOB-E01', 'MOB-E01', 'MOB-T01', 'MOB-T01', 'AGG-S03', 'AGG-S03'],
+  holy: ['SUP-U02', 'SUP-U02', 'SUP-U04', 'SUP-U04', 'DEF-U06', 'DEF-U06', 'SUP-U01', 'SUP-U01', 'SUP-U03', 'SUP-U03', 'SUP-U06', 'SUP-U06', 'DEF-U01', 'DEF-U01', 'DEF-U04', 'DEF-U04', 'DEF-S02', 'DEF-S02', 'DEF-S04', 'DEF-S04', 'SUP-S03', 'SUP-S03', 'SUP-T02', 'SUP-T02', 'SUP-T01', 'SUP-T01', 'SUP-E01', 'SUP-E01', 'SUP-E02', 'SUP-E02'],
+  titan: ['AGG-U08', 'AGG-U08', 'AGG-U07', 'AGG-U07', 'AGG-U03', 'AGG-U03', 'DEF-U04', 'DEF-U04', 'SUP-U06', 'SUP-U06', 'CON-U02', 'CON-U02', 'CON-U04', 'CON-U04', 'MOB-U07', 'MOB-U07', 'CON-U08', 'CON-U08', 'AGG-S04', 'AGG-S04', 'AGG-S02', 'AGG-S02', 'CON-S04', 'CON-S04', 'AGG-E02', 'AGG-E02', 'DEF-T02', 'DEF-T02', 'SUP-E02', 'SUP-E02'],
   warlord: ['AGG-U08', 'AGG-U08', 'AGG-U07', 'AGG-U07', 'SUP-U06', 'SUP-U06', 'SUP-U03', 'SUP-U03', 'CON-U02', 'CON-U02', 'CON-U04', 'CON-U04', 'MOB-U01', 'MOB-U01', 'MOB-U07', 'MOB-U07', 'MOB-U06', 'MOB-U06', 'AGG-S02', 'AGG-S02', 'AGG-S04', 'AGG-S04', 'SUP-E02', 'SUP-E02', 'AGG-E02', 'AGG-E02', 'DEF-T02', 'DEF-T02', 'AGG-S01', 'AGG-S01']
 };
 const ccOne = t => [{ id: 'go', at: 'low', t }];   // a Chapter 1 stage's single coach tip (under the battle line, so the bot's side stays visible)
@@ -146,6 +150,60 @@ const CC_CAMP = [{
       stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 18, t: 'Win by round 18' }],
       tips: ccOne('The Warlord: 18 HP, a Champion and a Commander up front and a trap in the middle, and he moves first. Good luck!') }
   ]
+}, {
+  id: 'c2', no: 2, name: 'The Frost Peaks', sub: 'Frost Peaks', own: true, path: 'climb',
+  miles: [10, 20, 30].map(n => ({ id: 'c2:' + n, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  stages: [
+    { id: '2-1', name: 'The Frozen Pass', twist: 'Frost mages that stun and weaken', hp: [20, 12], first: 0, seed: 301, bot: CC_CAMP_DECKS.frost,
+      intro: 'The road climbs into the mountains. Frost mages hold the pass: their Frost Witch stuns what it hits, and a Guardian shields her.',
+      setup: G => { ccCampUnit(G, 1, 'DEF-U02', 1, 0); ccCampUnit(G, 1, 'CON-U02', 1, 1); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }, { k: 'lost', n: 4, t: 'Lose no more than 4 units' }],
+      tips: ccOne('Chapter 2: the Frost Peaks. The Frost Witch behind the Guardian stuns your units when she hits them: break through the middle or go around it.') },
+    { id: '2-2', name: 'Whiteout', twist: 'Tailwind: moving is free · assassins', ev: 'wind', hp: [20, 18], first: 0, seed: 302, bot: CC_CAMP_DECKS.storm,
+      intro: 'A blizzard hides the slopes and the wind carries everyone: moving costs nothing. Assassins already lurk on both flanks, looking for your weak spots.',
+      setup: G => { ccCampUnit(G, 1, 'MOB-U01', 0, 0); ccCampUnit(G, 1, 'MOB-U03', 2, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'kills', n: 8, t: 'Destroy 8 enemy units' }, { k: 'round', n: 15, t: 'Win by round 15' }],
+      tips: ccOne('<b>Tailwind</b>: moving costs no AP, for the bot too. Its assassins will shift lanes, so keep every lane guarded.') },
+    { id: '2-3', name: 'Avalanche', twist: 'Blood Moon · raiders strike first', ev: 'bloodmoon', hp: [20, 12], first: 1, seed: 303, bot: CC_CAMP_DECKS.raiders,
+      intro: 'Raiders ride the avalanche down the mountain under a red moon. They strike first and every unit hits harder.',
+      setup: G => { ccCampUnit(G, 1, 'AGG-U02', 0, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 12, t: 'Win by round 12' }],
+      tips: ccOne('<b>Blood Moon</b> and a raider already out, and they move first. Block its lane right away.') },
+    { id: '2-4', name: 'The Ice Caverns', twist: 'Starfall: draw 3 a turn · traps everywhere', ev: 'starfall', hp: [20, 20], first: 0, seed: 304, bot: CC_CAMP_DECKS.traps,
+      intro: 'Glittering caverns under the glacier. Starlight gives both sides three cards a turn, and the hunters have set traps in two lanes already.',
+      setup: G => { ccCampTrap(G, 1, 'MOB-T02', 0); ccCampTrap(G, 1, 'DEF-T02', 2); ccCampUnit(G, 1, 'DEF-U08', 1, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }],
+      tips: ccOne('<b>Starfall</b>: three cards a turn. Traps wait in the left and right lanes: send something cheap in first.') },
+    { id: '2-5', name: 'The Frost Witch', twist: 'Mid-chapter boss: stuns, curses and snares', boss: true, hp: [20, 16], first: 1, seed: 305, bot: CC_CAMP_DECKS.frost,
+      intro: 'The Frost Witch herself. Her apprentices curse and stun from the back row, and snares lie in two lanes. She moves first.',
+      setup: G => { ccCampUnit(G, 1, 'CON-U02', 1, 1); ccCampUnit(G, 1, 'CON-U03', 0, 1); ccCampUnit(G, 1, 'DEF-U07', 1, 0); ccCampTrap(G, 1, 'CON-T02', 1); ccCampTrap(G, 1, 'MOB-T02', 2); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 16, t: 'Win by round 16' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }],
+      tips: ccOne('The Witch and the Hexer attack from the back row; the Stonewall shields them. Hex Field in the middle stuns what walks in.') },
+    { id: '2-6', name: 'Sanctuary Peak', twist: 'Sacred Ground: units enter with Armor · healers', ev: 'sanctuary', hp: [20, 10], first: 0, seed: 306, bot: CC_CAMP_DECKS.holy,
+      intro: 'A mountain shrine whose priests heal everything they touch. On sacred ground every unit enters with Armor 1.',
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'kills', n: 10, t: 'Destroy 10 enemy units' }, { k: 'round', n: 18, t: 'Win by round 18' }],
+      tips: ccOne('<b>Sacred Ground</b>: every unit has Armor 1, so small hits barely scratch. Kill the healers first or they undo your damage.') },
+    { id: '2-7', name: 'Storm Riders', twist: 'Rainstorm: 5 AP · assassins strike first', ev: 'rain', hp: [20, 22], first: 1, seed: 307, bot: CC_CAMP_DECKS.storm,
+      intro: 'Riders come out of the storm clouds with 5 AP a turn each. A Phantom and a Shadowblade lead the charge; they move first and love to stab the back row.',
+      setup: G => { ccCampUnit(G, 1, 'MOB-U06', 1, 0); ccCampUnit(G, 1, 'MOB-U07', 0, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 14, t: 'Win by round 14' }],
+      tips: ccOne('<b>Rainstorm</b>: 5 AP a turn and the bot goes first. Phantoms hit your back row first, so don\'t leave Ranged units alone.') },
+    { id: '2-8', name: 'The Iron Glacier', twist: 'Scorching Sun on the ice · you start on 18 HP', ev: 'heat', hp: [18, 14], first: 0, seed: 308, bot: CC_CAMP_DECKS.fort,
+      intro: 'A fort carved into the glacier. A strange sun melts the ice: Overtime from round 12, and you arrive worn out.',
+      setup: G => { ccCampUnit(G, 1, 'DEF-U02', 0, 0); ccCampUnit(G, 1, 'DEF-U07', 2, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 16, t: 'Win by round 16' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }],
+      tips: ccOne('<b>Scorching Sun</b>: Overtime from round 12. The fort is tough and you start on 18 HP: strike the open middle lane early.') },
+    { id: '2-9', name: 'The Crystal Gate', twist: 'Arcane Surge · battle mages strike first', ev: 'surge', hp: [20, 15], first: 1, seed: 309, bot: CC_CAMP_DECKS.arcane,
+      intro: 'The gate to the summit is guarded by battle mages whose spells hit harder in the surge, with a Counter Trap in the middle.',
+      setup: G => { ccCampUnit(G, 1, 'CON-U04', 2, 1); ccCampTrap(G, 1, 'DEF-T01', 1); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'kills', n: 10, t: 'Destroy 10 enemy units' }],
+      tips: ccOne('<b>Arcane Surge</b>: spells deal +1 damage. A Stormcaller waits unguarded in the right back row: hit it there before it starts firing.') },
+    { id: '2-10', name: 'The Frost Titan', twist: 'Final boss: a champion, a wall and two traps', boss: true, hp: [20, 18], first: 1, seed: 310, bot: CC_CAMP_DECKS.titan,
+      intro: 'On the summit the Frost Titan waits with a Champion and a Bulwark, traps in two lanes and 18 HP. He moves first.',
+      setup: G => { ccCampUnit(G, 1, 'AGG-U08', 1, 0); ccCampUnit(G, 1, 'DEF-U04', 0, 0); ccCampTrap(G, 1, 'DEF-T02', 1); ccCampTrap(G, 1, 'CON-T02', 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 6, t: 'Finish with 6 HP or more' }, { k: 'round', n: 18, t: 'Win by round 18' }],
+      tips: ccOne('The Frost Titan: a Champion and a Bulwark up front, Thorns in the middle and a Hex Field on the left, and he moves first. This is the hardest fight yet.') }
+  ]
 }];
 const ccCampStages = () => CC_CAMP.flatMap(ch => ch.stages.map(st => ({ ...st, ch })));
 const ccCampStage = id => ccCampStages().find(s => s.id === id) || null;
@@ -204,6 +262,8 @@ const ccCampChN = ch => ch.stages.reduce((t, s) => t + ccCampN(s.id), 0), ccCamp
 /* the chapter's star milestones with their state (reached, claimed) */
 const ccCampMiles = ch => ch.miles.map(m => ({ ...m, ready: ccCampChN(ch) >= m.n, got: ccCampSave().got.includes(m.id) }));
 const ccCampClaimable = ch => ccCampMiles(ch).some(m => m.ready && !m.got);
+/* a milestone's tooltip, like the quest gift boxes: the stars needed, each reward with its icon, and its state */
+const ccCampMileTip = m => `<b>${m.n} stars</b><span class="dq-tiprw">${Object.entries(m.reward).map(([k, v]) => `<i>${curIcon(k)}${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}</i>`).join('')}</span><em class="${m.got ? 'ok' : ''}">${m.got ? 'Claimed' : m.ready ? 'Tap to claim' : `Reach ${m.n} stars`}</em>`;
 const ccCampNext = st => { const L = ccCampStages(), i = L.findIndex(s => s.id === st.id), nx = L[i + 1]; return nx && ccCampOpen(nx) ? nx : null; };
 /* the Card Battle gate's red dot: a stage you can play that you haven't cleared yet, or a chapter reward waiting */
 const ccCampReady = () => CC_CAMP.some(ch => ccCampClaimable(ch) || ch.stages.some(s => ccCampOpen({ ...s, ch }) && !ccCampHave(s.id)[0]));
@@ -213,16 +273,25 @@ function ccCampFoe(st) { if (st.dummy) return null; const f = S.pool.filter(e =>
 function ccCampMyDeck() { const sv = ccSave(), d = ccDeck(sv.sel); return ccValidateDeck(d.cards).ok ? d : ccAllDecks().find(x => ccValidateDeck(x.cards).ok) || d; }
 const CC_STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.8l-5.8 3.3 1.4-6.4-4.9-4.4 6.5-.7z"/></svg>';
 const ccStars = (have, cls = '') => `<span class="cmp-stars ${cls}">${[0, 1, 2].map(i => `<i class="${have[i] ? 'on' : ''}">${CC_STAR_SVG}</i>`).join('')}</span>`;
-const CC_CHEST_SVG = '<svg viewBox="0 0 64 56"><path d="M8 22h48v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z" fill="#3a2470"/><path d="M8 22c0-10 8-18 24-18s24 8 24 18z" fill="#5a3aa8"/><path d="M8 22h48v6H8z" fill="#f3d98f"/><path d="M28 24h8v12h-8z" fill="#fff3c4"/><circle cx="32" cy="30" r="2.4" fill="#7a5a22"/><path d="M18 6v48M46 6v48" stroke="#f3d98f" stroke-width="3" opacity=".7"/></svg>';
 
 /* ---------- the campaign map ---------- */
 let cmpEl = null, cmpSel = null;
 /* node positions in % of the stage field: up to 6 stages a left-to-right zigzag; more stages a two-row snake (left to
    right on top, a bend on the right, back to the left below); on portrait screens always a top-to-bottom zigzag */
 const CMP_POS = [[9, 74], [29, 22], [50, 70], [70, 20], [90, 62]];
-function cmpLayout(n, mode) {   // mode 'h' tall landscape screens, 'v' portrait, 'q' short landscape screens (flat rows: the field is short)
-  if (mode === 'v') return Array.from({ length: n }, (_, i) => [i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]);
+/* every chapter has its own path shape (`ch.path`): Chapter 0 a wave, Chapter 1 a snake (top row first), Chapter 2 a
+   climb from the bottom left up to the summit at the top right (three rows; on short screens two rows starting at the
+   bottom; on portrait screens a swaying line instead of the zigzag) */
+const cmpLin = (k, a, b) => Array.from({ length: k }, (_, i) => k > 1 ? a + (b - a) * i / (k - 1) : (a + b) / 2);
+function cmpLayout(n, mode, path) {   // mode 'h' tall landscape screens, 'v' portrait, 'q' short landscape screens (flat rows: the field is short)
+  if (mode === 'v') return Array.from({ length: n }, (_, i) => [path === 'climb' ? [22, 52, 82, 52][i % 4] : i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]);
   if (n <= 5) return CMP_POS.slice(0, n);
+  if (path === 'climb') {
+    if (mode === 'q') { const b = Math.ceil(n / 2); return [...cmpLin(b, 8, 92).map(x => [x, 80]), ...cmpLin(n - b, 92, 8).map(x => [x, 24])]; }   // bottom row first, then back along the top
+    const b = Math.round(n * .3), t = Math.round(n * .3), m = n - b - t;
+    // the rows are offset sideways so no node sits right above another
+    return [...cmpLin(b, 8, 60).map((x, i) => [x, i % 2 ? 83 : 88]), ...cmpLin(m, 90, 24).map((x, i) => [x, i % 2 ? 45 : 50]), ...cmpLin(t, 34, 80).map((x, i) => [x, i % 2 ? 9 : 13])];
+  }
   const top = Math.ceil(n / 2), bot = n - top, gx = k => k > 1 ? 84 / (k - 1) : 0, z = mode === 'q' ? 0 : 1;
   return Array.from({ length: n }, (_, i) => i < top ? [8 + i * gx(top), z ? (i % 2 ? 26 : 12) : 18] : [92 - (i - top) * gx(bot), z ? ((i - top) % 2 ? 58 : 72) : 78]);
 }
@@ -250,9 +319,9 @@ function cmpPickIn(ch) { const L = ch.stages.map(s => ({ ...s, ch })), op = L.fi
 function renderCampaign() {
   if (!cmpEl) return;
   const st = ccCampStage(cmpSel) || ccCampStages()[0], ch = st.ch, n = ccCampChN(ch), max = ccCampChMax(ch), miles = ccCampMiles(ch), ready = ccCampClaimable(ch);
-  const next = miles.find(m => !m.got), allGot = !next;
+  const allGot = miles.every(m => m.got);
   const done = Math.min(ch.stages.length - 1, ch.stages.filter(s => ccCampHave(s.id)[0]).length);   // the bright path reaches the first stage not cleared yet
-  const nS = ch.stages.length, PH = cmpLayout(nS, 'h'), PV = cmpLayout(nS, 'v'), PQ = cmpLayout(nS, 'q'), wp = MEDIA.get('camp:bg:' + ch.id);
+  const nS = ch.stages.length, PH = cmpLayout(nS, 'h', ch.path), PV = cmpLayout(nS, 'v', ch.path), PQ = cmpLayout(nS, 'q', ch.path), wp = MEDIA.get('camp:bg:' + ch.id);
   const node = (s, i) => { const S2 = { ...s, ch }, op = ccCampOpen(S2), have = ccCampHave(s.id), k = have.filter(Boolean).length, [x, y] = PH[i], [px, py] = PV[i], [qx, qy] = PQ[i];
     return `<button class="cmp-node ${op ? k === 3 ? 'perfect' : k ? 'clear' : 'new' : 'locked'} ${s.id === st.id ? 'sel' : ''} ${s.boss ? 'boss' : ''}" data-stage="${s.id}" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--px:${px.toFixed(1)}%;--py:${py.toFixed(1)}%;--qx:${qx.toFixed(1)}%;--qy:${qy.toFixed(1)}%" ${op ? '' : 'aria-disabled="true"'}>
       <span class="cmp-med">${op ? `<b>${s.id}</b>` : icon('lock')}${s.boss ? `<i class="cmp-crown">${icon('crown')}</i>` : ''}${op && !k ? '<i class="cmp-newtag">New</i>' : ''}</span>
@@ -265,17 +334,18 @@ function renderCampaign() {
       <span class="cmp-sp"></span>
       <button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''}" style="--cmpn:${nS}">${wp ? `<img class="cmp-wp" src="${wp}" alt=""><i class="cmp-wpshade"></i>` : ''}
+    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `<img class="cmp-wp" src="${wp}" alt=""><i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
       <div class="cmp-field">
         <svg class="cmp-path h" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PH, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PH, false, done)}"/>` : ''}</svg>
         <svg class="cmp-path v" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PV, true)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PV, true, done)}"/>` : ''}</svg>
         <svg class="cmp-path q" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PQ, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PQ, false, done)}"/>` : ''}</svg>
         ${ch.stages.map(node).join('')}</div>
-      <div class="cmp-chest ${ready ? 'ready' : allGot ? 'got' : ''}"><span class="cmp-chest-ic">${CC_CHEST_SVG}</span>
-        <div class="cmp-chest-t"><small>${miles.length > 1 ? `Star rewards at ${miles.map(m => m.n).join(' · ')} stars` : 'Chapter reward · collect every star'}</small><b>${esc((next || miles[miles.length - 1]).txt)}${next && miles.length > 1 ? ` · at ${next.n} stars` : ''}</b>
-          <span class="cmp-bar"><i style="width:${(n / max * 100).toFixed(1)}%"></i>${miles.length > 1 ? miles.map(m => `<em class="cmp-mk ${m.got ? 'got' : m.ready ? 'ready' : ''}" style="left:${(m.n / max * 100).toFixed(1)}%" title="${m.n} stars: ${esc(m.txt)}">${m.got ? icon('check') : m.n}</em>`).join('') : ''}</span><small>${n} / ${max} stars</small></div>
-        <button class="btn gold sm" id="cmpClaim" ${ready ? '' : 'disabled'}>${ready ? 'Claim' : allGot ? 'Claimed' : `${next.n - n} to go`}</button></div>
+      <div class="cmp-chest dqx ${ready ? 'ready' : allGot ? 'got' : ''}">
+        <div class="dq-pts cmp-rw-pts"><i class="cmp-rw-star">${CC_STAR_SVG}</i><div><b>${n}</b><small>/ ${max} stars</small></div></div>
+        <div class="dq-track cmp-track"><div class="dq-bar"><i style="width:${(n / max * 100).toFixed(1)}%"></i></div>${miles.map(m => { const tip = ccCampMileTip(m);
+          return `<div class="dq-node ${m.got ? 'got' : m.ready ? 'can' : ''}" style="--x:${(m.n / max * 100).toFixed(1)}%"><button class="dq-dot" data-cmpm="${m.id}" data-tip="${esc(tip)}" aria-label="${m.n} stars reward${m.got ? ', claimed' : m.ready ? ', ready to claim' : ''}">${m.got ? icon('check') : icon('gift')}</button><span class="dq-m">${m.n}</span></div>`; }).join('')}</div>
+        ${ready ? '<button class="btn gold sm" id="cmpClaim">Claim</button>' : ''}</div>
     </section>
     <aside class="cmp-side">${ccCampPanel(st)}</aside>`;
   cmpEl.querySelector('#cmpClose').onclick = closeCampaign;
@@ -284,6 +354,7 @@ function renderCampaign() {
   cmpEl.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { cmpSel = b.dataset.stage; renderCampaign(); });
   cmpEl.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { const c = CC_CAMP.find(x => x.id === b.dataset.ch); if (c && c.id !== ch.id) { cmpSel = cmpPickIn(c); renderCampaign(); } });
   const cl = cmpEl.querySelector('#cmpClaim'); if (cl && ready) cl.onclick = () => ccCampClaim(ch);
+  cmpEl.querySelectorAll('[data-cmpm]').forEach(b => b.onclick = () => { if (ccCampClaimable(ch) && ccCampMiles(ch).find(m => m.id === b.dataset.cmpm).ready) ccCampClaim(ch); });   // like the quest gift boxes: tap a reached one to claim
   const go = cmpEl.querySelector('#cmpGo'); if (go) go.onclick = () => ccCampStart(st);
   const ls = cmpEl.querySelector('#cmpLesson'); if (ls) ls.onclick = () => ccRules(st.rules || 0);
   const dp = cmpEl.querySelector('#cmpDeckPick'); if (dp) dp.onclick = () => ccCampDeckPick();

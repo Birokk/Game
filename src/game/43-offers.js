@@ -47,7 +47,8 @@ const offerChar = o => findEntry(o.char) || (o.items || []).map(offerItemEntry).
 /* one reward as a small card */
 function offerItemHTML(it) {
   const e = offerItemEntry(it);
-  if (it.k === 'char' || it.k === 'skin') return e ? `<span class="ofp-it ent"><span class="ofp-card r${e.rarity}"><img src="${baseCard(e)}" alt="" ${baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>${rtag(e.rarity)}</span><b>${esc(e.name)}</b></span>` : '';
+  // a character or outfit: its round icon like the profile tab's (the owner asked for this instead of the whole picture), rarity tag bottom right
+  if (it.k === 'char' || it.k === 'skin') return e ? `<span class="ofp-it ent"><span class="ofp-face"><span class="ofp-fc r${e.rarity}">${baseThumb(e)}</span><span class="ofp-rt">${rtag(e.rarity)}</span></span><b>${esc(e.name)}</b>${it.k === 'skin' ? '<small>Outfit</small>' : ''}</span>` : '';
   const n = +it.n || 0; if (!n || !OFFER_KEYS.includes(it.k)) return '';
   return `<span class="ofp-it"><span class="inv-cell r${REW_R[it.k] || 4}"><span class="inv-pic">${curIcon(it.k)}</span></span><b>${fmt(n)}</b><small>${(REW_NAMES[it.k] || [it.k, it.k])[n === 1 ? 0 : 1]}</small></span>`;
 }
