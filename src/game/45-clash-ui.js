@@ -53,6 +53,7 @@ function renderDeck() {
       <button class="btn ghost ccd-help" id="ccdSkin" title="Board skins and card backs">${ccSkinIco(ccMySkin(), 'ccd-skic')}Skins</button>
       <button class="btn ghost ccd-help" id="ccdHelp">${icon('info')}How to play</button>
       <button class="btn ghost ccd-help" id="ccdCamp">${icon('map')}Campaign</button>
+      <button class="btn ghost ccd-help" id="ccdTower">${icon('tower')}Tower</button>
       <button class="btn gold ccd-play" id="ccdPlay">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="ccdClose" aria-label="Close">${icon('close')}</button></header>
     <aside class="ccd-side">
@@ -89,6 +90,7 @@ function renderDeck() {
   one('#ccdClose').onclick = closeDeck;
   one('#ccdPlay').onclick = openQuickMatch;
   one('#ccdCamp').onclick = () => openCampaign();
+  one('#ccdTower').onclick = () => openTower();
   one('#ccdHelp').onclick = () => ccRules(0);
   one('#ccdSkin').onclick = () => ccSkinPicker();
   one('#ccdLead').onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
@@ -169,7 +171,7 @@ const CC_TIPS = [
    and the match (and the bot) only starts once the board is revealed */
 /* camp = a campaign stage (54-clash-campaign.js): its own match setup, the default board / back for the bot, a coach, stars */
 function startClash(deck, seed, camp) {
-  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; }   // the campaign map comes back after a stage (ccCampMap)
+  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; }   // the campaign map / tower comes back after a stage (ccCampMap)
   const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = camp && camp.dummy ? null : foes.length ? foes[(seed >>> 0) % foes.length] : null;
   const names = [S.player.name || 'You', camp && camp.dummy ? camp.foeName : foe ? foe.name : 'Bot'];
   const G = camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), names);
@@ -246,7 +248,7 @@ function ccClick(e) {
     if (id === 'ccBack') { ccStop(); if (!ccdEl) openDeck(); else renderDeck(); return; }
     if (id === 'ccCampRetry') { ccCampStart(ccM.camp.st); return; }
     if (id === 'ccCampNext') { const nx = ccCampNext(ccM.camp.st); if (nx) ccCampStart(nx); return; }
-    if (id === 'ccCampMap') { const sid = ccM.camp.st.id; ccStop(); openCampaign(sid); return; }
+    if (id === 'ccCampMap') { const st = ccM.camp.st; ccStop(); ccCampBack(st); return; }
     if (id === 'ccCoachOk') { ccCoachHide(true); return; }
     if (id === 'ccCoachRules') { ccRules(ccM.camp.st.rules); return; }
   }
@@ -390,7 +392,7 @@ function ccRender(snap) {
   const ap = (P, p) => { const max = Math.max(P.ap, ccApBase(G, p)); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
   const hero = p => { const P = G.players[p]; return `<div class="ccm-hero ${p ? 'op' : 'me'} ${keyset.has('h' + p) ? 'tgt' : ''} ${G.active === p ? 'act' : ''}" data-hero="${p}">
       <span class="ccm-ava">${p === 0 ? avatarHTML(58) : ccFoeAva()}</span>
-      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : ccM.camp ? (ccM.camp.st.dummy ? 'Never attacks' : 'Stage bot') : 'Bot · mirror'}</small></span>
+      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : ccM.camp ? (ccM.camp.st.dummy ? 'Never attacks' : ccM.camp.st.ch.tower ? 'Floor guardian' : 'Stage bot') : 'Bot · mirror'}</small></span>
       <span class="ccm-gem ${p ? 'red' : 'blue'}"><b>${Math.max(0, P.hp)}</b></span></div>`; };
   const sel = ccM.sel, selCard = sel && sel.kind === 'hand' ? me.hand.find(c => c.iid === sel.iid) : null;
   const legal = my && G.phase === 'main' ? ccLegal(G) : [];
@@ -398,7 +400,7 @@ function ccRender(snap) {
     return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
   const ot = G.round >= ccOT(G);
   ui.innerHTML = `
-    <div class="ccm-tools">${ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon('map')}<b>Stage ${ccM.camp.st.id}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
+    <div class="ccm-tools">${ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tower' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
     <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML('', ccBackSkin(1))}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
@@ -535,10 +537,11 @@ function ccEndScreen() {
 function ccLeave() {
   if (!ccM) return;
   if (ccM.camp) {   // a campaign stage: leaving just goes back to the map (no loss is counted)
-    const sid = ccM.camp.st.id;
-    if (ccM.G.phase === 'over') { ccStop(); openCampaign(sid); return; }
-    openModal({ title: 'Leave the stage?', ic: 'close', small: true, kind: 'ccleave', body: `<p>This match ends and no stars are earned. You can try the stage again any time.</p><div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-close2>Keep playing</button><button class="btn gold" id="ccLeaveGo">Leave</button></div>`,
-      onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { closeModal(); ccStop(); openCampaign(sid); }; } });
+    const st = ccM.camp.st;
+    if (ccM.G.phase === 'over') { ccStop(); ccCampBack(st); return; }
+    const fl = st.ch.tower ? 'floor' : 'stage';
+    openModal({ title: `Leave the ${fl}?`, ic: 'close', small: true, kind: 'ccleave', body: `<p>This match ends and no stars are earned. You can try the ${fl} again any time.</p><div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-close2>Keep playing</button><button class="btn gold" id="ccLeaveGo">Leave</button></div>`,
+      onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { closeModal(); ccStop(); ccCampBack(st); }; } });
     return;
   }
   if (ccM.G.phase === 'over') { ccStop(); if (!ccdEl) openDeck(); return; }

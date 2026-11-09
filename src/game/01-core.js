@@ -148,7 +148,8 @@ const ICONS = {
   bolt:'<path d="M13 3L5 13.5h6L10 21l9-11.5h-6z"/>',
   ring:'<circle cx="12" cy="14.5" r="6"/><path d="M9 4.5h6l-3 3.5z"/>',
   wheel:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18"/><circle cx="12" cy="12" r="2.2"/>',
-  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'
+  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  tower:'<path d="M6 21V10.5L4.5 9V3.5h3v2h2.25v-2h4.5v2h2.25v-2h3V9L18 10.5V21z"/><path d="M10 21v-3.5a2 2 0 0 1 4 0V21M12 9v2.5"/>'
 };
 const CUR_SVG = {
   coins:'<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd36b" stroke="#c9952b" stroke-width="1.6"/><circle cx="12" cy="12" r="5.2" fill="none" stroke="#c9952b" stroke-width="1.4"/><path d="M12 9.2v5.6" stroke="#a8761a" stroke-width="1.8" stroke-linecap="round"/></svg>',

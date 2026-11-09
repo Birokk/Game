@@ -264,7 +264,7 @@ const ccCampMiles = ch => ch.miles.map(m => ({ ...m, ready: ccCampChN(ch) >= m.n
 const ccCampClaimable = ch => ccCampMiles(ch).some(m => m.ready && !m.got);
 /* a milestone's tooltip, like the quest gift boxes: the stars needed, each reward with its icon, and its state */
 const ccCampMileTip = m => `<b>${m.n} stars</b><span class="dq-tiprw">${Object.entries(m.reward).map(([k, v]) => `<i>${curIcon(k)}${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}</i>`).join('')}</span><em class="${m.got ? 'ok' : ''}">${m.got ? 'Claimed' : m.ready ? 'Tap to claim' : `Reach ${m.n} stars`}</em>`;
-const ccCampNext = st => { const L = ccCampStages(), i = L.findIndex(s => s.id === st.id), nx = L[i + 1]; return nx && ccCampOpen(nx) ? nx : null; };
+const ccCampNext = st => { const L = st.ch && st.ch.tower ? ccTowerFloors() : ccCampStages(), i = L.findIndex(s => s.id === st.id), nx = L[i + 1]; return nx && ccCampOpen(nx) ? nx : null; };
 /* the Card Battle gate's red dot: a stage you can play that you haven't cleared yet, or a chapter reward waiting */
 const ccCampReady = () => CC_CAMP.some(ch => ccCampClaimable(ch) || ch.stages.some(s => ccCampOpen({ ...s, ch }) && !ccCampHave(s.id)[0]));
 /* the stage's opponent: the Training Dummy, or a character from the pool picked by the stage seed (the same every time) */
@@ -332,7 +332,7 @@ function renderCampaign() {
     <header class="cmp-head"><div class="inv-title"><span class="inv-badge">${icon('map')}</span><h2 class="ts">Campaign</h2></div>
       <div class="cmp-chtabs">${CC_CAMP.map(tab).join('')}<button class="cmp-cht soon" disabled>${icon('lock')}Chapter ${CC_CAMP.length} · Coming soon</button></div>
       <span class="cmp-sp"></span>
-      <button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
+      <button class="btn ghost cmp-towerb" id="cmpTower">${icon('tower')}Tower${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
     <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `<img class="cmp-wp" src="${wp}" alt=""><i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
@@ -351,6 +351,7 @@ function renderCampaign() {
   cmpEl.querySelector('#cmpClose').onclick = closeCampaign;
   cmpEl.querySelector('#cmpDeck').onclick = () => { closeCampaign(); openDeck(); };
   cmpEl.querySelector('#cmpQuick').onclick = () => openQuickMatch();
+  cmpEl.querySelector('#cmpTower').onclick = () => openTower();
   cmpEl.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { cmpSel = b.dataset.stage; renderCampaign(); });
   cmpEl.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { const c = CC_CAMP.find(x => x.id === b.dataset.ch); if (c && c.id !== ch.id) { cmpSel = cmpPickIn(c); renderCampaign(); } });
   const cl = cmpEl.querySelector('#cmpClaim'); if (cl && ready) cl.onclick = () => ccCampClaim(ch);
@@ -365,9 +366,9 @@ function ccCampPanel(st) {
   const prev = i > 0 ? L[i - 1] : (() => { const ci = CC_CAMP.findIndex(c => c.id === st.ch.id), P = ci > 0 ? CC_CAMP[ci - 1].stages : null; return P ? P[P.length - 1] : null; })();
   const own = st.ch.own, my = own ? ccCampMyDeck() : null, myOk = !own || ccValidateDeck(my.cards).ok;
   const deck = own ? my.name : st.deck ? CC_PRESETS.find(d => d.id === st.deck).name : 'Stage deck (set cards, always the same order)';
-  const E = st.ev && CC_EVENTS[st.ev], last = i === L.length - 1;
+  const E = st.ev && CC_EVENTS[st.ev], last = i === L.length - 1, T = !!st.ch.tower;
   return `<div class="cmp-st ${st.boss ? 'boss' : ''}">
-    <div class="cmp-st-top"><span class="cmp-st-no">Stage ${st.id}</span>${st.boss ? `<span class="cmp-bosstag">${last ? 'Final boss' : 'Boss'}</span>` : ''}${ccStars(have, 'big')}</div>
+    <div class="cmp-st-top"><span class="cmp-st-no">${ccStLabel(st)}</span>${st.boss ? `<span class="cmp-bosstag">${T ? 'Guardian' : last ? 'Final boss' : 'Boss'}</span>` : ''}${ccStars(have, 'big')}</div>
     <h3 class="cmp-st-nm">${esc(st.name)}</h3>
     <span class="cmp-teach">${icon(st.teach ? 'book' : 'bolt')}${st.teach ? `Teaches: ${esc(st.teach)}` : esc(st.twist || '')}</span>
     <p class="cmp-intro">${esc(st.intro)}</p>
@@ -377,17 +378,18 @@ function ccCampPanel(st) {
     <ul class="cmp-goals">${st.stars.map((g, k) => `<li class="${have[k] ? 'ok' : ''}"><i class="cmp-gs">${CC_STAR_SVG}</i><span>${esc(g.t)}</span><em>${have[k] ? `${icon('check')}Earned` : `+${CC_CAMP_STAR_PEARLS} ${curIcon('pearls')}`}</em></li>`).join('')}</ul>
     <p class="tiny cmp-note">Stars stay once earned, so you can collect them over several tries. Every goal needs a win.</p>
     <div class="cmp-btns"><button class="btn ghost" id="cmpLesson">${icon('book')}${st.teach ? 'Lesson' : 'How to play'}</button><button class="btn gold cmp-go" id="cmpGo" ${op && myOk ? '' : 'disabled'}>${icon('bolt')}${have[0] ? 'Play again' : 'Start'}</button></div>
-    ${!op ? `<p class="tiny cmp-lock">${icon('lock')}Clear stage ${prev ? prev.id : ''} first.</p>` : !myOk ? `<p class="tiny cmp-lock">${icon('lock')}Build a 30-card deck first (Deck).</p>` : ''}</div>`;
+    ${!op ? `<p class="tiny cmp-lock">${icon('lock')}Clear ${prev ? ccStLabel({ ...prev, ch: st.ch }).toLowerCase() : 'the stage before'} first.</p>` : !myOk ? `<p class="tiny cmp-lock">${icon('lock')}Build a 30-card deck first (Deck).</p>` : ''}</div>`;
 }
 /* pick which of your ready decks goes into an own-deck chapter (it becomes your selected deck) */
 function ccCampDeckPick() {
   const sv = ccSave(), cur = ccCampMyDeck();
-  openModal({ title: 'Your deck', ic: 'cards', kind: 'ccqm', body: `<div class="ccq"><p class="ccq-intro">Chapter ${esc(String((ccCampStage(cmpSel) || {}).ch ? ccCampStage(cmpSel).ch.no : 1))} stages are played with your own deck. Pick a ready deck (30 cards):</p>
+  const where = twrEl ? 'Tower floors are' : `Chapter ${esc(String((ccCampStage(cmpSel) || {}).ch ? ccCampStage(cmpSel).ch.no : 1))} stages are`;
+  openModal({ title: 'Your deck', ic: 'cards', kind: 'ccqm', body: `<div class="ccq"><p class="ccq-intro">${where} played with your own deck. Pick a ready deck (30 cards):</p>
     <div class="ccq-decks">${ccAllDecks().map(d => { const v = ccValidateDeck(d.cards).ok; return `<button class="ccq-dk ${d.id === cur.id ? 'on' : ''}" data-cdeck="${d.id}" ${v ? '' : 'disabled'}><span>${d.preset ? icon('lock') : CC_IC}</span><b>${esc(d.name)}</b><small>${v ? 'Ready' : `${d.cards.length}/30`}</small></button>`; }).join('')}</div></div>`,
-    onMount: b => b.querySelectorAll('[data-cdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.cdeck; persist(); closeModal(); renderCampaign(); }) });
+    onMount: b => b.querySelectorAll('[data-cdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.cdeck; persist(); closeModal(); if (twrEl) renderTower(); else renderCampaign(); }) });
 }
 function ccCampStart(st) {
-  st = ccCampStage(st.id) || st; if (!ccCampOpen(st)) return;
+  st = (st.ch && st.ch.tower ? ccTowerFloor(st.id) : ccCampStage(st.id)) || st; if (!ccCampOpen(st)) return;
   const sv = ccSave();
   if (st.ch.own) {   // your own deck, shuffled differently every try
     const d = ccCampMyDeck(); if (!ccValidateDeck(d.cards).ok) return toast('Build a 30-card deck first', true);
@@ -418,15 +420,15 @@ function ccCampFinish() {
 function ccCampEndHTML() {
   const r = ccM.campRes, st = ccM.camp.st; if (!r) return '';
   return `<div class="ccm-camp">
-    <div class="ccm-camp-h"><small>Stage ${st.id}</small><b>${esc(st.name)}</b></div>
+    <div class="ccm-camp-h"><small>${ccStLabel(st)}</small><b>${esc(st.name)}</b></div>
     <div class="ccm-camp-stars">${[0, 1, 2].map(i => `<i class="${r.fresh[i] ? 'new' : r.all[i] ? 'on' : ''}" style="--d:${(.5 + i * .28).toFixed(2)}s">${CC_STAR_SVG}</i>`).join('')}</div>
     <ul class="ccm-camp-goals">${st.stars.map((g, i) => `<li class="${r.now[i] ? 'ok' : r.all[i] ? 'had' : ''}">${CC_STAR_SVG}<span>${esc(g.t)}</span><em>${r.fresh[i] ? `New · +${CC_CAMP_STAR_PEARLS} ${curIcon('pearls')}` : r.now[i] ? 'Done' : r.all[i] ? 'Earned before' : 'Not yet'}</em></li>`).join('')}</ul>
     <div class="ccm-rews">${r.pearls ? `<span class="ccm-rw pearl">${curIcon('pearls')}<b>+${r.pearls}</b><small>pearl${r.pearls > 1 ? 's' : ''}</small></span>` : `<span class="ccm-rw none"><small>${ccM.G.winner === 0 ? 'No new stars this time' : 'Win the stage to earn stars'}</small></span>`}</div>
     ${r.chDone ? `<p class="ccm-camp-ch">${icon('gift')}A Chapter ${st.ch.no} star reward is ready: claim it on the campaign map.</p>` : ''}</div>`;
 }
 function ccCampEndBtns() {
-  const st = ccM.camp.st, nx = ccCampNext(st);
-  return `<div class="ccm-endb"><button class="btn ghost" id="ccCampRetry">${icon('back')}Retry</button>${nx ? `<button class="btn gold" id="ccCampNext">Next: ${esc(nx.id)}</button>` : ''}<button class="btn ${nx ? 'ghost' : 'gold'}" id="ccCampMap">${icon('map')}Campaign</button></div>`;
+  const st = ccM.camp.st, nx = ccCampNext(st), T = !!st.ch.tower;
+  return `<div class="ccm-endb"><button class="btn ghost" id="ccCampRetry">${icon('back')}Retry</button>${nx ? `<button class="btn gold" id="ccCampNext">${T ? `${icon('up')}Climb to floor ${nx.no}` : `Next: ${esc(nx.id)}`}</button>` : ''}<button class="btn ${nx ? 'ghost' : 'gold'}" id="ccCampMap">${icon(T ? 'tower' : 'map')}${T ? 'Tower' : 'Campaign'}</button></div>`;
 }
 
 /* ---------- the coach: one tip at a time on your turn, pointing at the piece it talks about ---------- */
@@ -440,7 +442,7 @@ function ccCoachCheck() {
   const k = (c.st.tips || []).indexOf(t) + 1, le = ccM.leader;
   const el = document.createElement('div'); el.className = 'ccco';
   el.innerHTML = `<span class="ccco-ava">${le ? thumbImg(le) : avatarHTML(56)}</span>
-    <div class="ccco-t"><small>Tip ${k} / ${c.st.tips.length} · Stage ${c.st.id}</small><p>${t.t}</p></div>
+    <div class="ccco-t"><small>Tip ${k} / ${c.st.tips.length} · ${ccStLabel(c.st)}</small><p>${t.t}</p></div>
     <div class="ccco-b"><button class="btn gold sm" id="ccCoachOk">Got it</button><button class="ccq-help" id="ccCoachRules">Lesson</button></div>`;
   ccM.el.appendChild(el);
   if (t.at === 'low') { const ln = ccM.el.querySelector('.ccb-line'); if (ln) el.style.top = Math.round(ln.getBoundingClientRect().bottom + 10) + 'px'; }   // tips about the bot's side sit under the battle line
