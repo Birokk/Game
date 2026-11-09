@@ -3,9 +3,11 @@
    and traps already on the board) that teaches one part of the game, with a coach giving tips during the match.
    Up to 3 stars per stage, each one a goal; star 1 is always "clear the stage" and the others only count on a win.
    Stars are kept for good once earned (one clear can earn some, a later clear the rest). Every new star gives 1 pearl
-   (CC_CAMP_STAR_PEARLS); all stars of a chapter unlock its chapter reward (Chapter 0: 10 Standard tickets, a ×10
-   Standard summon), claimed on the campaign map. Campaign matches give no Quick match rewards and don't count in the
-   deck record. State S.cc.camp = { stars: { stageId: [0|1, 0|1, 0|1] }, got: [chapter ids claimed] }.
+   (CC_CAMP_STAR_PEARLS); each chapter has star milestones (`miles`) claimed on the campaign map (Chapter 0: all 15 stars
+   = 10 Standard tickets, a ×10 Standard summon; Chapter 1: 10 / 20 / 30 stars = 10 pearls + 1 stamina bottle each).
+   Chapter 0 uses set decks; from Chapter 1 on (`own`) you play your own deck against tougher stage decks. A chapter
+   opens when the last stage of the one before is cleared. Campaign matches give no Quick match rewards and don't count
+   in the deck record. State S.cc.camp = { stars: { stageId: [0|1, 0|1, 0|1] }, got: [milestone ids claimed] }.
    The top of this file is pure (no DOM): the stage data, the match setup and the star bookkeeping, so Node can test it. */
 
 const CC_CAMP_STAR_PEARLS = 1;
@@ -24,8 +26,18 @@ const ccHas = (G, id) => G.players[0].hand.some(c => c.id === id);
 const ccCanHit = G => ccMine(G).some(u => ccCanAttack(G, u)) && G.players[0].ap >= 1;
 const ccIdle = G => !ccLegal(G).some(a => a.k !== 'end');
 
+/* the stage bots' own decks for Chapter 1 (30 cards, at most 2 copies each) */
+const CC_CAMP_DECKS = {
+  raiders: ['AGG-U02', 'AGG-U02', 'AGG-U06', 'AGG-U06', 'AGG-U01', 'AGG-U01', 'AGG-U03', 'AGG-U03', 'AGG-U04', 'AGG-U04', 'AGG-U08', 'AGG-U08', 'AGG-U07', 'AGG-U07', 'MOB-U05', 'MOB-U05', 'MOB-U02', 'MOB-U02', 'AGG-S02', 'AGG-S02', 'AGG-S01', 'AGG-S01', 'AGG-S03', 'AGG-S03', 'AGG-T02', 'AGG-T02', 'AGG-E01', 'AGG-E01', 'AGG-T01', 'AGG-T01'],
+  arcane: ['CON-U01', 'CON-U01', 'CON-U02', 'CON-U02', 'CON-U03', 'CON-U03', 'CON-U04', 'CON-U04', 'CON-U08', 'CON-U08', 'CON-U06', 'CON-U06', 'DEF-U01', 'DEF-U01', 'DEF-U02', 'DEF-U02', 'AGG-S02', 'AGG-S02', 'SUP-S01', 'SUP-S01', 'CON-S04', 'CON-S04', 'CON-S01', 'CON-S01', 'CON-S02', 'CON-S02', 'DEF-T01', 'DEF-T01', 'CON-T01', 'CON-T01'],
+  traps: ['DEF-U03', 'DEF-U03', 'DEF-U01', 'DEF-U01', 'DEF-U08', 'DEF-U08', 'MOB-U04', 'MOB-U04', 'SUP-U08', 'SUP-U08', 'DEF-U06', 'DEF-U06', 'AGG-U05', 'AGG-U05', 'AGG-T02', 'AGG-T02', 'MOB-T01', 'MOB-T01', 'MOB-T02', 'MOB-T02', 'CON-T02', 'CON-T02', 'AGG-T01', 'AGG-T01', 'DEF-T02', 'DEF-T02', 'SUP-T02', 'SUP-T02', 'SUP-T01', 'SUP-T01'],
+  fort: ['DEF-U03', 'DEF-U03', 'DEF-U01', 'DEF-U01', 'DEF-U08', 'DEF-U08', 'DEF-U07', 'DEF-U07', 'DEF-U02', 'DEF-U02', 'MOB-U04', 'MOB-U04', 'SUP-U08', 'SUP-U08', 'AGG-U05', 'AGG-U05', 'AGG-U01', 'AGG-U01', 'DEF-S03', 'DEF-S03', 'DEF-S01', 'DEF-S01', 'DEF-S02', 'DEF-S02', 'DEF-T02', 'DEF-T02', 'DEF-E01', 'DEF-E01', 'SUP-T01', 'SUP-T01'],
+  warlord: ['AGG-U08', 'AGG-U08', 'AGG-U07', 'AGG-U07', 'SUP-U06', 'SUP-U06', 'SUP-U03', 'SUP-U03', 'CON-U02', 'CON-U02', 'CON-U04', 'CON-U04', 'MOB-U01', 'MOB-U01', 'MOB-U07', 'MOB-U07', 'MOB-U06', 'MOB-U06', 'AGG-S02', 'AGG-S02', 'AGG-S04', 'AGG-S04', 'SUP-E02', 'SUP-E02', 'AGG-E02', 'AGG-E02', 'DEF-T02', 'DEF-T02', 'AGG-S01', 'AGG-S01']
+};
+const ccOne = t => [{ id: 'go', at: 'low', t }];   // a Chapter 1 stage's single coach tip (under the battle line, so the bot's side stays visible)
+
 const CC_CAMP = [{
-  id: 'c0', no: 0, name: 'The First Lesson', sub: 'Tutorial', reward: { wishes: 10 }, rewardTxt: '10 Standard tickets · a ×10 Standard summon',
+  id: 'c0', no: 0, name: 'The First Lesson', sub: 'Tutorial', miles: [{ id: 'c0', n: 15, reward: { wishes: 10 }, txt: '10 Standard tickets · a ×10 Standard summon' }],
   stages: [
     { id: '0-1', name: 'First Steps', teach: 'Summoning and attacking', rules: 2, dummy: true, foeName: 'Dummy', hp: [20, 8], first: 0, seed: 101,
       intro: 'Every card costs AP, and you get 4 AP each turn. Summon units into the front row and attack: a lane with no enemy in it lets your attack hit the enemy hero. Your opponent is a training dummy that never fights back, so take your time.',
@@ -83,14 +95,68 @@ const CC_CAMP = [{
         { id: 'plan', when: G => G.round >= 2, t: 'Plan each turn: build a front row, keep Ranged units in the back, use spells on big threats and attack into open lanes.' }
       ] }
   ]
+}, {
+  id: 'c1', no: 1, name: 'The Ember Road', sub: 'Ember Road', own: true,
+  miles: [10, 20, 30].map(n => ({ id: 'c1:' + n, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  stages: [
+    { id: '1-1', name: 'Ambush at Dusk', twist: 'Raiders already on the board', hp: [20, 10], first: 0, seed: 201, bot: CC_CAMP_DECKS.raiders,
+      intro: 'Raiders jump you on the road with a hound already out. They hit hard but break easily: hold the lanes and strike back.',
+      setup: G => { ccCampUnit(G, 1, 'AGG-U06', 2, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 12, t: 'Finish with 12 HP or more' }, { k: 'round', n: 12, t: 'Win by round 12' }],
+      tips: ccOne('Chapter 1: you play <b>your own deck</b> (change it on the stage card). These raiders start with a unit on the board: block it before it reaches your hero.') },
+    { id: '1-2', name: 'Stormfront', twist: 'Rainstorm: 5 AP every turn', ev: 'rain', hp: [20, 10], first: 0, seed: 202, botDeck: 'p-balanced',
+      intro: 'A storm rolls over the road and the leylines run wild: both players get 5 AP every turn. Bigger turns for everyone, so plan them well.',
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'kills', n: 6, t: 'Destroy 6 enemy units' }, { k: 'lost', n: 4, t: 'Lose no more than 4 units' }],
+      tips: ccOne('<b>Rainstorm</b>: 5 AP a turn for both sides. Use the extra AP to summon and attack in the same turn.') },
+    { id: '1-3', name: 'The Iron Wall', twist: 'A fortress of tough defenders', hp: [20, 10], first: 0, seed: 203, bot: CC_CAMP_DECKS.fort,
+      intro: 'A border fort blocks the road. Its guards are slow but very tough, and a Guardian already holds the middle lane.',
+      setup: G => { ccCampUnit(G, 1, 'DEF-U02', 1, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 15, t: 'Win by round 15' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }],
+      tips: ccOne('The fort\'s walls are tough: find the open lane and hit the hero there, or gang up on one defender at a time.') },
+    { id: '1-4', name: 'Blood Moon Rising', twist: 'Blood Moon: all units +1 ATK · the bot goes first', ev: 'bloodmoon', hp: [20, 20], first: 1, seed: 204, bot: CC_CAMP_DECKS.raiders,
+      intro: 'The moon turns red and every unit hits harder. The raiders strike first this time.',
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }, { k: 'lost', n: 3, t: 'Lose no more than 3 units' }],
+      tips: ccOne('<b>Blood Moon</b>: every unit has +1 ATK, yours too. Trades get bloody, so keep your hero covered.') },
+    { id: '1-5', name: 'The Road Captain', twist: 'Mid-chapter boss with a hidden trap', boss: true, hp: [20, 12], first: 0, seed: 205, botDeck: 'p-balanced',
+      intro: 'The captain of the road guard leads from the middle lane and has hidden a trap on his left.',
+      setup: G => { ccCampUnit(G, 1, 'SUP-U06', 1, 0); ccCampTrap(G, 1, 'DEF-T02', 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 16, t: 'Win by round 16' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }],
+      tips: ccOne('The Commander gives +1 ATK to whoever joins it in the middle lane. Take it down early, and mind the trap stone on the left.') },
+    { id: '1-6', name: 'Arcane Tempest', twist: 'Arcane Surge: spells +1 damage · a spellcaster deck', ev: 'surge', hp: [20, 15], first: 0, seed: 206, bot: CC_CAMP_DECKS.arcane,
+      intro: 'Mages of the ember tower guard the pass. Their spells hit harder in the surge, and their traps can cancel yours.',
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'kills', n: 8, t: 'Destroy 8 enemy units' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }],
+      tips: ccOne('<b>Arcane Surge</b>: spells deal +1 damage. These mages love Fireball and Arcane Burst, so don\'t crowd the front row.') },
+    { id: '1-7', name: 'Hall of Snares', twist: 'Traps in every lane', hp: [20, 20], first: 0, seed: 207, bot: CC_CAMP_DECKS.traps,
+      intro: 'An old hall full of snares. Every lane already hides a trap, and the defenders keep setting more.',
+      setup: G => { ccCampTrap(G, 1, 'MOB-T02', 0); ccCampTrap(G, 1, 'AGG-T02', 1); ccCampTrap(G, 1, 'DEF-T02', 2); ccCampUnit(G, 1, 'DEF-U01', 1, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }, { k: 'round', n: 16, t: 'Win by round 16' }],
+      tips: ccOne('Every lane has a hidden trap. Cheap units are good bait to set them off before your big ones go in.') },
+    { id: '1-8', name: 'Scorched Plains', twist: 'Scorching Sun: Overtime from round 12', ev: 'heat', hp: [20, 10], first: 0, seed: 208, botDeck: 'p-defensive',
+      intro: 'The road crosses a burning plain. From round 12 every unit loses 1 HP a turn, and the enemy digs in.',
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 15, t: 'Win by round 15' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }],
+      tips: ccOne('<b>Scorching Sun</b>: Overtime starts in round 12 and wears every unit down. Press the attack before the heat does.') },
+    { id: '1-9', name: 'The Long Night', twist: 'You start on 16 HP · the bot goes first', hp: [16, 16], first: 1, seed: 209, botDeck: 'p-rush',
+      intro: 'Worn out after the plains, you are attacked at night by a fast squad. They move first and you start hurt.',
+      setup: G => { ccCampUnit(G, 1, 'AGG-U06', 0, 0); ccCampUnit(G, 1, 'MOB-U05', 2, 0); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 6, t: 'Finish with 6 HP or more' }, { k: 'kills', n: 10, t: 'Destroy 10 enemy units' }],
+      tips: ccOne('You start on 16 HP and the bot goes first with units out. Stabilise the board first, then turn it around.') },
+    { id: '1-10', name: 'The Ember Warlord', twist: 'Final boss: a champion guard and a trap', boss: true, hp: [20, 18], first: 1, seed: 210, bot: CC_CAMP_DECKS.warlord,
+      intro: 'At the end of the road the Ember Warlord waits with a Champion and a Commander already in line and a trap in the middle. He has 18 HP and moves first.',
+      setup: G => { ccCampUnit(G, 1, 'AGG-U08', 1, 0); ccCampUnit(G, 1, 'SUP-U06', 0, 0); ccCampTrap(G, 1, 'DEF-T02', 1); },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 18, t: 'Win by round 18' }],
+      tips: ccOne('The Warlord: 18 HP, a Champion and a Commander up front and a trap in the middle, and he moves first. Good luck!') }
+  ]
 }];
 const ccCampStages = () => CC_CAMP.flatMap(ch => ch.stages.map(st => ({ ...st, ch })));
 const ccCampStage = id => ccCampStages().find(s => s.id === id) || null;
 
-/* the stage's match: its decks (a starter deck shuffled by the stage seed for the exam), HP, first player, no battle event */
+/* the stage's match: set decks drawn in order (Chapter 0), a starter deck for both (the exam), or your own deck (`myDeck`,
+   from Chapter 1 on) against the stage's deck (`bot` cards or a starter `botDeck`); HP, first player, the battle event
+   (`ev`) and the board setup. `mseed` = this try's seed (Chapter 1 shuffles differently every try) */
 function ccCampMatch(st, names) {
-  const deck = st.deck ? CC_PRESETS.find(d => d.id === st.deck).cards : null;
-  return ccCreateMatch(st.seed, (deck || st.me).slice(), (deck || st.bot).slice(), names, { ev: null, first: st.first, hp: st.hp, order: !deck, setup: st.setup });
+  const pre = id => CC_PRESETS.find(d => d.id === id).cards;
+  const me = st.myDeck || (st.deck ? pre(st.deck) : st.me), bot = st.botDeck ? pre(st.botDeck) : st.deck ? pre(st.deck) : st.bot;
+  return ccCreateMatch(st.mseed || st.seed, me.slice(), bot.slice(), names, { ev: st.ev || null, first: st.first, hp: st.hp, order: !!st.me && !st.myDeck, setup: st.setup });
 }
 /* what you did during the match, for the stars: counted from your actions (ccCampNote) and from the match log (ccCampScan) */
 const ccCampStats = () => ({ seq: 0, spells: 0, equips: 0, trapsSet: 0, trapHits: 0, moves: 0, backHits: 0, attacks: 0, lost: 0, kills: 0, lanes: 0 });
@@ -126,27 +192,49 @@ function ccCampStarsOf(st, G, cs) {
 function ccCampSave() { const sv = ccSave(); if (!sv.camp) sv.camp = { stars: {}, got: [] }; if (!sv.camp.stars) sv.camp.stars = {}; if (!sv.camp.got) sv.camp.got = []; return sv.camp; }
 const ccCampHave = id => ccCampSave().stars[id] || [0, 0, 0];
 const ccCampN = id => ccCampHave(id).filter(Boolean).length;
-function ccCampOpen(st) { const L = st.ch.stages, i = L.findIndex(s => s.id === st.id); return i <= 0 || !!ccCampHave(L[i - 1].id)[0]; }
+/* a stage opens when the stage before it is cleared; a chapter's first stage when the last stage of the chapter before is */
+function ccCampOpen(st) {
+  const L = st.ch.stages, i = L.findIndex(s => s.id === st.id);
+  if (i > 0) return !!ccCampHave(L[i - 1].id)[0];
+  const ci = CC_CAMP.findIndex(c => c.id === st.ch.id); if (ci <= 0) return true;
+  const P = CC_CAMP[ci - 1].stages; return !!ccCampHave(P[P.length - 1].id)[0];
+}
+const ccCampChOpen = ch => ccCampOpen({ ...ch.stages[0], ch });
 const ccCampChN = ch => ch.stages.reduce((t, s) => t + ccCampN(s.id), 0), ccCampChMax = ch => ch.stages.length * 3;
-const ccCampClaimable = ch => ccCampChN(ch) >= ccCampChMax(ch) && !ccCampSave().got.includes(ch.id);
+/* the chapter's star milestones with their state (reached, claimed) */
+const ccCampMiles = ch => ch.miles.map(m => ({ ...m, ready: ccCampChN(ch) >= m.n, got: ccCampSave().got.includes(m.id) }));
+const ccCampClaimable = ch => ccCampMiles(ch).some(m => m.ready && !m.got);
 const ccCampNext = st => { const L = ccCampStages(), i = L.findIndex(s => s.id === st.id), nx = L[i + 1]; return nx && ccCampOpen(nx) ? nx : null; };
 /* the Card Battle gate's red dot: a stage you can play that you haven't cleared yet, or a chapter reward waiting */
 const ccCampReady = () => CC_CAMP.some(ch => ccCampClaimable(ch) || ch.stages.some(s => ccCampOpen({ ...s, ch }) && !ccCampHave(s.id)[0]));
 /* the stage's opponent: the Training Dummy, or a character from the pool picked by the stage seed (the same every time) */
 function ccCampFoe(st) { if (st.dummy) return null; const f = S.pool.filter(e => e.type === 'character' && !e.mc); return f.length ? f[(st.seed >>> 0) % f.length] : null; }
+/* the deck you take into an own-deck chapter: your selected deck if it is ready (30 cards), else the first ready one */
+function ccCampMyDeck() { const sv = ccSave(), d = ccDeck(sv.sel); return ccValidateDeck(d.cards).ok ? d : ccAllDecks().find(x => ccValidateDeck(x.cards).ok) || d; }
 const CC_STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.8l-5.8 3.3 1.4-6.4-4.9-4.4 6.5-.7z"/></svg>';
 const ccStars = (have, cls = '') => `<span class="cmp-stars ${cls}">${[0, 1, 2].map(i => `<i class="${have[i] ? 'on' : ''}">${CC_STAR_SVG}</i>`).join('')}</span>`;
 const CC_CHEST_SVG = '<svg viewBox="0 0 64 56"><path d="M8 22h48v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z" fill="#3a2470"/><path d="M8 22c0-10 8-18 24-18s24 8 24 18z" fill="#5a3aa8"/><path d="M8 22h48v6H8z" fill="#f3d98f"/><path d="M28 24h8v12h-8z" fill="#fff3c4"/><circle cx="32" cy="30" r="2.4" fill="#7a5a22"/><path d="M18 6v48M46 6v48" stroke="#f3d98f" stroke-width="3" opacity=".7"/></svg>';
 
 /* ---------- the campaign map ---------- */
 let cmpEl = null, cmpSel = null;
-/* node positions in % of the stage field: a left-to-right zigzag, and a top-to-bottom one on portrait screens */
-const CMP_POS = [[9, 74], [29, 22], [50, 70], [70, 20], [90, 62]], CMP_POS_P = [[24, 8], [74, 29], [26, 50], [74, 71], [30, 92]];
-/* the path through the nodes as smooth S curves (horizontal flow or vertical flow), up to node `upto` */
+/* node positions in % of the stage field: up to 6 stages a left-to-right zigzag; more stages a two-row snake (left to
+   right on top, a bend on the right, back to the left below); on portrait screens always a top-to-bottom zigzag */
+const CMP_POS = [[9, 74], [29, 22], [50, 70], [70, 20], [90, 62]];
+function cmpLayout(n, mode) {   // mode 'h' tall landscape screens, 'v' portrait, 'q' short landscape screens (flat rows: the field is short)
+  if (mode === 'v') return Array.from({ length: n }, (_, i) => [i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]);
+  if (n <= 5) return CMP_POS.slice(0, n);
+  const top = Math.ceil(n / 2), bot = n - top, gx = k => k > 1 ? 84 / (k - 1) : 0, z = mode === 'q' ? 0 : 1;
+  return Array.from({ length: n }, (_, i) => i < top ? [8 + i * gx(top), z ? (i % 2 ? 26 : 12) : 18] : [92 - (i - top) * gx(bot), z ? ((i - top) % 2 ? 58 : 72) : 78]);
+}
+/* the path through the nodes, up to node `upto`: S curves between neighbours, a bulge outward where the snake turns */
 function cmpPathD(P, vert, upto = P.length - 1) {
-  let d = `M${P[0][0]} ${P[0][1]}`;
-  for (let i = 1; i <= upto && i < P.length; i++) { const [x1, y1] = P[i - 1], [x2, y2] = P[i];
-    d += vert ? ` C${x1} ${(y1 + y2) / 2} ${x2} ${(y1 + y2) / 2} ${x2} ${y2}` : ` C${(x1 + x2) / 2} ${y1} ${(x1 + x2) / 2} ${y2} ${x2} ${y2}`; }
+  let d = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+  for (let i = 1; i <= upto && i < P.length; i++) {
+    const [x1, y1] = P[i - 1], [x2, y2] = P[i], f = v => v.toFixed(1);
+    if (vert) d += ` C${f(x1)} ${f((y1 + y2) / 2)} ${f(x2)} ${f((y1 + y2) / 2)} ${f(x2)} ${f(y2)}`;
+    else if (Math.abs(x2 - x1) < 6) { const b = x1 > 50 ? 9 : -9; d += ` C${f(x1 + b)} ${f(y1)} ${f(x2 + b)} ${f(y2)} ${f(x2)} ${f(y2)}`; }
+    else d += ` C${f((x1 + x2) / 2)} ${f(y1)} ${f((x1 + x2) / 2)} ${f(y2)} ${f(x2)} ${f(y2)}`;
+  }
   return d;
 }
 function openCampaign(id) {
@@ -157,62 +245,92 @@ function openCampaign(id) {
   renderCampaign();
 }
 function closeCampaign() { if (cmpEl) { cmpEl.remove(); cmpEl = null; } renderMenu(); }
+/* the stage to show when a chapter tab is picked: its first open stage without a star, else its last open one, else its first */
+function cmpPickIn(ch) { const L = ch.stages.map(s => ({ ...s, ch })), op = L.filter(ccCampOpen); return (op.find(s => !ccCampHave(s.id)[0]) || op[op.length - 1] || L[0]).id; }
 function renderCampaign() {
   if (!cmpEl) return;
-  const st = ccCampStage(cmpSel) || ccCampStages()[0], ch = st.ch, n = ccCampChN(ch), max = ccCampChMax(ch), got = ccCampSave().got.includes(ch.id), ready = ccCampClaimable(ch);
+  const st = ccCampStage(cmpSel) || ccCampStages()[0], ch = st.ch, n = ccCampChN(ch), max = ccCampChMax(ch), miles = ccCampMiles(ch), ready = ccCampClaimable(ch);
+  const next = miles.find(m => !m.got), allGot = !next;
   const done = Math.min(ch.stages.length - 1, ch.stages.filter(s => ccCampHave(s.id)[0]).length);   // the bright path reaches the first stage not cleared yet
-  const node = (s, i) => { const S2 = { ...s, ch }, op = ccCampOpen(S2), have = ccCampHave(s.id), k = have.filter(Boolean).length, [x, y] = CMP_POS[i] || [50, 50], [px, py] = CMP_POS_P[i] || [50, 50];
-    return `<button class="cmp-node ${op ? k === 3 ? 'perfect' : k ? 'clear' : 'new' : 'locked'} ${s.id === st.id ? 'sel' : ''} ${s.boss ? 'boss' : ''}" data-stage="${s.id}" style="--x:${x}%;--y:${y}%;--px:${px}%;--py:${py}%" ${op ? '' : 'aria-disabled="true"'}>
+  const nS = ch.stages.length, PH = cmpLayout(nS, 'h'), PV = cmpLayout(nS, 'v'), PQ = cmpLayout(nS, 'q'), wp = MEDIA.get('camp:bg:' + ch.id);
+  const node = (s, i) => { const S2 = { ...s, ch }, op = ccCampOpen(S2), have = ccCampHave(s.id), k = have.filter(Boolean).length, [x, y] = PH[i], [px, py] = PV[i], [qx, qy] = PQ[i];
+    return `<button class="cmp-node ${op ? k === 3 ? 'perfect' : k ? 'clear' : 'new' : 'locked'} ${s.id === st.id ? 'sel' : ''} ${s.boss ? 'boss' : ''}" data-stage="${s.id}" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--px:${px.toFixed(1)}%;--py:${py.toFixed(1)}%;--qx:${qx.toFixed(1)}%;--qy:${qy.toFixed(1)}%" ${op ? '' : 'aria-disabled="true"'}>
       <span class="cmp-med">${op ? `<b>${s.id}</b>` : icon('lock')}${s.boss ? `<i class="cmp-crown">${icon('crown')}</i>` : ''}${op && !k ? '<i class="cmp-newtag">New</i>' : ''}</span>
       ${ccStars(have)}<span class="cmp-nm">${esc(s.name)}</span></button>`; };
+  const tab = c => { const op = ccCampChOpen(c), dot = ccCampClaimable(c) || c.stages.some(s => ccCampOpen({ ...s, ch: c }) && !ccCampHave(s.id)[0]);
+    return `<button class="cmp-cht ${c.id === ch.id ? 'on' : ''} ${op ? '' : 'lock'}" data-ch="${c.id}">${op ? '' : icon('lock')}Chapter ${c.no} · ${esc(c.sub)}${dot && c.id !== ch.id ? '<i class="cmp-dot"></i>' : ''}</button>`; };
   cmpEl.innerHTML = `<div class="cmp-bg"><i class="cmp-moon"></i><i class="cmp-mist"></i></div>
     <header class="cmp-head"><div class="inv-title"><span class="inv-badge">${icon('map')}</span><h2 class="ts">Campaign</h2></div>
-      <div class="cmp-chtabs">${CC_CAMP.map(c => `<button class="cmp-cht on">Chapter ${c.no} · ${esc(c.sub)}</button>`).join('')}<button class="cmp-cht soon" disabled>${icon('lock')}Chapter 1 · Coming soon</button></div>
+      <div class="cmp-chtabs">${CC_CAMP.map(tab).join('')}<button class="cmp-cht soon" disabled>${icon('lock')}Chapter ${CC_CAMP.length} · Coming soon</button></div>
       <span class="cmp-sp"></span>
       <button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="cmp-map">
+    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''}" style="--cmpn:${nS}">${wp ? `<img class="cmp-wp" src="${wp}" alt=""><i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
       <div class="cmp-field">
-        <svg class="cmp-path h" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(CMP_POS, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(CMP_POS, false, done)}"/>` : ''}</svg>
-        <svg class="cmp-path v" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(CMP_POS_P, true)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(CMP_POS_P, true, done)}"/>` : ''}</svg>
+        <svg class="cmp-path h" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PH, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PH, false, done)}"/>` : ''}</svg>
+        <svg class="cmp-path v" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PV, true)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PV, true, done)}"/>` : ''}</svg>
+        <svg class="cmp-path q" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PQ, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PQ, false, done)}"/>` : ''}</svg>
         ${ch.stages.map(node).join('')}</div>
-      <div class="cmp-chest ${ready ? 'ready' : got ? 'got' : ''}"><span class="cmp-chest-ic">${CC_CHEST_SVG}</span>
-        <div class="cmp-chest-t"><small>Chapter reward · collect every star</small><b>${esc(ch.rewardTxt)}</b><span class="cmp-bar"><i style="width:${(n / max * 100).toFixed(1)}%"></i></span><small>${n} / ${max} stars</small></div>
-        <button class="btn gold sm" id="cmpClaim" ${ready ? '' : 'disabled'}>${got ? 'Claimed' : ready ? 'Claim' : `${max - n} to go`}</button></div>
+      <div class="cmp-chest ${ready ? 'ready' : allGot ? 'got' : ''}"><span class="cmp-chest-ic">${CC_CHEST_SVG}</span>
+        <div class="cmp-chest-t"><small>${miles.length > 1 ? `Star rewards at ${miles.map(m => m.n).join(' · ')} stars` : 'Chapter reward · collect every star'}</small><b>${esc((next || miles[miles.length - 1]).txt)}${next && miles.length > 1 ? ` · at ${next.n} stars` : ''}</b>
+          <span class="cmp-bar"><i style="width:${(n / max * 100).toFixed(1)}%"></i>${miles.length > 1 ? miles.map(m => `<em class="cmp-mk ${m.got ? 'got' : m.ready ? 'ready' : ''}" style="left:${(m.n / max * 100).toFixed(1)}%" title="${m.n} stars: ${esc(m.txt)}">${m.got ? icon('check') : m.n}</em>`).join('') : ''}</span><small>${n} / ${max} stars</small></div>
+        <button class="btn gold sm" id="cmpClaim" ${ready ? '' : 'disabled'}>${ready ? 'Claim' : allGot ? 'Claimed' : `${next.n - n} to go`}</button></div>
     </section>
     <aside class="cmp-side">${ccCampPanel(st)}</aside>`;
   cmpEl.querySelector('#cmpClose').onclick = closeCampaign;
   cmpEl.querySelector('#cmpDeck').onclick = () => { closeCampaign(); openDeck(); };
   cmpEl.querySelector('#cmpQuick').onclick = () => openQuickMatch();
   cmpEl.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { cmpSel = b.dataset.stage; renderCampaign(); });
+  cmpEl.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { const c = CC_CAMP.find(x => x.id === b.dataset.ch); if (c && c.id !== ch.id) { cmpSel = cmpPickIn(c); renderCampaign(); } });
   const cl = cmpEl.querySelector('#cmpClaim'); if (cl && ready) cl.onclick = () => ccCampClaim(ch);
   const go = cmpEl.querySelector('#cmpGo'); if (go) go.onclick = () => ccCampStart(st);
-  const ls = cmpEl.querySelector('#cmpLesson'); if (ls) ls.onclick = () => ccRules(st.rules);
+  const ls = cmpEl.querySelector('#cmpLesson'); if (ls) ls.onclick = () => ccRules(st.rules || 0);
+  const dp = cmpEl.querySelector('#cmpDeckPick'); if (dp) dp.onclick = () => ccCampDeckPick();
 }
-/* the selected stage: what it teaches, the opponent, the 3 star goals (+1 pearl each the first time) and Start */
+/* the selected stage: what it teaches (or its twist), the opponent, your deck, the 3 star goals (+1 pearl each the first time) and Start */
 function ccCampPanel(st) {
-  const op = ccCampOpen(st), have = ccCampHave(st.id), foe = ccCampFoe(st), L = st.ch.stages, prev = L[L.findIndex(s => s.id === st.id) - 1];
-  const deck = st.deck ? CC_PRESETS.find(d => d.id === st.deck).name : 'Stage deck (set cards, always the same order)';
+  const op = ccCampOpen(st), have = ccCampHave(st.id), foe = ccCampFoe(st), L = st.ch.stages, i = L.findIndex(s => s.id === st.id);
+  const prev = i > 0 ? L[i - 1] : (() => { const ci = CC_CAMP.findIndex(c => c.id === st.ch.id), P = ci > 0 ? CC_CAMP[ci - 1].stages : null; return P ? P[P.length - 1] : null; })();
+  const own = st.ch.own, my = own ? ccCampMyDeck() : null, myOk = !own || ccValidateDeck(my.cards).ok;
+  const deck = own ? my.name : st.deck ? CC_PRESETS.find(d => d.id === st.deck).name : 'Stage deck (set cards, always the same order)';
+  const E = st.ev && CC_EVENTS[st.ev], last = i === L.length - 1;
   return `<div class="cmp-st ${st.boss ? 'boss' : ''}">
-    <div class="cmp-st-top"><span class="cmp-st-no">Stage ${st.id}</span>${st.boss ? '<span class="cmp-bosstag">Final stage</span>' : ''}${ccStars(have, 'big')}</div>
+    <div class="cmp-st-top"><span class="cmp-st-no">Stage ${st.id}</span>${st.boss ? `<span class="cmp-bosstag">${last ? 'Final boss' : 'Boss'}</span>` : ''}${ccStars(have, 'big')}</div>
     <h3 class="cmp-st-nm">${esc(st.name)}</h3>
-    <span class="cmp-teach">${icon('book')}Teaches: ${esc(st.teach)}</span>
+    <span class="cmp-teach">${icon(st.teach ? 'book' : 'bolt')}${st.teach ? `Teaches: ${esc(st.teach)}` : esc(st.twist || '')}</span>
     <p class="cmp-intro">${esc(st.intro)}</p>
-    <div class="cmp-foe"><span class="cmp-foe-ic">${foe ? baseThumb(foe) : ccIco('bot')}</span><span><small>Opponent</small><b>${esc(st.dummy ? st.foeName : foe ? foe.name : 'Bot')}</b><em>${st.hp[1]} HP${st.dummy ? ' · never attacks' : ''}</em></span><span><small>Your deck</small><b class="cmp-deckn">${esc(deck)}</b><em>You go first · ${st.hp[0]} HP</em></span></div>
+    ${E ? `<div class="cmp-ev" style="--ec:${ccEvCol(st.ev)}"><span class="cmp-ev-ic">${ccEvIco(st.ev)}</span><span><b>${esc(E.name)}</b><small>${esc(E.text)}</small></span></div>` : ''}
+    <div class="cmp-foe"><span class="cmp-foe-ic">${foe ? baseThumb(foe) : ccIco('bot')}</span><span><small>Opponent</small><b>${esc(st.dummy ? st.foeName : foe ? foe.name : 'Bot')}</b><em>${st.hp[1]} HP${st.dummy ? ' · never attacks' : ''}</em></span><span><small>Your deck</small><b class="cmp-deckn">${esc(deck)}</b>${own ? `<button class="ccq-help cmp-dpick" id="cmpDeckPick">Change deck</button>` : ''}<em>${st.first === 1 ? 'The bot goes first' : 'You go first'} · ${st.hp[0]} HP</em></span></div>
     <span class="ccd-lbl">Star goals</span>
-    <ul class="cmp-goals">${st.stars.map((g, i) => `<li class="${have[i] ? 'ok' : ''}"><i class="cmp-gs">${CC_STAR_SVG}</i><span>${esc(g.t)}</span><em>${have[i] ? `${icon('check')}Earned` : `+${CC_CAMP_STAR_PEARLS} ${curIcon('pearls')}`}</em></li>`).join('')}</ul>
+    <ul class="cmp-goals">${st.stars.map((g, k) => `<li class="${have[k] ? 'ok' : ''}"><i class="cmp-gs">${CC_STAR_SVG}</i><span>${esc(g.t)}</span><em>${have[k] ? `${icon('check')}Earned` : `+${CC_CAMP_STAR_PEARLS} ${curIcon('pearls')}`}</em></li>`).join('')}</ul>
     <p class="tiny cmp-note">Stars stay once earned, so you can collect them over several tries. Every goal needs a win.</p>
-    <div class="cmp-btns"><button class="btn ghost" id="cmpLesson">${icon('book')}Lesson</button><button class="btn gold cmp-go" id="cmpGo" ${op ? '' : 'disabled'}>${icon('bolt')}${have[0] ? 'Play again' : 'Start'}</button></div>
-    ${op ? '' : `<p class="tiny cmp-lock">${icon('lock')}Clear stage ${prev ? prev.id : ''} first.</p>`}</div>`;
+    <div class="cmp-btns"><button class="btn ghost" id="cmpLesson">${icon('book')}${st.teach ? 'Lesson' : 'How to play'}</button><button class="btn gold cmp-go" id="cmpGo" ${op && myOk ? '' : 'disabled'}>${icon('bolt')}${have[0] ? 'Play again' : 'Start'}</button></div>
+    ${!op ? `<p class="tiny cmp-lock">${icon('lock')}Clear stage ${prev ? prev.id : ''} first.</p>` : !myOk ? `<p class="tiny cmp-lock">${icon('lock')}Build a 30-card deck first (Deck).</p>` : ''}</div>`;
 }
-function ccCampStart(st) { if (!ccCampOpen(st)) return; const sv = ccSave(); startClash({ id: sv.sel, name: `Stage ${st.id}`, cards: [] }, st.seed, st); }
+/* pick which of your ready decks goes into an own-deck chapter (it becomes your selected deck) */
+function ccCampDeckPick() {
+  const sv = ccSave(), cur = ccCampMyDeck();
+  openModal({ title: 'Your deck', ic: 'cards', kind: 'ccqm', body: `<div class="ccq"><p class="ccq-intro">Chapter ${esc(String((ccCampStage(cmpSel) || {}).ch ? ccCampStage(cmpSel).ch.no : 1))} stages are played with your own deck. Pick a ready deck (30 cards):</p>
+    <div class="ccq-decks">${ccAllDecks().map(d => { const v = ccValidateDeck(d.cards).ok; return `<button class="ccq-dk ${d.id === cur.id ? 'on' : ''}" data-cdeck="${d.id}" ${v ? '' : 'disabled'}><span>${d.preset ? icon('lock') : CC_IC}</span><b>${esc(d.name)}</b><small>${v ? 'Ready' : `${d.cards.length}/30`}</small></button>`; }).join('')}</div></div>`,
+    onMount: b => b.querySelectorAll('[data-cdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.cdeck; persist(); closeModal(); renderCampaign(); }) });
+}
+function ccCampStart(st) {
+  st = ccCampStage(st.id) || st; if (!ccCampOpen(st)) return;
+  const sv = ccSave();
+  if (st.ch.own) {   // your own deck, shuffled differently every try
+    const d = ccCampMyDeck(); if (!ccValidateDeck(d.cards).ok) return toast('Build a 30-card deck first', true);
+    return startClash({ id: d.id, name: d.name, cards: d.cards.slice() }, st.seed, { ...st, myDeck: d.cards.slice(), mseed: (Math.random() * 4294967296) >>> 0 });
+  }
+  startClash({ id: sv.sel, name: `Stage ${st.id}`, cards: [] }, st.seed, st);
+}
+/* claim every reached milestone of the chapter at once */
 function ccCampClaim(ch) {
-  if (!ccCampClaimable(ch)) return;
-  const sv = ccCampSave(); sv.got.push(ch.id);
-  for (const [k, v] of Object.entries(ch.reward)) S.wallet[k] = (S.wallet[k] || 0) + v;
+  const L = ccCampMiles(ch).filter(m => m.ready && !m.got); if (!L.length) return;
+  const sv = ccCampSave(), tot = {};
+  for (const m of L) { sv.got.push(m.id); for (const [k, v] of Object.entries(m.reward)) { tot[k] = (tot[k] || 0) + v; S.wallet[k] = (S.wallet[k] || 0) + v; } }
   persist(); renderCampaign(); renderMenu();
-  showRewards('Chapter reward', ch.reward, `Chapter ${ch.no} · ${ch.name}: every star collected!`);
+  showRewards(L.length > 1 ? 'Star rewards' : 'Star reward', tot, `Chapter ${ch.no} · ${ch.name}: ${L.map(m => m.n).join(', ')} stars`);
 }
 
 /* ---------- the end of a stage: stars earned, new ones paid (1 pearl each) ---------- */
@@ -233,7 +351,7 @@ function ccCampEndHTML() {
     <div class="ccm-camp-stars">${[0, 1, 2].map(i => `<i class="${r.fresh[i] ? 'new' : r.all[i] ? 'on' : ''}" style="--d:${(.5 + i * .28).toFixed(2)}s">${CC_STAR_SVG}</i>`).join('')}</div>
     <ul class="ccm-camp-goals">${st.stars.map((g, i) => `<li class="${r.now[i] ? 'ok' : r.all[i] ? 'had' : ''}">${CC_STAR_SVG}<span>${esc(g.t)}</span><em>${r.fresh[i] ? `New · +${CC_CAMP_STAR_PEARLS} ${curIcon('pearls')}` : r.now[i] ? 'Done' : r.all[i] ? 'Earned before' : 'Not yet'}</em></li>`).join('')}</ul>
     <div class="ccm-rews">${r.pearls ? `<span class="ccm-rw pearl">${curIcon('pearls')}<b>+${r.pearls}</b><small>pearl${r.pearls > 1 ? 's' : ''}</small></span>` : `<span class="ccm-rw none"><small>${ccM.G.winner === 0 ? 'No new stars this time' : 'Win the stage to earn stars'}</small></span>`}</div>
-    ${r.chDone ? `<p class="ccm-camp-ch">${icon('gift')}Every star of Chapter ${st.ch.no} collected! Claim <b>${esc(st.ch.rewardTxt)}</b> on the campaign map.</p>` : ''}</div>`;
+    ${r.chDone ? `<p class="ccm-camp-ch">${icon('gift')}A Chapter ${st.ch.no} star reward is ready: claim it on the campaign map.</p>` : ''}</div>`;
 }
 function ccCampEndBtns() {
   const st = ccM.camp.st, nx = ccCampNext(st);
