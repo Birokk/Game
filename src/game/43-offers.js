@@ -93,7 +93,7 @@ function openOffer(id, preview) {
           <h2 class="ofp-name">${esc(o.name)}</h2>
           <span class="ofp-time">${icon('clock')}${offerEnds(o) ? `Ends in ${offerLeftTxt(o)}` : 'Always on'}${offerLimit(o) > 1 ? ` · ${left} left` : ''}</span>
           <div class="ofp-items">${(o.items || []).map(offerItemHTML).join('')}</div>
-          <button class="btn gold ofp-buy" data-ofbuy ${preview ? 'disabled' : ''}>${preview ? 'Preview' : `$${offerUsd(o).toFixed(2)}${TOPUP_FREE ? ' · free test' : ''}`}</button>
+          <div class="ofp-buyrow">${saleTag(offerUsd(o), 'ofp-sale')}<button class="btn gold ofp-buy sale-btn" data-ofbuy ${preview ? 'disabled' : ''}>${salePrice(offerUsd(o))}${preview ? '<small>Preview</small>' : TOPUP_FREE ? '<small>Free test</small>' : ''}</button></div>
           <span class="ofp-vip">+${fmt(Math.round(offerUsd(o) * VIP_PER_USD))} VIP EXP</span>
         </div>
         ${list.length > 1 ? `<div class="ofp-nav"><button data-ofnav="-1" aria-label="Previous offer">${icon('back')}</button>${list.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}<button data-ofnav="1" aria-label="Next offer">${icon('back')}</button></div>` : ''}
@@ -110,7 +110,7 @@ function openOffer(id, preview) {
 function offerShopBanners() {
   return liveOffers().map(o => { const c = offerChar(o), png = MEDIA.get('offer:png:' + o.id), art = png || (c && baseArt(c));
     const names = (o.items || []).map(it => { const e = offerItemEntry(it); return e ? `${RNAME[e.rarity] || ''} ${e.name}`.trim() : +it.n ? `${fmt(+it.n)} ${(REW_NAMES[it.k] || [it.k, it.k])[+it.n === 1 ? 0 : 1]}` : ''; }).filter(Boolean).join(' · ');
-    return `<button class="ftu-ban" data-open="offer" data-offer="${esc(o.id)}">${art ? `<img src="${art}" alt="" class="${png ? 'png' : ''}">` : ''}<span class="ftu-ban-t"><b>${esc(o.name)}</b><small>${esc(names)}</small></span><span class="ftu-ban-r"><em>${icon('clock')}${offerLeftTxt(o)}</em><span class="ftu-ban-p">$${offerUsd(o).toFixed(2)}</span></span></button>`; }).join('');
+    return `<button class="ftu-ban" data-open="offer" data-offer="${esc(o.id)}">${art ? `<img src="${art}" alt="" class="${png ? 'png' : ''}">` : ''}<span class="ftu-ban-t"><b>${esc(o.name)}</b><small>${esc(names)}</small></span><span class="ftu-ban-r"><em>${icon('clock')}${offerLeftTxt(o)}</em><span class="ftu-ban-p">${saleTag(offerUsd(o), 'ban-sale')}${salePrice(offerUsd(o))}</span></span></button>`; }).join('');
 }
 
 /* ---------- admin → Offers: the special offer maker ---------- */

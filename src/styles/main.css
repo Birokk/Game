@@ -4458,3 +4458,18 @@ button.pt-slot:hover{border-color:#fff}
 .ofp-rt .rtag{font-size:9px;padding:1px 5px;border-radius:5px}
 .ofp-it>.ofp-face{align-self:center}
 @media (max-width:620px){.ofp-face{width:46px;height:46px}}
+
+/* sale prices on limited-time paid offers: Daily / Weekly / Monthly packs and special offers (07-shop.js saleWas / salePrice / saleTag) */
+.sale-was{font-weight:400;font-size:.8em;opacity:.62;text-decoration:line-through;text-decoration-thickness:1.5px;margin-right:2px}
+.sale-now{font-weight:400}
+.sale-btn{flex-wrap:wrap;gap:0 6px;line-height:1.15}
+.sale-btn small{flex-basis:100%;text-align:center;font:600 10.5px var(--read);opacity:.8;margin-top:1px}
+.sale-tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font:400 12px var(--display);letter-spacing:.04em;color:#fff;white-space:nowrap;
+  background:linear-gradient(135deg,#ff5c8a,#e0245e);box-shadow:0 0 10px rgba(255,77,122,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+.pk{position:relative}
+.pk-sale{position:absolute;left:-7px;top:-9px;z-index:2;transform:rotate(-8deg)}
+.pk.out .pk-sale{display:none}
+.ofp-buyrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ofp-sale{font-size:14px;padding:4px 11px}
+.ftu-ban-p{display:inline-flex;align-items:center;gap:6px}
+.ftu-ban-p .ban-sale{font-size:10.5px;padding:2px 7px;box-shadow:none}

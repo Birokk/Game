@@ -58,15 +58,22 @@ function packResetTxt(kind) {
   else r = new Date(n.getFullYear(), n.getMonth() + 1, 1);
   return `Resets in ${dhLeft(r - n)}`;
 }
+/* limited-time paid offers (Daily / Weekly / Monthly packs, special offers; not the permanent pearl packs) show a sale:
+   a "was" price 20% above today's, rounded to 10 cents and crossed out, so $0.99 reads $1.20 -> $0.99 (the owner's rule) */
+const SALE_UP = 1.2;
+const saleWas = usd => Math.round(usd * SALE_UP * 10) / 10;
+const salePct = usd => Math.round((1 - usd / saleWas(usd)) * 100);
+const salePrice = usd => `<s class="sale-was">$${saleWas(usd).toFixed(2)}</s><b class="sale-now">$${(+usd).toFixed(2)}</b>`;
+const saleTag = (usd, cls = '') => `<span class="sale-tag ${cls}">−${salePct(usd)}%</span>`;
 function packsHTML(kind) {
   const P = PACKS[kind];
   return `<div class="pk-head"><span class="pk-reset">${icon('clock')}${packResetTxt(kind)}</span></div>
     <div class="pk-grid">${P.list.map(pk => { const left = packLeft(kind, pk), worth = packWorth(pk.items), val = pk.usd ? Math.round(worth / (pk.usd * PEARLS_PER_USD) * 100 - 100) : 0;
-      return `<div class="pk ${pk.usd ? '' : 'free'} ${left > 0 ? '' : 'out'}">
+      return `<div class="pk ${pk.usd ? '' : 'free'} ${left > 0 ? '' : 'out'}">${pk.usd ? saleTag(pk.usd, 'pk-sale') : ''}
         <div class="pk-top"><b>${esc(pk.name)}</b>${pk.usd ? `<span class="pk-val" title="${esc(`Estimated worth of everything in the pack: about ${Math.round(worth)} pearls, against ${Math.round(pk.usd * PEARLS_PER_USD)} pearls for the same price`)}">+${val}% value</span>` : '<span class="pk-val free">FREE</span>'}</div>
         <div class="pk-items">${Object.entries(pk.items).map(([k, n]) => bpItem(k, n)).join('')}</div>
         <div class="pk-ft"><span class="tiny">${pk.usd ? `Worth ≈ ${fmt(Math.round(worth))} pearls · ${left} / ${pk.limit || 1} left · +${fmt(Math.round(pk.usd * VIP_PER_USD))} VIP EXP` : left > 0 ? 'Claim once per reset' : 'Claimed · come back after the reset'}</span>
-          ${left <= 0 ? `<button class="mall-buy" disabled>${pk.usd ? 'Sold out' : 'Claimed'}</button>` : pk.usd ? (TOPUP_FREE ? `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">$${pk.usd} · Free test</button>` : `<button class="mall-buy" disabled>$${pk.usd} · Soon</button>`) : `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">Claim</button>`}</div></div>`; }).join('')}</div>`;
+          ${left <= 0 ? `<button class="mall-buy" disabled>${pk.usd ? 'Sold out' : 'Claimed'}</button>` : pk.usd ? (TOPUP_FREE ? `<button class="mall-buy ok sale-btn" data-pack="${kind}|${pk.id}">${salePrice(pk.usd)}<small>Free test</small></button>` : `<button class="mall-buy sale-btn" disabled>${salePrice(pk.usd)}<small>Soon</small></button>`) : `<button class="mall-buy ok" data-pack="${kind}|${pk.id}">Claim</button>`}</div></div>`; }).join('')}</div>`;
 }
 function buyPack(kind, id) {
   const pk = PACKS[kind].list.find(x => x.id === id); if (!pk || packLeft(kind, pk) <= 0) return;

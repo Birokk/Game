@@ -332,7 +332,7 @@ function renderCampaign() {
     <header class="cmp-head"><div class="inv-title"><span class="inv-badge">${icon('map')}</span><h2 class="ts">Campaign</h2></div>
       <div class="cmp-chtabs">${CC_CAMP.map(tab).join('')}<button class="cmp-cht soon" disabled>${icon('lock')}Chapter ${CC_CAMP.length} · Coming soon</button></div>
       <span class="cmp-sp"></span>
-      <button class="btn ghost cmp-towerb" id="cmpTower">${icon('tower')}Tower${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
+      <button class="btn ghost cmp-towerb" id="cmpTower">${icon('compass')}World map${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
     <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `<img class="cmp-wp" src="${wp}" alt=""><i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
@@ -351,7 +351,7 @@ function renderCampaign() {
   cmpEl.querySelector('#cmpClose').onclick = closeCampaign;
   cmpEl.querySelector('#cmpDeck').onclick = () => { closeCampaign(); openDeck(); };
   cmpEl.querySelector('#cmpQuick').onclick = () => openQuickMatch();
-  cmpEl.querySelector('#cmpTower').onclick = () => openTower();
+  cmpEl.querySelector('#cmpTower').onclick = () => openWorld();
   cmpEl.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { cmpSel = b.dataset.stage; renderCampaign(); });
   cmpEl.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { const c = CC_CAMP.find(x => x.id === b.dataset.ch); if (c && c.id !== ch.id) { cmpSel = cmpPickIn(c); renderCampaign(); } });
   const cl = cmpEl.querySelector('#cmpClaim'); if (cl && ready) cl.onclick = () => ccCampClaim(ch);
@@ -428,7 +428,7 @@ function ccCampEndHTML() {
 }
 function ccCampEndBtns() {
   const st = ccM.camp.st, nx = ccCampNext(st), T = !!st.ch.tower;
-  return `<div class="ccm-endb"><button class="btn ghost" id="ccCampRetry">${icon('back')}Retry</button>${nx ? `<button class="btn gold" id="ccCampNext">${T ? `${icon('up')}Climb to floor ${nx.no}` : `Next: ${esc(nx.id)}`}</button>` : ''}<button class="btn ${nx ? 'ghost' : 'gold'}" id="ccCampMap">${icon(T ? 'tower' : 'map')}${T ? 'Tower' : 'Campaign'}</button></div>`;
+  return `<div class="ccm-endb"><button class="btn ghost" id="ccCampRetry">${icon('back')}Retry</button>${nx ? `<button class="btn gold" id="ccCampNext">${T ? `${icon('up')}Climb to floor ${nx.no}` : `Next: ${esc(nx.id)}`}</button>` : ''}<button class="btn ${nx ? 'ghost' : 'gold'}" id="ccCampMap">${icon(T ? 'tree' : 'map')}${T ? 'Great Tree' : 'Campaign'}</button></div>`;
 }
 
 /* ---------- the coach: one tip at a time on your turn, pointing at the piece it talks about ---------- */

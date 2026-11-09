@@ -53,7 +53,7 @@ function renderDeck() {
       <button class="btn ghost ccd-help" id="ccdSkin" title="Board skins and card backs">${ccSkinIco(ccMySkin(), 'ccd-skic')}Skins</button>
       <button class="btn ghost ccd-help" id="ccdHelp">${icon('info')}How to play</button>
       <button class="btn ghost ccd-help" id="ccdCamp">${icon('map')}Campaign</button>
-      <button class="btn ghost ccd-help" id="ccdTower">${icon('tower')}Tower</button>
+      <button class="btn ghost ccd-help" id="ccdTower">${icon('compass')}World map</button>
       <button class="btn gold ccd-play" id="ccdPlay">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="ccdClose" aria-label="Close">${icon('close')}</button></header>
     <aside class="ccd-side">
@@ -90,7 +90,7 @@ function renderDeck() {
   one('#ccdClose').onclick = closeDeck;
   one('#ccdPlay').onclick = openQuickMatch;
   one('#ccdCamp').onclick = () => openCampaign();
-  one('#ccdTower').onclick = () => openTower();
+  one('#ccdTower').onclick = () => openWorld();
   one('#ccdHelp').onclick = () => ccRules(0);
   one('#ccdSkin').onclick = () => ccSkinPicker();
   one('#ccdLead').onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
@@ -171,7 +171,7 @@ const CC_TIPS = [
    and the match (and the bot) only starts once the board is revealed */
 /* camp = a campaign stage (54-clash-campaign.js): its own match setup, the default board / back for the bot, a coach, stars */
 function startClash(deck, seed, camp) {
-  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; }   // the campaign map / tower comes back after a stage (ccCampMap)
+  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; } if (wmEl) { wmEl.remove(); wmEl = null; }   // the campaign map / tree comes back after a stage (ccCampMap)
   const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = camp && camp.dummy ? null : foes.length ? foes[(seed >>> 0) % foes.length] : null;
   const names = [S.player.name || 'You', camp && camp.dummy ? camp.foeName : foe ? foe.name : 'Bot'];
   const G = camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), names);
@@ -400,7 +400,7 @@ function ccRender(snap) {
     return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
   const ot = G.round >= ccOT(G);
   ui.innerHTML = `
-    <div class="ccm-tools">${ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tower' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
+    <div class="ccm-tools">${ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tree' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
     <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML('', ccBackSkin(1))}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
