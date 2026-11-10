@@ -2,6 +2,7 @@
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-open]'); if (!t) return;
   const k = t.dataset.open;
+  if (k !== 'battle' && t.closest('.menu')) bthBack = false;   // opened from home: closing it goes home, not back to Battle
   if (k === 'summon') openSummon(t.dataset.banner);
   else if (k === 'mail') openMail();
   else if (k === 'settings') openSettings();
@@ -10,6 +11,7 @@ document.addEventListener('click', e => {
   else if (k === 'characters') openCharacters(t.dataset.char);
   else if (k === 'collection') openCollection('character');
   else if (k === 'deck') openDeck();
+  else if (k === 'battle') openBattle();   // the home Battle gate: Campaign, Raids, the Great Tree and Quick Match
   else if (k === 'clash') openCampaign();   // the Card Battle gate opens the campaign (Quick match is one tap from there)
   else if (k === 'pets') openPets();
   else if (k === 'farm') openFarm();

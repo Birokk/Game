@@ -37,7 +37,7 @@ function openDeck() {
   if (!ccdEl) { ccdEl = document.createElement('div'); ccdEl.className = 'ccd'; ccdEl.setAttribute('role', 'dialog'); ccdEl.setAttribute('aria-label', 'Deck'); document.body.appendChild(ccdEl); }
   renderDeck();
 }
-function closeDeck() { if (ccdEl) { ccdEl.remove(); ccdEl = null; } renderMenu(); }
+function closeDeck() { if (ccdEl) { ccdEl.remove(); ccdEl = null; } bthHome(); }
 function renderDeck() {
   if (!ccdEl) return;
   const sv = ccSave(), deck = ccDeck(sv.sel), cards = deck.cards, v = ccValidateDeck(cards), ro = !!deck.preset;
@@ -171,7 +171,7 @@ const CC_TIPS = [
    and the match (and the bot) only starts once the board is revealed */
 /* camp = a campaign stage (54-clash-campaign.js): its own match setup, the default board / back for the bot, a coach, stars */
 function startClash(deck, seed, camp) {
-  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; } if (wmEl) { wmEl.remove(); wmEl = null; }   // the campaign map / tree comes back after a stage (ccCampMap)
+  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; } if (wmEl) { wmEl.remove(); wmEl = null; } if (bthEl) { bthEl.remove(); bthEl = null; }   // the campaign map / tree comes back after a stage (ccCampMap)
   const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = camp && camp.dummy ? null : foes.length ? foes[(seed >>> 0) % foes.length] : null;
   const names = [S.player.name || 'You', camp && camp.dummy ? camp.foeName : foe ? foe.name : 'Bot'];
   const G = camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), names);

@@ -138,7 +138,7 @@ function openRaids() {
   if (!raidEl) { raidEl = document.createElement('div'); raidEl.className = 'raid evp'; raidEl.setAttribute('role', 'dialog'); raidEl.setAttribute('aria-label', 'Raids'); document.body.appendChild(raidEl); }
   renderRaids();
 }
-function closeRaids() { if (raidEl) { raidEl.remove(); raidEl = null; } const d = document.querySelector('.rdrop'); if (d) d.remove(); renderMenu(); }
+function closeRaids() { if (raidEl) { raidEl.remove(); raidEl = null; } const d = document.querySelector('.rdrop'); if (d) d.remove(); bthHome(); }
 function renderRaids() {
   if (!raidEl) return;
   const d = raidOf(raidSel), bg = MEDIA.get('raid:bg:' + d.id) || MEDIA.get('raid:bg'), gold = d.kind === 'gold';

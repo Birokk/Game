@@ -218,7 +218,7 @@ function openTower(id) {
   twrSel = id || (L.find(s => s.id === twrSel) ? twrSel : null) || (open.find(s => !ccCampHave(s.id)[0]) || open[open.length - 1] || L[0]).id;
   renderTower(true);
 }
-function closeTower() { if (twrEl) { twrEl.remove(); twrEl = null; } renderMenu(); }
+function closeTower() { if (twrEl) { twrEl.remove(); twrEl = null; } bthHome(); }
 /* which floors show: every cleared one, the next one to clear, one more above it, and a third half lost in the clouds
    (drawn even past the last floor, as the tree going on); nothing higher is drawn at all, so scrolling up only ever
    reaches clouds and the tree's height never shows */

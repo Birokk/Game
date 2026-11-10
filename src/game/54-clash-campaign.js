@@ -313,7 +313,7 @@ function openCampaign(id) {
   cmpSel = id || (L.find(s => s.id === cmpSel) ? cmpSel : null) || (open.find(s => !ccCampHave(s.id)[0]) || open[open.length - 1] || L[0]).id;
   renderCampaign();
 }
-function closeCampaign() { if (cmpEl) { cmpEl.remove(); cmpEl = null; } renderMenu(); }
+function closeCampaign() { if (cmpEl) { cmpEl.remove(); cmpEl = null; } bthHome(); }
 /* the stage to show when a chapter tab is picked: its first open stage without a star, else its last open one, else its first */
 function cmpPickIn(ch) { const L = ch.stages.map(s => ({ ...s, ch })), op = L.filter(ccCampOpen); return (op.find(s => !ccCampHave(s.id)[0]) || op[op.length - 1] || L[0]).id; }
 function renderCampaign() {

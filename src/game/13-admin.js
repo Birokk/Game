@@ -6,17 +6,71 @@ const adArtSize = () => ($('#adType') || {}).value === 'pet' ? PET_SIZE : SPLASH
 let adminCard = { x: 50, y: 30, z: 1 }, adminCards = {}, adminCardK = 'base', adminSigMems = [];   // card framing per art: base / art3 / art6
 let adminTab = 'pool', adminEditId = null, adminArt = null, adminConfirm = null, adminAsc = { art3: null, art6: null }, adminIcon = null;
 const blankLook = () => ({ hair:'#ff5f8f', style:0, skin:'#ffe0c7', shirt:'#7ef3d4', pants:'#2f3a66' });
+/* the admin panel (revamped after the owner asked for it to be organised better): a grouped sidebar (ADMIN_NAV) with a page
+   search on the left, a header with the group, the page name and what it is for, and the page itself (#adPanel) on the right.
+   Each item is [tab id, label, icon, search words, what the page is for]; 'farm:<section>' pages show one part of the Base page
+   (base, exp, camp, house, guild). On phones the sidebar becomes a scrolling strip over the page. */
+const ADMIN_NAV = [
+  { g: 'Characters & items', ic: 'chars', items: [
+    ['pool', 'Game pool', 'book', 'characters pets items collectibles backup import export card framing icon splash art', 'Every character, skin, pet, collectible and item: add, edit, frame the cards, back up and import'],
+    ['skins', 'Skins', 'skins', 'outfits unlock art full art', 'Outfits per character: full art, unlock art and rarity'],
+    ['mr', 'Marriage skins', 'ring', 'wedding mr bond marry', 'The wedding outfit each character unlocks when married'],
+    ['wardrobe', 'Wardrobe', 'hanger', 'clothes sets gear raid pieces', 'Clothing sets and pieces, which raid they drop in'],
+    ['memories', 'Memories', 'memory', 'memory art icon framing desc', 'Memories: art, rarity, who can equip them and their square icon']] },
+  { g: 'Summons', ic: 'sparkle', items: [
+    ['banners', 'Banners', 'star', 'limited weekly beginner step-up permanent outfit memory selector milestones featured', 'Featured URs, end dates, the permanent pool, Beginner and Step-Up picks, the UR selector'],
+    ['pullfx', 'Summon animation', 'sparkle', 'fakeout double max win upgrade background preview sphere rainbow', 'Previews of every pull animation and their wallpapers']] },
+  { g: 'Events & shop', ic: 'gift', items: [
+    ['events', 'Events', 'calendar', 'daily login mystery fountain monthly sign-in scratch daily spin art event wallpaper', 'The event page: built-in events, your own events, their wallpapers and the daily spin art'],
+    ['offers', 'Special offers', 'gift', 'first top-up bundles offer popup', 'Time-limited offers: when they sell, their rewards and their pictures'],
+    ['shopart', 'Shop pictures', 'shop', 'top up icons membership cards pearl packs', 'Top Up pack pictures and the membership cards']] },
+  { g: 'Modes & places', ic: 'swords', items: [
+    ['battle', 'Battle screen', 'swords', 'campaign raids great tree quick match card wallpapers chapter', 'The Battle screen cards and the campaign chapter wallpapers'],
+    ['raids', 'Raids', 'raid', 'dungeons wallpaper gear sets golden vault', 'Raid wallpapers and the pieces of every raid set'],
+    ['farm:base', 'Base town', 'farm', 'buildings fountain labels wallpaper town', 'The Base wallpaper and where each building label sits'],
+    ['farm:exp', 'Expedition', 'compass', 'places wallpaper expedition labels', 'The Expedition wallpaper and its five places'],
+    ['farm:camp', 'Camp', 'tent', 'tournament tavern central wallpaper camp labels', 'The Camp wallpaper and its three places'],
+    ['farm:house', 'House', 'home', 'houses rooms inside wallpaper', 'The House map, each house picture and the rooms inside'],
+    ['farm:guild', 'Guild', 'guild', 'hall shop rewards quests wallpaper', 'The guild screen wallpaper and its spots']] },
+  { g: 'Look & icons', ic: 'image', items: [
+    ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
+    ['icons', 'Interface icons', 'grid', 'replace any icon ui', 'Replace any icon of the interface with a picture'],
+    ['art', 'Item icons', 'coin', 'exp egg memory ticket name selector fragments summon points guild points pearl honor emblems currency', 'Icons of currencies and items: EXP, eggs, tickets, fragments, points, Pearl Honor emblems']] },
+  { g: 'Testing & server', ic: 'wrench', items: [
+    ['wallet', 'Test tools', 'wrench', 'wallet currencies reset pity unlock level vip honor guild farm stamina rankings', 'Test balances and resets for every feature (only this browser)'],
+    ['server', 'Server', 'upload', 'publish supabase cloud support inbox connection', 'The server connection, publishing content and the support inbox']] }
+];
+const adminNavItem = id => { for (const g of ADMIN_NAV) { const it = g.items.find(x => x[0] === id); if (it) return { g, it }; } return null; };
+let admQuery = '';
 function openAdmin(tab) {
-  adminTab = tab || adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
-  openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="tabs" id="adTabs">
-      <button class="tab" data-adtab="pool">Game pool</button><button class="tab" data-adtab="banners">Banners</button><button class="tab" data-adtab="offers">Offers</button><button class="tab" data-adtab="icons">Icons</button><button class="tab" data-adtab="wallet">Wallet &amp; summons</button><button class="tab" data-adtab="title">Title screen</button><button class="tab" data-adtab="skins">Skins</button><button class="tab" data-adtab="wardrobe">Wardrobe</button><button class="tab" data-adtab="memories">Memories</button><button class="tab" data-adtab="farm">Base</button><button class="tab" data-adtab="events">Events</button><button class="tab" data-adtab="raids">Raids</button><button class="tab" data-adtab="pullfx">Summon animation</button><button class="tab" data-adtab="art">Art &amp; icons</button><button class="tab" data-adtab="server">Server</button><button class="tab" data-adtab="mr">Marriage skins</button>
-    </div><div id="adPanel"></div>`, onMount: () => {
+  if (tab === 'farm') tab = 'farm:base';
+  adminTab = tab && adminNavItem(tab) ? tab : adminTab; adminEditId = null; adminArt = null; adminConfirm = null;
+  const nav = ADMIN_NAV.map(g => `<div class="adm-g"><span class="adm-gh">${icon(g.ic)}${esc(g.g)}</span>
+      ${g.items.map(([id, l, ic, kw]) => `<button class="adm-it" data-adtab="${id}" data-kw="${esc((g.g + ' ' + l + ' ' + kw).toLowerCase())}">${icon(ic)}<span>${esc(l)}</span></button>`).join('')}</div>`).join('');
+  openModal({ title: 'Admin panel', ic: 'wrench', wide: true, kind: 'admin', body: `<div class="adm">
+      <aside class="adm-nav" id="adTabs"><label class="adm-q">${icon('search')}<input id="admQ" type="search" placeholder="Find a page" value="${esc(admQuery)}" aria-label="Find an admin page"></label>${nav}<p class="adm-none tiny" hidden>No page matches.</p></aside>
+      <section class="adm-main"><header class="adm-crumb" id="admCrumb"></header><div id="adPanel"></div></section>
+    </div>`, onMount: () => {
     document.querySelectorAll('[data-adtab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adtab; adminEditId = null; adminArt = null; renderAdminTab(); });
-    renderAdminTab();
+    const qi = $('#admQ'); qi.oninput = () => { admQuery = qi.value; admFilter(); };
+    qi.onkeydown = e => { if (e.key === 'Enter') { const f = [...document.querySelectorAll('.adm-it')].find(b => !b.hidden); if (f) f.click(); } };
+    admFilter(); renderAdminTab();
   } });
+}
+/* the sidebar search: an item shows when every word typed is in its name, group or search words */
+function admFilter() {
+  const w = admQuery.toLowerCase().split(/\s+/).filter(Boolean); let any = false;
+  document.querySelectorAll('.adm-g').forEach(g => { let n = 0;
+    g.querySelectorAll('.adm-it').forEach(b => { const ok = w.every(x => b.dataset.kw.includes(x)); b.hidden = !ok; if (ok) n++; });
+    g.hidden = !n; if (n) any = true; });
+  const no = document.querySelector('.adm-none'); if (no) no.hidden = any;
 }
 function renderAdminTab() {
   document.querySelectorAll('[data-adtab]').forEach(b => b.classList.toggle('on', b.dataset.adtab === adminTab));
+  const f = adminNavItem(adminTab), cr = $('#admCrumb');
+  if (f && cr) cr.innerHTML = `<span class="adm-ci">${icon(f.it[2])}</span><span class="adm-ct"><small>${esc(f.g.g)}</small><b class="ts">${esc(f.it[1])}</b><span class="tiny">${esc(f.it[4])}</span></span>`;
+  const main = document.querySelector('.adm-main'); if (main) main.scrollTop = 0;
+  const on = document.querySelector('.adm-it.on'); if (on && innerWidth <= 900) on.scrollIntoView({ block: 'nearest', inline: 'center' });
   if (adminTab === 'icons') return renderIconsTab();
   if (adminTab === 'banners') return renderBannersTab();
   if (adminTab === 'offers') return renderOffersTab();
@@ -27,12 +81,22 @@ function renderAdminTab() {
   if (adminTab === 'wardrobe') return renderWardrobeTab();
   if (adminTab === 'memories') return renderMemoriesTab();
   if (adminTab === 'server') return renderServerTab();
-  if (adminTab === 'farm') return renderFarmTab();
+  if (adminTab.startsWith('farm')) return renderFarmTab();
   if (adminTab === 'events') return renderEventsTab();
   if (adminTab === 'raids') return renderRaidsTab();
   if (adminTab === 'pullfx') return renderPullFxTab();
   if (adminTab === 'art') return renderArtTab();
+  if (adminTab === 'shopart') return renderShopArtTab();
+  if (adminTab === 'battle') return renderBattleTab();
   renderPoolTab();
+}
+/* the Base page holds five parts (Base, Expedition, Camp, Guild, House + Inside the houses): show only the one picked in
+   the sidebar. Called at the end of renderFarmTab, so a redraw of the page keeps the same part */
+const ADM_FARM_SECS = { 'Base': 'base', 'Expedition': 'exp', 'Camp': 'camp', 'Guild': 'guild', 'House': 'house', 'Inside the houses': 'house' };
+function admFarmSec() {
+  const st = document.querySelector('#adPanel > .stack'); if (!st || !adminTab.startsWith('farm')) return;
+  const sec = adminTab.split(':')[1] || 'base'; let cur = 'base';
+  [...st.children].forEach(el => { const h = el.querySelector(':scope > h3'); if (h && ADM_FARM_SECS[h.textContent.trim()]) cur = ADM_FARM_SECS[h.textContent.trim()]; el.classList.toggle('adm-off', cur !== sec); });
 }
 
 /* pool tab */
@@ -41,7 +105,7 @@ let adView = 'browse', adFilter = 'character', adQuery = '', adDelArm = false;
 function showPoolView(v) {
   adView = v; const b = $('#adBrowse'), e = $('#adEditView'); if (!b || !e) return;
   b.hidden = v !== 'browse'; e.hidden = v !== 'edit';
-  const body = modalEl && modalEl.querySelector('.m-body'); if (body) body.scrollTop = 0;
+  const body = document.querySelector('.adm-main'); if (body) body.scrollTop = 0;
 }
 function openEditor(entry, type) {
   fillAdminForm(entry || null);
@@ -501,7 +565,7 @@ function renderSkinsTab() {
       <div class="pool-grid">${all.map(c => { const n = skinsOf(c.id).length;
         return `<div class="pool-cell"><button type="button" class="skc col pool-card r${c.rarity}" data-skchar="${esc(c.id)}"><img src="${baseCard(c)}" alt="" class="${baseArt(c) ? '' : 'chibi'}">${rtag(c.rarity)}<span class="skc-nm">${esc(c.name)}<span class="skc-st">${n ? `${n} skin${n === 1 ? '' : 's'}` : 'No skins yet'}${c.mc ? ' · Main character' : ''}</span></span></button></div>`; }).join('')}</div>
     </div>`;
-    document.querySelectorAll('[data-skchar]').forEach(b => b.onclick = () => { skChar = b.dataset.skchar; skDelArm = null; renderSkinsTab(); const body = modalEl && modalEl.querySelector('.m-body'); if (body) body.scrollTop = 0; });
+    document.querySelectorAll('[data-skchar]').forEach(b => b.onclick = () => { skChar = b.dataset.skchar; skDelArm = null; renderSkinsTab(); const body = document.querySelector('.adm-main'); if (body) body.scrollTop = 0; });
     return;
   }
   const chars = [findEntry(skChar)];
@@ -894,10 +958,16 @@ function bindPullBg(rerender) {
   document.querySelectorAll('[data-pv="ten"]').forEach(b => { if (!b.onclick) b.onclick = () => { closeSettings(); previewPull('ten'); }; });
 }
 
-/* Art & icons: the admin-only pictures that used to sit in Settings → Admin (EXP / egg / Top Up / membership / ticket icons,
-   Camp and Expedition wallpapers, summon background, double UR and upgrade wallpapers); rows from adminArtRows (04-modals.js) */
+/* Item icons: the currency and item icons (EXP, eggs, tickets, fragments, points, Pearl Honor emblems); Shop pictures: the Top Up
+   pack pictures and the membership cards. Rows from adminArtRows (04-modals.js); the other admin pictures sit on their own pages
+   (summon art → Summon animation, chapter wallpapers → Battle screen, Camp / Expedition wallpapers → Camp / Expedition, daily spin art → Events) */
 function renderArtTab() {
   const p = $('#adPanel'); if (!p) return;
-  p.innerHTML = `<div class="stack"><p class="tiny">Admin-only pictures. Players never see these settings.</p><div class="setx-list ad-art">${adminArtRows()}</div></div>`;
+  p.innerHTML = `<div class="stack"><p class="tiny">Players see these icons wherever the item appears (shop, Bag, rewards). Square PNGs with a transparent background work best.</p><div class="setx-list ad-art">${adminArtRows('icons')}</div></div>`;
   bindAdminArt(p, renderArtTab);
+}
+function renderShopArtTab() {
+  const p = $('#adPanel'); if (!p) return;
+  p.innerHTML = `<div class="stack"><p class="tiny">The pictures of the pearl packs in Shop → Top Up and of the two monthly memberships in Hot Picks.</p><div class="setx-list ad-art">${adminArtRows('shop')}</div></div>`;
+  bindAdminArt(p, renderShopArtTab);
 }

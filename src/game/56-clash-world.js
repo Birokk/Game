@@ -46,7 +46,7 @@ function openWorld(tab) {
   wmTab = tab || 'map';
   renderWorld();
 }
-function closeWorld() { if (wmEl) { wmEl.remove(); wmEl = null; } removeEventListener('resize', wmResize); renderMenu(); }
+function closeWorld() { if (wmEl) { wmEl.remove(); wmEl = null; } removeEventListener('resize', wmResize); bthHome(); }
 const wmReg = id => WM_REGIONS.find(r => r.id === id);
 /* the label under a region: the tree shows how high you've climbed, everything else is still to come */
 function wmSub(r) { if (r.id !== 'tree') return 'Coming soon'; const t = ccTowerTop(); return t ? `Highest floor ${t}` : 'Start climbing'; }

@@ -303,12 +303,14 @@ function renderFarmTab() {
     <div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" id="fmUp"></label>${bg ? '<button class="btn ghost sm" id="fmDel">Use the default town</button>' : ''}<button class="btn ghost sm" id="fmResetPos">Reset label positions</button><button class="btn ghost sm" id="fmOpen">Open the farm</button></div>
     <div class="fm-sliders">${[...FARM_DEFS, { id: 'fountain', name: 'Fountain' }].map(d => { const q = farmPos(d.id); return `<div class="fm-sl" style="--fc:${FARM_COL[d.id]}"><b>${esc(d.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${d.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${d.id}"></label></div>`; }).join('')}</div>
-    <div><h3>Expedition</h3><p class="tiny">The Base's second tab. Its wallpaper is set in Settings → Admin → Expedition wallpaper (black without one). Drag each place's label where you want it.</p></div>
+    <div><h3>Expedition</h3><p class="tiny">The Base's second tab. Upload its wallpaper here (1920×1080 best, black without one) and drag each place's label where you want it.</p></div>
+    <div class="setx-list ad-art">${adminArtRows('exp')}</div>
     <div class="fm-adprev" id="exPrev">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<div class="fm-bg ex-black"></div>'}
       ${EXP_AREAS.map(a => { const q = farmPos('x:' + a.id); return `<span class="fm-dot" data-fmdrag="x:${a.id}" style="left:${q.x}%;top:${q.y}%;--fc:${a.col}">${esc(a.name)}</span>`; }).join('')}</div>
     <div class="fm-sliders">${EXP_AREAS.map(a => { const q = farmPos('x:' + a.id); return `<div class="fm-sl" style="--fc:${a.col}"><b>${esc(a.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="x:${a.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="x:${a.id}"></label></div>`; }).join('')}</div>
-    <div><h3>Camp</h3><p class="tiny">The Base's third tab (arrow on the left). Its wallpaper is set in Settings → Admin → Camp wallpaper (black without one). Drag each place's label where you want it.</p></div>
+    <div><h3>Camp</h3><p class="tiny">The Base's third tab (arrow on the left). Upload its wallpaper here (1920×1080 best, black without one) and drag each place's label where you want it.</p></div>
+    <div class="setx-list ad-art">${adminArtRows('camp')}</div>
     <div class="fm-adprev" id="cpPrev">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<div class="fm-bg ex-black"></div>'}
       ${CAMP_PLACES.map(c => { const q = farmPos('c:' + c.id); return `<span class="fm-dot" data-fmdrag="c:${c.id}" style="left:${q.x}%;top:${q.y}%;--fc:${c.col}">${esc(c.name)}</span>`; }).join('')}</div>
     <div class="fm-sliders">${CAMP_PLACES.map(c => { const q = farmPos('c:' + c.id); return `<div class="fm-sl" style="--fc:${c.col}"><b>${esc(c.name)}</b>
@@ -350,6 +352,7 @@ function renderFarmTab() {
   const del = $('#fmDel'); if (del) del.onclick = async () => { await mediaDel('farm:bg'); renderFarmTab(); toast('Back to the default town.'); };
   $('#fmResetPos').onclick = () => { S.farmLayout = {}; persist(); renderFarmTab(); };
   $('#fmOpen').onclick = () => { closeModal(); openFarm(); };
+  bindAdminArt(p, renderFarmTab); admFarmSec();   // the Expedition / Camp wallpaper rows; show only the part picked in the admin sidebar
   $('#hsOpen').onclick = () => { closeModal(); openFarm('house'); };
   $('#gdBgUp').onchange = async ev => { try { if (await mediaSet('guild:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { renderFarmTab(); toast('Guild wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const gbd = $('#gdBgDel'); if (gbd) gbd.onclick = async () => { await mediaDel('guild:bg'); renderFarmTab(); };
