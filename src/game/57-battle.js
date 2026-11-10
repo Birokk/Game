@@ -1,11 +1,11 @@
 /* =========================================================
    BATTLE: one home gate for every fight. The owner asked for a "Battle" button instead of the Raids and Card Battle
    gates, with a reference of a gacha Battle screen (tall illustrated mode cards in a row, tabs on top). openBattle()
-   is a full-screen screen (.bth) with tabs (General; Seasonal and Event say Coming soon) and four tall cards:
-   Campaign, Raids, The Great Tree and Quick Match, each with its progress and a red dot when something waits.
+   is a full-screen screen (.bth) with five tall cards: Campaign (the chapter you're in), Raids, The Great Tree (the floor
+   you're on), Quick Match and the World Map, each with a red dot when something waits.
    Each card's wallpaper is set in admin → Battle screen (media key battle:<id>, portrait 720×1280 best; it covers
    the card), else the drawn scene in BTH_ART. A screen opened from here comes back here when it closes (bthBack,
-   bthHome); Quick match is a window over the Battle screen.
+   bthHome).
    ========================================================= */
 ICONS.swords = '<path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 6.5L13 3h3v3l-3.5 3.5"/><path d="M5 14l4 4"/><path d="M7 17l-3 3"/><path d="M3 19l2 2"/>';
 /* default wallpapers of the four Battle cards: portrait 300×520 SVG scenes made once by a Python script (gen/battle_art.py) */
@@ -14,25 +14,29 @@ const BTH_MODES = [
   { id: 'campaign', name: 'Campaign', kind: 'Card Battle · Story', ic: 'map', col: '#ffb8e0', col2: '#c8a2ff' },
   { id: 'raids', name: 'Raids', kind: 'Gear & gold', ic: 'raid', col: '#c9a6ff', col2: '#7a4cff' },
   { id: 'tree', name: 'The Great Tree', kind: 'Card Battle · Climb', ic: 'tree', col: '#9fe6ff', col2: '#7ee0a8' },
-  { id: 'quick', name: 'Quick Match', kind: 'Card Battle · Versus', ic: 'bolt', col: '#ffe3a0', col2: '#ff9ac8' }
+  { id: 'quick', name: 'Quick Match', kind: 'Card Battle · Versus', ic: 'bolt', col: '#ffe3a0', col2: '#ff9ac8' },
+  { id: 'world', name: 'World Map', kind: 'Card Battle · Regions', ic: 'compass', col: '#f1e2bd', col2: '#b48a52' }
 ];
-const BTH_TABS = [['general', 'General'], ['seasonal', 'Seasonal'], ['event', 'Event']];
+/* the drawn scene of a card: BTH_ART, or for the World Map the parchment map itself (WM_SVG, centred on the tree) */
+const bthScene = id => id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
 const bthArt = (id, bg) => { const u = MEDIA.get('battle:' + id); if (u) return `<img src="${u}" alt="">`;
-  const a = BTH_ART[id] || ''; return bg ? a.replace(/id="bt/g, 'id="bg-bt').replace(/url\(#bt/g, 'url(#bg-bt').replace(/class="bt-/g, 'data-x="') : a; };   // the blurred copy behind gets its own ids and no animations
+  const a = bthScene(id); return bg ? a.replace(/id="/g, 'id="bg-').replace(/url\(#/g, 'url(#bg-').replace(/href="#/g, 'href="#bg-').replace(/class="/g, 'data-c="') : a; };   // the blurred copy behind gets its own ids and no animations
 /* each card's progress: a sub line, an optional bar (0-100) and a small stat line */
 function bthInfo(id) {
-  if (id === 'campaign') {
-    const open = CC_CAMP.filter(ccCampChOpen), ch = open[open.length - 1] || CC_CAMP[0], all = ccCampStages();
-    const n = all.reduce((t, s) => t + ccCampN(s.id), 0), max = all.length * 3;
-    return { sub: `Chapter ${ch.no} · ${esc(ch.name)}`, bar: Math.round(n / max * 100), line: `${icon('star')}${n} / ${max} stars`, dot: ccCampReady() };
+  const next = L => L.find(st => ccCampOpen(st) && !ccCampHave(st.id)[0]);   // the first open stage / floor not cleared yet
+  if (id === 'campaign') {   // the chapter you're in: the one with the next stage to clear, else the last open one
+    const open = CC_CAMP.filter(ccCampChOpen), n = next(ccCampStages()), ch = n ? n.ch : open[open.length - 1] || CC_CAMP[0];
+    return { sub: `Chapter ${ch.no}`, line: `${icon('map')}${esc(ch.name)}`, dot: ccCampReady() };
   }
-  if (id === 'raids') return { sub: `${RAIDS.filter(r => r.kind === 'gear').length} gear raids · Golden Vault`, bar: null, line: `${curIcon('stamina')}${stamina()} / ${stamMax()} stamina`, dot: false };
-  if (id === 'tree') { const top = ccTowerTop(), n = CC_TOWER.stages.length;
-    return { sub: top ? (top >= n ? 'Every floor cleared' : `Highest floor ${top}`) : 'Start climbing', bar: Math.round(top / n * 100), line: `${icon('star')}${ccTowerStars()} / ${n * 3} stars`, dot: ccTowerReady() }; }
+  if (id === 'raids') return { sub: `${RAIDS.length} dungeons`, line: `${curIcon('stamina')}${stamina()} / ${stamMax()} stamina`, dot: false };
+  if (id === 'tree') { const L = ccTowerFloors(), f = next(L) || L[L.length - 1];   // the floor you're on (never how many there are)
+    return { sub: `Floor ${f.no}`, line: `${icon('tree')}${esc(f.name)}`, dot: ccTowerReady() }; }
+  if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
+    return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
   const st = ccSave().stats;
-  return { sub: 'Your deck against a bot', bar: null, line: `${icon('trophy')}${st.w} W · ${st.l} L · ${st.d} D`, dot: false };
+  return { sub: 'Mirror match', line: `${icon('trophy')}${st.w} W · ${st.l} L · ${st.d} D`, dot: false };
 }
-let bthEl = null, bthBack = false, bthTab = 'general', bthHov = 'campaign';
+let bthEl = null, bthBack = false, bthHov = 'campaign';
 function openBattle() {
   closeModal();
   if (!bthEl) { bthEl = document.createElement('div'); bthEl.className = 'bth'; bthEl.setAttribute('role', 'dialog'); bthEl.setAttribute('aria-label', 'Battle'); document.body.appendChild(bthEl); }
@@ -42,19 +46,18 @@ function closeBattle() { if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = 
 /* a screen opened from the Battle screen calls this when it closes: back to Battle, unless another screen took over */
 function bthHome() {
   renderMenu(); if (!bthBack) return;
-  setTimeout(() => { if (bthBack && !bthEl && !cmpEl && !raidEl && !twrEl && !wmEl && !ccdEl && !ccM) openBattle(); }, 0);
+  setTimeout(() => { if (bthBack && !bthEl && !cmpEl && !raidEl && !twrEl && !wmEl && !ccdEl && !qmEl && !ccM) openBattle(); }, 0);
 }
 function bthGo(id) {
-  if (id === 'quick') { bthBack = true; openQuickMatch(); return; }
   if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = true;
-  if (id === 'campaign') openCampaign(); else if (id === 'raids') openRaids(); else openTower();
+  if (id === 'campaign') openCampaign(); else if (id === 'raids') openRaids(); else if (id === 'quick') openQuickMatch(); else if (id === 'world') openWorld(); else openTower();
 }
 function bthCard(m, i) {
   const x = bthInfo(m.id);
   return `<button class="bth-card" data-bt="${m.id}" style="--bc:${m.col};--bc2:${m.col2};--i:${i}" aria-label="${esc(m.name)}: ${x.sub}">
     <span class="bth-frame"><span class="bth-art">${bthArt(m.id)}</span><span class="bth-shade"></span><i class="bth-shine"></i></span>
     <span class="bth-top"><span class="bth-ic">${icon(m.ic)}</span><span class="bth-tt"><small>${esc(m.kind)}</small><b class="ts">${esc(m.name)}</b></span></span>
-    <span class="bth-bot"><span class="bth-sub">${x.sub}</span>${x.bar != null ? `<span class="bth-bar"><i style="width:${x.bar}%"></i></span>` : ''}
+    <span class="bth-bot"><span class="bth-sub">${x.sub}</span>
       <span class="bth-ft"><span class="bth-line">${x.line}</span><span class="bth-go">Enter${icon('back')}</span></span></span>
     ${x.dot ? '<i class="cmp-dot bth-dot"></i>' : ''}</button>`;
 }
@@ -73,13 +76,11 @@ function renderBattle() {
       <div class="bth-curs">${cur('stamina', 'Stamina', `<button class="plus" id="bthStam" aria-label="Get more stamina">${icon('plus')}</button>`)}${cur('coins', 'Gold coins', '')}${cur('pearls', 'Pearls', `<button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button>`)}</div>
       ${canAdmin() ? `<button class="btn ghost bth-adm" id="bthAdm" title="Admin: card wallpapers">${icon('image')}<span>Wallpapers</span></button>` : ''}
       <button class="inv-x" id="bthClose" aria-label="Close">${icon('close')}</button></header>
-    <nav class="bth-tabs" role="tablist">${BTH_TABS.map(([k, l]) => `<button class="bth-tab ${bthTab === k ? 'on' : ''} ${k === 'general' ? '' : 'soon'}" data-btab="${k}" role="tab" aria-selected="${bthTab === k}">${k === 'general' ? '' : icon('lock')}${l}</button>`).join('')}</nav>
     <section class="bth-stage"><div class="bth-row">${BTH_MODES.map(bthCard).join('')}</div></section>`;
   const q = s => bthEl.querySelector(s);
   q('#bthClose').onclick = closeBattle;
   q('#bthStam').onclick = openStamina;
   const ad = q('#bthAdm'); if (ad) ad.onclick = () => openAdmin('battle');
-  bthEl.querySelectorAll('[data-btab]').forEach(b => b.onclick = () => { if (b.dataset.btab !== 'general') return toast(`${b.textContent.trim()} battles are coming soon.`); });
   bthEl.querySelectorAll('[data-bt]').forEach(b => { b.onclick = () => bthGo(b.dataset.bt); b.onpointerenter = b.onfocus = () => { bthHov = b.dataset.bt; bthBg(bthHov); }; });
   bthBg(bthHov);
 }
@@ -87,8 +88,8 @@ INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in on
   <ul class="info-list"><li><b>Campaign</b>: Card Battle stages in chapters, each teaching or twisting the rules. Up to 3 stars per stage (1 pearl each) and star rewards per chapter.</li>
   <li><b>Raids</b>: spend stamina in the gear raids for clothes, or in the Golden Vault for gold.</li>
   <li><b>The Great Tree</b>: climb floor by floor with your own deck; each cleared floor opens the next. Stars give pearls, there are no milestone rewards.</li>
-  <li><b>Quick Match</b>: a mirror match against a bot with one of your decks, for gold, a pearl and a chance at gear when you win.</li></ul>
-  <p class="tiny">Seasonal and event battles come later.</p>` });
+  <li><b>Quick Match</b>: a mirror match against a bot with one of your decks, for gold, a pearl and a chance at gear when you win.</li>
+  <li><b>World Map</b>: the regions around the Great Tree. Only the tree is open for now.</li></ul>` });
 
 /* admin → Battle screen: a wallpaper per card (portrait; it covers the card) and the campaign chapter wallpapers */
 function renderBattleTab() {
@@ -96,7 +97,7 @@ function renderBattleTab() {
   p.innerHTML = `<div class="stack">
     <div><h3>Battle cards</h3><p class="tiny">The home Battle button opens a screen with one tall card per mode. Upload a wallpaper for each card (portrait, 720×1280 works best; it covers the card and other shapes are cropped round the middle). Without one, the drawn scene is used.</p></div>
     <div class="bth-ad">${BTH_MODES.map(m => { const u = MEDIA.get('battle:' + m.id); return `<div class="bth-adit" style="--bc:${m.col}">
-      <span class="bth-adpic">${u ? `<img src="${u}" alt="">` : BTH_ART[m.id]}</span><b>${esc(m.name)}</b><small>${u ? 'Your wallpaper' : 'Drawn default'}</small>
+      <span class="bth-adpic">${u ? `<img src="${u}" alt="">` : bthScene(m.id)}</span><b>${esc(m.name)}</b><small>${u ? 'Your wallpaper' : 'Drawn default'}</small>
       <span class="row" style="gap:6px;justify-content:center"><label class="btn mint sm">${icon('upload')}${u ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-btup="${m.id}"></label>${u ? `<button class="btn ghost sm" data-btdel="${m.id}">Default</button>` : ''}</span></div>`; }).join('')}</div>
     <div class="row"><button class="btn ghost sm" id="bthAdOpen">${icon('swords')}Open the Battle screen</button></div>
     <div><h3>Campaign chapter wallpapers</h3><p class="tiny">Each chapter's map on the campaign screen (only inside the map panel, 1920×1080 best). Default: the night sky.</p></div>

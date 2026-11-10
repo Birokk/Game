@@ -80,7 +80,7 @@ function ccSkinPicker(back, tab) {
     const draw = () => { const backs = ccPickTab === 'backs';
       root.innerHTML = `<div class="ccsk-tabs">${[['boards', 'Board skins'], ['backs', 'Card backs']].map(([k, l]) => `<button class="mall-pill ${k === ccPickTab ? 'on' : ''}" data-pt="${k}">${l}</button>`).join('')}</div>
         <p class="tiny">${backs ? `Your draw deck and every face-down card of yours wears the card back you equip. Each costs ${CC_BACK_PRICE} pearls` : `Your half of the Card Clash table wears the board skin you equip. Each costs ${CC_SKIN_PRICE} pearls`} (you have ${fmt(S.wallet.pearls)}).</p>${backs ? ccBackGrid() : ccSkinGrid()}${back ? '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn ghost" id="ccskBack">Back</button></div>' : ''}`;
-      const again = () => { if (document.getElementById('ccskRoot')) draw(); else ccSkinPicker(back); if (ccdEl) renderDeck(); };
+      const again = () => { if (document.getElementById('ccskRoot')) draw(); else ccSkinPicker(back); if (ccdEl) renderDeck(); if (qmEl) renderQuickMatch(); };
       ccSkinBind(root, again); ccBackBind(root, again);
       root.querySelectorAll('[data-pt]').forEach(x => x.onclick = () => { ccPickTab = x.dataset.pt; draw(); });
       const bk = root.querySelector('#ccskBack'); if (bk) bk.onclick = back; };

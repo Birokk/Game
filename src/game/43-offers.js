@@ -119,7 +119,7 @@ function renderOffersTab() {
   const p = $('#adPanel'); if (!p) return;
   const list = offerList(), chars = S.pool.filter(e => e.type === 'character' && !e.mc), skins = S.pool.filter(e => e.type === 'skin');
   const itemRow = (o, it, j) => `<div class="of-it">
-      <select class="input" data-ofik="${j}" data-ofid="${esc(o.id)}">${OFFER_KEYS.map(k => `<option value="${k}" ${it.k === k ? 'selected' : ''}>${(REW_NAMES[k] || [k, k])[1]}</option>`).join('')}<option value="char" ${it.k === 'char' ? 'selected' : ''}>Character</option><option value="skin" ${it.k === 'skin' ? 'selected' : ''}>Outfit</option></select>
+      <select class="input" data-ofik="${j}" data-ofid="${esc(o.id)}">${OFFER_KEYS.map(k => { const t = (REW_NAMES[k] || [k, k])[1]; return `<option value="${k}" ${it.k === k ? 'selected' : ''}>${t[0].toUpperCase() + t.slice(1)}</option>`; }).join('')}<option value="char" ${it.k === 'char' ? 'selected' : ''}>Character</option><option value="skin" ${it.k === 'skin' ? 'selected' : ''}>Outfit</option></select>
       ${it.k === 'char' || it.k === 'skin' ? `<select class="input" data-ofie="${j}" data-ofid="${esc(o.id)}"><option value="">Pick one</option>${(it.k === 'char' ? chars : skins).map(e => `<option value="${esc(e.id)}" ${it.id === e.id ? 'selected' : ''}>${RNAME[e.rarity] || ''} · ${esc(e.name)}</option>`).join('')}</select>`
         : `<input class="input" type="number" min="1" max="999999" data-ofin="${j}" data-ofid="${esc(o.id)}" value="${+it.n || 1}">`}
       <button class="iconbtn" data-ofidel="${j}" data-ofid="${esc(o.id)}" aria-label="Remove">${icon('close')}</button></div>`;

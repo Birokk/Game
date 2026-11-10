@@ -120,37 +120,82 @@ function renderDeck() {
   const del = one('#ccdDel'); if (del) del.onclick = () => { if (!del.dataset.sure) { del.dataset.sure = 1; del.textContent = 'Tap again'; return; } sv.decks = sv.decks.filter(d => d.id !== deck.id); sv.sel = 'p-balanced'; persist(); renderDeck(); };
 }
 
-/* ---- Quick match setup ---- */
-let ccQmSeed = 0;
+/* ---- Quick match: a full-screen lobby (rebuilt when the owner asked for a more premium Quick match) ----
+   A fighting-game style VS arena: you on the left (your deck's leader art, your name, your board skin and card back),
+   the challenger on the right (the character, board skin and card back the match seed gives the bot), split on a
+   glowing diagonal with a big VS, the seed's battle event over the split. Under it your decks as cards (playstyle bar,
+   leader, ready or not), the rewards (win / draw / loss) and a big crystal Battle! button. "New challenger" rolls a new
+   seed (a new opponent, event, first player and bot skins); the seed field stays for replaying a match. */
+let ccQmSeed = 0, qmEl = null;
+const ccQmFoe = seed => { const foes = S.pool.filter(e => e.type === 'character' && !e.mc); return foes.length ? foes[(seed >>> 0) % foes.length] : null; };   // startClash uses the same pick
 function openQuickMatch() {
-  const sv = ccSave(); ccQmSeed = Math.floor(Math.random() * 1e9);
+  const sv = ccSave(); closeModal();
+  if (!qmEl) {
+    ccQmSeed = Math.floor(Math.random() * 1e9);
+    qmEl = document.createElement('div'); qmEl.className = 'qm intro'; qmEl.setAttribute('role', 'dialog'); qmEl.setAttribute('aria-label', 'Quick match'); document.body.appendChild(qmEl);
+    setTimeout(() => qmEl && qmEl.classList.remove('intro'), 1400);
+  }
   const ok = ccAllDecks().filter(d => ccValidateDeck(d.cards).ok);
   if (!ccValidateDeck(ccDeck(sv.sel).cards).ok && ok.length) sv.sel = ok[0].id;
-  openModal({ title: 'Quick match', ic: 'bolt', kind: 'ccqm', body: `<div class="ccq">
-    <p class="ccq-intro">Play Card Clash against a bot. <b>The bot uses the same deck as you</b> (a mirror match), each deck shuffled on its own. The bot plays like an average player and never sees your hand or your face-down traps.</p>
-    <span class="ccd-lbl">Your deck</span>
-    <div class="ccq-decks">${ccAllDecks().map(d => { const v = ccValidateDeck(d.cards).ok; return `<button class="ccq-dk ${d.id === sv.sel ? 'on' : ''}" data-qdeck="${d.id}" ${v ? '' : 'disabled'}><span>${d.preset ? icon('lock') : CC_IC}</span><b>${esc(d.name)}</b><small>${v ? 'Ready' : `${d.cards.length}/30`}</small></button>`; }).join('')}</div>
-    <div class="ccq-row"><label class="ccd-lbl" for="ccqSeed">Match seed</label><input id="ccqSeed" class="ccq-seed" inputmode="numeric" value="${ccQmSeed}"><button class="btn ghost" id="ccqDice">New seed</button></div>
-    <p class="tiny ccq-ev" id="ccqEv"></p>
-    <p class="tiny">The same seed and the same moves always replay the same match, handy for reporting a bug. Who goes first and the battle event are decided by the seed.</p>
-    <p class="tiny ccq-skin">${ccSkinIco(ccMySkin(), 'ccq-skic')}Board: <b>${esc(ccSkinOf(ccMySkin()).name)}</b> · card back: <b>${esc(ccBackOf(ccMyBack()).name)}</b> · <button class="ccq-help" id="ccqSkin">Change</button> · the bot gets random ones.</p>
-    <p class="tiny">New to Card Clash? <button class="ccq-help" id="ccqCamp">Play the tutorial campaign</button> or <button class="ccq-help" id="ccqHelp">read How to play</button> · every win gives +1 pearl.</p>
-    <button class="btn gold ccq-go" id="ccqGo">${icon('bolt')}Start match</button></div>`,
-    onMount: b => {
-      b.querySelectorAll('[data-qdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.qdeck; persist(); b.querySelectorAll('[data-qdeck]').forEach(y => y.classList.toggle('on', y === x)); if (ccdEl) renderDeck(); });
-      b.querySelector('#ccqHelp').onclick = () => ccRules(0);
-      b.querySelector('#ccqCamp').onclick = () => openCampaign();
-      b.querySelector('#ccqSkin').onclick = () => ccSkinPicker(openQuickMatch);
-      const evLine = () => { const sd = (parseInt(b.querySelector('#ccqSeed').value, 10) || 0) >>> 0, k = ccPickEvent(sd), E = k && CC_EVENTS[k];
-        b.querySelector('#ccqEv').innerHTML = E ? `<span class="ccq-evt" style="--ec:${ccEvCol(k)}">${ccEvIco(k)}<b>${esc(E.name)}</b></span> ${esc(E.text)}` : 'Battle event: none for this seed (clear skies). 60% of matches start with one.'; };
-      evLine(); b.querySelector('#ccqSeed').oninput = evLine;
-      b.querySelector('#ccqDice').onclick = () => { b.querySelector('#ccqSeed').value = Math.floor(Math.random() * 1e9); evLine(); };
-      b.querySelector('#ccqGo').onclick = () => {
-        const d = ccDeck(sv.sel); if (!ccValidateDeck(d.cards).ok) return toast('Pick a deck with 30 cards', true);
-        const seed = (parseInt(b.querySelector('#ccqSeed').value, 10) || 0) >>> 0;
-        closeModal(); startClash(d, seed);
-      };
-    } });
+  renderQuickMatch();
+}
+/* closing: back to whatever screen is under it (Deck, campaign, tree), else Battle or home */
+function closeQuickMatch(home = true) { if (qmEl) { qmEl.remove(); qmEl = null; } if (home && !ccdEl && !cmpEl && !twrEl && !wmEl) bthHome(); }
+function renderQuickMatch(swap) {
+  if (!qmEl) return;
+  const sv = ccSave(), seed = ccQmSeed >>> 0, deck = ccDeck(sv.sel), valid = ccValidateDeck(deck.cards).ok, st = sv.stats;
+  const le = ccLeaderOf(deck.id), foe = ccQmFoe(seed), lart = le ? mediaArt(le) || baseCard(le) : null, fart = foe ? baseArt(foe) || baseCard(foe) : null;
+  const k = ccPickEvent(seed), E = k && CC_EVENTS[k];
+  const kit = (sk, bk, mine) => `<div class="qm-kit">
+      <span class="qm-chip" title="Board skin: ${esc(ccSkinOf(sk).name)}">${ccSkinIco(sk, 'qm-skic')}<span class="qm-ct"><small>Board</small><b>${esc(ccSkinOf(sk).name)}</b></span></span>
+      <span class="qm-chip" title="Card back: ${esc(ccBackOf(bk).name)}">${ccBackHTML('qm-back', bk)}<span class="qm-ct"><small>Card back</small><b>${esc(ccBackOf(bk).name)}</b></span></span>
+      ${mine ? `<button class="qm-change" id="qmSkin">${icon('edit')}<span>Change</span></button>` : ''}</div>`;
+  const dk = d => { const v = ccValidateDeck(d.cards).ok, L = ccLeaderOf(d.id), by = s => d.cards.filter(id => ccDef(id).style === s).length, on = d.id === sv.sel;
+    return `<button class="qm-dk ${on ? 'on' : ''}" data-qdeck="${d.id}" ${v ? '' : 'disabled'} aria-pressed="${on}">
+      <span class="qm-dkbar">${Object.keys(CC_STYLES).map(s => by(s) ? `<i style="flex:${by(s)};--cs:${CC_STYLES[s][1]}"></i>` : '').join('') || '<i class="none"></i>'}</span>
+      <span class="qm-dkav">${L ? baseThumb(L) : CC_IC}</span>
+      <span class="qm-dkt"><b>${esc(d.name)}</b><small>${d.preset ? `${icon('lock')}Starter` : v ? 'Ready' : `${d.cards.length} / 30`}</small></span>
+      ${on ? `<i class="qm-dkon">${icon('check')}</i>` : ''}</button>`; };
+  qmEl.innerHTML = `<div class="qm-bg" aria-hidden="true"><div class="qm-bga">${typeof bthArt === 'function' ? bthArt('quick', true) : ''}</div><i class="qm-glow me"></i><i class="qm-glow op"></i><i class="qm-vig"></i></div>
+    <header class="qm-head"><div class="inv-title"><span class="inv-badge">${icon('bolt')}</span><h2 class="ts">Quick Match</h2></div>
+      <button class="cs-info info-btn" id="qmRules" title="How to play" aria-label="How to play">${icon('book')}</button>
+      <span class="qm-sp"></span>
+      <div class="qm-rec" title="Your Quick match record">${icon('trophy')}<span class="w"><b>${st.w}</b>Wins</span><span class="l"><b>${st.l}</b>Losses</span><span class="d"><b>${st.d}</b>Draws</span></div>
+      <button class="inv-x" id="qmClose" aria-label="Close">${icon('close')}</button></header>
+    <section class="qm-arena ${swap ? 'swap' : ''}">
+      <div class="qm-side me"><div class="qm-art">${lart ? `<img src="${lart}" alt="">` : `<span class="qm-ava">${avatarHTML(200)}</span>`}</div><i class="qm-shade"></i></div>
+      <div class="qm-side op"><div class="qm-art">${fart ? `<img src="${fart}" alt="">` : `<span class="qm-bot">${ccIco('bot')}</span>`}</div><i class="qm-shade"></i></div>
+      <i class="qm-cut" aria-hidden="true"></i><i class="qm-motes" aria-hidden="true"></i>
+      <div class="qm-plate me"><small>You</small><b class="ts">${esc(S.player.name || 'You')}</b><span>${le ? `${icon('crown')}Leader · ${esc(le.name)}` : 'No leader yet'}</span>${kit(ccMySkin(), ccMyBack(), true)}</div>
+      <div class="qm-plate op"><small>Challenger</small><b class="ts">${foe ? esc(foe.name) : 'Bot'}</b><span>${ccIco('bot')}Plays your deck · average player</span>${kit(ccBotSkin(seed), ccBotBack(seed))}</div>
+      <div class="qm-vs" aria-hidden="true"><i class="qm-vsr"></i><i class="qm-vsr r2"></i><b>VS</b></div>
+      <div class="qm-ev ${E ? '' : 'none'}" style="--ec:${E ? ccEvCol(k) : '#c9d4ff'}"><span class="qm-evic">${E ? ccEvIco(k) : icon('sparkle')}</span><span class="qm-evt"><small>Battle event</small><b>${E ? esc(E.name) : 'Clear skies'}</b><em>${E ? esc(E.text) : 'No event this match.'}</em></span></div>
+      <div class="qm-seed"><label for="qmSeed">Seed</label><input id="qmSeed" inputmode="numeric" value="${seed}" aria-label="Match seed"><button class="qm-new" id="qmDice">${icon('refresh')}<span>New challenger</span></button></div>
+    </section>
+    <section class="qm-foot">
+      <div class="qm-decks"><span class="qm-lbl">Your deck <button class="qm-link" id="qmDecks">${CC_IC}Edit decks</button></span><div class="qm-dkrow">${ccAllDecks().map(dk).join('')}</div></div>
+      <div class="qm-rew"><span class="qm-lbl">Rewards</span>
+        <div class="qm-rw win"><b>Win</b><span>${curIcon('coins')}${fmt(CC_GOLD.win)}</span><span>${curIcon('pearls')}${CC_WIN_PEARLS}</span><span title="One clothing piece, like a gear raid clear (needs a free wardrobe space)">${icon('hanger')}Gear</span></div>
+        <div class="qm-rw"><b>Draw</b><span>${curIcon('coins')}${fmt(CC_GOLD.draw)}</span></div>
+        <div class="qm-rw"><b>Loss</b><span>${curIcon('coins')}${fmt(CC_GOLD.lose)}</span></div></div>
+      <div class="qm-gobox"><button class="qm-go" id="qmGo" ${valid ? '' : 'disabled'}><span class="qm-goi">${icon('bolt')}</span><span class="qm-got"><b>Battle!</b><small>${valid ? esc(deck.name) : 'Pick a deck with 30 cards'}</small></span></button>
+        <button class="qm-link" id="qmCamp">${icon('map')}New to Card Clash? Play the tutorial</button></div>
+    </section>`;
+  const q = s => qmEl.querySelector(s);
+  q('#qmClose').onclick = () => closeQuickMatch();
+  q('#qmRules').onclick = () => ccRules(0);
+  q('#qmSkin').onclick = () => ccSkinPicker(openQuickMatch);
+  q('#qmDecks').onclick = () => { closeQuickMatch(false); if (ccdEl) renderDeck(); else openDeck(); };
+  q('#qmCamp').onclick = () => { closeQuickMatch(false); openCampaign(); };
+  qmEl.querySelectorAll('[data-qdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.qdeck; persist(); if (ccdEl) renderDeck(); renderQuickMatch(); });
+  const si = q('#qmSeed'); si.onchange = () => { ccQmSeed = (parseInt(si.value, 10) || 0) >>> 0; renderQuickMatch(true); };
+  si.onkeydown = e => { if (e.key === 'Enter') si.blur(); };
+  q('#qmDice').onclick = () => { ccQmSeed = Math.floor(Math.random() * 1e9); renderQuickMatch(true); };
+  q('#qmGo').onclick = () => {
+    const d = ccDeck(sv.sel); if (!ccValidateDeck(d.cards).ok) return toast('Pick a deck with 30 cards', true);
+    const sd = (parseInt(si.value, 10) || 0) >>> 0; closeQuickMatch(false); startClash(d, sd);
+  };
+  const row = q('.qm-dkrow'), on = q('.qm-dk.on'); if (row && on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;   // keep the chosen deck in view
 }
 
 /* ---- the match ---- */
@@ -171,8 +216,8 @@ const CC_TIPS = [
    and the match (and the bot) only starts once the board is revealed */
 /* camp = a campaign stage (54-clash-campaign.js): its own match setup, the default board / back for the bot, a coach, stars */
 function startClash(deck, seed, camp) {
-  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; } if (wmEl) { wmEl.remove(); wmEl = null; } if (bthEl) { bthEl.remove(); bthEl = null; }   // the campaign map / tree comes back after a stage (ccCampMap)
-  const foes = S.pool.filter(e => e.type === 'character' && !e.mc), foe = camp && camp.dummy ? null : foes.length ? foes[(seed >>> 0) % foes.length] : null;
+  ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; } if (wmEl) { wmEl.remove(); wmEl = null; } if (bthEl) { bthEl.remove(); bthEl = null; } if (qmEl) { qmEl.remove(); qmEl = null; }   // the campaign map / tree comes back after a stage (ccCampMap)
+  const foe = camp && camp.dummy ? null : ccQmFoe(seed);   // the same challenger the Quick match lobby showed for this seed
   const names = [S.player.name || 'You', camp && camp.dummy ? camp.foeName : foe ? foe.name : 'Bot'];
   const G = camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), names);
   ccSkReset();
