@@ -1695,8 +1695,8 @@ b.ccd-dname{border:0}
 .wm-head .wm-tabs{order:10;flex:1 1 100%;width:100%;margin-left:0;justify-content:center}
 .wm-head .wm-tabs .cmp-cht{display:inline-flex;align-items:center;gap:6px}.wm-head .wm-tabs .cmp-cht svg{width:15px;height:15px}
 .wm-head .btn svg{width:18px;height:18px;flex:none}
-.wm-stage{position:relative;z-index:1;min-height:0;border-radius:26px;overflow:hidden;border:2px solid rgba(225,200,255,.3);box-shadow:0 20px 40px rgba(0,0,0,.5);background:#5f8798}
-.wm-stage::after{content:'';position:absolute;inset:7px;border-radius:20px;border:1px solid rgba(255,236,200,.4);box-shadow:inset 0 0 40px rgba(40,20,8,.35);pointer-events:none;z-index:4}
+.wm-stage{position:relative;z-index:1;min-height:0;border-radius:26px;overflow:hidden;border:2px solid rgba(214,186,130,.55);box-shadow:0 20px 40px rgba(0,0,0,.5),inset 0 0 0 1px rgba(60,36,12,.6);background:#cdb07c}
+.wm-stage::after{content:'';position:absolute;inset:7px;border-radius:20px;border:1.5px solid rgba(62,42,23,.55);box-shadow:inset 0 0 0 3px rgba(239,226,192,.35),inset 0 0 50px rgba(60,36,12,.35);pointer-events:none;z-index:4}
 .wm-view{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;outline:none}
 .wm-view.grab{cursor:grabbing}
 .wm-map{position:absolute;left:0;top:0;width:1600px;height:1000px;transform-origin:0 0;will-change:transform}
@@ -1704,8 +1704,9 @@ b.ccd-dname{border:0}
 .wm-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .wm-svg *{pointer-events:none}
 .wm-svg .wm-rg,.wm-svg .wm-rg *{pointer-events:visiblePainted;cursor:pointer}
-.wm-svg .wm-rg{transition:filter .25s}
-.wm-svg .wm-rg.on{filter:brightness(1.12) saturate(1.2)}
+.wm-svg path.wm-rg{fill:#5a3a18;transition:fill-opacity .25s}
+.wm-svg path.wm-rg.on{fill-opacity:.07}
+.wm-svg g.wm-rg{transition:filter .25s}.wm-svg g.wm-rg.on{filter:drop-shadow(0 0 6px rgba(110,70,20,.5))}
 .wm-svg .wm-smoke{animation:wmSmoke 6s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}
 @keyframes wmSmoke{to{transform:translate(6px,-6px) scale(1.08)}}
 .wm-svg .wm-mote{animation:wmMote 3.6s ease-in-out var(--d,0s) infinite}
@@ -1715,19 +1716,18 @@ b.ccd-dname{border:0}
 .wm-svg .wm-ship{animation:wmShip 4s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}
 @keyframes wmShip{to{rotate:4deg}}
 /* region labels: a framed icon, the name with a dark outline, a sub line and a bar (green when open) */
-.wm-lab{position:absolute;z-index:2;display:grid;justify-items:center;gap:1px;padding:0;margin:0;border:0;background:none;color:#fff;font:inherit;cursor:pointer;
-  transform:translate(-50%,-32px) scale(var(--is,1));transform-origin:50% 32px;-webkit-tap-highlight-color:transparent}
-.wm-ic{position:relative;width:64px;height:64px;border-radius:16px;display:grid;place-items:center;border:3px solid transparent;transition:transform .2s var(--u2-ease,ease),box-shadow .2s;
-  background:radial-gradient(circle at 50% 35%,#3a2c5c,#140e26 72%) padding-box,linear-gradient(160deg,#f4f1ff,#a39cc0 50%,#57516e) border-box;box-shadow:0 6px 14px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.1)}
-.wm-ic svg{width:48px;height:48px;display:block}
-.wm-lab.open .wm-ic{background:radial-gradient(circle at 50% 35%,#3d2b78,#140c30 72%) padding-box,var(--cry-grad,linear-gradient(90deg,#ffd6ec,#e3b6ff,#b9dcff)) border-box;box-shadow:0 6px 14px rgba(0,0,0,.55),0 0 18px rgba(227,182,255,.7)}
-.wm-lab b{margin-top:5px;font:400 17px var(--display);white-space:nowrap;color:#fff;text-shadow:1px 1px 0 #2a1808,-1px -1px 0 #2a1808,1px -1px 0 #2a1808,-1px 1px 0 #2a1808,0 2px 6px rgba(0,0,0,.8)}
-.wm-lab small{font:700 12px var(--read);color:#ffe7a8;white-space:nowrap;text-shadow:1px 1px 0 #2a1808,-1px -1px 0 #2a1808,1px -1px 0 #2a1808,-1px 1px 0 #2a1808}
-.wm-bar{width:100px;height:4px;margin-top:2px;border-radius:2px;background:#2c2430;box-shadow:0 1px 2px rgba(0,0,0,.6)}
-.wm-lab.open .wm-bar{background:linear-gradient(90deg,#8dff7e,#3ed86a);box-shadow:0 0 8px rgba(80,255,120,.6)}
+.wm-lab{position:absolute;z-index:2;display:grid;justify-items:center;gap:0;padding:0;margin:0;border:0;background:none;color:#3e2a17;font:inherit;cursor:pointer;
+  transform:translate(-50%,-28px) scale(var(--is,1));transform-origin:50% 28px;-webkit-tap-highlight-color:transparent}
+.wm-ic{position:relative;width:48px;height:56px;color:#e7d7b1;display:block;transition:transform .2s var(--u2-ease,ease);filter:drop-shadow(0 3px 3px rgba(40,24,8,.45))}
+.wm-ic svg{width:100%;height:100%;display:block}
+.wm-lab.open .wm-ic{filter:drop-shadow(0 3px 3px rgba(40,24,8,.45)) drop-shadow(0 0 8px rgba(255,236,170,.9))}
+.wm-lab b{margin-top:3px;font:400 17px var(--display);white-space:nowrap;color:#3e2a17;letter-spacing:.04em;
+  text-shadow:0 0 3px #f1e5c6,0 0 6px #f1e5c6,0 0 10px rgba(241,229,198,.9)}
+.wm-lab small{font:italic 600 12px var(--read);color:#6e5232;white-space:nowrap;text-shadow:0 0 3px #f1e5c6,0 0 6px #f1e5c6}
+.wm-lab.open small{color:#7a3e10}
 .wm-lab:hover .wm-ic,.wm-lab.on .wm-ic,.wm-lab:focus-visible .wm-ic{transform:translateY(-3px) scale(1.07)}
 .wm-lab:focus-visible{outline:none}.wm-lab:focus-visible b{text-decoration:underline}
-.wm-lab .cmp-dot{right:-5px;top:-5px}
+.wm-lab .cmp-dot{right:-3px;top:-2px}
 /* edge arrows and zoom */
 .wm-arr{position:absolute;z-index:5;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,236,200,.5);display:grid;place-items:center;cursor:pointer;color:#fff;
   background:radial-gradient(circle at 50% 35%,rgba(70,50,30,.85),rgba(30,18,8,.85));box-shadow:0 4px 12px rgba(0,0,0,.5);transition:opacity .2s,transform .15s}
@@ -1736,17 +1736,18 @@ b.ccd-dname{border:0}
 .wm-arr.u{top:14px;left:50%;margin-left:-22px}.wm-arr.u svg{transform:rotate(90deg)}.wm-arr.d{bottom:14px;left:50%;margin-left:-22px}.wm-arr.d svg{transform:rotate(-90deg)}
 .wm-arr.off{opacity:0;pointer-events:none}
 .wm-zoom{position:absolute;right:16px;bottom:16px;z-index:5;display:flex;gap:6px}
-.wm-zoom button{width:40px;height:40px;border-radius:12px;border:0;cursor:pointer;font:400 24px/1 var(--display);background:var(--cry-grad,linear-gradient(90deg,#ffd6ec,#e3b6ff,#b9dcff));color:var(--cry-ink,#2a1d5c);box-shadow:0 4px 12px rgba(0,0,0,.45)}
+.wm-zoom button{width:40px;height:40px;border-radius:12px;border:1px solid rgba(231,215,177,.6);cursor:pointer;font:400 24px/1 var(--display);background:radial-gradient(circle at 50% 35%,#5a3e22,#2e1e0e);color:#efe2c0;box-shadow:0 4px 12px rgba(40,24,8,.5)}
 .wm-stage.paged .wm-arr,.wm-stage.paged .wm-zoom{display:none}
 /* a region's own tab: for now only "Coming soon", over the map zoomed onto the region */
-.wm-page{--rc:#e3b6ff;position:absolute;inset:0;z-index:6;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 50% 50%,rgba(14,8,30,.35),rgba(8,4,18,.72));backdrop-filter:blur(3px);animation:fade .3s}
+.wm-page{--rc:#e3b6ff;position:absolute;inset:0;z-index:6;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 50% 50%,rgba(60,36,12,.2),rgba(30,16,4,.6));backdrop-filter:blur(2px) sepia(.3);animation:fade .3s}
 .wm-page[data-r=forest]{--rc:#8dff7e}.wm-page[data-r=volcano]{--rc:#ff8a3a}.wm-page[data-r=cursed]{--rc:#b98cff}.wm-page[data-r=magic]{--rc:#ff9ad8}.wm-page[data-r=desert]{--rc:#ffd36a}.wm-page[data-r=isles]{--rc:#9fe0ff}
-.wm-card{width:min(440px,100%);display:grid;justify-items:center;gap:6px;text-align:center;padding:28px 26px 24px;border-radius:26px;border:1.5px solid transparent;
-  background:linear-gradient(180deg,rgba(32,22,64,.95),rgba(12,8,26,.96)) padding-box,linear-gradient(160deg,var(--rc),rgba(255,255,255,.15) 60%,var(--rc)) border-box;box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 40px color-mix(in srgb,var(--rc) 35%,transparent)}
-.wm-ic.big{width:110px;height:110px;border-radius:26px;margin-bottom:6px}.wm-ic.big svg{width:84px;height:84px}
-.wm-card small{font:400 12px var(--display);letter-spacing:.3em;padding-left:.3em;text-transform:uppercase;color:var(--rc)}
-.wm-card h3{margin:0;font:400 34px var(--display);font-style:italic;line-height:1.1;text-shadow:0 0 18px color-mix(in srgb,var(--rc) 55%,transparent)}
-.wm-soon{margin:10px 0 16px;padding:8px 22px;border-radius:999px;font:400 18px var(--display);letter-spacing:.12em;text-transform:uppercase;background:var(--cry-grad,linear-gradient(90deg,#ffd6ec,#e3b6ff,#b9dcff));color:var(--cry-ink,#2a1d5c);box-shadow:0 0 18px rgba(227,182,255,.5)}
+.wm-card{width:min(440px,100%);display:grid;justify-items:center;gap:6px;text-align:center;padding:28px 26px 24px;border-radius:18px;color:#3e2a17;
+  background:radial-gradient(ellipse at 50% 30%,#f3e8cc,#e2cfa4 75%,#cdb07c);border:2px solid #5a3e22;box-shadow:0 20px 50px rgba(20,10,2,.6),inset 0 0 0 4px rgba(239,226,192,.7),inset 0 0 0 5px rgba(90,62,34,.6),inset 0 0 40px rgba(110,70,20,.25)}
+.wm-ic.big{width:96px;height:112px;margin-bottom:4px}
+.wm-card small{font:400 12px var(--display);letter-spacing:.3em;padding-left:.3em;text-transform:uppercase;color:#6e5232}
+.wm-card h3{margin:0;font:400 34px var(--display);font-style:italic;line-height:1.1;color:#3e2a17}
+.wm-soon{margin:10px 0 16px;padding:8px 22px;border-radius:6px;font:400 18px var(--display);letter-spacing:.14em;text-transform:uppercase;background:#3e2a17;color:#efe2c0;border:1px solid #1f140a;box-shadow:inset 0 0 0 2px rgba(239,226,192,.35)}
+.wm-card .btn.ghost{color:#3e2a17;border-color:rgba(62,42,23,.5);background:rgba(239,226,192,.6)}
 .wm-card .btn svg{width:16px;height:16px}
 @media (max-width:640px),(orientation:portrait){
   .wm .wm-stage{flex:1 1 auto;min-height:440px}
@@ -1759,7 +1760,49 @@ b.ccd-dname{border:0}
   .wm-head .wm-tabs{display:none}
   .wm-arr{width:34px;height:34px}.wm-arr.l,.wm-arr.r{margin-top:-17px}.wm-arr.u,.wm-arr.d{margin-left:-17px}.wm-arr svg{width:18px;height:18px}
   .wm-zoom button{width:34px;height:34px;font-size:20px}
-  .wm-card{padding:16px 18px}.wm-ic.big{width:76px;height:76px}.wm-ic.big svg{width:58px;height:58px}.wm-card h3{font-size:24px}.wm-soon{margin:6px 0 10px;font-size:15px}
+  .wm-card{padding:16px 18px}.wm-ic.big{width:64px;height:75px}.wm-card h3{font-size:24px}.wm-soon{margin:6px 0 10px;font-size:15px}
 }
 @media (prefers-reduced-motion:reduce){.wm-svg .wm-smoke,.wm-svg .wm-mote,.wm-svg .wm-isle,.wm-svg .wm-ship,.twr-spore{animation:none}.wm-map.ease{transition:none}}
 @media (max-width:430px){.twr-head .inv-title h2,.wm-head .inv-title h2{font-size:16px}.twr-head .inv-title,.wm-head .inv-title{padding-right:8px}.twr-head .btn,.wm-head .btn{padding:8px 8px}.twr-head,.wm-head{gap:5px}}
+
+/* the Great Tree's living sky: twinkling stars, moon rays, a second aurora, drifting clouds, shooting stars, birds,
+   a soft spirit glow behind the trunk, the particle canvas, and a little parallax as you climb (--sy) */
+.twr-sky{container-type:size}
+.twr-stars{position:absolute;inset:0;background-image:radial-gradient(1.3px 1.4px at 91.6% 33.1%,#fff,transparent),radial-gradient(1.3px 1.4px at 19.1% 36.3%,#fff,transparent),radial-gradient(1.4px 1.6px at 10.2% 21.9%,#fff,transparent),radial-gradient(0.9px 1.6px at 69.0% 3.9%,#fff,transparent),radial-gradient(1.8px 1.8px at 65.1% 43.5%,#fff,transparent),radial-gradient(1.0px 0.8px at 52.8% 5.1%,#fff,transparent),radial-gradient(1.0px 1.0px at 3.9% 33.0%,#fff,transparent),radial-gradient(1.2px 1.6px at 51.9% 45.2%,#fff,transparent),radial-gradient(1.3px 1.5px at 45.8% 20.2%,#fff,transparent),radial-gradient(1.8px 1.8px at 83.3% 49.8%,#fff,transparent),radial-gradient(1.1px 1.0px at 29.3% 5.8%,#fff,transparent),radial-gradient(1.6px 1.2px at 84.0% 27.7%,#fff,transparent),radial-gradient(1.8px 1.6px at 1.1% 15.5%,#fff,transparent),radial-gradient(1.7px 1.3px at 97.1% 28.4%,#fff,transparent),radial-gradient(0.9px 1.4px at 77.3% 19.6%,#fff,transparent),radial-gradient(0.9px 1.1px at 95.5% 53.3%,#fff,transparent),radial-gradient(0.9px 1.0px at 10.9% 5.1%,#fff,transparent),radial-gradient(1.6px 1.0px at 55.8% 31.9%,#fff,transparent),radial-gradient(1.0px 1.5px at 13.8% 45.4%,#fff,transparent),radial-gradient(0.9px 1.2px at 21.9% 19.6%,#fff,transparent),radial-gradient(1.8px 1.6px at 30.8% 62.1%,#fff,transparent),radial-gradient(1.0px 1.2px at 84.7% 45.3%,#fff,transparent),radial-gradient(0.9px 1.8px at 21.9% 18.8%,#fff,transparent),radial-gradient(1.6px 1.1px at 30.0% 6.1%,#fff,transparent);animation:twrTwinkle 3.6s ease-in-out infinite alternate}
+.twr-stars.s2{background-image:radial-gradient(0.9px 1.4px at 24.8% 42.5%,#fff,transparent),radial-gradient(1.2px 1.3px at 95.0% 34.4%,#fff,transparent),radial-gradient(1.4px 1.7px at 18.9% 11.6%,#fff,transparent),radial-gradient(1.7px 1.6px at 25.5% 14.1%,#fff,transparent),radial-gradient(1.5px 1.7px at 20.3% 66.6%,#fff,transparent),radial-gradient(1.7px 1.4px at 42.3% 8.2%,#fff,transparent),radial-gradient(0.8px 1.8px at 24.4% 49.6%,#fff,transparent),radial-gradient(1.1px 1.6px at 59.5% 21.2%,#fff,transparent),radial-gradient(1.0px 1.5px at 7.7% 16.8%,#fff,transparent),radial-gradient(1.4px 1.7px at 61.2% 20.3%,#fff,transparent),radial-gradient(1.7px 1.0px at 2.6% 19.6%,#fff,transparent),radial-gradient(1.2px 0.9px at 18.3% 26.4%,#fff,transparent),radial-gradient(1.4px 0.9px at 36.5% 62.5%,#fff,transparent),radial-gradient(1.8px 1.5px at 68.7% 41.3%,#fff,transparent),radial-gradient(0.9px 0.8px at 2.8% 63.8%,#fff,transparent),radial-gradient(1.5px 1.8px at 3.1% 44.9%,#fff,transparent),radial-gradient(1.3px 1.5px at 32.3% 70.0%,#fff,transparent),radial-gradient(0.9px 1.3px at 73.2% 63.1%,#fff,transparent),radial-gradient(1.5px 1.5px at 78.7% 64.1%,#fff,transparent),radial-gradient(1.2px 1.5px at 89.3% 61.1%,#fff,transparent),radial-gradient(1.2px 1.6px at 85.6% 40.5%,#fff,transparent),radial-gradient(1.4px 1.2px at 58.1% 43.0%,#fff,transparent);animation-duration:5.2s;animation-delay:-2.4s}
+@keyframes twrTwinkle{from{opacity:.3}to{opacity:1}}
+.twr-rays{position:absolute;right:-20%;top:-30%;width:110%;height:150%;pointer-events:none;mix-blend-mode:screen;transform-origin:84% 26%;
+  background:repeating-conic-gradient(from 190deg at 84% 26%,rgba(225,205,255,.075) 0 3.5deg,transparent 3.5deg 12deg);
+  -webkit-mask:radial-gradient(ellipse 60% 60% at 84% 26%,#000 8%,transparent 72%);mask:radial-gradient(ellipse 60% 60% at 84% 26%,#000 8%,transparent 72%);animation:twrRays 26s ease-in-out infinite alternate}
+@keyframes twrRays{to{transform:rotate(5deg)}}
+.twr-moon,.twr-rays{translate:0 calc((2600 - var(--sy,2600)) * .02px)}
+.twr-aur.a2{top:8%;height:35%;opacity:.7;background:radial-gradient(ellipse 40% 50% at 60% 30%,rgba(120,220,255,.12),transparent 70%),radial-gradient(ellipse 35% 45% at 30% 50%,rgba(255,150,220,.1),transparent 70%);animation-duration:22s;animation-direction:alternate-reverse}
+.twr-skycl{position:absolute;left:-30%;width:160%;height:20%;top:22%;pointer-events:none;
+  background:radial-gradient(ellipse 14% 50% at 18% 50%,rgba(190,170,240,.13),transparent 70%),radial-gradient(ellipse 20% 60% at 52% 40%,rgba(190,170,240,.1),transparent 70%),radial-gradient(ellipse 15% 45% at 82% 58%,rgba(210,190,250,.11),transparent 70%);
+  animation:twrSkyDrift 80s linear infinite alternate}
+.twr-skycl.c2{top:58%;opacity:.75;animation-duration:110s;animation-direction:alternate-reverse}
+@keyframes twrSkyDrift{to{transform:translateX(18%)}}
+.twr-shoot{position:absolute;top:10%;left:30%;width:150px;height:2px;border-radius:2px;pointer-events:none;opacity:0;rotate:161deg;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(230,220,255,.7) 70%,#fff);filter:drop-shadow(0 0 4px #e3d4ff);animation:twrShoot 11s linear infinite}
+.twr-shoot.h2{top:26%;left:72%;animation-duration:15s;animation-delay:-5s}.twr-shoot.h3{top:5%;left:58%;animation-duration:19s;animation-delay:-11s}
+@keyframes twrShoot{0%,91%{opacity:0;translate:0 0}92%{opacity:1}100%{opacity:0;translate:-280px 96px}}
+.twr-birds{position:absolute;top:32%;left:0;display:block;width:90px;height:30px;pointer-events:none;animation:twrBirds 42s linear infinite;animation-delay:-14s}
+.twr-bird{position:absolute;width:20px;height:9px;opacity:.75}.twr-bird svg{display:block;width:100%;height:100%;animation:twrFlap .42s ease-in-out infinite alternate;transform-origin:50% 60%}
+.twr-bird.b0{left:0;top:10px}.twr-bird.b1{left:26px;top:0;scale:.8}.twr-bird.b2{left:44px;top:16px;scale:.7}.twr-bird.b1 svg{animation-delay:-.2s}.twr-bird.b2 svg{animation-delay:-.1s}
+@keyframes twrFlap{to{transform:scaleY(.35)}}
+@keyframes twrBirds{from{transform:translate(-120px,0)}50%{transform:translate(50cqw,-30px)}to{transform:translate(calc(100cqw + 120px),10px)}}
+.twr-aura{position:absolute;left:50%;top:0;bottom:0;width:calc(var(--tw) * 1.9);translate:-50% 0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 46% 50% at 50% 50%,rgba(186,160,255,.16),rgba(150,220,255,.05) 55%,transparent 72%);background-size:100% calc(var(--fh) * 3);background-repeat:repeat-y;animation:twrAuraP 6s ease-in-out infinite alternate}
+@keyframes twrAuraP{from{opacity:.55}to{opacity:1}}
+.twr-fxc{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+/* the tree's own life: veins of light flowing up the bark, swaying tendrils, twinkling glints, runes and an owl's blink */
+.twr-fs .tr-vein{animation:trFlow 3.4s linear infinite}
+@keyframes trFlow{to{stroke-dashoffset:132}}
+.twr-fs .tr-tend{transform-box:fill-box;transform-origin:50% 0;animation:trSway 4.6s ease-in-out infinite alternate}
+@keyframes trSway{from{rotate:-5deg}to{rotate:5deg}}
+.twr-fs .tr-glint,.twr-fs .tr-bulb,.twr-fs .tr-rune{animation:trGlint 2.8s ease-in-out infinite}
+.twr-fs .tr-bulb{animation-duration:3.6s}.twr-fs .tr-rune{animation-duration:3.2s}
+@keyframes trGlint{0%,100%{opacity:.2}50%{opacity:1}}
+.twr-fs .tr-blink{transform-box:fill-box;transform-origin:50% 50%;animation:trBlink 5.5s infinite}
+@keyframes trBlink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+@media (prefers-reduced-motion:reduce){.twr-stars,.twr-rays,.twr-skycl,.twr-shoot,.twr-birds,.twr-bird svg,.twr-aura,.twr-fs .tr-vein,.twr-fs .tr-tend,.twr-fs .tr-glint,.twr-fs .tr-bulb,.twr-fs .tr-rune,.twr-fs .tr-blink{animation:none}.twr-shoot,.twr-birds{display:none}}
