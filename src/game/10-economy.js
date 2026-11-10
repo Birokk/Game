@@ -77,7 +77,7 @@ function openSpin() {
   const SL = spinSlices();
   const conic = SPIN.map((s, i) => `${s.jackpot ? '#f2b8ee' : i % 2 ? '#2c2560' : '#4a2f7e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
   const art = MEDIA.get('spin:art');
-  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="spin-lay"><div class="spin-art">${art ? `<img src="${art}" alt="">` : MCAL_ART}<div class="mcal-hd"><b>Daily Spin</b><span>${spinsPerDay()} spin${spinsPerDay() > 1 ? 's' : ''} a day · resets at midnight</span></div></div>
+  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="spin-lay"><div class="spin-art">${art ? artImg('spin:art') : MCAL_ART}<div class="mcal-hd"><b>Daily Spin</b><span>${spinsPerDay()} spin${spinsPerDay() > 1 ? 's' : ''} a day · resets at midnight</span></div></div>
     <div class="stack" style="justify-items:center">
     <div class="wheel-wrap"><span class="wheel-ptr"></span>
       <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">

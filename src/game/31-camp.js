@@ -95,7 +95,7 @@ INFO.camp = () => ({ title: 'Camp', body: `<p class="desc">Send characters out f
     <tr><td>Central</td><td>3</td><td>1–3 R pieces per character</td></tr></tbody></table>` });
 
 /* the Camp view of the Base screen */
-function campBg() { const bg = MEDIA.get('camp:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'; }
+function campBg() { const bg = MEDIA.get('camp:bg'); return bg ? artImgClip('camp:bg', 'fm-bg') : '<div class="fm-bg ex-black"></div>'; }
 function campStatus(p) {
   const c = campOf(p.id);
   if (!c) return { cls: '', html: `<span>Send ${p.slots} character${p.slots > 1 ? 's' : ''}</span>` };

@@ -88,8 +88,8 @@ INFO.house = () => ({ title: 'House', body: `<p class="desc">Buy houses and move
    Buy panel; buying it takes you inside. */
 let houseIn = null, roomSel = -1, housePick = -1, houseSeen = '';
 const houseRoomPosDef = (hid, i) => { const h = houseOf(hid), n = h ? h.slots : 1; return { x: Math.round((50 + (i - (n - 1) / 2) * 15) * 2) / 2, y: 64 }; };
-function houseBg() { const bg = MEDIA.get('house:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'; }
-function houseInBg(id) { const bg = MEDIA.get('house:in:' + id); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'; }
+function houseBg() { const bg = MEDIA.get('house:bg'); return bg ? artImgClip('house:bg', 'fm-bg') : '<div class="fm-bg ex-black"></div>'; }
+function houseInBg(id) { const bg = MEDIA.get('house:in:' + id); return bg ? artImgClip('house:in:' + id, 'fm-bg') : '<div class="fm-bg ex-black"></div>'; }
 function enterHouse(id) { houseIn = id; roomSel = -1; housePick = -1; fmSel = null; renderFarm(); }
 function renderHouse() {
   houseTick();

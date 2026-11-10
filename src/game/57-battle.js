@@ -19,7 +19,7 @@ const BTH_MODES = [
 ];
 /* the drawn scene of a card: BTH_ART, or for the World Map the parchment map itself (WM_SVG, centred on the tree) */
 const bthScene = id => id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
-const bthArt = (id, bg) => { const u = MEDIA.get('battle:' + id); if (u) return `<img src="${u}" alt="">`;
+const bthArt = (id, bg) => { const u = MEDIA.get('battle:' + id); if (u) return artImg('battle:' + id);
   const a = bthScene(id); return bg ? a.replace(/id="/g, 'id="bg-').replace(/url\(#/g, 'url(#bg-').replace(/href="#/g, 'href="#bg-').replace(/class="/g, 'data-c="') : a; };   // the blurred copy behind gets its own ids and no animations
 /* each card's progress: a sub line, an optional bar (0-100) and a small stat line */
 function bthInfo(id) {
@@ -97,8 +97,8 @@ function renderBattleTab() {
   p.innerHTML = `<div class="stack">
     <div><h3>Battle cards</h3><p class="tiny">The home Battle button opens a screen with one tall card per mode. Upload a wallpaper for each card (portrait, 720×1280 works best; it covers the card and other shapes are cropped round the middle). Without one, the drawn scene is used.</p></div>
     <div class="bth-ad">${BTH_MODES.map(m => { const u = MEDIA.get('battle:' + m.id); return `<div class="bth-adit" style="--bc:${m.col}">
-      <span class="bth-adpic">${u ? `<img src="${u}" alt="">` : bthScene(m.id)}</span><b>${esc(m.name)}</b><small>${u ? 'Your wallpaper' : 'Drawn default'}</small>
-      <span class="row" style="gap:6px;justify-content:center"><label class="btn mint sm">${icon('upload')}${u ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-btup="${m.id}"></label>${u ? `<button class="btn ghost sm" data-btdel="${m.id}">Default</button>` : ''}</span></div>`; }).join('')}</div>
+      <span class="bth-adpic">${u ? artImg('battle:' + m.id) : bthScene(m.id)}</span><b>${esc(m.name)}</b><small>${u ? 'Your wallpaper' : 'Drawn default'}</small>
+      <span class="row" style="gap:6px;justify-content:center"><label class="btn mint sm">${icon('upload')}${u ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-btup="${m.id}"></label>${u ? `<button class="btn ghost sm" data-btdel="${m.id}">Default</button>` : ''}</span>${artFrameBtn('battle:' + m.id, 'card', `${m.name} card`)}</div>`; }).join('')}</div>
     <div class="row"><button class="btn ghost sm" id="bthAdOpen">${icon('swords')}Open the Battle screen</button></div>
     <div><h3>Campaign chapter wallpapers</h3><p class="tiny">Each chapter's map on the campaign screen (only inside the map panel, 1920×1080 best). Default: the night sky.</p></div>
     <div class="setx-list ad-art">${adminArtRows('campaign')}</div>

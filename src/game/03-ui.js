@@ -228,6 +228,7 @@ const DEFAULT_NEWS = 'Welcome to Blank: Project! | The lantern festival is open.
 function renderTitle() {
   const bg = MEDIA.get('title:bg'), img = $('#ttImg');
   img.hidden = !bg; if (bg) img.src = bg; else img.removeAttribute('src');
+  img.setAttribute('style', artPosStyle('title:bg'));   // framed in admin → Title & loading
   titleEl.classList.toggle('has-img', !!bg);
   const acct = S.account ? (S.account.email ? esc(S.account.email) : 'Guest') : '';
   $('#ttWho').innerHTML = S.account ? `Signed in as <b>${esc(S.player.name)}</b> · ${acct} · <button class="link" id="ttSwitch">Switch account</button>` : 'Not signed in';
@@ -281,8 +282,8 @@ const LOAD_TIPS = [
   'Hide UI on the home screen to enjoy your wallpaper.'
 ];
 function loadingArt() {
-  const own = (S.loadArts || []).map(k => MEDIA.get(k)).filter(Boolean);
-  if (own.length) return { src: rpick(own), fit: 'cover' };
+  const own = (S.loadArts || []).filter(k => MEDIA.get(k));
+  if (own.length) { const k = rpick(own); return { src: MEDIA.get(k), fit: 'cover', k }; }
   const arts = S.pool.filter(e => (e.type === 'character' || e.type === 'skin') && mediaArt(e)).map(mediaArt);   // fallback: uploaded character art
   return arts.length ? { src: rpick(arts), fit: 'contain' } : null;
 }
@@ -291,7 +292,7 @@ function loadingArt() {
 function showLoading(done, opts = {}) {
   const art = loadingArt(), el = document.createElement('div');
   el.className = 'loading';
-  el.innerHTML = `${art ? `${art.fit === 'contain' ? `<img class="cs-blur" src="${art.src}" alt="">` : ''}<img class="ld-img ${art.fit}" src="${art.src}" alt="">` : '<div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div></div>'}
+  el.innerHTML = `${art ? `${art.fit === 'contain' ? `<img class="cs-blur" src="${art.src}" alt="">` : ''}<img class="ld-img ${art.fit}" src="${art.src}" alt="" style="${artPosStyle(art.k)}">` : '<div class="tt-bg"><div class="wp-stars"></div><div class="tt-moon"></div></div>'}
     <div class="ld-shade"></div><div class="ld-logo">Blank: Project</div>
     <div class="ld-bottom"><p class="ld-tip"><b>Tip</b> ${esc(rpick(opts.tips || LOAD_TIPS))}</p>
       <div class="ld-row"><span class="ld-prism"></span><span class="ld-txt">${esc(opts.label || 'Loading')}</span><span class="ld-pct">0%</span></div>

@@ -74,7 +74,7 @@ function msignBoard() {
     return `<button class="mcal-d ${st} r${REW_R[k] || 3}" ${now || (miss && left) ? `data-msday="${d}"` : 'tabindex="-1"'} aria-label="${monthName()} ${d}: ${fmt(n)} ${REW_NAMES[k] ? REW_NAMES[k][n === 1 ? 0 : 1] : k}${got ? ', claimed' : now ? ', claim today' : miss ? ', missed' : ''}">
       <b>${d}</b><span class="mcal-ic">${curIcon(k)}</span><em>${n >= 1000 ? fmt(n / 1000) + 'k' : n}</em>${got ? `<span class="chk">${icon('check')}</span>` : now ? '<span class="mcal-tag">Claim</span>' : miss ? `<span class="mcal-tag">${left ? `${curIcon('pearls')}${MSIGN_PEARL}` : 'Missed'}</span>` : ''}</button>`; };
   return `<div class="mcal">
-    <div class="mcal-art">${art ? `<img src="${art}" alt="">` : MCAL_ART}<div class="mcal-hd"><b>${monthName()}</b><span>${new Date().getFullYear()} · Monthly Sign-in</span></div>
+    <div class="mcal-art">${art ? artImg('msign:art') : MCAL_ART}<div class="mcal-hd"><b>${monthName()}</b><span>${new Date().getFullYear()} · Monthly Sign-in</span></div>
 </div>
     <div class="mcal-main"><div class="mcal-wd">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => `<span>${w}</span>`).join('')}</div>
       <div class="mcal-grid">${'<i></i>'.repeat(first)}${Array.from({ length: N }, (_, i) => cell(i + 1)).join('')}</div>
@@ -116,7 +116,8 @@ function eventTimer(e) {
 function eventBg(e) {
   // the Mystery Fountain shows its premium outfit's art; other events use the admin's upload, else the limited banner's art
   const sk = e.id === 'mystery' && mboxSkin(), own = (sk && baseArt(sk)) || MEDIA.get('ev:' + e.id), f = findEntry(S.featuredId), art = own || (f && baseArt(f));
-  return art ? `<img src="${art}" alt="">` : '';
+  const evk = !(sk && baseArt(sk)) && MEDIA.get('ev:' + e.id) ? 'ev:' + e.id : null;   // only the event's own wallpaper is framed
+  return art ? `<img src="${art}" alt="" style="${artPosStyle(evk)}">` : '';
 }
 function renderEvents() {
   if (!evEl) return;
@@ -182,19 +183,19 @@ function renderEventsTab() {
   p.innerHTML = `<div class="stack">
     <div class="ad-head" style="margin:0"><h3>Events</h3><div class="row"><button class="btn mint sm" id="evAdd">${icon('plus')}New event</button><button class="btn ghost sm" id="evOpen">Open events</button></div></div>
     <p class="tiny">Each event has its own wallpaper behind the event page (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the limited banner's art is used. Events with an end date disappear for players after that day.</p>
-    <div class="row" style="gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05)"><b>Daily spin art</b><span class="tiny">The picture on the left of the Daily spin window (portrait, ~600×720)</span>${MEDIA.get('spin:art') ? `<img src="${MEDIA.get('spin:art')}" alt="" style="width:48px;height:58px;object-fit:cover;border-radius:8px">` : ''}<label class="btn mint sm">${icon('upload')}${MEDIA.get('spin:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-spinup></label>${MEDIA.get('spin:art') ? '<button class="btn ghost sm" data-spindel>Default art</button>' : ''}</div>
+    <div class="row" style="gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05)"><b>Daily spin art</b><span class="tiny">The picture on the left of the Daily spin window (portrait, ~600×720)</span>${MEDIA.get('spin:art') ? `<img src="${MEDIA.get('spin:art')}" alt="" style="width:48px;height:58px;object-fit:cover;border-radius:8px">` : ''}<label class="btn mint sm">${icon('upload')}${MEDIA.get('spin:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-spinup></label>${MEDIA.get('spin:art') ? '<button class="btn ghost sm" data-spindel>Default art</button>' : ''}${artFrameBtn('spin:art', 'spin', 'Daily spin art')}</div>
     ${list.map(e => { const bg = MEDIA.get('ev:' + e.id), login = e.id === 'login', builtin = EV_BUILTIN.includes(e.id);
       return `<div class="ev-ad">
         <div class="ev-adprev">${(() => { const w = e.id === 'mystery' && mboxSkin() && baseArt(mboxSkin()) || bg; return w ? `<img src="${w}" alt="">` : '<span class="tiny">No wallpaper</span>'; })()}</div>
         <div class="stack" style="gap:8px;min-width:0">
           <div class="row" style="gap:8px"><input class="input" data-evf="name" data-evid="${esc(e.id)}" maxlength="40" value="${esc(e.name || '')}" placeholder="Event name" aria-label="Event name" style="flex:1">${builtin && e.id !== 'mystery' ? '<span class="tag">Built in</span>' : `<label class="tiny">Ends <input class="input" type="date" data-evf="end" data-evid="${esc(e.id)}" value="${esc(e.end || '')}"></label>`}</div>
           <input class="input" data-evf="sub" data-evid="${esc(e.id)}" maxlength="80" value="${esc(e.sub || '')}" placeholder="Subtitle (optional)" aria-label="Subtitle">
-          ${e.id === 'msign' ? `<div class="row" style="gap:8px;align-items:center"><span class="tiny">Calendar art (portrait, ~600×720)</span><label class="btn mint sm">${icon('upload')}${MEDIA.get('msign:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-mcalup></label>${MEDIA.get('msign:art') ? '<button class="btn ghost sm" data-mcaldel>Default art</button>' : ''}</div>` : ''}
+          ${e.id === 'msign' ? `<div class="row" style="gap:8px;align-items:center"><span class="tiny">Calendar art (portrait, ~600×720)</span><label class="btn mint sm">${icon('upload')}${MEDIA.get('msign:art') ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-mcalup></label>${MEDIA.get('msign:art') ? '<button class="btn ghost sm" data-mcaldel>Default art</button>' : ''}${artFrameBtn('msign:art', 'msign', 'Monthly Sign-in calendar art')}</div>` : ''}
           ${e.id === 'msign' ? `<label class="field" style="max-width:320px"><span>Missed-day make-ups per month (${MSIGN_PEARL} pearl each)</span><input class="input" type="number" min="0" max="28" data-evmk value="${msignMakeups()}"></label>` : ''}
           ${login ? `${loginCharAdmin(e)}<div class="ev-days"><span class="tiny">Limited tickets per day</span>${loginDays().map((n, i) => `<label>Day ${i + 1}<input class="input" type="number" min="1" max="99" data-evday="${i}" value="${n}"></label>`).join('')}</div>`
             : e.id === 'mystery' ? mboxAdmin() : builtin ? '<span class="tiny">Scratch cards: 5 pearls each, 10 a day. Prizes and odds are set in the game code.</span>' : `<textarea class="input" data-evf="text" data-evid="${esc(e.id)}" rows="3" maxlength="1200" placeholder="What the event is about" aria-label="Event text">${esc(e.text || '')}</textarea>`}
           <div class="row" style="gap:8px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-evbg="${esc(e.id)}"></label>
-            ${bg ? `<button class="btn ghost sm" data-evbgdel="${esc(e.id)}">Remove wallpaper</button>` : ''}
+            ${bg ? `<button class="btn ghost sm" data-evbgdel="${esc(e.id)}">Remove wallpaper</button>` : ''}${artFrameBtn('ev:' + e.id, 'screen', `${e.name || 'Event'} wallpaper`)}
             ${builtin ? '' : `<button class="link" data-evdel="${esc(e.id)}" style="color:${evDelArm === e.id ? '#ff6b81' : ''}">${evDelArm === e.id ? 'Tap again to delete' : 'Delete'}</button>`}</div>
         </div></div>`; }).join('')}
   </div>`;

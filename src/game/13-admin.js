@@ -763,12 +763,12 @@ function renderTitleTab() {
   $('#adPanel').innerHTML = `<div class="admin">
     <section class="stack" style="align-content:start">
       <div><h3>Title screen wallpaper</h3><p class="tiny">Shown behind the logo and "Tap to start". Use wide art, for example 1920×1080; it fills the screen. Without one, the default moonlit sky is used.</p></div>
-      <div class="tt-prev">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">Default background</span>'}</div>
-      <div class="row"><label class="btn mint sm">${icon('upload')}Upload wallpaper<input type="file" accept="image/*" class="sr" id="ttUp"></label>${bg ? '<button class="btn ghost sm" id="ttDel">Remove</button>' : ''}<button class="btn ghost sm" id="ttShow">Show title screen</button></div>
+      <div class="tt-prev">${bg ? artImg('title:bg') : '<span class="tiny">Default background</span>'}</div>
+      <div class="row"><label class="btn mint sm">${icon('upload')}Upload wallpaper<input type="file" accept="image/*" class="sr" id="ttUp"></label>${bg ? '<button class="btn ghost sm" id="ttDel">Remove</button>' : ''}${artFrameBtn('title:bg', 'screen', 'Title screen wallpaper')}<button class="btn ghost sm" id="ttShow">Show title screen</button></div>
     </section>
     <section class="stack" style="align-content:start">
       <div><h3>Loading screen wallpapers</h3><p class="tiny">One is picked at random each time the game loads after signing in. Wide art works best. Without any, uploaded character art is used.</p></div>
-      <div class="ld-thumbs">${S.loadArts.filter(k => MEDIA.get(k)).map(k => `<div class="ld-thumb"><img src="${MEDIA.get(k)}" alt=""><button data-ldel="${k}" aria-label="Remove">${icon('close')}</button></div>`).join('') || '<span class="tiny">No loading wallpapers yet.</span>'}</div>
+      <div class="ld-thumbs">${S.loadArts.filter(k => MEDIA.get(k)).map(k => `<div class="ld-thumb">${artImg(k)}<button data-ldel="${k}" aria-label="Remove">${icon('close')}</button><button class="ld-adj ${artPos(k) ? 'on' : ''}" data-artframe="${k}" data-shape="thumb" data-label="Loading wallpaper" aria-label="Adjust position" title="Adjust position">${icon('image')}</button></div>`).join('') || '<span class="tiny">No loading wallpapers yet.</span>'}</div>
       <div class="row"><label class="btn mint sm">${icon('upload')}Add wallpapers<input type="file" accept="image/*" class="sr" id="ldUp" multiple></label><button class="btn ghost sm" id="ldTest">Preview loading screen</button></div>
     </section>
     <section class="stack" style="align-content:start">
@@ -938,14 +938,14 @@ function bindUpArts(rerender) {
 /* the art behind the summon animation (media key pull:bg), shared by admin → Summon animation and Settings → Admin */
 function pullBgHTML() {
   const bg = MEDIA.get('pull:bg');
-  return `<div class="row" style="gap:12px;align-items:center"><div class="ev-adprev" style="width:200px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">Black (default)</span>'}</div>
-    <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} background<input type="file" accept="image/*" class="sr" data-pbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-pbgdel>Use black</button>' : ''}<button type="button" class="btn ghost sm" data-pv="ten">Preview</button></div></div>`;
+  return `<div class="row" style="gap:12px;align-items:center"><div class="ev-adprev" style="width:200px">${bg ? artImg('pull:bg') : '<span class="tiny">Black (default)</span>'}</div>
+    <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} background<input type="file" accept="image/*" class="sr" data-pbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-pbgdel>Use black</button>' : ''}${artFrameBtn('pull:bg', 'screen', 'Summon background')}<button type="button" class="btn ghost sm" data-pv="ten">Preview</button></div></div>`;
 }
 /* the Max Win wallpaper (media key mw:bg): fades in behind the red SSS sphere at the end of a Max Win */
 function mwBgHTML() {
   const bg = MEDIA.get('mw:bg');
   return `<div class="row" style="gap:12px;align-items:center"><div class="ev-adprev" style="width:200px">${bg ? `<img src="${bg}" alt="">` : '<span class="tiny">A pulled UR\'s art (default)</span>'}</div>
-    <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-mwbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-mwbgdel>Remove</button>' : ''}<button type="button" class="btn ghost sm" data-pvmw>Preview: Max Win</button></div></div>`;
+    <div class="row" style="gap:6px"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-mwbgup></label>${bg ? '<button type="button" class="btn ghost sm" data-mwbgdel>Remove</button>' : ''}${artFrameBtn('mw:bg', 'screen', 'Max Win wallpaper')}<button type="button" class="btn ghost sm" data-pvmw>Preview: Max Win</button></div></div>`;
 }
 function bindMwBg(rerender) {
   document.querySelectorAll('[data-mwbgup]').forEach(i => i.onchange = async ev => { try { if (await mediaSet('mw:bg', await resizeImage(ev.target.files[0], 1920, 'image/jpeg'))) { rerender(); toast('Max Win wallpaper saved.'); } } catch (e) { toast(e.message, true); } });

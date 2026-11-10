@@ -378,7 +378,8 @@
    ========================================================================== */
 .menu .hm-gates{left:var(--sl);bottom:calc(14px + var(--sb));display:grid;justify-items:stretch;gap:10px;z-index:3}
 .menu.ui-hidden .hm-gates{transform:translateY(14px)}
-.menu .hm-tabs{max-width:calc(100% - 2 * (var(--sl) + 324px))}
+.menu .hm-tabs{max-width:calc(100% - 2 * (var(--sl) + 262px))}   /* room for the wider of the two sides (Summon ~251 px); 324 px was for the old gates and squeezed the dock so its end tabs spilled past its border */
+.menu .hm-tabs>.tabb{flex-shrink:1}   /* if the dock is ever narrower than its tabs they shrink inside it instead of overflowing */
 .menu .mode2{height:60px;padding:0 26px 0 9px;gap:11px;cursor:pointer}
 .menu .mode2 .so{width:44px;height:44px}
 .menu .mode2 .so .ic{width:23px;height:23px}
@@ -410,7 +411,7 @@
   .menu .mode2 .so{width:30px;height:30px}.menu .mode2 .so .ic{width:16px;height:16px}
   .menu .mode2 .st b{font-size:17px}
   .menu .mode2 .dot-n{top:4px;right:8px}
-  .menu .hm-tabs{max-width:calc(100% - 2 * (var(--sl) + 196px))}
+  .menu .hm-tabs{max-width:calc(100% - 2 * (var(--sl) + 172px))}
 }
 /* home screen size: every home HUD piece is zoomed by --hmz (set by hmZoom in 03-ui.js: 1 on phones and small windows,
    up to 1.6 on big screens; Settings → Graphics → Home screen size) */

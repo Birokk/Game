@@ -68,6 +68,7 @@ async function mediaSet(k, v) {
 async function mediaDel(k) {
   const old = S.media && S.media[k];
   MEDIA.delete(k); if (S.media) { const m = { ...S.media }; delete m[k]; S.media = m; persist(); }
+  if (S.artPos && S.artPos[k]) { const a = { ...S.artPos }; delete a[k]; S.artPos = a; persist(); }   // its framing goes with it (58-artpos.js)
   if (Backend.canEditContent()) Backend.remove(k).catch(() => {});
   if (assetSrc(old)) previewAssets().then(pa => pa && pa.delete(old.slice(2))).catch(() => {});
   try { await DB.del(k); } catch (e) {}
@@ -208,7 +209,7 @@ const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_U
    - the player save: everything else (wallet, owned, bond, settings, ...)
    Locally both go to localStorage; with the cloud on, the save syncs per account and content comes from the server. */
 const KEY = 'prismplaza.v1', CONTENT_KEY = 'prismplaza.content.v1';
-const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts', 'mystery', 'offers'];
+const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts', 'mystery', 'offers', 'artPos'];
 const splitState = st => { const save = {}, content = {}; for (const [k, v] of Object.entries(st)) (CONTENT_KEYS.includes(k) ? content : save)[k] = v; return { save, content }; };
 const CLOUD_CONFIGURED = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 /* the cloud connection; 16-backend.js fills it in when Supabase is configured, otherwise everything stays local */

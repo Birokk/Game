@@ -334,7 +334,7 @@ function renderCampaign() {
       <span class="cmp-sp"></span>
       <button class="btn ghost cmp-towerb" id="cmpTower">${icon('compass')}World map${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `<img class="cmp-wp" src="${wp}" alt=""><i class="cmp-wpshade"></i>` : ''}
+    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `${artImg('camp:bg:' + ch.id, 'cmp-wp')}<i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
       <div class="cmp-field">
         <svg class="cmp-path h" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PH, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PH, false, done)}"/>` : ''}</svg>

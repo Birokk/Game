@@ -4652,3 +4652,32 @@ button.pt-slot:hover{border-color:#fff}
   .adm-crumb{padding:9px 12px;gap:10px;margin-bottom:12px}.adm-ci{width:38px;height:38px}.adm-ct b{font-size:19px}
 }
 @media (max-height:500px) and (orientation:landscape){.adm-crumb .tiny{display:none}.adm-crumb{padding:6px 12px;margin-bottom:8px}}
+
+/* ==========================================================================
+   Wallpaper framing (58-artpos.js): the "Adjust position" popup over the admin panel, its buttons, and the clipping
+   box for zoomed Base / House / Guild wallpapers
+   ========================================================================== */
+.afr{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:20px;background:rgba(6,4,16,.74);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:fade .2s}
+.afr-box{--mh:min(52vh,540px);width:min(1000px,100%);max-height:calc(100dvh - 40px);overflow:auto;display:grid;gap:14px;padding:18px 20px 20px;border-radius:24px;color:#fff;
+  background:linear-gradient(160deg,rgba(40,28,80,.97),rgba(14,10,30,.98));border:1px solid rgba(232,214,255,.22);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.afr-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.afr-note{margin:0}
+.afr-prevs{display:flex;gap:16px;align-items:center;justify-content:center;min-width:0}
+.afr-prev{position:relative;overflow:hidden;border-radius:14px;border:2px solid rgba(232,214,255,.45);background:#0b0818;cursor:grab;touch-action:none;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.afr-prev.main{flex:0 1 auto;width:calc(var(--mh) * var(--r,1.78));max-width:100%;min-width:0}
+.afr-prevs.two .afr-prev.main{max-width:calc(100% - 156px)}
+.afr-prev.phone{flex:none;width:140px;cursor:default;pointer-events:none}
+.afr-prev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.afr-prev.drag{cursor:grabbing;border-color:#ffd6f0}
+.afr-cross{position:absolute;inset:0;pointer-events:none;opacity:.5;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px)),linear-gradient(transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+.afr-tag{position:absolute;left:8px;bottom:8px;padding:2px 9px;border-radius:8px;background:rgba(6,4,16,.72);font:400 10.5px var(--display);letter-spacing:.06em;pointer-events:none}
+.afr-sl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.afr-sl label{display:grid;gap:6px;font:400 12px var(--display);letter-spacing:.06em;color:rgba(255,255,255,.8)}
+.afr-sl label span{display:flex;justify-content:space-between}.afr-sl b{font-weight:400;color:#ffd6f0}
+.afr-sl input{width:100%;accent-color:#e3b6ff}
+.afr-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.afr-sp{flex:1}
+.afr-btns .ic{width:16px;height:16px}
+.afr-btn.on{border-color:rgba(227,182,255,.65);color:#ffd6f0}
+.afr-clip{position:absolute;inset:0;overflow:hidden;display:block}
+.ld-thumb .ld-adj{left:4px;right:auto}.ld-thumb .ld-adj.on{background:var(--cry-grad);color:var(--cry-ink)}
+@media (max-width:640px){.afr{padding:10px}.afr-box{--mh:42vh;padding:14px}.afr-sl{grid-template-columns:1fr;gap:10px}.afr-prevs.two .afr-prev.phone{display:none}.afr-prevs.two .afr-prev.main{max-width:100%}}

@@ -86,7 +86,7 @@ function openOffer(id, preview) {
     const o = list[i], c = offerChar(o), bg = MEDIA.get('offer:bg:' + o.id), png = MEDIA.get('offer:png:' + o.id), left = offerLimit(o) - offerBoughtN(o);
     ofpEl.setAttribute('aria-label', o.name);
     ofpEl.innerHTML = `<div class="ofp-box ${png ? 'cut' : ''}">
-        <div class="ofp-bg">${bg ? `<img src="${bg}" alt="">` : ''}</div>
+        <div class="ofp-bg">${bg ? artImg('offer:bg:' + o.id) : ''}</div>
         ${png ? `<img class="ofp-png" src="${png}" alt="">` : c ? `<span class="ofp-art r${c.rarity}"><img src="${baseCard(c)}" alt="" ${baseArt(c) ? `style="${cardImgStyle(c, 'base')}"` : ''}></span>` : ''}
         <button class="ofp-x" data-ofx aria-label="Close">${icon('close')}</button>
         <div class="ofp-info">
@@ -142,7 +142,7 @@ function renderOffersTab() {
           <span class="lbl-sm">Rewards</span>
           <div class="of-items">${(o.items || []).map((it, j) => itemRow(o, it, j)).join('')}<button class="btn ghost sm" data-ofiadd="${esc(o.id)}">${icon('plus')}Add a reward</button></div>
           <div class="row" style="gap:8px;flex-wrap:wrap">
-            <label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-ofbg="${esc(o.id)}"></label>${bg ? `<button class="btn ghost sm" data-ofbgdel="${esc(o.id)}">Remove wallpaper</button>` : ''}
+            <label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" data-ofbg="${esc(o.id)}"></label>${bg ? `<button class="btn ghost sm" data-ofbgdel="${esc(o.id)}">Remove wallpaper</button>` : ''}${artFrameBtn('offer:bg:' + o.id, 'offer', `${o.name || 'Offer'} wallpaper`)}
             <label class="btn mint sm">${icon('upload')}${png ? 'Replace' : 'Upload'} character PNG<input type="file" accept="image/png,image/webp,image/*" class="sr" data-ofpng="${esc(o.id)}"></label>${png ? `<button class="btn ghost sm" data-ofpngdel="${esc(o.id)}">Remove PNG</button>` : ''}
             <button class="btn ghost sm" data-ofprev="${esc(o.id)}">${icon('eye')}Preview</button>
             <button class="link" data-ofdel="${esc(o.id)}" style="color:${offDelArm === o.id ? '#ff6b81' : ''}">${offDelArm === o.id ? 'Tap again to delete' : 'Delete'}</button></div>

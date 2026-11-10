@@ -287,7 +287,7 @@ const GUILD_SPOTS = [
   { id: 'quests', name: 'Guild Quests', sub: 'Daily · guild EXP', x: 66, y: 44, col: '#6fb8ff', ic: 'quests' }
 ];
 const guildPosDef = id => { const p = GUILD_SPOTS.find(s => s.id === String(id).replace(/^g:/, '')); return p ? { x: p.x, y: p.y } : { x: 50, y: 50 }; };
-function guildBg() { const bg = MEDIA.get('guild:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg gd-bg"></div>'; }
+function guildBg() { const bg = MEDIA.get('guild:bg'); return bg ? artImgClip('guild:bg', 'fm-bg') : '<div class="fm-bg gd-bg"></div>'; }
 function renderGuild() {
   const g = myGuild();
   const cur = `<div class="fm-cur"><div class="cur" title="Guild points">${curIcon('gpts')}<b>${fmt(S.wallet.gpts || 0)}</b></div><div class="cur">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b></div></div>`;

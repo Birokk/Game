@@ -81,7 +81,7 @@ INFO.expedition = () => { const pc = ur => { const w = expPearlW(ur), t = w.redu
     </tbody></table>` }; };
 
 /* the Expedition view of the Base screen */
-function expBg() { const bg = MEDIA.get('exp:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'; }
+function expBg() { const bg = MEDIA.get('exp:bg'); return bg ? artImgClip('exp:bg', 'fm-bg') : '<div class="fm-bg ex-black"></div>'; }
 function expStatus(a) {
   const e = expOf(a.id), c = e && findEntry(e.char);
   if (!e) return { cls: '', html: '<span>Send a character</span>' };

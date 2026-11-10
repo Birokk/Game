@@ -115,7 +115,7 @@ function openFarm(sel) {
   farmTimer = setInterval(() => { if (!fmEl) return clearInterval(farmTimer); if (fmView === 'exp') { farmTick(); updateExpLive(); return; } if (fmView === 'camp') { farmTick(); updateCampLive(); return; } if (fmView === 'house') { farmTick(); updateHouseLive(); return; } if (fmView === 'guild') { farmTick(); return; } if (farmTick()) { renderFarm(); renderMenu(); } else updateFarmLive(); }, 1000);
 }
 function closeFarm() { if (fmEl) { fmEl.remove(); fmEl = null; } clearInterval(farmTimer); renderMenu(); }
-function farmBg() { const bg = MEDIA.get('farm:bg'); return bg ? `<img class="fm-bg" src="${bg}" alt="">` : `<div class="fm-bg">${farmTownSVG()}</div>`; }
+function farmBg() { const bg = MEDIA.get('farm:bg'); return bg ? artImgClip('farm:bg', 'fm-bg') : `<div class="fm-bg">${farmTownSVG()}</div>`; }
 /* what a building's label says under its name */
 function farmStatus(id) {
   const f = farmOf(id), st = farmWhole(id);
@@ -298,40 +298,40 @@ function renderFarmTab() {
   const bg = MEDIA.get('farm:bg');
   p.innerHTML = `<div class="stack">
     <div><h3>Base</h3><p class="tiny">The wallpaper fills the Base screen at 16:9 (best size 1920×1080; it covers the screen and other shapes are cropped). Without one, the drawn default town is used. Drag each label in the preview (or use the sliders) so it sits on its building in your picture.</p></div>
-    <div class="fm-adprev" id="fmPrev">${bg ? `<img src="${bg}" alt="">` : `<div class="fm-bg">${farmTownSVG()}</div>`}
+    <div class="fm-adprev" id="fmPrev">${bg ? artImg('farm:bg') : `<div class="fm-bg">${farmTownSVG()}</div>`}
       ${[...FARM_DEFS, { id: 'fountain', name: 'Fountain' }].map(d => { const q = farmPos(d.id); return `<span class="fm-dot" data-fmdrag="${d.id}" style="left:${q.x}%;top:${q.y}%;--fc:${FARM_COL[d.id]}">${esc(d.name)}</span>`; }).join('')}</div>
-    <div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" id="fmUp"></label>${bg ? '<button class="btn ghost sm" id="fmDel">Use the default town</button>' : ''}<button class="btn ghost sm" id="fmResetPos">Reset label positions</button><button class="btn ghost sm" id="fmOpen">Open the farm</button></div>
+    <div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} wallpaper<input type="file" accept="image/*" class="sr" id="fmUp"></label>${bg ? '<button class="btn ghost sm" id="fmDel">Use the default town</button>' : ''}${artFrameBtn('farm:bg', 'stage', 'Base wallpaper')}<button class="btn ghost sm" id="fmResetPos">Reset label positions</button><button class="btn ghost sm" id="fmOpen">Open the farm</button></div>
     <div class="fm-sliders">${[...FARM_DEFS, { id: 'fountain', name: 'Fountain' }].map(d => { const q = farmPos(d.id); return `<div class="fm-sl" style="--fc:${FARM_COL[d.id]}"><b>${esc(d.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${d.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${d.id}"></label></div>`; }).join('')}</div>
     <div><h3>Expedition</h3><p class="tiny">The Base's second tab. Upload its wallpaper here (1920×1080 best, black without one) and drag each place's label where you want it.</p></div>
     <div class="setx-list ad-art">${adminArtRows('exp')}</div>
-    <div class="fm-adprev" id="exPrev">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+    <div class="fm-adprev" id="exPrev">${MEDIA.get('exp:bg') ? artImg('exp:bg') : '<div class="fm-bg ex-black"></div>'}
       ${EXP_AREAS.map(a => { const q = farmPos('x:' + a.id); return `<span class="fm-dot" data-fmdrag="x:${a.id}" style="left:${q.x}%;top:${q.y}%;--fc:${a.col}">${esc(a.name)}</span>`; }).join('')}</div>
     <div class="fm-sliders">${EXP_AREAS.map(a => { const q = farmPos('x:' + a.id); return `<div class="fm-sl" style="--fc:${a.col}"><b>${esc(a.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="x:${a.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="x:${a.id}"></label></div>`; }).join('')}</div>
     <div><h3>Camp</h3><p class="tiny">The Base's third tab (arrow on the left). Upload its wallpaper here (1920×1080 best, black without one) and drag each place's label where you want it.</p></div>
     <div class="setx-list ad-art">${adminArtRows('camp')}</div>
-    <div class="fm-adprev" id="cpPrev">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+    <div class="fm-adprev" id="cpPrev">${MEDIA.get('camp:bg') ? artImg('camp:bg') : '<div class="fm-bg ex-black"></div>'}
       ${CAMP_PLACES.map(c => { const q = farmPos('c:' + c.id); return `<span class="fm-dot" data-fmdrag="c:${c.id}" style="left:${q.x}%;top:${q.y}%;--fc:${c.col}">${esc(c.name)}</span>`; }).join('')}</div>
     <div class="fm-sliders">${CAMP_PLACES.map(c => { const q = farmPos('c:' + c.id); return `<div class="fm-sl" style="--fc:${c.col}"><b>${esc(c.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="c:${c.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="c:${c.id}"></label></div>`; }).join('')}</div>
     <div><h3>Guild</h3><p class="tiny">The guild screen (home Guild button). Upload its wallpaper (1920×1080 best; without one a dark gradient) and drag the Hall, Shop and Rewards labels.</p></div>
-    <div class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('guild:bg') ? 'Replace' : 'Upload'} guild wallpaper<input type="file" accept="image/*" class="sr" id="gdBgUp"></label>${MEDIA.get('guild:bg') ? '<button class="btn ghost sm" id="gdBgDel">Remove wallpaper</button>' : ''}</div>
-    <div class="fm-adprev" id="gdPrev">${MEDIA.get('guild:bg') ? `<img src="${MEDIA.get('guild:bg')}" alt="">` : '<div class="fm-bg gd-bg"></div>'}
+    <div class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('guild:bg') ? 'Replace' : 'Upload'} guild wallpaper<input type="file" accept="image/*" class="sr" id="gdBgUp"></label>${MEDIA.get('guild:bg') ? '<button class="btn ghost sm" id="gdBgDel">Remove wallpaper</button>' : ''}${artFrameBtn('guild:bg', 'stage', 'Guild wallpaper')}</div>
+    <div class="fm-adprev" id="gdPrev">${MEDIA.get('guild:bg') ? artImg('guild:bg') : '<div class="fm-bg gd-bg"></div>'}
       ${GUILD_SPOTS.map(c => { const q = farmPos('g:' + c.id); return `<span class="fm-dot" data-fmdrag="g:${c.id}" style="left:${q.x}%;top:${q.y}%;--fc:${c.col}">${esc(c.name)}</span>`; }).join('')}</div>
     <div class="fm-sliders">${GUILD_SPOTS.map(c => { const q = farmPos('g:' + c.id); return `<div class="fm-sl" style="--fc:${c.col}"><b>${esc(c.name)}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="g:${c.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="g:${c.id}"></label></div>`; }).join('')}</div>
     <div><h3>House</h3><p class="tiny">The House tab (its own button on the home screen). Upload the wallpaper (1920×1080 best, black without one) and a picture for each house (PNG with a transparent background works best). Drag each house on the preview, and set how wide its picture is.</p></div>
-    <div class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('house:bg') ? 'Replace' : 'Upload'} House wallpaper<input type="file" accept="image/*" class="sr" id="hsBgUp"></label>${MEDIA.get('house:bg') ? '<button class="btn ghost sm" id="hsBgDel">Remove wallpaper</button>' : ''}<button class="btn ghost sm" id="hsOpen">Open the House tab</button></div>
-    <div class="fm-adprev" id="hsPrev">${MEDIA.get('house:bg') ? `<img src="${MEDIA.get('house:bg')}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+    <div class="row"><label class="btn mint sm">${icon('upload')}${MEDIA.get('house:bg') ? 'Replace' : 'Upload'} House wallpaper<input type="file" accept="image/*" class="sr" id="hsBgUp"></label>${MEDIA.get('house:bg') ? '<button class="btn ghost sm" id="hsBgDel">Remove wallpaper</button>' : ''}${artFrameBtn('house:bg', 'stage', 'House wallpaper')}<button class="btn ghost sm" id="hsOpen">Open the House tab</button></div>
+    <div class="fm-adprev" id="hsPrev">${MEDIA.get('house:bg') ? artImg('house:bg') : '<div class="fm-bg ex-black"></div>'}
       ${HOME_HOUSES.map(h => { const q = farmPos('h:' + h.id), img = MEDIA.get('house:' + h.id); return `<span class="fm-dot hs-dot" data-fmdrag="h:${h.id}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col};--hw:${houseW(h.id)}">${img ? `<img src="${img}" alt="">` : ''}<span class="hs-dn">${esc(h.name)}</span></span>`; }).join('')}</div>
     <div class="fm-sliders">${HOME_HOUSES.map(h => { const q = farmPos('h:' + h.id), img = MEDIA.get('house:' + h.id); return `<div class="fm-sl hs-sl" style="--fc:${h.col}"><b>${esc(h.name)}</b>
       <span class="row" style="gap:6px"><label class="btn ghost sm">${icon('upload')}${img ? 'Replace' : 'Upload'} picture<input type="file" accept="image/*" class="sr" data-hsup="${h.id}"></label>${img ? `<button class="btn ghost sm" data-hsdel="${h.id}">Remove</button>` : ''}</span>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="h:${h.id}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="h:${h.id}"></label><label>Width <input type="range" min="6" max="45" step=".5" value="${houseW(h.id)}" data-hsw="${h.id}"></label></div>`; }).join('')}</div>
     <div><h3>Inside the houses</h3><p class="tiny">Tapping an owned house takes the player inside it. Pick a house, upload its inside wallpaper (1920×1080 best, black without one) and drag each room's card to where the character should stand.</p></div>
     <div class="row chips">${HOME_HOUSES.map(h => `<button class="chip ${hsAdmIn === h.id ? 'on' : ''}" data-hsin="${h.id}">${esc(h.name)} · ${h.slots}</button>`).join('')}</div>
-    ${(() => { const h = houseOf(hsAdmIn), bg = MEDIA.get('house:in:' + h.id); return `<div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} inside wallpaper<input type="file" accept="image/*" class="sr" id="hiUp"></label>${bg ? '<button class="btn ghost sm" id="hiDel">Remove</button>' : ''}</div>
-    <div class="fm-adprev" id="hiPrev">${bg ? `<img src="${bg}" alt="">` : '<div class="fm-bg ex-black"></div>'}
+    ${(() => { const h = houseOf(hsAdmIn), bg = MEDIA.get('house:in:' + h.id); return `<div class="row"><label class="btn mint sm">${icon('upload')}${bg ? 'Replace' : 'Upload'} inside wallpaper<input type="file" accept="image/*" class="sr" id="hiUp"></label>${bg ? '<button class="btn ghost sm" id="hiDel">Remove</button>' : ''}${artFrameBtn('house:in:' + h.id, 'stage', `${h.name} inside wallpaper`)}</div>
+    <div class="fm-adprev" id="hiPrev">${bg ? artImg('house:in:' + h.id) : '<div class="fm-bg ex-black"></div>'}
       ${Array.from({ length: h.slots }, (_, i) => { const k = `hr:${h.id}:${i}`, q = farmPos(k); return `<span class="fm-dot hr-dot" data-fmdrag="${k}" style="left:${q.x}%;top:${q.y}%;--fc:${h.col}"><i></i><span class="hs-dn">Room ${i + 1}</span></span>`; }).join('')}</div>
     <div class="fm-sliders">${Array.from({ length: h.slots }, (_, i) => { const k = `hr:${h.id}:${i}`, q = farmPos(k); return `<div class="fm-sl" style="--fc:${h.col}"><b>Room ${i + 1}</b>
       <label>X <input type="range" min="2" max="98" step=".5" value="${q.x}" data-fmx2="${k}"></label><label>Y <input type="range" min="4" max="96" step=".5" value="${q.y}" data-fmy2="${k}"></label></div>`; }).join('')}</div>`; })()}
