@@ -1,8 +1,8 @@
 /* =========================================================
    BATTLE: one home gate for every fight. The owner asked for a "Battle" button instead of the Raids and Card Battle
    gates, with a reference of a gacha Battle screen (tall illustrated mode cards in a row, tabs on top). openBattle()
-   is a full-screen screen (.bth) with five tall cards: Campaign (the chapter you're in), Raids, The Great Tree (the floor
-   you're on), Quick Match and the World Map, each with a red dot when something waits.
+   is a full-screen screen (.bth) with six tall cards: Campaign (the chapter you're in), Raids, The Great Tree (the floor
+   you're on), Quick Match, the World Map and the Guild Boss (59-gboss.js), each with a red dot when something waits.
    Each card's wallpaper is set in admin → Battle screen (media key battle:<id>, portrait 720×1280 best; it covers
    the card), else the drawn scene in BTH_ART. A screen opened from here comes back here when it closes (bthBack,
    bthHome).
@@ -15,7 +15,8 @@ const BTH_MODES = [
   { id: 'raids', name: 'Raids', kind: 'Gear & gold', ic: 'raid', col: '#c9a6ff', col2: '#7a4cff' },
   { id: 'tree', name: 'The Great Tree', kind: 'Card Battle · Climb', ic: 'tree', col: '#9fe6ff', col2: '#7ee0a8' },
   { id: 'quick', name: 'Quick Match', kind: 'Card Battle · Versus', ic: 'bolt', col: '#ffe3a0', col2: '#ff9ac8' },
-  { id: 'world', name: 'World Map', kind: 'Card Battle · Regions', ic: 'compass', col: '#f1e2bd', col2: '#b48a52' }
+  { id: 'world', name: 'World Map', kind: 'Card Battle · Regions', ic: 'compass', col: '#f1e2bd', col2: '#b48a52' },
+  { id: 'gboss', name: 'Guild Boss', kind: 'Card Battle · Guild', ic: 'dragon', col: '#ffb07a', col2: '#e0384f' }
 ];
 /* the drawn scene of a card: BTH_ART, or for the World Map the parchment map itself (WM_SVG, centred on the tree) */
 const bthScene = id => id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
@@ -31,6 +32,8 @@ function bthInfo(id) {
   if (id === 'raids') return { sub: `${RAIDS.length} dungeons`, line: `${curIcon('stamina')}${stamina()} / ${stamMax()} stamina`, dot: false };
   if (id === 'tree') { const L = ccTowerFloors(), f = next(L) || L[L.length - 1];   // the floor you're on (never how many there are)
     return { sub: `Floor ${f.no}`, line: `${icon('tree')}${esc(f.name)}`, dot: ccTowerReady() }; }
+  if (id === 'gboss') { if (!inGuild()) return { sub: 'Join a guild', line: `${icon('guild')}Fight it with your guild`, dot: false };
+    const bd = gbBoard(); return { sub: `Level ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP`, line: `${icon('swords')}${gbLeft()} of ${GB_TRIES} battles left`, dot: gbReady() || gbClaimable(bd).length > 0 }; }
   if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
     return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
   const st = ccSave().stats;
@@ -46,11 +49,11 @@ function closeBattle() { if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = 
 /* a screen opened from the Battle screen calls this when it closes: back to Battle, unless another screen took over */
 function bthHome() {
   renderMenu(); if (!bthBack) return;
-  setTimeout(() => { if (bthBack && !bthEl && !cmpEl && !raidEl && !twrEl && !wmEl && !ccdEl && !qmEl && !ccM) openBattle(); }, 0);
+  setTimeout(() => { if (bthBack && !bthEl && !cmpEl && !raidEl && !twrEl && !wmEl && !ccdEl && !qmEl && !gbEl && !ccM) openBattle(); }, 0);
 }
 function bthGo(id) {
   if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = true;
-  if (id === 'campaign') openCampaign(); else if (id === 'raids') openRaids(); else if (id === 'quick') openQuickMatch(); else if (id === 'world') openWorld(); else openTower();
+  if (id === 'campaign') openCampaign(); else if (id === 'raids') openRaids(); else if (id === 'quick') openQuickMatch(); else if (id === 'world') openWorld(); else if (id === 'gboss') openGuildBoss(); else openTower();
 }
 function bthCard(m, i) {
   const x = bthInfo(m.id);
@@ -89,7 +92,8 @@ INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in on
   <li><b>Raids</b>: spend stamina in the gear raids for clothes, or in the Golden Vault for gold.</li>
   <li><b>The Great Tree</b>: climb floor by floor with your own deck; each cleared floor opens the next. Stars give pearls, there are no milestone rewards.</li>
   <li><b>Quick Match</b>: a mirror match against a bot with one of your decks, for gold, a pearl and a chance at gear when you win.</li>
-  <li><b>World Map</b>: the regions around the Great Tree. Only the tree is open for now.</li></ul>` });
+  <li><b>World Map</b>: the regions around the Great Tree. Only the tree is open for now.</li>
+  <li><b>Guild Boss</b>: a dragon your whole guild fights together, ${GB_TRIES} battles every 48 hours, with rewards by the damage you deal.</li></ul>` });
 
 /* admin → Battle screen: a wallpaper per card (portrait; it covers the card) and the campaign chapter wallpapers */
 function renderBattleTab() {
@@ -100,6 +104,7 @@ function renderBattleTab() {
       <span class="bth-adpic">${u ? artImg('battle:' + m.id) : bthScene(m.id)}</span><b>${esc(m.name)}</b><small>${u ? 'Your wallpaper' : 'Drawn default'}</small>
       <span class="row" style="gap:6px;justify-content:center"><label class="btn mint sm">${icon('upload')}${u ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-btup="${m.id}"></label>${u ? `<button class="btn ghost sm" data-btdel="${m.id}">Default</button>` : ''}</span>${artFrameBtn('battle:' + m.id, 'card', `${m.name} card`)}</div>`; }).join('')}</div>
     <div class="row"><button class="btn ghost sm" id="bthAdOpen">${icon('swords')}Open the Battle screen</button></div>
+    ${gbAdminHTML()}
     <div><h3>Campaign chapter wallpapers</h3><p class="tiny">Each chapter's map on the campaign screen (only inside the map panel, 1920×1080 best). Default: the night sky.</p></div>
     <div class="setx-list ad-art">${adminArtRows('campaign')}</div>
   </div>`;
@@ -108,4 +113,5 @@ function renderBattleTab() {
   p.querySelectorAll('[data-btdel]').forEach(b => b.onclick = async () => { await mediaDel('battle:' + b.dataset.btdel); redo(); toast('Card back to the drawn scene.'); });
   p.querySelector('#bthAdOpen').onclick = () => { closeModal(); openBattle(); };
   bindAdminArt(p, renderBattleTab);
+  gbAdminBind(p, redo);
 }

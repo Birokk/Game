@@ -302,11 +302,11 @@ function ccReveal(a, done) {
 function ccIntro(done) {
   const L = ccLayer(); if (!L) return done();
   const G = ccM.G, le = ccM.leader, lart = le && mediaArt(le), w = lart ? null : avatarEntry() || wallpaperInfo(), art = !!lart || (!!w && wpHasArt(w)), src = lart || (w ? wpSrc(w) : portrait(S.player.look, 4));   // your deck's leader, else your avatar
-  const foe = ccM.foe, foeArt = foe && baseArt(foe);
+  const foe = ccM.foe, foeArt = ccM.boss ? gbArt() : foe && baseArt(foe);
   const el = document.createElement('div'); el.className = 'ccx-intro';
   el.innerHTML = `<i class="cci-bg"></i>
     <div class="cci-side me"><div class="cci-art">${art ? `<img src="${src}" alt="">` : `<span class="cci-ava">${avatarHTML(220)}</span>`}</div><div class="cci-name"><small>${esc(ccM.deck.name)}</small><b>${esc(G.names[0])}</b></div></div>
-    <div class="cci-side op"><div class="cci-art">${foeArt ? `<img src="${foeArt}" alt="">` : foe ? `<span class="cci-ava foe">${baseThumb(foe)}</span>` : `<span class="cci-bot">${ccIco('bot')}</span>`}</div><div class="cci-name"><small>Bot · mirror deck</small><b>${esc(G.names[1])}</b></div></div>
+    <div class="cci-side op"><div class="cci-art">${foeArt ? `<img src="${foeArt}" alt="">` : foe ? `<span class="cci-ava foe">${baseThumb(foe)}</span>` : `<span class="cci-bot">${ccIco('bot')}</span>`}</div><div class="cci-name"><small>${ccM.boss ? `Guild boss · ${fmt(G.players[1].hp)} HP` : 'Bot · mirror deck'}</small><b>${esc(G.names[1])}</b></div></div>
     <i class="cci-cut"></i><b class="cci-vs">VS</b>`;   // who goes first is decided by the coin flip that follows (ccCoinFlip)
   L.appendChild(el);
   ccLater(520, () => { ccShake(9, 420); ccGlow(800, 450, 'rgba(255,230,250,.95)', 420, 26); ccBurst(800, 450, { n: 90, c: ['#fff', '#ffd9f4', '#c9a6ff', '#ffe9b0'], sp: 13, g: .06, life: 40 }); ccRing(800, 450, '#ffe9fb', { r0: 40, r1: 520, w: 8, life: 34 }); });   // the burst comes out of the VS (centred at 800, 450)

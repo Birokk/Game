@@ -93,4 +93,5 @@ function artPosRefresh() {
   if (evEl) run(renderEvents);
   if (fmEl) run(renderFarm);
   if (titleOn) run(renderTitle);
+  if (gbEl) run(renderGB);
 }

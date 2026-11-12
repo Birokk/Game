@@ -25,7 +25,7 @@ const ADMIN_NAV = [
     ['offers', 'Special offers', 'gift', 'first top-up bundles offer popup', 'Time-limited offers: when they sell, their rewards and their pictures'],
     ['shopart', 'Shop pictures', 'shop', 'top up icons membership cards pearl packs', 'Top Up pack pictures and the membership cards']] },
   { g: 'Modes & places', ic: 'swords', items: [
-    ['battle', 'Battle screen', 'swords', 'campaign raids great tree quick match card wallpapers chapter', 'The Battle screen cards and the campaign chapter wallpapers'],
+    ['battle', 'Battle screen', 'swords', 'campaign raids great tree quick match card wallpapers chapter guild boss dragon', 'The Battle screen cards, the guild boss and the campaign chapter wallpapers'],
     ['raids', 'Raids', 'raid', 'dungeons wallpaper gear sets golden vault', 'Raid wallpapers and the pieces of every raid set'],
     ['farm:base', 'Base town', 'farm', 'buildings fountain labels wallpaper town', 'The Base wallpaper and where each building label sits'],
     ['farm:exp', 'Expedition', 'compass', 'places wallpaper expedition labels', 'The Expedition wallpaper and its five places'],
@@ -537,12 +537,18 @@ function renderBannersTab() {
 }
 
 /* icons tab */
+/* every icon slot: the groups above, then any built-in icon not in a group (so a new icon is always editable) */
+function iconSlotsAll() {
+  const seen = new Set(); const groups = ICON_SLOTS.map(([g, L]) => [g, L.filter(([k]) => !seen.has(k) && seen.add(k))]);
+  const rest = Object.keys(ICONS).filter(k => !seen.has(k)).map(k => [k, k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())]);
+  return rest.length ? [...groups, ['Other icons', rest]] : groups;
+}
 function renderIconsTab() {
   $('#adPanel').innerHTML = `<p class="tiny">Upload your own image for any icon. Square PNG or SVG with a transparent background works best; images are scaled to 128px. Reset puts the default back.</p>
-    ${ICON_SLOTS.map(([group, slots]) => `<h3 style="margin-top:16px">${group}</h3><div class="icon-grid">${slots.map(([k, label]) => {
-      const custom = !!customIcon(k);
+    ${iconSlotsAll().map(([group, slots]) => `<h3 style="margin-top:16px">${group}</h3><div class="icon-grid">${slots.map(([k, label]) => {
+      const custom = !!MEDIA.get('icon:' + k), borrowed = !custom && !!customIcon(k);
       return `<div class="islot"><div class="iprev">${CUR_SVG[k] ? curIcon(k) : icon(k)}</div>
-        <div class="iname">${label}<span class="${custom ? 'cust' : ''}">${custom ? 'Custom' : 'Default'}</span></div>
+        <div class="iname">${label}<span class="${custom ? 'cust' : ''}">${custom ? 'Custom' : borrowed ? `Uses the ${ICON_ALIAS[k]} picture` : 'Default'}</span></div>
         <div class="acts"><label class="btn ghost sm">Upload<input type="file" accept="image/*" class="sr" data-iup="${k}"></label>${custom ? `<button class="btn ghost sm" data-ireset="${k}" aria-label="Reset ${label} icon">Reset</button>` : ''}</div></div>`;
     }).join('')}</div>`).join('')}`;
   document.querySelectorAll('[data-iup]').forEach(inp => inp.onchange = async () => {

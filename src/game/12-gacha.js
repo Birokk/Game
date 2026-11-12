@@ -291,64 +291,121 @@ function openSummon(bk) {
   }
   renderSummon();
 }
-function closeSummon() { if (smEl) { smEl.remove(); smEl = null; } }
+function closeSummon() { if (smEl) { smEl.remove(); smEl = null; } closeProb(); }
 function refreshSummon() { if (smEl) renderSummon(); }
+/* The summon screen (remade after the owner sent a "Draw Costume" screen as a reference). The owner's splash arts are
+   full-screen 16:9 pictures, so text laid over them would cover faces: the banner's UR art is shown WHOLE in a framed
+   16:9 panel (.smx-card) and every word sits beside it in the info column (.smx-info), never on the art. Layout: header
+   (back, Summon pill, Draw record, Shop, ? = Probability, currencies), the banner tabs as a rail on the left, the framed
+   art + info column in the middle, the milestones bottom left and Skip + the pull buttons bottom right. Behind it all a
+   blurred, darkened copy of the same art. Portrait phones stack: tabs row, art, info, then the buttons pinned below. */
+const SMX_DESC = {
+  limited: f => `The chance to get <b>${esc(f.name)}</b> is boosted: every UR you get is a 50/50 for <b>${esc(f.name)}</b>, and after a lost 50/50 the next UR is <b>${esc(f.name)}</b>.`,
+  weekly: f => `A new UR every Monday. This week: <b>${esc(f.name)}</b>, with a 50/50 on every UR you get.`,
+  skins: f => f ? `Outfits only. Every UR outfit you get is a 50/50 for <b>${esc(f.name)}</b>.` : 'Outfits only: every UR outfit on this banner is equally likely.',
+  memories: () => 'Memories only, at <b>double</b> the UR and SSR rates. A free UR memory at 50 pulls.',
+  standard: () => 'Every permanent UR is equally likely. Milestone rewards every 100 pulls, up to 600.'
+};
 function renderSummon() {
   if (!smEl) return;
   if (!bannerKeys().includes(curBanner)) curBanner = 'limited';   // the Beginner Wish is gone once finished
   const bk = curBanner, g = S.gacha[bk], B = bannerInfo(bk), f = B.feat;
-  // lineup: the featured UR in the middle with SSRs beside it, or the banner's URs
+  // lineup for banners without uploaded art: the featured UR in the middle with SSRs beside it, or the banner's URs
   let line = f ? [f] : B.ur.slice(0, 5);
   if (f) { const side = B.ssr.filter(e => B.skins || e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
   const mid = f ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
-  const left = HARD_PITY - g.pity5;
-  const tabArt = e => e ? `<img src="${baseSplash(e)}" alt="" class="${baseArt(e) ? '' : 'chibi'}">` : '';
-  const dotFor = k => canPull(10, k) || freeReady(k) ? '<span class="dot-n"></span>' : '', dot = dotFor(bk);
-  // a hero with uploaded art fills the screen; chibis stand in a lineup
+  const left = HARD_PITY - g.pity5, what = B.skins ? 'outfit' : B.mems ? 'memory' : 'character';
+  const dotFor = k => canPull(10, k) || freeReady(k) ? '<span class="dot-n"></span>' : '';
   const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
-    return `<button class="sx-tab ${I.kind === 'feat' ? 'lim' : ''} ${on ? 'on' : ''}" data-bk="${k}">${TAB_IC[k] ? `<span class="sx-tab-ic ${k}" title="${TAB_IC[k][1]}">${TAB_IC[k][0]}</span>` : ''}<small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small>${tabArt(art)}<b>${esc(I.feat ? I.feat.name : bannerName(k))}${I.feat && !I.skins ? (I.step ? '<br>Step-Up' : '<br>Summon') : ''}</b>${dotFor(k)}</button>`; };
-  const what = B.skins ? 'outfit' : B.mems ? 'memory' : 'character';
-  smEl.className = 'sx r5';
-  smEl.innerHTML = `<div class="sx-word">${B.word}</div>
-    ${heroArt ? `<img class="cs-blur" src="${heroArt}" alt=""><img class="sx-hero" src="${heroArt}" alt="${esc(hero.name)}">` : ''}
-    <div class="sx-line" ${heroArt ? 'hidden' : ''}>${line.map((e, i) => `<div class="sx-fig ${i === mid ? 'main' : ''} ${baseArt(e) ? 'art' : 'chibi'}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${baseSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>
-    <div class="sx-fade"></div><div class="sx-vig"></div>
-    <div class="sx-top"><button class="cs-back" id="sxBack">${icon('back')}Back</button><button class="cs-help" id="sxHelp" aria-label="Rates and rules">?</button></div>
-    <div class="sx-cur">${(bk === 'stepup' ? ['pearls'] : [TK(bk), 'pearls']).map(k => `<div class="cur" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
-    <nav class="sx-tabs" aria-label="Banners">${bannerKeys().map(tab).join('')}</nav>
-    <div class="sx-title">${isSpecial(bk) ? specialTitleHTML(B, hero) : `
-      <h2>${esc(B.title)}</h2>
-      ${line.length ? `<p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
-      <p>Guaranteed <span class="u">UR</span> ${f && g.guarantee ? `<span class="g">${esc(f.name)}</span>` : what}</p>
-      ${f ? `<span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`}</span>${B.ends ? `<span class="lim-time">${icon('clock')}${B.bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : ''}${B.note ? `<span class="chip">${B.note}</span>` : ''}`
-        : `<span class="chip">${B.ur.length} UR ${what === 'memory' ? 'memories' : what + 's'} · equal chance each${B.ends ? ` · ends in ${shortLeft(B.ends)}` : ' · always open'}</span><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div>`}`
-      : `<p>${B.skins ? 'No UR outfits on this banner yet.' : B.mems ? 'No UR memories yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : B.mems ? 'memories' : 'banners'}">${icon('wrench')}Set it up in admin</button>`}`}
-    </div>
-    <div class="sx-rule"></div>
-    <div class="sx-bl">
-      <button class="sx-rb ts" id="sxRates"><span class="c">${icon('info')}</span>Rates</button>
-      <button class="sx-rb ts" id="sxHist"><span class="c">${icon('clock')}</span>History</button>
-      <button class="sx-rb ts" data-open="shop"><span class="c">${icon('shop')}</span>Shop</button>
-      ${isSpecial(bk) ? '' : `<button class="sx-rb ts" id="sxPts" title="Summon points: 1 per pull, spend ${PT_PRICE} in the shop"><span class="c">${curIcon(PT_FEAT.includes(bk) && ptKey(bk) ? 'spt' : 'sptp')}</span>Points<small class="sx-ptn">${fmt(ptOf(PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm'))}</small></button>`}
-    </div>
-    ${MILES[bk] ? milestoneBtn(bk) : ''}
-    <label class="sx-skip ts"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
-    <div class="sx-br">${isSpecial(bk) ? specialPullHTML(bk) : `
-      ${freeReady(bk) ? `<button class="sx-pull free" id="sxFree">Free daily pull<span class="dot-n"></span></button>` : ''}
-      <button class="sx-pull" data-pull="1">Summon 1 ${payHTML(1, bk)}</button>
-      <button class="sx-pull gold" data-pull="10">Summon 10 ${payHTML(10, bk)}${dot}</button>`}
-    </div>`;
-  $('#sxBack').onclick = closeSummon;
+    return `<button class="smx-tab ${on ? 'on' : ''}" data-bk="${k}" aria-pressed="${on}">${art ? `<img src="${baseSplash(art)}" alt="" class="${baseArt(art) ? '' : 'chibi'}">` : ''}<i class="smx-tsh"></i>
+      ${TAB_IC[k] ? `<span class="smx-tic ${k}" title="${TAB_IC[k][1]}">${TAB_IC[k][0]}</span>` : ''}<small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small><b>${esc(I.feat ? I.feat.name : bannerName(k))}</b>${dotFor(k)}</button>`; };
+  const pts = PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm';
+  const owned = e => { if (!e || !S.owned[e.id]) return 'Not owned yet'; return hasStars(e) ? `Owned · ${starsOf(e.id)}★` : 'Owned'; };
+  const time = B.ends ? `<span class="smx-time">${icon('clock')}${bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : '';
+  const pity = `<div class="smx-pity"><div class="smx-pl"><span>${icon('sparkle')}<span class="u">UR</span> guaranteed in</span><b>${left}</b><small>${left === 1 ? 'pull' : 'pulls'}</small></div>
+      <span class="smx-bar"><i style="width:${g.pity5 / HARD_PITY * 100}%"></i></span><small class="smx-pn">UR pity ${g.pity5} / ${HARD_PITY} · SSR or higher at least once every 10 pulls</small></div>`;
+  const chips = B.ur.length > 1 && !f ? `<div class="smx-chips"><small>Shown on the banner</small><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div></div>` : '';
+  let info;
+  if (isSpecial(bk)) info = smxSpecial(B, hero, chips);
+  else if (!line.length) info = `<small class="smx-kind">${B.tab}</small><h2 class="smx-name">${esc(B.title)}</h2><p class="smx-desc">${B.skins ? 'No UR outfits on this banner yet.' : B.mems ? 'No UR memories yet.' : 'No UR on this banner yet.'}</p><button class="btn ghost sm" data-open="admin" data-adtab="${B.skins ? 'skins' : B.mems ? 'memories' : 'banners'}">${icon('wrench')}Set it up in admin</button>`;
+  else info = `<h2 class="smx-name ${f ? 'r5' : ''}">${esc(f ? f.name : B.title)}</h2>
+      ${f ? `<span class="smx-sub">${esc(B.title)}</span>` : ''}
+      <p class="smx-desc">${(SMX_DESC[bk] || SMX_DESC.standard)(f)}</p>
+      ${f ? `<div class="smx-fc"><span class="smx-fic">${baseThumb(f)}</span>${rtag(5)}<span class="smx-fct"><b>${esc(f.name)}</b><small>${owned(f)}</small></span>
+        <span class="smx-gt ${g.guarantee ? 'on' : ''}">${g.guarantee ? `${icon('check')}Next UR is ${esc(f.name)}` : '50/50 on your next UR'}</span></div>` : chips}
+      ${pity}
+      <div class="smx-meta">${time}${B.note && !f ? `<span class="smx-time">${B.note}</span>` : ''}
+        <button class="smx-pts" id="sxPts" title="Summon points: 1 per pull, spend ${PT_PRICE} in the shop">${curIcon(pts === 'perm' ? 'sptp' : 'spt')}<span>Points <b>${fmt(ptOf(pts))}</b></span><em>Exchange</em></button></div>`;
+  smEl.className = 'smx';
+  smEl.dataset.bk = bk;
+  smEl.innerHTML = `<div class="smx-bg" aria-hidden="true">${heroArt ? `<img src="${heroArt}" alt="">` : ''}<i></i><span class="smx-word">${B.word}</span></div>
+    <header class="smx-head">
+      <button class="smx-back" id="sxBack" aria-label="Back">${icon('back')}</button>
+      <div class="inv-title"><span class="inv-badge">${icon('sparkle')}</span><h2 class="ts">Summon</h2></div>
+      <button class="smx-link" id="sxHist">${icon('clock')}<span>Draw record</span></button>
+      <button class="smx-link" data-open="shop">${icon('shop')}<span>Shop</span></button>
+      <span class="smx-sp"></span>
+      <div class="smx-cur">${(bk === 'stepup' ? ['pearls'] : [TK(bk), 'pearls']).map(k => `<div class="cur" data-k="${k}" title="${k === 'pearls' ? 'Pearls' : `${TK_NAME[k]}s: 1 ticket = 1 pull on this banner`}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'pearls' ? 'shop' : 'buytickets'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} data-tkbk="${bk}" aria-label="Get more ${k}">${icon('plus')}</button></div>`).join('')}</div>
+    </header>
+    <nav class="smx-tabs" aria-label="Banners">${bannerKeys().map(tab).join('')}</nav>
+    <section class="smx-stage"><div class="smx-show">
+      <div class="smx-card ${heroArt ? '' : 'noart'}">
+        ${heroArt ? `<img class="smx-art" src="${heroArt}" alt="${esc(hero.name)}">` : !line.length || isSpecial(bk) && !hero ? `<div class="smx-empty">${icon('sparkle')}<span>${B.word}</span></div>` : `<div class="smx-line">${line.map((e, i) => `<div class="smx-fig ${i === mid ? 'main' : ''}" style="--i:${Math.abs(i - mid)};z-index:${10 - Math.abs(i - mid)}"><img src="${baseSplash(e)}" alt="${esc(e.name)}"></div>`).join('')}</div>`}
+        <i class="smx-csh"></i><i class="smx-gl"></i>
+      </div>
+      <aside class="smx-info"><div class="smx-itop"><span class="smx-rib">${B.word}${f ? ' · Rate up' : ''}</span><button class="smx-prob" id="sxRates">${icon('info')}<span>Probability</span>${icon('plus')}</button></div>${info}</aside>
+    </div></section>
+    <footer class="smx-foot">
+      <div class="smx-fl">${MILES[bk] ? milestoneBtn(bk) : ''}</div>
+      <label class="smx-skip"><input type="checkbox" id="sxSkip" ${S.settings.skipPull ? 'checked' : ''}><i></i>Skip</label>
+      <div class="smx-fr">
+        ${isSpecial(bk) ? smxSpecialPull(bk) : `
+        ${freeReady(bk) ? `<button class="smx-go free" id="sxFree"><b>Free pull</b><small>Once a day</small><span class="dot-n"></span></button>` : ''}
+        <button class="smx-go one" data-pull="1"><b>Summon ×1</b>${payHTML(1, bk)}</button>
+        <button class="smx-go ten" data-pull="10"><span class="smx-tag"><span class="l">SSR or higher guaranteed</span><span class="s">SSR+ guaranteed</span></span><b>Summon ×10</b>${payHTML(10, bk)}${dotFor(bk)}</button>`}
+      </div>
+    </footer>`;
+  const q = s => smEl.querySelector(s);
+  q('#sxBack').onclick = closeSummon;
   smEl.querySelectorAll('[data-focus]').forEach(b => b.onclick = () => { smFocus = +b.dataset.focus; renderSummon(); });
-  smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { curBanner = b.dataset.bk; smFocus = 0; renderSummon(); });
+  smEl.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { if (b.dataset.bk === bk) return; curBanner = b.dataset.bk; smFocus = 0; renderSummon(); });
   smEl.querySelectorAll('[data-pull]').forEach(b => b.onclick = () => doPull(+b.dataset.pull, bk));
-  const fr = $('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
-  $('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
-  $('#sxRates').onclick = $('#sxHelp').onclick = () => openRates(bk);
-  const ms = $('#sxMile'); if (ms) ms.onclick = e => { const b = e.target.closest('[data-mile]'), m = b && +b.dataset.mile; if (m && mileN('standard') >= m && !stdMiles().includes(m)) return claimStdMile(m); confirmMilestone(ms.dataset.mbk); };
-  $('#sxHist').onclick = () => openRates(bk, true);
-  const pb = $('#sxPts'); if (pb) pb.onclick = () => openShop('points:' + (PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm'));
+  const fr = q('#sxFree'); if (fr) fr.onclick = () => doPull(1, bk, true);
+  q('#sxSkip').onchange = e => { S.settings.skipPull = e.target.checked; persist(); };
+  q('#sxRates').onclick = () => openProb(bk);
+  const ms = q('#sxMile'); if (ms) ms.onclick = e => { const b = e.target.closest('[data-mile]'), m = b && +b.dataset.mile; if (m && mileN('standard') >= m && !stdMiles().includes(m)) return claimStdMile(m); confirmMilestone(ms.dataset.mbk); };
+  q('#sxHist').onclick = () => openDrawRecord(bk);
+  const pb = q('#sxPts'); if (pb) pb.onclick = () => openShop('points:' + pts);
+  const on = q('.smx-tab.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+/* the info column of the Beginner Wish (pulls left, the 3 URs of pull 50) and the Step-Up (the 7 steps) */
+function smxSpecial(B, hero, chips) {
+  const setup = `<button class="btn ghost sm" data-open="admin" data-adtab="banners">${icon('wrench')}Set it up in admin</button>`;
+  if (B.begin) {
+    const left = beginLeft(), n = BEGIN_PULLS - left;
+    if (!B.ur.length) return `<small class="smx-kind">Beginner</small><h2 class="smx-name">${esc(B.title)}</h2><p class="smx-desc">No UR characters chosen for pull ${BEGIN_PULLS} yet.</p>${setup}`;
+    return `<small class="smx-kind">Beginner · ×10 only · 20% off</small><h2 class="smx-name">${esc(B.title)}</h2>
+      <p class="smx-desc">Pull <b>${BEGIN_PULLS}</b> is a guaranteed <span class="u">UR</span> character, one of the ${B.ur.length} below. No UR characters drop before it, but UR memories can.</p>
+      <div class="smx-chips"><small>Pull ${BEGIN_PULLS} gives one of</small><div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div></div>
+      <div class="smx-pity"><div class="smx-pl"><span>${icon('sparkle')}Pulls left</span><b>${left}</b><small>of ${BEGIN_PULLS}</small></div><span class="smx-bar"><i style="width:${n / BEGIN_PULLS * 100}%"></i></span></div>`;
+  }
+  const f = B.feat, g = stepState(), st = g.step || 0;
+  if (!f) return `<small class="smx-kind">Step-Up</small><h2 class="smx-name">${esc(B.title)}</h2><p class="smx-desc">No rate-up character set yet.</p>${setup}`;
+  const k = n => n >= 1000 ? (n / 1000) + 'k' : n;
+  return `<small class="smx-kind">Step-Up · pearls only · characters only</small><h2 class="smx-name r5">${esc(f.name)}</h2><span class="smx-sub">${esc(B.title)}</span>
+    <p class="smx-desc">${st >= STEP_N ? 'All 7 steps done.' : `Step <b>${st + 1}</b> of ${STEP_N}.`} Step 7 guarantees <b>${esc(f.name)}</b>; every step gives gold.</p>
+    <div class="smx-fc"><span class="smx-fic">${baseThumb(f)}</span>${rtag(5)}<span class="smx-fct"><b>${esc(f.name)}</b><small>${S.owned[f.id] ? `Owned · ${starsOf(f.id)}★` : 'Not owned yet'}</small></span><span class="smx-gt ${g.guarantee ? 'on' : ''}">${g.guarantee ? `${icon('check')}Next UR is ${esc(f.name)}` : '50/50 on your next UR'}</span></div>
+    <div class="stp" role="list" aria-label="Steps">${STEP_COST.map((c, i) => `<div class="stp-n ${i < st ? 'done' : i === st ? 'on' : ''} ${STEP_PERK[i] ? 'perk' : ''}" role="listitem">
+      <b class="stp-no">${i < st ? icon('check') : i + 1}</b><span class="stp-c">${curIcon('pearls')}${c}</span>
+      <span class="stp-p">${STEP_PERK[i] || '&nbsp;'}</span><span class="stp-g">${curIcon('coins')}${k(STEP_GOLD[i])}</span></div>`).join('')}</div>`;
+}
+function smxSpecialPull(bk) {
+  const open = bannerOpen(bk), can = canPull(10, bk), dot = can ? '<span class="dot-n"></span>' : '';
+  if (bk === 'beginner') { const was = payFor(10, bk).k === 'pearls' ? COST[10] : '×10'; return `<button class="smx-go ten" data-pull="10" ${open ? '' : 'disabled'}><span class="smx-tag">−20%</span><b>Summon ×10</b><span class="sx-disc"><s>${was}</s>${payHTML(10, bk)}</span>${dot}</button>`; }
+  const st = stepIdx();
+  return st >= STEP_N ? `<button class="smx-go ten" disabled><b>All steps done</b></button>`
+    : `<button class="smx-go ten" data-pull="10" ${open ? '' : 'disabled'}><span class="smx-tag">Step ${st + 1} of ${STEP_N}</span><b>Summon ×10</b>${payHTML(10, bk)}${dot}</button>`;
 }
 /* small icons on the banner tabs: Beginner = a sprout, Step-Up = steps with an arrow, Weekly = a clock (it changes every week) */
 const TAB_IC = {
@@ -356,38 +413,6 @@ const TAB_IC = {
   stepup: ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h5v-4h5v-4h5V8h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M14 4h6v6M20 4l-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Step-Up: 7 steps, better odds as you climb'],
   weekly: ['<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 9v4l3 2M9 2h6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M19.5 4.5l1.5 1.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>', 'Weekly: a new UR every Monday']
 };
-/* the right side of the summon screen for the Beginner Wish (pulls left, the 3 URs of pull 50) and the Step-Up (the 7 steps) */
-function specialTitleHTML(B, hero) {
-  const setup = `<button class="btn ghost sm" data-open="admin" data-adtab="banners">${icon('wrench')}Set it up in admin</button>`;
-  if (B.begin) {
-    const left = beginLeft(), n = BEGIN_PULLS - left;
-    if (!B.ur.length) return `<h2>${esc(B.title)}</h2><p>No UR characters chosen for pull ${BEGIN_PULLS} yet.</p>${setup}`;
-    return `<h2>${esc(B.title)}</h2>
-      <p>Summon <span class="g">${left}</span> more time${left === 1 ? '' : 's'}</p>
-      <p>Guaranteed <span class="u">UR</span> character at pull ${BEGIN_PULLS}</p>
-      <span class="chip gold">×10 only · 20% off · Pulls ${n} / ${BEGIN_PULLS}</span>
-      <span class="chip">No UR characters before pull ${BEGIN_PULLS} · UR memories can still drop</span>
-      <div class="sx-feat">${B.ur.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div>
-      <span class="tiny sx-bg-note">Pull ${BEGIN_PULLS} gives one of these ${B.ur.length}</span>`;
-  }
-  const f = B.feat, g = stepState(), st = g.step || 0;
-  if (!f) return `<h2>${esc(B.title)}</h2><p>No rate-up character set yet.</p>${setup}`;
-  const k = n => n >= 1000 ? (n / 1000) + 'k' : n;
-  return `<h2>${esc(B.title)}</h2>
-    <p>${st >= STEP_N ? 'All 7 steps done' : `Step <span class="g">${st + 1}</span> of ${STEP_N}`}</p>
-    <p>Step 7 guarantees <span class="g">${esc(f.name)}</span></p>
-    <span class="chip ${g.guarantee ? 'gold' : ''}">${g.guarantee ? `Next UR is guaranteed ${esc(f.name)}` : `50/50 for ${esc(f.name)} on your next UR`} · characters only</span>
-    <div class="stp" role="list" aria-label="Steps">${STEP_COST.map((c, i) => `<div class="stp-n ${i < st ? 'done' : i === st ? 'on' : ''} ${STEP_PERK[i] ? 'perk' : ''}" role="listitem">
-      <b class="stp-no">${i < st ? icon('check') : i + 1}</b><span class="stp-c">${curIcon('pearls')}${c}</span>
-      <span class="stp-p">${STEP_PERK[i] || '&nbsp;'}</span><span class="stp-g">${curIcon('coins')}${k(STEP_GOLD[i])}</span></div>`).join('')}</div>`;
-}
-function specialPullHTML(bk) {
-  const open = bannerOpen(bk), can = canPull(10, bk);
-  if (bk === 'beginner') { const was = payFor(10, bk).k === 'pearls' ? COST[10] : '×10'; return `<button class="sx-pull gold sx-disc-btn" data-pull="10" ${open ? '' : 'disabled'}>Summon 10 <span class="sx-off">−20%</span><span class="sx-disc"><s>${was}</s>${payHTML(10, bk)}</span>${can ? '<span class="dot-n"></span>' : ''}</button>`; }
-  const st = stepIdx();
-  return st >= STEP_N ? `<button class="sx-pull" disabled>All steps done</button>`
-    : `<button class="sx-pull gold" data-pull="10" ${open ? '' : 'disabled'}>Step ${st + 1} · Summon 10 ${payHTML(10, bk)}${can ? '<span class="dot-n"></span>' : ''}</button>`;
-}
 /* one-time milestones. Permanent banner: every 100 pulls from 100 to 600 (STD_MILES): a random permanent UR at 100 / 200 /
    400 / 500 and a UR selector (choose one UR from the admin's list) at 300 and 600; claimed ones in S.gacha.standard.miles.
    Memory Wish: one at 50 pulls → a random UR memory (S.gacha.memories.mile). */
@@ -475,45 +500,134 @@ function openUrSelector() {
   if (!(S.wallet.ursel > 0)) { toast('You have no UR selector.'); return; }
   openCharPicker({ title: 'UR selector', note: `Choose one UR character. You have ${S.wallet.ursel} selector${S.wallet.ursel === 1 ? '' : 's'}.`, list: selPool(), btn: `${curIcon('ursel')}Choose`, onPick: e => { if (!(S.wallet.ursel > 0)) return; S.wallet.ursel--; giftChar(e); } });
 }
-/* rates, pity and history for one banner */
-function openRates(bk, histOpen) {
-  const g = S.gacha[bk], B = bannerInfo(bk), f = B.feat, what = B.skins ? 'outfit' : 'UR', X = RATE_X(bk);
+/* ---- Probability: a full page per banner (after the owner's reference: rarity rates on the left, every obtainable item
+   with its icon and exact rate on the right). bannerOdds(bk) works the rates out from the same rules rollOne uses, for one
+   pull with no pity: rarity first (BASE5 / BASE4, ×2 on the Memory Wish, the Step-Up step's UR multiplier), then an item
+   of that rarity with equal chance, except the featured UR's 50/50 (pickUR); 33% of SSR results on the character banners
+   are SSR memories (SSR_MEM_CHANCE); 1% of the other SSR results turn into a UR through the upgrade (UPGRADE_CHANCE),
+   which is counted in the UR rows; the lowest tier (R) is gold or a fragment (LOW_DROPS). Rows add up to 100%. ---- */
+function bannerOdds(bk) {
+  const B = bannerInfo(bk), X = RATE_X(bk), urX = bk === 'stepup' ? STEP_UR_X[Math.min(stepIdx(), STEP_N - 1)] : 1;
+  const p5 = Math.min(1, BASE5 * X * urX), p4 = Math.min(1 - p5, BASE4 * X), p3 = 1 - p5 - p4;
+  const groups = [], add = (key, title, r, items, note) => { const L = items.filter(x => x.p > 0); if (L.length) groups.push({ key, title, r, items: L, note }); };
+  const item = (e, p, type) => ({ e, p, type: type || (e.type === 'memory' ? 'Memory' : e.type === 'skin' ? 'Outfit' : e.type === 'pet' ? 'Pet' : e.type === 'character' ? 'Character' : 'Item') });
+  const split = (list, p, type) => list.map(e => item(e, p / list.length, type));
+  // SSR results
+  const sMem = SSR_MEM_BK.includes(bk) ? pullableMems(4).filter(Boolean) : [], sShare = sMem.length ? SSR_MEM_CHANCE : 0;
+  let ssrMain = B.ssr.slice(), ssrP = p4 * (1 - sShare), urFromSsr = 0, gold4 = 0, gold5 = 0;
+  const canUp = bk !== 'beginner' && (B.feat || B.ur.length) && !B.mems;
+  if (!ssrMain.length) { gold4 = ssrP; ssrP = 0; }
+  else if (canUp) { urFromSsr = ssrP * UPGRADE_CHANCE; ssrP -= urFromSsr; }
+  // UR results (the roll plus the upgrades, which follow the same rules)
+  const urAll = p5 + urFromSsr, urGroups = [];
+  if (B.begin) {
+    const m = urMems();
+    if (m.length) urGroups.push(['urmem', 'UR memories', split(m, p5)]);
+    else ssrP += p5;   // no UR memories yet: a UR roll before pull 50 gives an SSR character
+  } else if (B.feat) {
+    const others = B.lose.filter(e => e.id !== B.feat.id);
+    urGroups.push(['feat', 'Rate up', [item(B.feat, others.length ? urAll / 2 : urAll)]]);
+    if (others.length) urGroups.push(['ur', `Other UR ${B.skins ? 'outfits' : 'characters'} (if you lose the 50/50)`, split(others, urAll / 2)]);
+  } else if (B.ur.length) urGroups.push(['ur', `UR ${B.skins ? 'outfits' : B.mems ? 'memories' : 'characters'}`, split(B.ur, urAll)]);
+  else gold5 = urAll;
+  urGroups.forEach(([k, t, L]) => add(k, t, 5, L));
+  add('ssr', `SSR ${B.skins ? 'outfits' : B.mems ? 'memories' : B.begin || B.step ? 'characters' : 'characters and items'}`, 4, split(ssrMain, ssrP));
+  add('ssrmem', 'SSR memories', 4, split(sMem, p4 * sShare));
+  const lowName = { ssr: 'SSR egg fragment', ur: 'UR egg fragment', cfssr: 'SSR character fragment', cfur: 'UR character fragment' }, lowIc = { ssr: 'fragssr', ur: 'fragur', cfssr: 'cfssr', cfur: 'cfur' };
+  const lowSum = LOW_DROPS.reduce((a, d) => a + d[1], 0);
+  add('r', 'R items', 3, [
+    ...LOW_DROPS.map(([k, w]) => ({ ic: lowIc[k], name: lowName[k], type: 'Item', p: p3 * w })),
+    { ic: 'coins', name: `${fmt(COIN_DROP)} gold coins`, type: 'Gold', p: p3 * (1 - lowSum) },
+    ...(gold4 ? [{ ic: 'coins', name: `${fmt(FILLER_COINS[4])} gold coins (no SSR on this banner)`, type: 'Gold', p: gold4 }] : []),
+    ...(gold5 ? [{ ic: 'coins', name: `${fmt(FILLER_COINS[5])} gold coins (no UR on this banner)`, type: 'Gold', p: gold5 }] : [])]);
+  const sum = r => groups.filter(x => x.r === r).reduce((a, x) => a + x.items.reduce((b, i) => b + i.p, 0), 0);
+  const tiers = [5, 4, 3].map(r => ({ r, p: sum(r) }));
+  // the Beginner Wish's pull 50 is not a per-pull rate: listed on its own, outside the 100%
+  const extra = B.begin && B.ur.length ? [{ key: 'b50', title: `Pull ${BEGIN_PULLS} guarantee`, r: 5, items: B.ur.map(e => item(e, 1 / B.ur.length)), at: `at pull ${BEGIN_PULLS}` }] : [];
+  return { B, X, urX, p5, p4, p3, urFromSsr, groups, tiers, extra, sMem: sShare };
+}
+const prTag = r => r === 3 ? ctag(3) : rtag(r);
+const pctTxt = v => { const x = v * 100; return x >= 10 ? x.toFixed(2) : x >= 1 ? x.toFixed(3) : x.toFixed(4); };
+let prbEl = null, prbBk = 'limited', prbTier = 0;
+function openProb(bk = curBanner) {
+  prbBk = bk; prbTier = 0; closeModal();
+  if (!prbEl) { prbEl = document.createElement('div'); prbEl.className = 'prb'; prbEl.setAttribute('role', 'dialog'); prbEl.setAttribute('aria-label', 'Probability'); document.body.appendChild(prbEl); }
+  renderProb();
+}
+function closeProb() { if (prbEl) { prbEl.remove(); prbEl = null; } }
+addEventListener('keydown', e => { if (prbEl && e.key === 'Escape' && !document.querySelector('.modal-back')) { e.stopPropagation(); closeProb(); } }, true);
+function renderProb() {
+  if (!prbEl) return;
+  const bk = prbBk, O = bannerOdds(bk), B = O.B, g = S.gacha[bk], f = B.feat, hero = f || B.ur[0], art = hero && baseArt(hero);
+  const kinds = B.skins ? ['Outfits'] : B.mems ? ['Memories'] : B.begin || B.step ? ['Characters', ...(B.begin && urMems().length ? ['UR memories'] : [])] : ['Characters', ...(O.sMem ? ['Memories'] : [])];
+  const tierName = { 5: `${B.skins ? 'UR outfits' : B.mems ? 'UR memories' : B.begin ? 'UR memories (pull 50: a UR character)' : 'UR characters'}`, 4: `SSR ${B.skins ? 'outfits' : B.mems ? 'memories' : O.sMem ? 'characters and memories' : 'characters'}`, 3: 'Gold and fragments' };
+  const ava = x => {
+    if (x.ic) return `<span class="prb-av r3"><span class="prb-ic">${curIcon(x.ic)}</span></span>`;
+    const e = x.e, r = +e.rarity;
+    if (e.type === 'memory') { const m = (S.memories || []).find(z => z.id === e.id) || e, u = artFrom(m.img); return `<span class="prb-av r${r} mem"><span>${u ? `<img src="${u}" alt="" style="${memIconStyle(m)}">` : icon('memory')}</span></span>`; }
+    return `<span class="prb-av r${r}"><span>${baseThumb(e)}</span></span>`;
+  };
+  const own = x => { const e = x.e; if (!e) return ''; const n = e.type === 'memory' ? memCopiesSt(e.id).length : S.owned[e.id] || 0; return n ? `<em class="prb-own">${hasStars(e) ? `${starsOf(e.id)}★` : n > 1 ? `×${n}` : 'Owned'}</em>` : ''; };
+  const row = (x, at) => `<div class="prb-row ${x.e && B.feat && x.e.id === B.feat.id || at ? 'feat' : ''}">${ava(x)}<span class="prb-nm">${prTag(x.e ? +x.e.rarity : 3)}<b>${esc(x.e ? x.e.name : x.name)}</b><small>${x.type}${at ? ` · ${at}` : ''}</small></span>${own(x)}<span class="prb-p">${pctTxt(x.p)}<i>%</i></span></div>`;
+  const shown = O.groups.filter(x => !prbTier || x.r === prbTier), count = shown.reduce((a, x) => a + x.items.length, 0);
+  const pityBox = B.begin ? `<div class="prb-pity"><b>Your progress</b>
+      <div class="prb-pb"><span>Pulls</span><span class="smx-bar"><i style="width:${(BEGIN_PULLS - beginLeft()) / BEGIN_PULLS * 100}%"></i></span><em>${BEGIN_PULLS - beginLeft()} / ${BEGIN_PULLS}</em></div>
+      <div class="prb-pb r4"><span>SSR pity</span><span class="smx-bar"><i style="width:${g.pity4 * 10}%"></i></span><em>${g.pity4} / 10</em></div>
+      <p>Pull ${BEGIN_PULLS} is a guaranteed UR character: ${B.ur.map(u => `<b>${esc(u.name)}</b>`).join(', ') || 'the 3 chosen URs'}, ${B.ur.length ? (100 / B.ur.length).toFixed(2) + '% each' : ''}.</p></div>`
+    : `<div class="prb-pity"><b>Your pity on this banner</b>
+      <div class="prb-pb"><span><span class="u">UR</span> pity</span><span class="smx-bar"><i style="width:${g.pity5 / HARD_PITY * 100}%"></i></span><em>${g.pity5} / ${HARD_PITY}</em></div>
+      <div class="prb-pb r4"><span>SSR pity</span><span class="smx-bar"><i style="width:${g.pity4 * 10}%"></i></span><em>${g.pity4} / 10</em></div>
+      <p>A UR is guaranteed within <b>${HARD_PITY - g.pity5}</b> more pull${HARD_PITY - g.pity5 === 1 ? '' : 's'}${f ? `; ${g.guarantee ? `it will be <b>${esc(f.name)}</b> (you lost the last 50/50)` : `it is a 50/50 for <b>${esc(f.name)}</b>`}` : ''}. SSR or higher comes at least once every 10 pulls.${B.step ? ` You are on step <b>${Math.min(stepIdx() + 1, STEP_N)}</b> of ${STEP_N}${O.urX !== 1 ? ` (${O.urX}× UR rate on this step)` : ''}.` : ''}${MILES[bk] ? ` Milestones: <b>${mileN(bk)}</b> / ${MILES[bk].n} pulls.` : ''}</p></div>`;
+  const rules = [
+    B.feat ? `<b>Rate up:</b> every UR you get is a 50/50 for <b>${esc(B.feat.name)}</b>; after a lost 50/50 the next UR is ${esc(B.feat.name)}.` : '',
+    B.begin ? `No UR character before pull ${BEGIN_PULLS}: a UR roll gives a UR memory instead. ×10 only, 20% off. No SSR → UR upgrades.` : '',
+    B.step ? `Steps 1 to 7 cost ${STEP_COST.join(', ')} pearls. Step 1 has half the UR rate, steps 3 and 5 1.5×. Step 4 always holds a UR memory and step 7 always holds ${B.feat ? esc(B.feat.name) : 'the rate-up character'}.` : '',
+    B.mems ? 'The Memory Wish has double the UR and SSR rates.' : '',
+    bk === 'weekly' ? `The featured UR changes every Monday (00:00 UTC), next in ${shortLeft(B.ends)}.` : '',
+    O.sMem ? `${SSR_MEM_CHANCE * 100}% of SSR results are a random SSR memory instead of an SSR character.` : '',
+    O.urFromSsr ? `1% of SSR results turn into a UR (the SSR → UR upgrade): that adds ${pctTxt(O.urFromSsr)}% to the UR rows.` : '',
+    `Every ×10 holds at least 1 UR and 2 SSR character fragments (they take the place of egg fragments or gold).`,
+    `Duplicates add a star, up to ${MAX_STARS}; after that a duplicate character gives ${STARLIGHT_MAX[5]} Corals (UR) or ${STARLIGHT_MAX[4]} (SSR).`,
+    'Rates are for one pull with no pity. Each banner keeps its own pity.'].filter(Boolean);
+  prbEl.innerHTML = `<div class="prb-bg" aria-hidden="true">${art ? `<img src="${art}" alt="">` : ''}<i></i></div>
+    <header class="prb-head"><button class="smx-back" id="prbBack" aria-label="Back">${icon('back')}</button>
+      <div class="inv-title"><span class="inv-badge">${icon('info')}</span><h2 class="ts">Probability</h2></div>
+      <span class="prb-bn">${esc(B.title)}</span><span class="smx-sp"></span>
+      <button class="inv-x" id="prbClose" aria-label="Close">${icon('close')}</button></header>
+    <div class="prb-body">
+      <section class="prb-left">
+        <p class="prb-can">You can get ${kinds.map(k => `<b>${k}</b>`).join(' and ')} from this banner.</p>
+        <small class="prb-lbl">${B.step ? `Step ${Math.min(stepIdx() + 1, STEP_N)} · ×10` : B.begin ? 'Beginner summon · ×10' : 'Regular summon'} · draw rate</small>
+        <div class="prb-tiers">
+          <button class="prb-tier all ${prbTier ? '' : 'on'}" data-ptier="0"><span class="prb-tn">All items</span><b>100<i>%</i></b></button>
+          ${O.tiers.map(t => `<button class="prb-tier r${t.r} ${prbTier === t.r ? 'on' : ''}" data-ptier="${t.r}">${prTag(t.r)}<span class="prb-tn">${tierName[t.r]}</span><b>${pctTxt(t.p)}<i>%</i></b></button>`).join('')}
+        </div>
+        ${pityBox}
+        <details class="prb-rules" ${innerWidth > 900 ? 'open' : ''}><summary>Rules</summary><ul>${rules.map(r => `<li>${r}</li>`).join('')}</ul></details>
+      </section>
+      <section class="prb-right">
+        <div class="prb-rh"><b>Obtainable items</b><small>${count} item${count === 1 ? '' : 's'}${prbTier ? ` · ${prbTier === 3 ? 'R' : RNAME[prbTier]}` : ''}</small></div>
+        <div class="prb-list">${O.extra.filter(x => !prbTier || x.r === prbTier).map(x => `<div class="prb-grp r${x.r}"><div class="prb-gh">${prTag(x.r)}<span>${x.title}</span><em>${x.at}</em></div>${x.items.map(i => row(i, x.at)).join('')}</div>`).join('')}${shown.map(x => `<div class="prb-grp r${x.r}"><div class="prb-gh">${prTag(x.r)}<span>${x.title}</span><em>${pctTxt(x.items.reduce((a, i) => a + i.p, 0))}%</em></div>${x.items.map(i => row(i)).join('')}</div>`).join('') || '<p class="tiny">Nothing on this banner yet.</p>'}</div>
+      </section>
+    </div>`;
+  prbEl.querySelector('#prbBack').onclick = prbEl.querySelector('#prbClose').onclick = closeProb;
+  prbEl.querySelectorAll('[data-ptier]').forEach(b => b.onclick = () => { prbTier = +b.dataset.ptier; renderProb(); });
+}
+/* the draw record: best pulls to replay + the history of this banner (what the old Rates window also held) */
+function openDrawRecord(bk) {
+  const g = S.gacha[bk], B = bannerInfo(bk);
   const t = e => new Date(e.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const hist = S.gacha.history.filter(h => (h.banner || 'limited') === bk);
-  openModal({ title: B.title, ic: 'sparkle', wide: true, body: `<div class="stack">
-    <div class="pity" ${bk === 'beginner' ? 'hidden' : ''}>
-      <div class="r5"><div class="row" style="justify-content:space-between"><span>UR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity5} / ${HARD_PITY}</span></div><div class="bar"><i style="width:${g.pity5 / HARD_PITY * 100}%"></i></div></div>
-      <div class="r4"><div class="row" style="justify-content:space-between"><span>SSR pity</span><span style="font-variant-numeric:tabular-nums">${g.pity4} / 10</span></div><div class="bar"><i style="width:${g.pity4 * 10}%"></i></div></div>
-    </div>
-    ${specialRates(B)}<table class="rates" ${isSpecial(bk) ? 'hidden' : ''}>
-      <tr><td>${rtag(5)}</td><td>${+(BASE5 * X * 100).toFixed(2)}% · guaranteed by pull ${HARD_PITY} · ${f ? `50% ${esc(f.name)}, otherwise ${B.skins ? 'another UR outfit' : 'a permanent UR'} and the next UR is guaranteed featured` : `each of the ${B.ur.length} UR ${B.skins ? 'outfits' : B.mems ? 'memories' : 'characters'} is equally likely`}</td></tr>
-      <tr><td>${rtag(4)}</td><td>${+(BASE4 * X * 100).toFixed(2)}% · at least one every 10 pulls · ${B.skins ? `one of ${B.ssr.length} SSR outfits` : B.mems ? `one of ${B.ssr.length} SSR memories` : 'a random SSR'}</td></tr>
-      ${B.bk === 'weekly' ? `<tr><td>${icon('clock')}</td><td>The featured UR is picked at random every Monday (00:00 UTC). Next change in ${shortLeft(B.ends)}.</td></tr>` : ''}
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins (${Math.round((1 - LOW_DROPS.reduce((a, d) => a + d[1], 0)) * 100)}%), an SSR egg fragment (20%), a UR egg fragment (6%), an SSR character fragment (18%) or a UR character fragment (8%) · every ×10 has at least 1 UR and 2 SSR character fragments</td></tr>
-      ${SSR_MEM_BK.includes(bk) ? `<tr><td>${icon('memory')}</td><td>${SSR_MEM_CHANCE * 100}% of SSR results are a random SSR memory instead of an SSR character</td></tr>` : ''}
-    </table>
-    <p class="tiny">Each banner keeps its own pity. Each duplicate adds a star to that character, up to ${MAX_STARS}; after that duplicate characters give ${STARLIGHT_MAX[5]} Corals (UR) or ${STARLIGHT_MAX[4]} (SSR) instead of a star. If a banner has no UR or SSR to give, you get a bigger bag of gold coins instead.</p>
+  openModal({ title: `Draw record · ${B.title}`, ic: 'clock', wide: true, body: `<div class="stack">
     ${replaysHTML()}
-    <details ${histOpen ? 'open' : ''}><summary>History · ${fmt(g.total)} pulls on this banner</summary>
+    <details open><summary>History · ${fmt(g.total)} pulls on this banner</summary>
       <div class="hist">${hist.length ? hist.map(h => `<div class="r${h.rarity}"><span>${h.rarity >= 4 ? rtag(h.rarity) : '<span class="cost">' + curIcon('coins') + '</span>'} ${esc(h.name)}</span><time>${t(h)}</time></div>`).join('') : '<p class="tiny">No pulls yet.</p>'}</div>
     </details>
-  </div>`, onMount: bindReplays });
+    <button class="btn ghost sm" id="drProb" style="justify-self:start">${icon('info')}Probability</button>
+  </div>`, onMount: root => { bindReplays(root); const b = root.querySelector('#drProb'); if (b) b.onclick = () => openProb(bk); } });
 }
-/* the rules of the Beginner Wish and the Step-Up, shown in their Rates window instead of the usual table */
-function specialRates(B) {
-  if (B.begin) return `<table class="rates">
-      <tr><td>${rtag(5)}</td><td>Pull ${BEGIN_PULLS} is a guaranteed UR character: one of ${B.ur.map(u => esc(u.name)).join(', ') || 'the 3 chosen URs'} (equal chance). No UR character can drop before it; a UR roll (${+(BASE5 * 100).toFixed(2)}%) gives a random UR memory instead${urMems().length ? '' : ' (an SSR while there are no UR memories)'}.</td></tr>
-      <tr><td>${rtag(4)}</td><td>${+(BASE4 * 100).toFixed(2)}% · at least one every 10 pulls · a random SSR character</td></tr>
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins, an egg fragment or a character fragment (at least 1 UR and 2 SSR per ×10)</td></tr>
-      <tr><td>${icon('info')}</td><td>${BEGIN_PULLS} pulls in total, ×10 only, 20% off: ${BEGIN_TK} Standard tickets or ${BEGIN_PEARLS} pearls per ×10. No SSR → UR upgrades. You have ${beginLeft()} pulls left.</td></tr></table>`;
-  if (B.step) return `<table class="rates">
-      <tr><td>${rtag(5)}</td><td>${+(BASE5 * 100).toFixed(2)}% per pull (step 1: ${+(BASE5 * 50).toFixed(2)}%, step 5: ${+(BASE5 * 150).toFixed(2)}%) · 50% ${B.feat ? esc(B.feat.name) : 'the rate-up character'}, otherwise a permanent UR character and the next UR is the rate-up · getting a UR never resets the steps</td></tr>
-      <tr><td>${rtag(4)}</td><td>${+(BASE4 * 100).toFixed(2)}% · at least one every 10 pulls · a random SSR character</td></tr>
-      <tr><td><span class="cost">${curIcon('coins')}Gold coins</span></td><td>Everything else: ${fmt(COIN_DROP)} coins, an egg fragment or a character fragment (at least 1 UR and 2 SSR per ×10)</td></tr>
-      ${STEP_COST.map((c, i) => `<tr><td><b>Step ${i + 1}</b></td><td>${c} pearls · ×10${STEP_PERK[i] ? ` · <b>${STEP_PERK[i]}</b>` : ''} · +${fmt(STEP_GOLD[i])} gold</td></tr>`).join('')}
-    </table>`;
-  return '';
-}
+/* the old name still works (the summon screen's ? and older links): openRates(bk) = the Probability page, (bk, true) = the draw record */
+function openRates(bk = curBanner, histOpen) { if (histOpen) openDrawRecord(bk); else openProb(bk); }
 /* best ×10 pulls (S.gacha.replays, newest first): Max Wins, upgrades, 2+ URs; Replay plays the exact same animation again */
 function replayTags(x) { const urs = x.results.filter(r => r.rarity === 5).length, up = x.results.filter(r => r.up).length; return [x.maxwin ? '<span class="rp-tag mw">MAX WIN</span>' : '', urs >= 2 ? `<span class="rp-tag ur">UR ×${urs}</span>` : '', x.double ? '<span class="rp-tag dbl">Double</span>' : '', up ? `<span class="rp-tag up">Upgrade${up > 1 ? ' ×' + up : ''}</span>` : '', x.rainbow ? '<span class="rp-tag rb">Rainbow</span>' : ''].join(''); }
 function replaysHTML() {

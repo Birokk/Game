@@ -45,7 +45,7 @@ function ccCoinFlip(done) {
   const G = ccM && ccM.G, L = ccLayer && ccLayer();
   if (!G || !L) return done();
   const meFirst = G.first === 0, le = ccM.leader, foe = ccM.foe;
-  const myPic = le ? thumbImg(le) : avatarHTML(150), foePic = foe ? baseThumb(foe) : ccIco('bot');
+  const myPic = le ? thumbImg(le) : avatarHTML(150), foePic = ccM.boss ? gbIcon() : foe ? baseThumb(foe) : ccIco('bot');
   const el = document.createElement('div'); el.className = `ccx-coin ${meFirst ? 'me' : 'op'}`;
   el.innerHTML = `<i class="ccn-bg"></i>
     <div class="ccn-title"><small>Coin flip</small><b>Who goes first?</b></div>

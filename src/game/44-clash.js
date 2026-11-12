@@ -130,7 +130,8 @@ function ccPickEvent(seed) {
   return a < CC_EV_CHANCE ? CC_EV_KEYS[Math.floor(b * CC_EV_KEYS.length)] : null;
 }
 const ccOT = G => G.ev === 'heat' ? 12 : CC_CFG.overtime;
-const ccApBase = (G, p) => (G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap) + (G.ev === 'rain' ? 1 : 0);
+const ccApBase = (G, p) => (G.round === 1 && p !== G.first ? CC_CFG.ap2 : CC_CFG.ap) + (G.ev === 'rain' ? 1 : 0) + (G.apB ? G.apB[p] : 0);
+const ccRounds = G => G.maxRound || CC_CFG.rounds;   // the round limit (the guild boss flies off sooner)
 /* the three ready-made starter decks from the design document (15 names × 2) */
 const CC_N2ID = Object.fromEntries(CC_CARDS.map(c => [c.name, c.id]));
 const ccPreset = names => names.flatMap(n => [CC_N2ID[n], CC_N2ID[n]]);
@@ -155,9 +156,10 @@ function ccShuffle(G, a) { for (let i = a.length - 1; i > 0; i--) { const j = Ma
 
 /* opts (all optional; the campaign uses them): ev = battle event key or null, first = 0 | 1 (else the seed decides),
    hp = [your HP, bot HP] at the start, order = keep both decks in the given order (deck[0] is drawn first) instead of
-   shuffling, setup(G) = runs after the opening hands, before the first turn (place units / traps) */
+   shuffling, setup(G) = runs after the opening hands, before the first turn (place units / traps); the guild boss also
+   uses rounds = an earlier round limit (with limitText = why it ended), apB = [your extra AP, bot extra AP] every turn */
 function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
-  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now() };
+  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now(), maxRound: opts.rounds || 0, limitText: opts.limitText || '', apB: opts.apB || null };
   G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
   G.players.forEach(P => opts.order ? P.deck.reverse() : ccShuffle(G, P.deck));   // cards are drawn from the end of the array
   G.first = G.active = opts.first === 0 || opts.first === 1 ? opts.first : ccRand(G) < 0.5 ? 0 : 1;
@@ -248,7 +250,7 @@ function ccEndTurn(G) {
   G.active = 1 - p;
   if (G.active === G.first) {
     G.round++; G.players.forEach(P => P.healed = 0);
-    if (G.round > CC_CFG.rounds) { G.phase = 'over'; G.winner = 'draw'; G.reason = `Round ${CC_CFG.rounds} ended with both heroes alive`; ccLog(G, 'Draw: round limit reached', 'sys'); return; }
+    if (G.round > ccRounds(G)) { G.phase = 'over'; G.winner = 'draw'; G.reason = G.limitText || `Round ${ccRounds(G)} ended with both heroes alive`; ccLog(G, G.limitText ? 'Time is up' : 'Draw: round limit reached', 'sys'); return; }
   }
   ccBeginTurn(G);
 }
