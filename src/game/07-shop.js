@@ -23,7 +23,7 @@ const TOPUP_FREE = true;   // testing: Top Up packs are free (no real payments y
    times per reset (daily = local midnight, weekly = Monday, monthly = the 1st). State S.packs[kind] = {key, got: {id: n}}. */
 const PEARLS_PER_USD = 6;
 /* rough pearl value of each pack item, for the "+N% value" tag (pearls 1:1; a stamina bottle ≈ a pearl refill; fragments from
-   60 = a random character; a UR memory ticket ≈ a UR memory on the Memory Wish) */
+   60 = a random character; a UR memory ticket ≈ a UR memory on the Memory Banner) */
 const PACK_VAL = { pearls: 1, coins: 1 / 2000, bottles: 1.5, cfssr: 1, cfur: 2.5, memtk: 60, tickets: 3, wishes: 3 };
 const packWorth = items => Object.entries(items).reduce((t, [k, n]) => t + (PACK_VAL[k] || 0) * n, 0);
 const PACKS = {

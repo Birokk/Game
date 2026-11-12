@@ -69,7 +69,7 @@ function myGuild() {
 }
 const guildCS = g => g.members.reduce((t, m) => t + (m.total || 0), 0);
 const guildDayReady = () => inGuild() && guildState().day !== dayKey();
-const guildReady = () => guildDayReady() || gqReady() || (typeof gbReady === 'function' && gbReady());
+const guildReady = () => guildDayReady() || gqReady() || (typeof gbReady === 'function' && gbReady()) || (typeof hangReady === 'function' && hangReady());
 
 function joinGuild(id) {
   const g = practiceGuilds().find(x => x.id === id); if (!g || inGuild()) return;
@@ -285,7 +285,8 @@ const GUILD_SPOTS = [
   { id: 'shop', name: 'Guild Shop', sub: 'Resets daily', x: 18, y: 66, col: '#ffb35a', ic: 'shop' },
   { id: 'reward', name: 'Rewards', sub: 'Daily login', x: 48, y: 70, col: '#5be3a8', ic: 'gift' },
   { id: 'quests', name: 'Guild Quests', sub: 'Daily · guild EXP', x: 66, y: 44, col: '#6fb8ff', ic: 'quests' },
-  { id: 'boss', name: 'Guild Boss', sub: 'Card battle · 48 h', x: 80, y: 70, col: '#ff8a5a', ic: 'dragon' }
+  { id: 'boss', name: 'Guild Boss', sub: 'Card battle · 48 h', x: 80, y: 70, col: '#ff8a5a', ic: 'dragon' },
+  { id: 'hangout', name: 'Hangout', sub: 'Minigames · daily pearls', x: 16, y: 34, col: '#ff9ad8', ic: 'mug' }
 ];
 const guildPosDef = id => { const p = GUILD_SPOTS.find(s => s.id === String(id).replace(/^g:/, '')); return p ? { x: p.x, y: p.y } : { x: 50, y: 50 }; };
 function guildBg() { const bg = MEDIA.get('guild:bg'); return bg ? artImgClip('guild:bg', 'fm-bg') : '<div class="fm-bg gd-bg"></div>'; }
@@ -305,13 +306,13 @@ function renderGuild() {
     return;
   }
   fmEl.innerHTML = `<div class="fm-scroll"><div class="fm-stage">${guildBg()}
-      ${GUILD_SPOTS.map(p => { const q = farmPos('g:' + p.id), bd = p.id === 'boss' ? gbBoard(g) : null, ready = (p.id === 'reward' && guildDayReady()) || (p.id === 'quests' && gqReady()) || (bd && gbReady()), done = GQUESTS.filter(gqDone).length;
-        return `<button class="fm-spot ${fmSel === p.id ? 'on' : ''}" data-gs="${p.id}" style="left:${q.x}%;top:${q.y}%;--fc:${p.col}">${ready ? `<span class="fm-bubble">${bd ? icon('swords') : curIcon('gpts')}</span>` : ''}<span class="fm-label"><b>${esc(p.name)}</b><span>${p.id === 'reward' ? (ready ? `+${guildDaily()} guild points` : 'Come back tomorrow') : p.id === 'quests' ? `${done} / ${GQUESTS.length} done · Lv ${guildLvOf(g)}` : bd ? `Lv ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP · ${gbLeft()} battle${gbLeft() === 1 ? '' : 's'} left` : esc(p.sub)}</span></span></button>`; }).join('')}
+      ${GUILD_SPOTS.map(p => { const q = farmPos('g:' + p.id), bd = p.id === 'boss' ? gbBoard(g) : null, ready = (p.id === 'reward' && guildDayReady()) || (p.id === 'quests' && gqReady()) || (bd && gbReady()) || (p.id === 'hangout' && hangReady()), done = GQUESTS.filter(gqDone).length;
+        return `<button class="fm-spot ${fmSel === p.id ? 'on' : ''}" data-gs="${p.id}" style="left:${q.x}%;top:${q.y}%;--fc:${p.col}">${ready ? `<span class="fm-bubble">${bd ? icon('swords') : p.id === 'hangout' ? curIcon('pearls') : curIcon('gpts')}</span>` : ''}<span class="fm-label"><b>${esc(p.name)}</b><span>${p.id === 'reward' ? (ready ? `+${guildDaily()} guild points` : 'Come back tomorrow') : p.id === 'quests' ? `${done} / ${GQUESTS.length} done · Lv ${guildLvOf(g)}` : bd ? `Lv ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP · ${gbLeft()} battle${gbLeft() === 1 ? '' : 's'} left` : p.id === 'hangout' ? (hangLeft() ? `3 minigames · ${hangLeft()} pearl${hangLeft() === 1 ? '' : 's'} left today` : 'Play for fun · pearls collected') : esc(p.sub)}</span></span></button>`; }).join('')}
     </div></div>
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><span class="gd-tname">${guildIcon(g.icon, 38)}<h2 class="ts">${esc(g.name)}</h2></span>${infoBtn('guild', 'How guilds work')}<span class="fm-rate ts">Guild Lv ${guildLvOf(g)} · ${g.members.length} / ${guildCap(guildLvOf(g))} members · Total CS ${fmt(guildCS(g))}</span></div>${cur}
     ${fmSel && GUILD_SPOTS.some(s => s.id === fmSel) ? `<aside class="fm-panel glass-deep gd-panel" id="fmPanel">${guildPanel(g, fmSel)}</aside>` : ''}`;
   $('#fmBack').onclick = closeFarm;
-  fmEl.querySelectorAll('[data-gs]').forEach(b => b.onclick = e => { e.stopPropagation(); if (b.dataset.gs === 'boss') { fmSel = null; return openGuildBoss(); } fmSel = fmSel === b.dataset.gs ? null : b.dataset.gs; renderFarm(); });
+  fmEl.querySelectorAll('[data-gs]').forEach(b => b.onclick = e => { e.stopPropagation(); if (b.dataset.gs === 'boss') { fmSel = null; return openGuildBoss(); } if (b.dataset.gs === 'hangout') { fmSel = null; return openHangout(); } fmSel = fmSel === b.dataset.gs ? null : b.dataset.gs; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;
   pn.querySelector('[data-fmx]').onclick = () => { fmSel = null; renderFarm(); };

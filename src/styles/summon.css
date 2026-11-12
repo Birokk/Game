@@ -126,7 +126,7 @@
 .smx-pts .cic{width:20px;height:20px}
 .smx-pts em{font-style:normal;padding:5px 12px;border-radius:12px 3px 12px 3px;background:var(--cry-grad);color:var(--cry-ink)}
 .smx-pts:hover{border-color:#f5c4ff}
-/* the Beginner Wish: 5 steps of ×10 to the UR at pull 50 */
+/* the Beginner Banner: 5 steps of ×10 to the UR at pull 50 */
 .smx-bgn{display:grid;gap:12px}
 .smx-bgn-h{display:grid;gap:4px}
 .smx-bgn-t{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr)) auto;gap:5px;align-items:center}

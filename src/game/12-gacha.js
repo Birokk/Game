@@ -2,16 +2,18 @@
    GACHA
    ========================================================= */
 function rate5(pity) { return pity >= HARD_PITY ? 1 : BASE5; }
-const BANNER_KEYS = ['beginner', 'stepup', 'limited', 'weekly', 'skins', 'memories', 'standard'];   // order of the tabs on the summon screen (bannerKeys() hides a finished Beginner Wish)
+const BANNER_KEYS = ['beginner', 'stepup', 'limited', 'weekly', 'skins', 'memories', 'standard'];   // order of the tabs on the summon screen (bannerKeys() hides a finished Beginner Banner)
 let curBanner = 'limited';
 const limitedUR = () => { const f = findEntry(S.featuredId); return f && f.rarity === 5 && f.pullable !== false ? f : null; };
 const standardURs = () => S.pool.filter(e => e.rarity === 5 && e.pullable !== false && e.standard && e.type !== 'pet');
 const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== false && e.type !== 'pet');
-const BANNER_DEFAULT_NAME = { beginner: 'Beginner Wish', stepup: 'Step-Up Summon', limited: 'Limited Banner', weekly: 'Weekly Spotlight', skins: 'Outfit Wish', memories: 'Memory Wish', standard: 'Pearl Wish' };
+const BANNER_DEFAULT_NAME = { beginner: 'Beginner Banner', stepup: 'Step-Up Summon', limited: 'Limited Banner', weekly: 'Weekly Spotlight', skins: 'Outfit Banner', memories: 'Memory Banner', standard: 'Pearl Banner' };
 /* memory banner: pulls give memories at double the usual UR / SSR rates, paid with Standard tickets */
 const pullableMems = r => (S.memories || []).filter(m => +m.rarity === r).map(m => memEntry(m.id));
 const RATE_X = bk => bk === 'memories' ? 2 : 1;
-const bannerName = bk => (S.banners[bk] && S.banners[bk].name) || BANNER_DEFAULT_NAME[bk];
+/* the banners used to be called "… Wish" (the owner renamed them to "… Banner"): an old default name in saved content shows the new one */
+const BANNER_OLD_NAME = { 'Beginner Wish': 'Beginner Banner', 'Outfit Wish': 'Outfit Banner', 'Memory Wish': 'Memory Banner', 'Pearl Wish': 'Pearl Banner' };
+const bannerName = bk => { const n = (S.banners[bk] && S.banners[bk].name) || BANNER_DEFAULT_NAME[bk]; return BANNER_OLD_NAME[n] || n; };
 /* weekly banner: a random pullable UR character, the same for every player, changes every Monday 00:00 UTC */
 const WEEK_MS = 7 * 864e5, WEEK_EPOCH = Date.UTC(2024, 0, 1);   // 1 Jan 2024 was a Monday
 const weekIndex = (t = Date.now()) => Math.floor((t - WEEK_EPOCH) / WEEK_MS);
@@ -37,7 +39,7 @@ const pullableSkins = r => S.pool.filter(e => e.type === 'skin' && e.rarity === 
 const skinFeatured = () => { const k = findEntry(S.banners.skins && S.banners.skins.featured); return k && k.type === 'skin' && k.rarity === 5 && k.pullable !== false ? k : null; };
 const skinsEnd = () => S.banners.skins && S.banners.skins.end ? +new Date(S.banners.skins.end + 'T23:59:00') : null;
 /* ---------- special banners ----------
-   Beginner Wish (beginner): 50 pulls in total, ×10 only, 20% off (8 Standard tickets or 24 pearls per ×10). No UR character
+   Beginner Banner (beginner): 50 pulls in total, ×10 only, 20% off (8 Standard tickets or 24 pearls per ×10). No UR character
    can drop before pull 50 (a UR roll gives a UR memory instead, or an SSR when there are none, and no SSR → UR upgrades);
    pull 50 is a guaranteed UR character from the 3 set in admin → Banners (S.banners.beginner.picks). The tab leaves once done.
    Step-Up (stepup): 7 steps, each a ×10 paid in pearls (STEP_COST: 6, 12, 18, 24 = 60, then 30, 30, 30), characters only,
@@ -76,7 +78,7 @@ function stepPull() {
   return { out, gold: STEP_GOLD[s] };
 }
 /* ---------- summon points ----------
-   Every pull on a regular banner gives 1 point (not the Beginner Wish or Step-Up). Pulls on the Limited, Weekly and Outfit
+   Every pull on a regular banner gives 1 point (not the Beginner Banner or Step-Up). Pulls on the Limited, Weekly and Outfit
    banners give points for THAT banner (S.spoints[bk] = {key, n}), spent in Shop → Summon Points on copies of the banner's
    featured UR / outfit for PT_PRICE each. When the banner changes (new featured character / outfit, new end date, new week)
    its leftover points move to the Permanent points automatically. Pulls on the Permanent and Memory banners (and featured
@@ -186,7 +188,7 @@ function upgradeSSR(B, g, res) {
 function rollOne(bk, force, urX = 1) {
   const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
   const r = Math.random(), x = RATE_X(bk), p5 = Math.min(1, rate5(g.pity5) * x * urX);
-  const beginUR = bk === 'beginner' && g.total >= BEGIN_PULLS;   // the Beginner Wish's pull 50
+  const beginUR = bk === 'beginner' && g.total >= BEGIN_PULLS;   // the Beginner Banner's pull 50
   let rarity = 3;
   if (force === 5 || force === 'mem' || force === 'feat' || beginUR) rarity = 5; else if (force === 'up') rarity = 4;
   else if (r < p5) rarity = 5; else if (g.pity4 >= 10 || r < p5 + BASE4 * x) rarity = 4;
@@ -252,21 +254,21 @@ function doPull(n, bk = curBanner, free = false) {
   if (!S.pool.some(e => e.pullable !== false)) { toast('The summon pool is empty. Add entries in the admin panel.'); return; }
   if (isSpecial(bk)) {
     if (free || n !== 10) return;
-    if (!bannerOpen(bk)) { toast(bk === 'beginner' ? (beginDone() ? 'You finished the Beginner Wish.' : 'The Beginner Wish is not set up yet.') : stepFeat() ? 'You finished all 7 steps.' : 'The Step-Up is not set up yet.'); return; }
+    if (!bannerOpen(bk)) { toast(bk === 'beginner' ? (beginDone() ? 'You finished the Beginner Banner.' : 'The Beginner Banner is not set up yet.') : stepFeat() ? 'You finished all 7 steps.' : 'The Step-Up is not set up yet.'); return; }
   }
   if (free) { if (!freeReady(bk)) return; S.freePull[bk] = dayKey(); }
   else {
     if (!canPull(n, bk)) { toast(bk === 'stepup' ? `You need ${pearlNeed(n, bk)} pearls for this step.` : `You need ${tkNeed(n, bk)} ${TK_NAME[TK(bk)].toLowerCase()}${tkNeed(n, bk) > 1 ? 's' : ''} or ${pearlNeed(n, bk)} pearls for this pull.`); return; }
     const pay = payFor(n, bk); S.wallet[pay.k] -= pay.amt;
   }
-  // Max Win: 0.1% of ×10 summons hold at least 5 URs (one of them upgraded from an SSR) and play every animation (not on the Beginner Wish or Step-Up);
+  // Max Win: 0.1% of ×10 summons hold at least 5 URs (one of them upgraded from an SSR) and play every animation (not on the Beginner Banner or Step-Up);
   // only possible from player level 10 with at least 100 summons already made (maxWinOpen)
   const maxwin = n === 10 && !isSpecial(bk) && maxWinOpen() && Math.random() < MAXWIN_CHANCE;
   let bonus = 0, results;
   if (bk === 'stepup') { const sp = stepPull(); results = sp.out; bonus = sp.gold; }
   else results = (maxwin && maxWinResults(bk)) || Array.from({ length: n }, () => rollOne(bk));
   if (n === 10 && !maxwin) fragFloor(results, bk);   // every ×10: at least 1 UR and 2 SSR character fragments
-  addPoints(bk, n);   // summon points: 1 per pull (not on the Beginner Wish or Step-Up)
+  addPoints(bk, n);   // summon points: 1 per pull (not on the Beginner Banner or Step-Up)
   if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
   gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
@@ -303,7 +305,7 @@ function refreshSummon() { if (smEl) renderSummon(); }
    Portrait phones stack: tabs row, card, column, then the buttons pinned below. */
 function renderSummon() {
   if (!smEl) return;
-  if (!bannerKeys().includes(curBanner)) curBanner = 'limited';   // the Beginner Wish is gone once finished
+  if (!bannerKeys().includes(curBanner)) curBanner = 'limited';   // the Beginner Banner is gone once finished
   const bk = curBanner, g = S.gacha[bk], B = bannerInfo(bk), f = B.feat;
   // lineup for banners without uploaded art: the featured UR in the middle with SSRs beside it, or the banner's URs
   let line = f ? [f] : B.ur.slice(0, 5);
@@ -391,7 +393,7 @@ function smxLineup(B) {
   const L = B.ssr.filter(e => e.type === 'character' || e.type === 'skin').slice(0, 5); if (!L.length) return '';
   return `<div class="smx-lu"><small>SSR ${B.skins ? 'outfits' : 'characters'} on this banner</small><div class="smx-lui">${L.map(e => `<span title="${esc(e.name)}">${baseThumb(e)}</span>`).join('')}${B.ssr.length > L.length ? `<em>+${B.ssr.length - L.length}</em>` : ''}</div></div>`;
 }
-/* the Beginner Wish: 50 pulls drawn as 5 steps of ×10 leading to the guaranteed UR at pull 50 */
+/* the Beginner Banner: 50 pulls drawn as 5 steps of ×10 leading to the guaranteed UR at pull 50 */
 function smxBeginner(B, hero) {
   const done = BEGIN_PULLS - beginLeft(), segs = BEGIN_PULLS / 10;
   return `<div class="smx-bgn">
@@ -424,9 +426,9 @@ const TAB_IC = {
 };
 /* one-time milestones. Permanent banner: every 100 pulls from 100 to 600 (STD_MILES): a random permanent UR at 100 / 200 /
    400 / 500 and a UR selector (choose one UR from the admin's list) at 300 and 600; claimed ones in S.gacha.standard.miles.
-   Memory Wish: one at 50 pulls → a random UR memory (S.gacha.memories.mile). */
+   Memory Banner: one at 50 pulls → a random UR memory (S.gacha.memories.mile). */
 const STD_MILES = [100, 200, 300, 400, 500, 600], STD_SEL = [300, 600];
-const MILES = { standard: { n: 600, what: 'UR', where: 'the permanent banner', pool: () => standardURs() }, memories: { n: 50, what: 'UR memory', where: 'the Memory Wish', pool: () => (S.memories || []).filter(m => +m.rarity === 5).map(m => memEntry(m.id)).filter(Boolean) } };
+const MILES = { standard: { n: 600, what: 'UR', where: 'the permanent banner', pool: () => standardURs() }, memories: { n: 50, what: 'UR memory', where: 'the Memory Banner', pool: () => (S.memories || []).filter(m => +m.rarity === 5).map(m => memEntry(m.id)).filter(Boolean) } };
 const MILESTONE_PULLS = STD_MILES[0];
 function stdMiles() { const g = S.gacha.standard; if (!Array.isArray(g.miles)) g.miles = g.mile ? [100] : []; return g.miles; }
 const mileN = (bk = 'standard') => Math.min(MILES[bk].n, (S.gacha[bk] || {}).total || 0);
@@ -511,7 +513,7 @@ function openUrSelector() {
 }
 /* ---- Probability: a full page per banner (after the owner's reference: rarity rates on the left, every obtainable item
    with its icon and exact rate on the right). bannerOdds(bk) works the rates out from the same rules rollOne uses, for one
-   pull with no pity: rarity first (BASE5 / BASE4, ×2 on the Memory Wish, the Step-Up step's UR multiplier), then an item
+   pull with no pity: rarity first (BASE5 / BASE4, ×2 on the Memory Banner, the Step-Up step's UR multiplier), then an item
    of that rarity with equal chance, except the featured UR's 50/50 (pickUR); 33% of SSR results on the character banners
    are SSR memories (SSR_MEM_CHANCE); 1% of the other SSR results turn into a UR through the upgrade (UPGRADE_CHANCE),
    which is counted in the UR rows; the lowest tier (R) is gold or a fragment (LOW_DROPS). Rows add up to 100%. ---- */
@@ -551,7 +553,7 @@ function bannerOdds(bk) {
     ...(gold5 ? [{ ic: 'coins', name: `${fmt(FILLER_COINS[5])} gold coins (no UR on this banner)`, type: 'Gold', p: gold5 }] : [])]);
   const sum = r => groups.filter(x => x.r === r).reduce((a, x) => a + x.items.reduce((b, i) => b + i.p, 0), 0);
   const tiers = [5, 4, 3].map(r => ({ r, p: sum(r) }));
-  // the Beginner Wish's pull 50 is not a per-pull rate: listed on its own, outside the 100%
+  // the Beginner Banner's pull 50 is not a per-pull rate: listed on its own, outside the 100%
   const extra = B.begin && B.ur.length ? [{ key: 'b50', title: `Pull ${BEGIN_PULLS} guarantee`, r: 5, items: B.ur.map(e => item(e, 1 / B.ur.length)), at: `at pull ${BEGIN_PULLS}` }] : [];
   return { B, X, urX, p5, p4, p3, urFromSsr, groups, tiers, extra, sMem: sShare };
 }
@@ -591,7 +593,7 @@ function renderProb() {
     B.feat ? `<b>Rate up:</b> every UR you get is a 50/50 for <b>${esc(B.feat.name)}</b>; after a lost 50/50 the next UR is ${esc(B.feat.name)}.` : '',
     B.begin ? `No UR character before pull ${BEGIN_PULLS}: a UR roll gives a UR memory instead. ×10 only, 20% off. No SSR → UR upgrades.` : '',
     B.step ? `Steps 1 to 7 cost ${STEP_COST.join(', ')} pearls. Step 1 has half the UR rate, steps 3 and 5 1.5×. Step 4 always holds a UR memory and step 7 always holds ${B.feat ? esc(B.feat.name) : 'the rate-up character'}.` : '',
-    B.mems ? 'The Memory Wish has double the UR and SSR rates.' : '',
+    B.mems ? 'The Memory Banner has double the UR and SSR rates.' : '',
     bk === 'weekly' ? `The featured UR changes every Monday (00:00 UTC), next in ${shortLeft(B.ends)}.` : '',
     O.sMem ? `${SSR_MEM_CHANCE * 100}% of SSR results are a random SSR memory instead of an SSR character.` : '',
     O.urFromSsr ? `1% of SSR results turn into a UR (the SSR → UR upgrade): that adds ${pctTxt(O.urFromSsr)}% to the UR rows.` : '',
