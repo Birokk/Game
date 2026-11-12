@@ -133,12 +133,14 @@ function ccLeaderBox(deckId) {
 /* ---- rewards ---- */
 const CC_GOLD = { win: 2000, draw: 800, lose: 400 };
 function ccGrantRewards(winner) {
-  const k = winner === 0 ? 'win' : winner === 1 ? 'lose' : 'draw', out = { k, gold: CC_GOLD[k], pearls: k === 'win' ? CC_WIN_PEARLS : 0, gear: null, full: false };
+  const D = ccM && ccM.qm ? qmDiff(ccM.qm.diff) : null;   // Quick match difficulty: gold ×0.5–2, 0–3 pearls, gear (not on Easy)
+  const k = winner === 0 ? 'win' : winner === 1 ? 'lose' : 'draw', out = { k, gold: D ? qmGold(k, D) : CC_GOLD[k], pearls: k === 'win' ? (D ? D.pearls : CC_WIN_PEARLS) : 0, gear: null, full: false };
   S.wallet.coins = (S.wallet.coins || 0) + out.gold;
   if (out.pearls) S.wallet.pearls = (S.wallet.pearls || 0) + out.pearls;
   if (k === 'win') {
     questAdd('clash', 1);   // guild quest: win a Card Clash match
-    if (wardFree() < 1) out.full = true;
+    if (D && !D.gear) { /* Easy gives no gear */ }
+    else if (wardFree() < 1) out.full = true;
     else {   // one piece, rolled like a gear raid clear (a random gear dungeon: its UR set, the shared R / SSR sets, 1.5% a 2★ UR)
       const d = rpick(RAIDS.filter(x => x.kind === 'gear')), ur = dungeonPieces(d, 5), st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d);
       if (x) { const isNew = !owns(x.id); addCloth(x.id, st2 ? 2 : 1); out.gear = { x, isNew, st: st2 ? 2 : (hasClothStars(x) ? 1 : 0) }; }

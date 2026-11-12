@@ -37,7 +37,7 @@ function bthInfo(id) {
   if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
     return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
   const st = ccSave().stats;
-  return { sub: 'Mirror match', line: `${icon('trophy')}${st.w} W · ${st.l} L · ${st.d} D`, dot: false };
+  return { sub: `${QM_MODES.length} battle types · ${QM_DIFF.length} difficulties`, line: `${icon('trophy')}${st.w} W · ${st.l} L · ${st.d} D`, dot: false };
 }
 let bthEl = null, bthBack = false, bthHov = 'campaign';
 function openBattle() {
@@ -91,7 +91,7 @@ INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in on
   <ul class="info-list"><li><b>Campaign</b>: Card Battle stages in chapters, each teaching or twisting the rules. Up to 3 stars per stage (1 pearl each) and star rewards per chapter.</li>
   <li><b>Raids</b>: spend stamina in the gear raids for clothes, or in the Golden Vault for gold.</li>
   <li><b>The Great Tree</b>: climb floor by floor with your own deck; each cleared floor opens the next. Stars give pearls, there are no milestone rewards.</li>
-  <li><b>Quick Match</b>: a mirror match against a bot with one of your decks, for gold, a pearl and a chance at gear when you win.</li>
+  <li><b>Quick Match</b>: a quick battle against a hidden challenger with one of your decks. Pick a battle type (Mirror Duel, Rival Deck, Event Storm, Blitz) and a difficulty (Easy to Expert); tougher challengers give more gold, pearls and gear.</li>
   <li><b>World Map</b>: the regions around the Great Tree. Only the tree is open for now.</li>
   <li><b>Guild Boss</b>: a dragon your whole guild fights together, ${GB_TRIES} battles every 48 hours, with rewards by the damage you deal.</li></ul>` });
 
@@ -105,6 +105,8 @@ function renderBattleTab() {
       <span class="row" style="gap:6px;justify-content:center"><label class="btn mint sm">${icon('upload')}${u ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-btup="${m.id}"></label>${u ? `<button class="btn ghost sm" data-btdel="${m.id}">Default</button>` : ''}</span>${artFrameBtn('battle:' + m.id, 'card', `${m.name} card`)}</div>`; }).join('')}</div>
     <div class="row"><button class="btn ghost sm" id="bthAdOpen">${icon('swords')}Open the Battle screen</button></div>
     ${gbAdminHTML()}
+    <div><h3>Quick match wallpapers</h3><p class="tiny">One per battle type, behind the Quick match screen and on its battle type card (1920×1080 best). Without one, the screen shows a featured character of the day (a different one per type).</p></div>
+    <div class="setx-list ad-art">${QM_MODES.map(m => { const k = 'qm:bg:' + m.id, u = MEDIA.get(k); return setRow(`${m.name} wallpaper`, `<span class="set-wp">${u ? `<img src="${u}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-qmup="${m.id}"></label>${u ? `<button type="button" class="sx-btn" data-qmdel="${m.id}">Default</button>` : ''}${artFrameBtn(k, 'screen', `${m.name} wallpaper`)}`, `${m.kind} · ${m.desc}`); }).join('')}</div>
     <div><h3>Campaign chapter wallpapers</h3><p class="tiny">Each chapter's map on the campaign screen (only inside the map panel, 1920×1080 best). Default: the night sky.</p></div>
     <div class="setx-list ad-art">${adminArtRows('campaign')}</div>
   </div>`;
@@ -112,6 +114,8 @@ function renderBattleTab() {
   p.querySelectorAll('[data-btup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('battle:' + i.dataset.btup, await resizeImage(i.files[0], 1280, 'image/jpeg'))) { redo(); toast('Card wallpaper saved.'); } } catch (e) { toast(e.message, true); } });
   p.querySelectorAll('[data-btdel]').forEach(b => b.onclick = async () => { await mediaDel('battle:' + b.dataset.btdel); redo(); toast('Card back to the drawn scene.'); });
   p.querySelector('#bthAdOpen').onclick = () => { closeModal(); openBattle(); };
+  p.querySelectorAll('[data-qmup]').forEach(i => i.onchange = async () => { try { if (await mediaSet('qm:bg:' + i.dataset.qmup, await resizeImage(i.files[0], 1920, 'image/jpeg'))) { renderBattleTab(); if (qmEl) renderQuickMatch(); toast('Quick match wallpaper saved.'); } } catch (e) { toast(e.message, true); } });
+  p.querySelectorAll('[data-qmdel]').forEach(b => b.onclick = async () => { await mediaDel('qm:bg:' + b.dataset.qmdel); renderBattleTab(); if (qmEl) renderQuickMatch(); toast('Back to the featured character.'); });
   bindAdminArt(p, renderBattleTab);
   gbAdminBind(p, redo);
 }

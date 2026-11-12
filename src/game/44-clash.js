@@ -158,9 +158,10 @@ function ccShuffle(G, a) { for (let i = a.length - 1; i > 0; i--) { const j = Ma
    hp = [your HP, bot HP] at the start, order = keep both decks in the given order (deck[0] is drawn first) instead of
    shuffling, setup(G) = runs after the opening hands, before the first turn (place units / traps); the guild boss also
    uses rounds = an earlier round limit (with limitText = why it ended), apB = [your extra AP, bot extra AP] every turn,
-   hitX = [x, x] damage multiplier on each hero (the dragon takes ×3) */
+   hitX = [x, x] damage multiplier on each hero (the dragon takes ×3), hpWin = at the round limit the hero with more HP wins
+   (Quick match Blitz) instead of a draw */
 function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
-  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now(), maxRound: opts.rounds || 0, limitText: opts.limitText || '', apB: opts.apB || null, hitX: opts.hitX || null };
+  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now(), maxRound: opts.rounds || 0, limitText: opts.limitText || '', apB: opts.apB || null, hitX: opts.hitX || null, hpWin: !!opts.hpWin };
   G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
   G.players.forEach(P => opts.order ? P.deck.reverse() : ccShuffle(G, P.deck));   // cards are drawn from the end of the array
   G.first = G.active = opts.first === 0 || opts.first === 1 ? opts.first : ccRand(G) < 0.5 ? 0 : 1;
@@ -251,7 +252,7 @@ function ccEndTurn(G) {
   G.active = 1 - p;
   if (G.active === G.first) {
     G.round++; G.players.forEach(P => P.healed = 0);
-    if (G.round > ccRounds(G)) { G.phase = 'over'; G.winner = 'draw'; G.reason = G.limitText || `Round ${ccRounds(G)} ended with both heroes alive`; ccLog(G, G.limitText ? 'Time is up' : 'Draw: round limit reached', 'sys'); return; }
+    if (G.round > ccRounds(G)) { const h0 = G.players[0].hp, h1 = G.players[1].hp; G.phase = 'over'; G.winner = G.hpWin && h0 !== h1 ? (h0 > h1 ? 0 : 1) : 'draw'; G.reason = G.limitText || `Round ${ccRounds(G)} ended with both heroes alive`; ccLog(G, G.limitText ? 'Time is up' : 'Draw: round limit reached', 'sys'); return; }
   }
   ccBeginTurn(G);
 }

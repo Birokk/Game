@@ -120,20 +120,80 @@ function renderDeck() {
   const del = one('#ccdDel'); if (del) del.onclick = () => { if (!del.dataset.sure) { del.dataset.sure = 1; del.textContent = 'Tap again'; return; } sv.decks = sv.decks.filter(d => d.id !== deck.id); sv.sel = 'p-balanced'; persist(); renderDeck(); };
 }
 
-/* ---- Quick match: a full-screen lobby (rebuilt when the owner asked for a more premium Quick match) ----
-   A fighting-game style VS arena: you on the left (your deck's leader art, your name, your board skin and card back),
-   the challenger on the right (the character, board skin and card back the match seed gives the bot), split on a
-   glowing diagonal with a big VS, the seed's battle event over the split. Under it your decks as cards (playstyle bar,
-   leader, ready or not), the rewards (win / draw / loss) and a big crystal Battle! button. "New challenger" rolls a new
-   seed (a new opponent, event, first player and bot skins); the seed field stays for replaying a match. */
+/* ---- Quick match (rebuilt a second time: the owner asked for the Raids page's glass design, a challenger you don't see
+   before the game, battle types and difficulties, and character art on the wallpaper; "a template, we change it later") ----
+   QM_MODES = the battle types, QM_DIFF = the difficulties (the challenger's HP, how it thinks, the rewards). The lobby is
+   .qmx on the Raids page's layout (.rdx): battle type cards on the left, the type's hero block, the difficulty cards and
+   one action bar: your deck vs a hidden challenger ("?", revealed by the VS intro) and Battle!. Admins also get the seed
+   box, New challenger and a preview of what the seed brings. State S.cc.qm {mode, diff}, wins per difficulty S.cc.qmWins. */
+const QM_MODES = [
+  { id: 'mirror', name: 'Mirror Duel', kind: 'Classic', ic: 'cards', col: '#c8a2ff', desc: 'Your challenger shuffles a copy of your own deck. Same cards on both sides: the better plan wins.', rules: [['cards', 'Same deck as you'], ['heart', '20 HP each'], ['sparkle', 'Battle event 60%']] },
+  { id: 'rival', name: 'Rival Deck', kind: 'Surprise', ic: 'swords', col: '#ff9ec7', desc: 'Your challenger brings a deck of its own: rush, traps, spells or a wall. You only find out which when the cards are dealt.', rules: [['swords', 'A secret rival deck'], ['heart', '20 HP each'], ['sparkle', 'Battle event 60%']] },
+  { id: 'storm', name: 'Event Storm', kind: 'Chaos', ic: 'bolt', col: '#8fe3ff', desc: 'Every match starts under a battle event: rain, blood moon, starfall and more. Read the sky and adapt your plan.', rules: [['bolt', 'Always a battle event'], ['cards', 'Same deck as you'], ['heart', '20 HP each']] },
+  { id: 'blitz', name: 'Blitz', kind: 'Fast', ic: 'clock', col: '#ffd27a', hp: 12, rounds: 12, desc: 'Both heroes start on 12 HP and the match ends after round 12. When time runs out, the hero with more HP wins.', rules: [['heart', '12 HP each'], ['clock', 'Ends after round 12'], ['trophy', 'More HP wins']] }
+];
+/* brain: easy = the bot with mistakes, bot = the normal bot, plan = a softer planner (QM_HARD), best = the auto play planner */
+const QM_DIFF = [
+  { id: 'easy', name: 'Easy', pips: 1, hpX: .7, brain: 'easy', gold: .5, pearls: 0, gear: false, col: '#9ff5c6', desc: 'Makes mistakes and has less HP. Good for trying a new deck.' },
+  { id: 'normal', name: 'Normal', pips: 2, hpX: 1, brain: 'bot', gold: 1, pearls: 1, gear: true, col: '#94b8ff', desc: 'An average player. The classic Quick match.' },
+  { id: 'hard', name: 'Hard', pips: 3, hpX: 1, brain: 'plan', gold: 1.5, pearls: 2, gear: true, col: '#ffb3dd', desc: 'Plans its whole turn ahead before it moves.' },
+  { id: 'expert', name: 'Expert', pips: 4, hpX: 1.2, brain: 'best', gold: 2, pearls: 3, gear: true, col: '#ff8a8a', need: { hard: 3 }, desc: 'Plans like auto play and has 20% more HP.' }
+];
+const QM_RIVALS = ['raiders', 'arcane', 'traps', 'frost', 'storm', 'holy', 'fort', 'warlord', 'p-balanced', 'p-rush', 'p-defensive'];
+const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', holy: 'Holy deck', fort: 'Fortress deck', warlord: 'Warlord deck' };
+const qmMode = id => QM_MODES.find(m => m.id === id) || QM_MODES[0];
+const qmDiff = id => QM_DIFF.find(d => d.id === id) || QM_DIFF[1];
+function qmState() { const sv = ccSave(); if (!sv.qm || typeof sv.qm !== 'object') sv.qm = { mode: 'mirror', diff: 'normal' }; if (!sv.qmWins || typeof sv.qmWins !== 'object') sv.qmWins = {}; return sv.qm; }
+const qmOpen = d => !d.need || canAdmin() || Object.entries(d.need).every(([k, n]) => (ccSave().qmWins[k] || 0) >= n);
+const qmNeedTxt = d => d.need ? Object.entries(d.need).map(([k, n]) => `Win ${n} on ${qmDiff(k).name}`).join(' · ') : '';
+const qmGold = (k, d) => Math.round(CC_GOLD[k] * d.gold / 100) * 100;
+/* what a seed brings in a mode: the challenger's deck (its own in Rival Deck), the event, both heroes' HP and the time limit */
+function qmSetup(seed, mode, diff, deck) {
+  const m = qmMode(mode), d = qmDiff(diff), base = m.hp || CC_CFG.hp, opts = { hp: [base, Math.max(4, Math.round(base * d.hpX))] };
+  let foeDeck = deck.cards.slice(), deckName = 'Your own deck';
+  if (m.id === 'rival') { const k = QM_RIVALS[(seed >>> 3) % QM_RIVALS.length], pr = CC_PRESETS.find(x => x.id === k); foeDeck = (pr ? pr.cards : CC_CAMP_DECKS[k]).slice(); deckName = pr ? pr.name : QM_RIVAL_NM[k] || 'Rival deck'; }
+  if (m.id === 'storm') opts.ev = CC_EV_KEYS[(seed >>> 5) % CC_EV_KEYS.length];
+  if (m.rounds) { opts.ev = null; opts.rounds = m.rounds; opts.hpWin = true; opts.limitText = `Round ${m.rounds} ended: the hero with more HP wins`; }
+  return { foeDeck, deckName, opts, ev: 'ev' in opts ? opts.ev : ccPickEvent(seed) };
+}
+/* the challenger's brains: Easy plays the normal bot but a third of its moves are random and it sometimes ends early;
+   Hard and Expert plan their whole turn with the auto play planner (Hard = without looking at your reply and with more
+   slips, QM_HARD; Expert = CC_AUTO, the same good player as auto play) */
+function ccBotPickEasy(G) {
+  if (G.phase === 'choice') return ccBotPick(G);
+  const r = ccNoise(G, 7331);
+  if (r < .3) { const acts = ccLegal(G).filter(a => a.k !== 'end'); if (acts.length) return acts[Math.floor(ccNoise(G, 7919) * acts.length) % acts.length]; }
+  if (r > .9) return { k: 'end' };
+  return ccBotPick(G);
+}
+async function ccPlanPick(G, cfg) {
+  const m = ccM;
+  if (!m.qmPlan || !m.qmPlan.length || !ccAutoStill(G, m.qmPlan[0])) {
+    const plan = await ccAutoPlanAsync(G, cfg, () => ccM === m);
+    if (ccM !== m) return null;
+    m.qmPlan = plan && plan.length && ccAutoStill(G, plan[0]) ? plan : null;
+  }
+  if (!m.qmPlan) return ccBotPick(G);
+  const { pre, ...a } = m.qmPlan.shift(); return a;
+}
+/* tuned in Node (scratchpad qm/sim.js, the three starter decks as mirrors, an average player = the bot's own policy on your
+   side): Easy 71% wins / 0% losses, Normal 33% / 33% (the rest draws, mostly Defensive mirrors), Hard 22% / 47%, Expert
+   (the full planner + 20% HP) about 10% / 60%; a good player (auto play) does a lot better */
+const QM_HARD = () => ({ ...CC_AUTO, reply: 0, slip: .35 });
+const qmAi = q => q && q.brain === 'plan' ? QM_HARD() : q && q.brain === 'best' ? CC_AUTO : null;
+/* the wallpaper: the admin's per-type picture (qm:bg:<mode>), else a featured character of the day (a different one per type) */
+function qmFeatured(mode) {
+  const L = S.pool.filter(e => e.type === 'character' && !e.mc && baseArt(e)); if (!L.length) return null;
+  const i = QM_MODES.findIndex(m => m.id === mode), day = Math.floor(Date.now() / 864e5);
+  return L[(day + i * 5) % L.length];
+}
 let ccQmSeed = 0, qmEl = null;
 const ccQmFoe = seed => { const foes = S.pool.filter(e => e.type === 'character' && !e.mc); return foes.length ? foes[(seed >>> 0) % foes.length] : null; };   // startClash uses the same pick
 function openQuickMatch() {
-  const sv = ccSave(); closeModal();
+  const sv = ccSave(); closeModal(); qmState();
   if (!qmEl) {
     ccQmSeed = Math.floor(Math.random() * 1e9);
-    qmEl = document.createElement('div'); qmEl.className = 'qm intro'; qmEl.setAttribute('role', 'dialog'); qmEl.setAttribute('aria-label', 'Quick match'); document.body.appendChild(qmEl);
-    setTimeout(() => qmEl && qmEl.classList.remove('intro'), 1400);
+    qmEl = document.createElement('div'); qmEl.className = 'qmx rdx'; qmEl.setAttribute('role', 'dialog'); qmEl.setAttribute('aria-label', 'Quick match'); document.body.appendChild(qmEl);
   }
   const ok = ccAllDecks().filter(d => ccValidateDeck(d.cards).ok);
   if (!ccValidateDeck(ccDeck(sv.sel).cards).ok && ok.length) sv.sel = ok[0].id;
@@ -141,62 +201,69 @@ function openQuickMatch() {
 }
 /* closing: back to whatever screen is under it (Deck, campaign, tree), else Battle or home */
 function closeQuickMatch(home = true) { if (qmEl) { qmEl.remove(); qmEl = null; } if (home && !ccdEl && !cmpEl && !twrEl && !wmEl) bthHome(); }
-function renderQuickMatch(swap) {
+function renderQuickMatch() {
   if (!qmEl) return;
-  const sv = ccSave(), seed = ccQmSeed >>> 0, deck = ccDeck(sv.sel), valid = ccValidateDeck(deck.cards).ok, st = sv.stats;
-  const le = ccLeaderOf(deck.id), foe = ccQmFoe(seed), lart = le ? mediaArt(le) || baseCard(le) : null, fart = foe ? baseArt(foe) || baseCard(foe) : null;
-  const k = ccPickEvent(seed), E = k && CC_EVENTS[k];
-  const kit = (sk, bk, mine) => `<div class="qm-kit">
-      <span class="qm-chip" title="Board skin: ${esc(ccSkinOf(sk).name)}">${ccSkinIco(sk, 'qm-skic')}<span class="qm-ct"><small>Board</small><b>${esc(ccSkinOf(sk).name)}</b></span></span>
-      <span class="qm-chip" title="Card back: ${esc(ccBackOf(bk).name)}">${ccBackHTML('qm-back', bk)}<span class="qm-ct"><small>Card back</small><b>${esc(ccBackOf(bk).name)}</b></span></span>
-      ${mine ? `<button class="qm-change" id="qmSkin">${icon('edit')}<span>Change</span></button>` : ''}</div>`;
-  const dk = d => { const v = ccValidateDeck(d.cards).ok, L = ccLeaderOf(d.id), by = s => d.cards.filter(id => ccDef(id).style === s).length, on = d.id === sv.sel;
-    return `<button class="qm-dk ${on ? 'on' : ''}" data-qdeck="${d.id}" ${v ? '' : 'disabled'} aria-pressed="${on}">
-      <span class="qm-dkbar">${Object.keys(CC_STYLES).map(s => by(s) ? `<i style="flex:${by(s)};--cs:${CC_STYLES[s][1]}"></i>` : '').join('') || '<i class="none"></i>'}</span>
-      <span class="qm-dkav">${L ? baseThumb(L) : CC_IC}</span>
-      <span class="qm-dkt"><b>${esc(d.name)}</b><small>${d.preset ? `${icon('lock')}Starter` : v ? 'Ready' : `${d.cards.length} / 30`}</small></span>
-      ${on ? `<i class="qm-dkon">${icon('check')}</i>` : ''}</button>`; };
-  qmEl.innerHTML = `<div class="qm-bg" aria-hidden="true"><div class="qm-bga">${typeof bthArt === 'function' ? bthArt('quick', true) : ''}</div><i class="qm-glow me"></i><i class="qm-glow op"></i><i class="qm-vig"></i></div>
-    <header class="qm-head"><div class="inv-title"><span class="inv-badge">${icon('bolt')}</span><h2 class="ts">Quick Match</h2></div>
-      <button class="cs-info info-btn" id="qmRules" title="How to play" aria-label="How to play">${icon('book')}</button>
-      <span class="qm-sp"></span>
-      <div class="qm-rec" title="Your Quick match record">${icon('trophy')}<span class="w"><b>${st.w}</b>Wins</span><span class="l"><b>${st.l}</b>Losses</span><span class="d"><b>${st.d}</b>Draws</span></div>
+  const sv = ccSave(), q = qmState(), m = qmMode(q.mode), seed = ccQmSeed >>> 0, deck = ccDeck(sv.sel), valid = ccValidateDeck(deck.cards).ok, st = sv.stats;
+  if (!qmOpen(qmDiff(q.diff))) q.diff = 'normal';
+  const D = qmDiff(q.diff), le = ccLeaderOf(deck.id), bgk = 'qm:bg:' + m.id, up = MEDIA.get(bgk), fe = up ? null : qmFeatured(m.id), fart = fe ? baseArt(fe) : null;
+  const keep = qmEl.querySelector('.rdx-scroll'), top = keep ? keep.scrollTop : 0;
+  const card = x => { const xf = MEDIA.get('qm:bg:' + x.id) ? null : qmFeatured(x.id), xa = MEDIA.get('qm:bg:' + x.id) || (xf ? baseArt(xf) : '');
+    return `<button class="rdx-it qmx-it ${x.id === m.id ? 'on' : ''}" data-qmode="${x.id}" style="--mc:${x.col}">${xa ? `<span class="qmx-itart" aria-hidden="true"><img src="${xa}" alt=""></span>` : ''}<span class="rdx-iti">${icon(x.ic)}</span><span class="rdx-itt"><b>${esc(x.name)}</b><small>${esc(x.kind)} · ${esc(x.rules[0][1])}</small></span></button>`; };
+  const pip = (n, max = 4) => `<span class="qmx-pips">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+  const diff = d => { const open = qmOpen(d), on = d.id === D.id, bh = Math.max(4, Math.round((m.hp || CC_CFG.hp) * d.hpX)), w = sv.qmWins[d.id] || 0;
+    return `<button class="qmx-df ${on ? 'on' : ''} ${open ? '' : 'locked'}" data-qdiff="${d.id}" style="--dc:${d.col}" aria-pressed="${on}" ${open ? '' : `title="${esc(qmNeedTxt(d))}"`}>
+      <span class="qmx-dfh">${pip(d.pips)}<b>${d.name}</b>${open ? '' : `<i class="qmx-lock">${icon('lock')}</i>`}</span>
+      <small class="qmx-dfd">${open ? esc(d.desc) : esc(qmNeedTxt(d)) + ' to unlock'}</small>
+      <span class="qmx-dfs"><span>${icon('heart')}Challenger ${bh} HP</span><span>${icon('trophy')}${w} win${w === 1 ? '' : 's'}</span></span>
+      <span class="qmx-dfr">${curIcon('coins')}${fmt(qmGold('win', d))}${d.pearls ? `<i>${curIcon('pearls')}${d.pearls}</i>` : ''}${d.gear ? `<i title="One clothing piece on a win, like a gear raid clear">${icon('hanger')}Gear</i>` : ''}</span></button>`; };
+  let adm = '';
+  if (canAdmin()) { const ss = qmSetup(seed, m.id, D.id, deck), foe = ccQmFoe(seed), E = ss.ev && CC_EVENTS[ss.ev];
+    adm = `<div class="rdx-panel qmx-adm"><div class="rdx-ph"><b>Admin preview</b><small>Players never see this: the challenger stays hidden until the battle starts</small></div>
+      <div class="qmx-admr"><label class="qmx-seed"><span>Seed</span><input id="qmSeed" inputmode="numeric" value="${seed}" aria-label="Match seed"></label><button class="rdx-sec" id="qmDice">${icon('refresh')}New challenger</button>
+        <span class="qmx-admi">${foe ? `<b>${esc(foe.name)}</b>` : '<b>Bot</b>'} · ${esc(ss.deckName)} · ${E ? esc(E.name) : 'no event'} · board ${esc(ccSkinOf(ccBotSkin(seed)).name)}</span></div></div>`; }
+  qmEl.innerHTML = `<div class="rdx-bg qmx-bg ${up || fart ? 'art' : ''}" style="--mc:${m.col}">${up ? artImg(bgk) : fart ? `<img src="${fart}" alt="">` : `<div class="qmx-scene">${typeof bthArt === 'function' ? bthArt('quick', true) : ''}</div>`}</div><div class="rdx-shade qmx-shade"></div>
+    ${fe ? `<span class="qmx-feat">${icon('sparkle')}Featured today · <b>${esc(fe.name)}</b></span>` : ''}
+    <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('bolt')}</span><h2 class="ts">Quick Match</h2></div>
+      <button class="cs-info info-btn" id="qmRules" title="How to play" aria-label="How to play">${icon('book')}</button><span class="rdx-sp"></span>
+      <span class="rdx-ward qmx-rec" title="Your Quick match record: wins, losses, draws">${icon('trophy')}W <b>${st.w}</b><i>·</i>L <b>${st.l}</b><i>·</i>D <b>${st.d}</b></span>
+      <div class="cur" id="qmStam" data-k="stamina">${curIcon('stamina')}<b>${stamina()}<small>/${stamMax()}</small></b><button class="plus" id="qmPlus" aria-label="Refill stamina">${icon('plus')}</button></div>
       <button class="inv-x" id="qmClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="qm-arena ${swap ? 'swap' : ''}">
-      <div class="qm-side me"><div class="qm-art">${lart ? `<img src="${lart}" alt="">` : `<span class="qm-ava">${avatarHTML(200)}</span>`}</div><i class="qm-shade"></i></div>
-      <div class="qm-side op"><div class="qm-art">${fart ? `<img src="${fart}" alt="">` : `<span class="qm-bot">${ccIco('bot')}</span>`}</div><i class="qm-shade"></i></div>
-      <i class="qm-cut" aria-hidden="true"></i><i class="qm-motes" aria-hidden="true"></i>
-      <div class="qm-plate me"><small>You</small><b class="ts">${esc(S.player.name || 'You')}</b><span>${le ? `${icon('crown')}Leader · ${esc(le.name)}` : 'No leader yet'}</span>${kit(ccMySkin(), ccMyBack(), true)}</div>
-      <div class="qm-plate op"><small>Challenger</small><b class="ts">${foe ? esc(foe.name) : 'Bot'}</b><span>${ccIco('bot')}Plays your deck · average player</span>${kit(ccBotSkin(seed), ccBotBack(seed))}</div>
-      <div class="qm-vs" aria-hidden="true"><i class="qm-vsr"></i><i class="qm-vsr r2"></i><b>VS</b></div>
-      <div class="qm-ev ${E ? '' : 'none'}" style="--ec:${E ? ccEvCol(k) : '#c9d4ff'}"><span class="qm-evic">${E ? ccEvIco(k) : icon('sparkle')}</span><span class="qm-evt"><small>Battle event</small><b>${E ? esc(E.name) : 'Clear skies'}</b><em>${E ? esc(E.text) : 'No event this match.'}</em></span></div>
-      <div class="qm-seed ${canAdmin() ? '' : 'ro'}"><label for="qmSeed">Seed</label><input id="qmSeed" inputmode="numeric" value="${seed}" aria-label="Match seed" ${canAdmin() ? '' : 'readonly tabindex="-1"'}>${canAdmin() ? `<button class="qm-new" id="qmDice" title="Admin only">${icon('refresh')}<span>New challenger</span></button>` : ''}</div>
-    </section>
-    <section class="qm-foot">
-      <div class="qm-decks"><span class="qm-lbl">Your deck <button class="qm-link" id="qmDecks">${CC_IC}Edit decks</button></span><div class="qm-dkrow">${ccAllDecks().map(dk).join('')}</div></div>
-      <div class="qm-rew"><span class="qm-lbl">Rewards</span>
-        <div class="qm-rw win"><b>Win</b><span>${curIcon('coins')}${fmt(CC_GOLD.win)}</span><span>${curIcon('pearls')}${CC_WIN_PEARLS}</span><span title="One clothing piece, like a gear raid clear (needs a free wardrobe space)">${icon('hanger')}Gear</span></div>
-        <div class="qm-rw"><b>Draw</b><span>${curIcon('coins')}${fmt(CC_GOLD.draw)}</span></div>
-        <div class="qm-rw"><b>Loss</b><span>${curIcon('coins')}${fmt(CC_GOLD.lose)}</span></div></div>
-      <div class="qm-gobox"><button class="qm-go" id="qmGo" ${valid ? '' : 'disabled'}><span class="qm-goi">${icon('bolt')}</span><span class="qm-got"><b>Battle!</b><small>${valid ? esc(deck.name) : 'Pick a deck with 30 cards'}</small></span><span class="qm-cost" title="Every Quick match costs ${CC_QM_STAM} stamina">${curIcon('stamina')}${CC_QM_STAM}</span></button>
-        <button class="qm-link" id="qmCamp">${icon('map')}New to Card Clash? Play the tutorial</button></div>
-    </section>`;
-  const q = s => qmEl.querySelector(s);
-  q('#qmClose').onclick = () => closeQuickMatch();
-  q('#qmRules').onclick = () => ccRules(0);
-  q('#qmSkin').onclick = () => ccSkinPicker(openQuickMatch);
-  q('#qmDecks').onclick = () => { closeQuickMatch(false); if (ccdEl) renderDeck(); else openDeck(); };
-  q('#qmCamp').onclick = () => { closeQuickMatch(false); openCampaign(); };
-  qmEl.querySelectorAll('[data-qdeck]').forEach(x => x.onclick = () => { sv.sel = x.dataset.qdeck; persist(); if (ccdEl) renderDeck(); renderQuickMatch(); });
-  const si = q('#qmSeed'); si.onchange = () => { if (!canAdmin()) { si.value = ccQmSeed; return; } ccQmSeed = (parseInt(si.value, 10) || 0) >>> 0; renderQuickMatch(true); };   // only admins pick the challenger
-  si.onkeydown = e => { if (e.key === 'Enter') si.blur(); };
-  const dice = q('#qmDice'); if (dice) dice.onclick = () => { if (!canAdmin()) return; ccQmSeed = Math.floor(Math.random() * 1e9); renderQuickMatch(true); };
-  q('#qmGo').onclick = () => {
+    <aside class="rdx-rail"><span class="rdx-gh">${icon('swords')}Battle types</span>${QM_MODES.map(card).join('')}
+      <span class="rdx-gh">${icon('map')}New here?</span><button class="rdx-it qmx-it tut" id="qmCamp"><span class="rdx-iti">${icon('map')}</span><span class="rdx-itt"><b>Tutorial</b><small>Learn Card Clash in the campaign</small></span></button>
+      <button class="rdx-it qmx-it tut" id="qmRules2"><span class="rdx-iti">${icon('book')}</span><span class="rdx-itt"><b>How to play</b><small>The illustrated rules book</small></span></button></aside>
+    <section class="rdx-main"><div class="rdx-scroll">
+      <div class="rdx-hero"><span class="rdx-kind" style="--mc:${m.col}">${icon(m.ic)}Quick match · ${esc(m.kind)}</span>
+        <h1 class="rdx-title qmx-title" style="--mc:${m.col}">${esc(m.name)}</h1><p class="rdx-desc">${esc(m.desc)}</p>
+        <div class="rdx-meta">${m.rules.map(([ic, t]) => `<span>${icon(ic)}${esc(t)}</span>`).join('')}<span>${curIcon('stamina')}${CC_QM_STAM} stamina a match</span></div></div>
+      <div class="rdx-panel"><div class="rdx-ph"><b>Difficulty</b><small>Tougher challengers give bigger rewards</small></div><div class="qmx-dfs-row">${QM_DIFF.map(diff).join('')}</div></div>
+      ${adm}</div>
+      <div class="rdx-bar qmx-bar">
+        <div class="rdx-vs">
+          <button class="rdx-side me" id="qmDeck" title="Change the deck you play with"><span class="rdx-si qmx-av">${le ? baseThumb(le) : icon('cards')}</span><span class="rdx-st"><small>Your deck</small><b>${valid ? esc(deck.name) : 'No ready deck'}</b><em>${valid ? `${le ? `${icon('crown')}${esc(le.name)} · ` : ''}Change` : 'Build a 30-card deck'}</em></span></button>
+          <span class="rdx-vsx">VS</span>
+          <div class="rdx-side op qmx-myst"><span class="rdx-si qmx-q">?</span><span class="rdx-st"><small>Challenger</small><b>??? · ${D.name}</b><em>${icon('eye')}Revealed when the battle starts</em></span></div>
+        </div>
+        <div class="rdx-inst qmx-rew"><span class="rdx-il">${icon('gift')}Rewards · ${D.name}</span><div class="qmx-rws"><span class="w"><b>Win</b>${curIcon('coins')}${fmt(qmGold('win', D))}${D.pearls ? ` ${curIcon('pearls')}${D.pearls}` : ''}${D.gear ? ` ${icon('hanger')}` : ''}</span><span><b>Draw</b>${curIcon('coins')}${fmt(qmGold('draw', D))}</span><span><b>Loss</b>${curIcon('coins')}${fmt(qmGold('lose', D))}</span></div></div>
+        <button class="rdx-go" id="qmGo" ${valid ? '' : 'disabled'}><span class="rdx-goi">${icon('bolt')}</span><span class="rdx-got"><b>Battle!</b><small>${curIcon('stamina')}${CC_QM_STAM} stamina</small></span></button>
+      </div></section>`;
+  const sc = qmEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;
+  const rl = qmEl.querySelector('.rdx-rail'), onm = rl && rl.querySelector('.rdx-it.on'); if (onm && rl.scrollWidth > rl.clientWidth + 2) rl.scrollLeft = Math.max(0, onm.offsetLeft - (rl.clientWidth - onm.offsetWidth) / 2);
+  const $q = s => qmEl.querySelector(s);
+  $q('#qmClose').onclick = () => closeQuickMatch();
+  $q('#qmRules').onclick = $q('#qmRules2').onclick = () => ccRules(0);
+  $q('#qmPlus').onclick = openStamina;
+  $q('#qmCamp').onclick = () => { closeQuickMatch(false); openCampaign(); };
+  $q('#qmDeck').onclick = () => { if (ccAllDecks().some(x => ccValidateDeck(x.cards).ok)) ccDeckPicker(() => { if (ccdEl) renderDeck(); renderQuickMatch(); }); else { closeQuickMatch(false); openDeck(); } };
+  qmEl.querySelectorAll('[data-qmode]').forEach(b => b.onclick = () => { q.mode = b.dataset.qmode; persist(); renderQuickMatch(); });
+  qmEl.querySelectorAll('[data-qdiff]').forEach(b => b.onclick = () => { const d = qmDiff(b.dataset.qdiff); if (!qmOpen(d)) return toast(`${d.name} opens after you ${qmNeedTxt(d).toLowerCase()}.`); q.diff = d.id; persist(); renderQuickMatch(); });
+  const si = $q('#qmSeed'); if (si) { si.onchange = () => { ccQmSeed = (parseInt(si.value, 10) || 0) >>> 0; renderQuickMatch(); }; si.onkeydown = e => { if (e.key === 'Enter') si.blur(); }; }
+  const dice = $q('#qmDice'); if (dice) dice.onclick = () => { ccQmSeed = Math.floor(Math.random() * 1e9); renderQuickMatch(); };
+  $q('#qmGo').onclick = () => {
     const d = ccDeck(sv.sel); if (!ccValidateDeck(d.cards).ok) return toast('Pick a deck with 30 cards', true);
-    const sd = canAdmin() ? (parseInt(si.value, 10) || 0) >>> 0 : ccQmSeed >>> 0; if (!ccQmPay()) return; closeQuickMatch(false); startClash(d, sd);
+    const sd = ccQmSeed >>> 0; if (!ccQmPay()) return; closeQuickMatch(false); startClash(d, sd, null, null, null, { mode: q.mode, diff: q.diff });
   };
-  const row = q('.qm-dkrow'), on = q('.qm-dk.on'); if (row && on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;   // keep the chosen deck in view
 }
+setInterval(() => { const s = qmEl && qmEl.querySelector('#qmStam b'); if (s) s.innerHTML = `${stamina()}<small>/${stamMax()}</small>`; }, 5000);
 
 /* ---- the match ---- */
 let ccM = null;
@@ -220,14 +287,15 @@ const CC_TIPS = [
 /* starting a match: the loading screen covers everything while the board, the forest and the textures are built,
    and the match (and the bot) only starts once the board is revealed */
 /* camp = a campaign stage (54-clash-campaign.js): its own match setup, the default board / back for the bot, a coach, stars */
-function startClash(deck, seed, camp, boss, raid) {   // boss = a guild boss battle {lv, hp0, max, gid} (59-gboss.js); raid = a raid battle {id, stage, cost, hp} (23-raids.js)
+function startClash(deck, seed, camp, boss, raid, qm) {   // boss = a guild boss battle {lv, hp0, max, gid} (59-gboss.js); raid = a raid battle {id, stage, cost, hp} (23-raids.js); qm = a Quick match {mode, diff}
   ccStop(); closeModal(); if (cmpEl) { cmpEl.remove(); cmpEl = null; } if (twrEl) { twrEl.remove(); twrEl = null; } if (wmEl) { wmEl.remove(); wmEl = null; } if (bthEl) { bthEl.remove(); bthEl = null; } if (qmEl) { qmEl.remove(); qmEl = null; } if (typeof gbEl !== 'undefined' && gbEl) { gbEl.remove(); gbEl = null; } if (raidEl) { raidEl.remove(); raidEl = null; }   // the campaign map / tree comes back after a stage (ccCampMap)
   const foe = boss || camp && camp.dummy ? null : ccQmFoe(seed);   // the same challenger the Quick match lobby showed for this seed
   const names = [S.player.name || 'You', boss ? gbName() : camp && camp.dummy ? camp.foeName : foe ? foe.name : 'Bot'];
-  const G = boss ? gbMatch(deck, seed, names, boss) : raid ? raidMatch(deck, seed, names, raid) : camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), deck.cards.slice(), names);
+  const qd = !boss && !raid && !camp ? { mode: qmMode(qm && qm.mode).id, diff: qmDiff(qm && qm.diff).id } : null, qs = qd ? qmSetup(seed, qd.mode, qd.diff, deck) : null;
+  const G = boss ? gbMatch(deck, seed, names, boss) : raid ? raidMatch(deck, seed, names, raid) : camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), qs.foeDeck, names, qs.opts);
   ccSkReset();
   const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), boss ? 'inferno' : raid ? raidFoe(raid.id).skin : camp ? 'default' : ccBotSkin(seed)], backs: [ccMyBack(), boss ? 'inferno' : raid ? raidFoe(raid.id).back : camp ? 'default' : ccBotBack(seed)], boss: boss || null, raid: raid || null, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false,
-    camp: camp ? { st: camp, cs: ccCampStats(), shown: new Set(), tip: null } : null };
+    camp: camp ? { st: camp, cs: ccCampStats(), shown: new Set(), tip: null } : null, qm: qd ? { ...qd, brain: qmDiff(qd.diff).brain, deckName: qs.deckName } : null };
   showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => ccCoinFlip(() => ccEventReveal(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }))); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
@@ -294,8 +362,8 @@ function ccClick(e) {
     if (id === 'ccRules') return ccRules();
     if (id === 'ccCancel') { ccM.sel = null; ccRender(); return; }
     if (id === 'ccAtk' || id === 'ccCast') { const a = ccTargets().get(id === 'ccAtk' ? 'attack' : 'cast'); if (a) ccDo(a); return; }
-    if (id === 'ccRematch') { const d = ccM.deck; if (!ccQmPay()) return; startClash(d, Math.floor(Math.random() * 1e9)); return; }
-    if (id === 'ccBack') { ccStop(); if (!ccdEl) openDeck(); else renderDeck(); return; }
+    if (id === 'ccRematch') { const d = ccM.deck, qq = ccM.qm; if (!ccQmPay()) return; startClash(d, Math.floor(Math.random() * 1e9), null, null, null, qq); return; }
+    if (id === 'ccBack') { ccStop(); openQuickMatch(); return; }
     if (id === 'ccCampRetry') { ccCampStart(ccM.camp.st); return; }
     if (id === 'gbAgain') { ccStop(); gbStart(); return; }
     if (id === 'rbAgain') { const r = ccM.raid; ccStop(); raidBattle(r.id, r.stage); return; }
@@ -381,9 +449,10 @@ async function ccAutoStep() {
 /* one bot move: cards it plays are shown first (ccReveal), then applied and animated like yours */
 function ccBotStep(G) {
   if (!ccM || ccM.G !== G) return;
-  if (ccM.boss && !ccM.bossA) { const m = ccM; gbBossPick(G).then(a => { if (ccM !== m || m.G !== G) return; m.bossA = a || { k: 'end' }; ccBotStep(G); }); return; }   // the guild boss plans its turn (48-clash-auto.js)
-  let a = ccM.bossA || (ccM.camp && ccM.camp.st.dummy ? { k: 'end' } : ccBotPick(G));   // the campaign's Training Dummy never acts
-  if (ccM.boss) ccM.bossA = null;
+  const ai = !ccM.boss && qmAi(ccM.qm), plans = ccM.boss || ai;   // the guild boss and Hard / Expert Quick match challengers plan their turn (48-clash-auto.js)
+  if (plans && !ccM.bossA) { const m = ccM; (ccM.boss ? gbBossPick(G) : ccPlanPick(G, ai)).then(a => { if (ccM !== m || m.G !== G) return; m.bossA = a || { k: 'end' }; ccBotStep(G); }); return; }
+  let a = ccM.bossA || (ccM.camp && ccM.camp.st.dummy ? { k: 'end' } : ccM.qm && ccM.qm.brain === 'easy' ? ccBotPickEasy(G) : ccBotPick(G));   // the campaign's Training Dummy never acts
+  if (plans) ccM.bossA = null;
   const go = src => {
     if (!ccM || ccM.G !== G) return;
     const snap = ccSnap(a, src);
@@ -448,7 +517,7 @@ function ccRender(snap) {
   const ap = (P, p) => { const max = Math.max(P.ap, ccApBase(G, p)); return `<div class="ccb-ap ${p ? 'op' : 'me'}" title="${p ? 'Bot' : 'Your'} AP"><b>${P.ap}</b><span>${Array.from({ length: max }, (_, i) => `<i class="${i < P.ap ? 'on' : ''}"></i>`).join('')}</span></div>`; };
   const hero = p => { const P = G.players[p]; return `<div class="ccm-hero ${p ? 'op' : 'me'} ${p && ccM.boss ? 'boss' : ''} ${keyset.has('h' + p) ? 'tgt' : ''} ${G.active === p ? 'act' : ''}" data-hero="${p}">
       <span class="ccm-ava">${p === 0 ? avatarHTML(58) : ccFoeAva()}</span>
-      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : ccM.boss ? `Lv ${ccM.boss.lv} · ${ccM.boss.hp0 - Math.max(0, P.hp)} damage` : ccM.camp ? (ccM.camp.st.dummy ? 'Never attacks' : ccM.camp.st.ch.tower ? 'Floor guardian' : 'Stage bot') : ccM.raid ? 'Raid guardian' : 'Bot · mirror'}</small></span>
+      <span class="ccm-nm">${esc(G.names[p])}<small>${p === 0 ? esc(ccM.deck.name) : ccM.boss ? `Lv ${ccM.boss.lv} · ${ccM.boss.hp0 - Math.max(0, P.hp)} damage` : ccM.camp ? (ccM.camp.st.dummy ? 'Never attacks' : ccM.camp.st.ch.tower ? 'Floor guardian' : 'Stage bot') : ccM.raid ? 'Raid guardian' : ccM.qm ? `Challenger · ${esc(qmDiff(ccM.qm.diff).name)}` : 'Bot · mirror'}</small></span>
       <span class="ccm-gem ${p ? 'red' : 'blue'} ${P.hp >= 100 ? 'big' : ''}"><b>${Math.max(0, P.hp)}</b></span>${p && ccM.boss ? `<span class="ccm-bhp"><i style="width:${Math.max(0, P.hp) / ccM.boss.max * 100}%"></i></span>` : ''}</div>`; };
   const sel = ccM.sel, selCard = sel && sel.kind === 'hand' ? me.hand.find(c => c.iid === sel.iid) : null;
   const legal = my && G.phase === 'main' ? ccLegal(G) : [];
@@ -456,7 +525,7 @@ function ccRender(snap) {
     return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
   const ot = G.round >= ccOT(G);
   ui.innerHTML = `
-    <div class="ccm-tools">${ccM.boss ? `<span class="ccm-campst" title="Guild boss: every hit on the dragon deals triple damage">${icon('dragon')}<b>Guild Boss · ×${GB_HITX}</b></span>` : ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tree' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `${ccM.raid ? `<span class="ccm-campst" title="Win to clear the raid">${icon(ccM.raid.id === 'vault' ? 'coin' : 'raid')}<b>${esc(raidLabel(ccM.raid))}</b></span>` : ''}<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
+    <div class="ccm-tools">${ccM.boss ? `<span class="ccm-campst" title="Guild boss: every hit on the dragon deals triple damage">${icon('dragon')}<b>Guild Boss · ×${GB_HITX}</b></span>` : ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tree' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `${ccM.raid ? `<span class="ccm-campst" title="Win to clear the raid">${icon(ccM.raid.id === 'vault' ? 'coin' : 'raid')}<b>${esc(raidLabel(ccM.raid))}</b></span>` : ccM.qm ? `<span class="ccm-campst" title="Quick match: ${esc(qmMode(ccM.qm.mode).name)}, ${esc(qmDiff(ccM.qm.diff).name)}">${icon(qmMode(ccM.qm.mode).ic)}<b>${esc(qmMode(ccM.qm.mode).name)} · ${esc(qmDiff(ccM.qm.diff).name)}</b></span>` : ''}<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
     <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML('', ccBackSkin(1))}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     ${ccM.boss ? `<div class="ccm-lead op" title="${esc(gbName())}: the guild boss">${gbCardHTML()}<span class="ccl-tag">Boss</span></div>` : ''}
@@ -545,7 +614,7 @@ function ccPreview(G, iid) {
 function ccEndScreen() {
   if (!ccM) return;
   const G = ccM.G, sv = ccSave();
-  if (!ccM.done) { ccM.done = true; ccCoachHide(false); if (ccM.boss) ccM.bossRes = gbFinish(G); else if (ccM.raid) ccM.raidRes = raidFinish(G, ccM.raid); else if (ccM.camp) ccM.campRes = ccCampFinish(); else { if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; ccM.rewards = ccGrantRewards(G.winner); } persist(); renderMenu(); }
+  if (!ccM.done) { ccM.done = true; ccCoachHide(false); if (ccM.boss) ccM.bossRes = gbFinish(G); else if (ccM.raid) ccM.raidRes = raidFinish(G, ccM.raid); else if (ccM.camp) ccM.campRes = ccCampFinish(); else { if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; if (G.winner === 0 && ccM.qm) { qmState(); sv.qmWins[ccM.qm.diff] = (sv.qmWins[ccM.qm.diff] || 0) + 1; } ccM.rewards = ccGrantRewards(G.winner); } persist(); renderMenu(); }
   const res = G.winner === 0 ? ['Victory', 'win'] : G.winner === 1 ? ['Defeat', 'lose'] : [ccM.boss ? 'Time up' : 'Draw', 'draw'];
   const ms = Date.now() - G.started, mm = Math.floor(ms / 60000), ss = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
   const crack = res[1] === 'lose' ? `<svg class="ccf-crack" viewBox="0 0 1600 900" preserveAspectRatio="none">${Array.from({ length: 9 }, (_, i) => { const a = i / 9 * 6.283 + .3; let x = 800, y = 450, d = `M${x} ${y}`; for (let k = 0; k < 7; k++) { x += Math.cos(a + Math.sin(k * 2.1 + i) * .5) * (60 + k * 22); y += Math.sin(a + Math.cos(k * 1.7 + i) * .5) * (40 + k * 14); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return `<path d="${d}" style="--d:${i * .05}s"/>`; }).join('')}</svg>` : '';
@@ -556,8 +625,8 @@ function ccEndScreen() {
       <div class="ccm-endbox"><p>${esc(G.reason)}</p>
       ${ccM.boss ? gbEndHTML(ccM.bossRes) : ccM.raid ? raidEndHTML(ccM.raidRes) : ccM.camp ? ccCampEndHTML() : ccRewardsHTML(ccM.rewards)}
       <div class="ccm-endst"><span>Rounds<b>${Math.min(G.round, ccRounds(G))}</b></span><span>Turns<b>${G.turnNo}</b></span><span>Time<b>${mm}:${ss}</b></span><span>Your HP<b>${Math.max(0, G.players[0].hp)}</b></span></div>
-      ${ccM.boss ? gbEndBtns() : ccM.raid ? raidEndBtns(ccM.raid) : ccM.camp ? ccCampEndBtns() : `<p class="tiny">Deck: ${esc(ccM.deck.name)} (mirror) · seed ${G.seed} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
-      <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch ${curIcon('stamina')}${CC_QM_STAM}</button><button class="btn ghost" id="ccBack">Back to Deck</button></div>`}</div></div>`;
+      ${ccM.boss ? gbEndBtns() : ccM.raid ? raidEndBtns(ccM.raid) : ccM.camp ? ccCampEndBtns() : `<p class="tiny">${ccM.qm ? `${esc(qmMode(ccM.qm.mode).name)} · ${esc(qmDiff(ccM.qm.diff).name)} · the challenger played ${esc(ccM.qm.deckName === 'Your own deck' ? 'your deck' : ccM.qm.deckName)}` : `Deck: ${esc(ccM.deck.name)}`} · record ${sv.stats.w} W · ${sv.stats.l} L · ${sv.stats.d} D</p>
+      <div class="ccm-endb"><button class="btn gold" id="ccRematch">Rematch ${curIcon('stamina')}${CC_QM_STAM}</button><button class="btn ghost" id="ccBack">Quick Match</button></div>`}</div></div>`;
   ccM.el.querySelector('.ccm-stage').appendChild(box);
   if (res[1] === 'lose') ccM.el.querySelector('.ccm-ui').classList.add('ccf-shake');
   // particles: gold sparks rising and bursting for a win, red embers and ash drifting for a loss
@@ -614,7 +683,7 @@ function ccLeave() {
       onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { closeModal(); ccStop(); ccCampBack(st); }; } });
     return;
   }
-  if (ccM.G.phase === 'over') { ccStop(); if (!ccdEl) openDeck(); return; }
+  if (ccM.G.phase === 'over') { ccStop(); openQuickMatch(); return; }
   openModal({ title: 'Leave the match?', ic: 'close', small: true, kind: 'ccleave', body: `<p>Leaving now counts as a loss.</p><div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-close2>Keep playing</button><button class="btn gold" id="ccLeaveGo">Leave</button></div>`,
-    onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { const sv = ccSave(); sv.stats.l++; persist(); closeModal(); ccStop(); if (!ccdEl) openDeck(); else renderDeck(); }; } });
+    onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; b.querySelector('#ccLeaveGo').onclick = () => { const sv = ccSave(); sv.stats.l++; persist(); closeModal(); ccStop(); openQuickMatch(); }; } });
 }

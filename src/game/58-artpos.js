@@ -95,4 +95,5 @@ function artPosRefresh() {
   if (titleOn) run(renderTitle);
   if (gbEl) run(renderGB);
   if (bpEl) run(bpxBgRefresh);
+  if (qmEl) run(renderQuickMatch);
 }

@@ -124,7 +124,8 @@ const CC_RULES = [
     <div class="ccr-txt"><h3>Your leader</h3>
       <p>Every deck has a <b>leader</b>: one of your characters, picked on the Deck screen (<b>Change leader</b>). Its showcase card, with its badges, grade, rarity and stars, stands beside your hero for the whole match, and it is the art you see on the VS screen and in big hits. Leaders have no skill yet.</p>
       <h3>Rewards</h3>
-      <p>Every match gives gold: <b>${fmt(CC_GOLD.win)}</b> for a win, ${fmt(CC_GOLD.draw)} for a draw, ${fmt(CC_GOLD.lose)} for a loss. A win also gives <b>${CC_WIN_PEARLS} pearl</b> and <b>one clothing piece</b>, rolled exactly like a gear raid clear (UR 8%, SSR 20%, R 72%, 1.5% a 2★ UR piece). It needs a free wardrobe space.</p></div>` },
+      <p>On Normal a Quick match gives gold: <b>${fmt(CC_GOLD.win)}</b> for a win, ${fmt(CC_GOLD.draw)} for a draw, ${fmt(CC_GOLD.lose)} for a loss. A win also gives <b>${CC_WIN_PEARLS} pearl</b> and <b>one clothing piece</b>, rolled exactly like a gear raid clear (UR 8%, SSR 20%, R 72%, 1.5% a 2★ UR piece). It needs a free wardrobe space.</p>
+      <p>The difficulty changes it: ${QM_DIFF.map(d => `<b>${d.name}</b> ${fmt(qmGold('win', d))} gold${d.pearls ? ` + ${d.pearls} pearl${d.pearls > 1 ? 's' : ''}` : ''}${d.gear ? '' : ', no gear'}`).join(' · ')} for a win.</p></div>` },
   { t: 'Auto play', ic: 'bolt', h: () => `
     <div class="ccr-fig ccr-autofig"><span class="ccm-auto on">${icon('bolt')}<b>Auto</b><i>On</i></span><p>Tap <b>Auto</b> in the top right of the match to let the game play your turns. Tap it again (or Stop auto play) to take over.</p></div>
     <div class="ccr-txt"><h3>Let the game play for you</h3>
