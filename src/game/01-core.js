@@ -76,6 +76,31 @@ async function mediaDel(k) {
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
 const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968], PET_SIZE = [1254, 1254];   // pets' splash arts are square   // every character / skin art is cropped to exactly this size
 /* exact = [w, h]: cover-crop to exactly that size (keeping the middle across and the upper part top to bottom, like the art views) */
+/* an uploaded icon: the see-through margin around its picture is trimmed and the picture centred on a square canvas
+   with a small even margin, so it sits in the middle of every round / diamond frame however it was drawn. Pictures
+   without transparency (or already centred squares) come back unchanged. */
+function centerIcon(url, size = 128, pad = .03) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight; if (!w || !h) return res(url);
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+      let d; try { d = g.getImageData(0, 0, w, h).data; } catch (e) { return res(url); }
+      let x0 = w, y0 = h, x1 = -1, y1 = -1;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) return res(url);
+      const bw = x1 - x0 + 1, bh = y1 - y0 + 1, cx = (x0 + x1 + 1) / 2 - w / 2, cy = (y0 + y1 + 1) / 2 - h / 2;
+      if (w === h && Math.abs(cx) < 1.5 && Math.abs(cy) < 1.5 && Math.max(bw, bh) >= w * (1 - 2 * pad) - 2) return res(url);   // already centred
+      const o = document.createElement('canvas'); o.width = o.height = size;
+      const s = size * (1 - 2 * pad) / Math.max(bw, bh), dw = bw * s, dh = bh * s;
+      o.getContext('2d').drawImage(c, x0, y0, bw, bh, (size - dw) / 2, (size - dh) / 2, dw, dh);
+      let out = o.toDataURL('image/webp', .92); if (!out.startsWith('data:image/webp')) out = o.toDataURL('image/png');
+      res(out);
+    };
+    img.onerror = () => res(url);
+    img.src = url;
+  });
+}
 function resizeImage(file, max, type = 'image/webp', exact) {
   return new Promise((res, rej) => {
     if (!file || !file.type.startsWith('image/')) return rej(new Error('That file is not an image. Pick a PNG, JPG, WebP or SVG.'));
@@ -188,7 +213,7 @@ const ICON_SLOTS = [
   ['Home screen · Menu dropdown', [['shop', 'Shop'], ['bag', 'Bag'], ['trophy', 'Ranking'], ['level', 'Level rewards'], ['ach', 'Achievements'], ['fuse', 'Fusion'], ['friends', 'Friends'], ['team', 'Team'], ['gift', 'Redeem / gifts']]],
   ['Home screen · bottom', [['plaza', 'Plaza button'], ['swords', 'Battle button (and the Battle screen)'], ['chars', 'Characters'], ['paw', 'Pets'], ['farm', 'Base'], ['house', 'House'], ['book', 'Collection'], ['cards', 'Deck (Card Clash)'], ['summon', 'Summon button']]],
   ['Character screen', [['home', 'Home tab'], ['heart', 'Bond'], ['info', 'Character info'], ['hanger', 'Outfits'], ['wardrobe', 'Wardrobe'], ['memory', 'Memory'], ['lock', 'Locked'], ['bondheart', 'Bond level heart'], ['star', 'Favourite / stars'], ['up', 'Upgrade']]],
-  ['Battle & Card Clash', [['bolt', 'Quick Match'], ['tree', 'The Great Tree'], ['compass', 'World map'], ['raid', 'Raids'], ['crown', 'Crown (bosses, leaders)'], ['tower', 'Tower'], ['refresh', 'Refresh / new challenger'], ['swap', 'Swap']]],
+  ['Battle & Card Clash', [['bolt', 'Quick Match'], ['tree', 'The Great Tree'], ['compass', 'World map'], ['raid', 'Raids'], ['crown', 'Crown (bosses, leaders)'], ['tower', 'Tower'], ['refresh', 'Refresh / new challenger'], ['swap', 'Swap'], ['dragon', 'Guild boss']]],
   ['Plaza', [['map', 'Map (also the campaign)'], ['smile', 'Emotes'], ['send', 'Send chat'], ['door', 'Door'], ['tent', 'Camp tent'], ['mug', 'Tavern mug'], ['well', 'Well'], ['peak', 'Mountain'], ['wave', 'Lake']]],
   ['Small UI', [['sparkle', 'Sparkle (window headers, rewards)'], ['skins', 'Skins'], ['close', 'Close'], ['clock', 'Timer'], ['plus', 'Plus'], ['edit', 'Edit'], ['trash', 'Delete'], ['upload', 'Upload'], ['copy', 'Copy'], ['back', 'Back'], ['check', 'Selected'], ['search', 'Search'], ['notice', 'Notice'], ['mailOpen', 'Opened letter'], ['audio', 'Audio'], ['user', 'Account'], ['locked', 'Locked (closed)'], ['ring', 'Marriage ring'], ['coin', 'Coin'], ['fountain', 'Fountain (Mystery Fountain, Base)'], ['shell', 'Quest shell']]]
 ];

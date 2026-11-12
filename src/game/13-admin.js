@@ -544,7 +544,9 @@ function iconSlotsAll() {
   return rest.length ? [...groups, ['Other icons', rest]] : groups;
 }
 function renderIconsTab() {
-  $('#adPanel').innerHTML = `<p class="tiny">Upload your own image for any icon. Square PNG or SVG with a transparent background works best; images are scaled to 128px. Reset puts the default back.</p>
+  const ups = [...MEDIA.keys()].filter(k => k.startsWith('icon:') && !k.startsWith('icon:pass'));
+  $('#adPanel').innerHTML = `<p class="tiny">Upload your own image for any icon. A PNG or WebP with a transparent background works best: the empty margin around the picture is trimmed and the picture centred automatically, then it replaces the whole button (its circle is hidden). Reset puts the default back.</p>
+    ${ups.length ? `<div class="row" style="gap:8px;align-items:center"><button class="btn ghost sm" id="icCenter">${icon('refresh')}Centre all uploaded icons (${ups.length})</button><span class="tiny">For icons uploaded before automatic centring.</span></div>` : ''}
     ${iconSlotsAll().map(([group, slots]) => `<h3 style="margin-top:16px">${group}</h3><div class="icon-grid">${slots.map(([k, label]) => {
       const custom = !!MEDIA.get('icon:' + k), borrowed = !custom && !!customIcon(k);
       return `<div class="islot"><div class="iprev">${CUR_SVG[k] ? curIcon(k) : icon(k)}</div>
@@ -552,10 +554,18 @@ function renderIconsTab() {
         <div class="acts"><label class="btn ghost sm">Upload<input type="file" accept="image/*" class="sr" data-iup="${k}"></label>${custom ? `<button class="btn ghost sm" data-ireset="${k}" aria-label="Reset ${label} icon">Reset</button>` : ''}</div></div>`;
     }).join('')}</div>`).join('')}`;
   document.querySelectorAll('[data-iup]').forEach(inp => inp.onchange = async () => {
-    try { await mediaSet('icon:' + inp.dataset.iup, await resizeImage(inp.files[0], 128)); iconsChanged(); toast('Icon updated.'); }
+    try { await mediaSet('icon:' + inp.dataset.iup, await centerIcon(await resizeImage(inp.files[0], 256, 'image/png'), 128)); iconsChanged(); toast('Icon updated (centred).'); }
     catch (e) { toast(e.message); }
   });
   document.querySelectorAll('[data-ireset]').forEach(b => b.onclick = async () => { await mediaDel('icon:' + b.dataset.ireset); iconsChanged(); toast('Icon reset to default.'); });
+  const cb = $('#icCenter'); if (cb) cb.onclick = async () => {
+    cb.disabled = true; let n = 0;
+    for (const k of [...MEDIA.keys()].filter(k => k.startsWith('icon:') && !k.startsWith('icon:pass'))) {
+      const u = MEDIA.get(k); if (!u) continue;
+      const c = await centerIcon(u, 128); if (c !== u && await mediaSet(k, c)) n++;
+    }
+    iconsChanged(); toast(n ? `Centred ${n} icon${n === 1 ? '' : 's'}.` : 'Every uploaded icon was already centred.');
+  };
 }
 function iconsChanged() { hydrateIcons(); renderMenu(); renderIconsTab(); const mi = modalEl && modalEl.querySelector('.m-ic'); if (mi) mi.innerHTML = icon('wrench'); }
 
