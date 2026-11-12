@@ -13,8 +13,17 @@ function openFuse(r) {
   fusePot = [];
   openModal({ title: 'Fusion', ic: 'fuse', wide: true, kind: 'fuse', body: '<div id="fuRoot"></div>', onMount: renderFuse });
 }
+/* the window: the chosen tab's renderer draws its parts, then fuWrap moves everything but the category rail into
+   one scrolling glass column (.fu-main), keeping its scroll position */
 function renderFuse() {
   const root = $('#fuRoot'); if (!root) return;
+  const old = root.querySelector('.fu-main'), top = old && old.dataset.r === String(fuseR) ? old.scrollTop : 0;
+  fuseBody(root);
+  const fu = root.querySelector('.fu'); if (!fu) return;
+  const cats = fu.querySelector('.fu-cats'), main = document.createElement('div'); main.className = 'fu-main'; main.dataset.r = String(fuseR);
+  [...fu.children].filter(c => c !== cats).forEach(c => main.appendChild(c)); fu.appendChild(main); main.scrollTop = top;
+}
+function fuseBody(root) {
   const tabs = fuseTabsHTML();
   if (fuseR === 'star') return renderStarUp(root, tabs);
   if (fuseR === 'pet') return renderPetFuse(root, tabs);
@@ -25,7 +34,7 @@ function renderFuse() {
   const targets = S.clothes.filter(x => +x.rarity === to), n = Math.floor(fusePot.length / 3);
   root.innerHTML = `<div class="fu">
     ${tabs}
-    <div class="fu-pot">
+    <div class="fu-pot r${to}">
       <div class="fu-slots">${[0, 1, 2].map(i => { const id = fusePot[fusePot.length - (fusePot.length % 3 || (fusePot.length ? 3 : 0)) + i], x = id && clothOf(id);
         return `<span class="fu-slot r${fuseR} ${x ? 'full' : ''}">${x ? `<img src="${clothImg(x)}" alt="">` : '<i>+</i>'}</span>`; }).join('')}
         <span class="fu-arrow">${icon('fuse')}</span><span class="fu-slot r${to} out"><b>?</b>${ctag(to)}</span></div>
@@ -36,7 +45,7 @@ function renderFuse() {
     </div>
     <span class="lbl-sm">Spare ${CRN[fuseR]} clothes · tap to add one, − to take one out (worn pieces don't count)</span>
     ${list.length ? `<div class="fu-list">${list.map(x => { const sp = spareOf(x.id), k = inPot(x.id);
-      return `<div class="fu-it r${x.rarity} ${k ? 'on' : ''}"><button class="fu-add" data-fua="${esc(x.id)}" ${k >= sp ? 'disabled' : ''} aria-label="Add ${esc(x.name)}"><img src="${clothImg(x)}" alt="">${ctag(x.rarity)}<span class="fu-nm">${esc(x.name)}</span><span class="fu-n">${k}/${sp}</span></button>${k ? `<button class="fu-rm" data-fur-rm="${esc(x.id)}" aria-label="Take one out">−</button>` : ''}</div>`; }).join('')}</div>`
+      return `<div class="fu-it r${x.rarity} ${k ? 'on' : ''}" style="--i:${Math.min(20, list.indexOf(x))}"><button class="fu-add" data-fua="${esc(x.id)}" ${k >= sp ? 'disabled' : ''} aria-label="Add ${esc(x.name)}"><img src="${clothImg(x)}" alt="">${ctag(x.rarity)}<span class="fu-nm">${esc(x.name)}</span><span class="fu-n">${k}/${sp}</span></button>${k ? `<button class="fu-rm" data-fur-rm="${esc(x.id)}" aria-label="Take one out">−</button>` : ''}</div>`; }).join('')}</div>`
       : `<div class="cs-pill">No spare ${CRN[fuseR]} clothes. Clear raids to find more.</div>`}
   </div>`;
   bindFuseTabs(root);
@@ -46,14 +55,41 @@ function renderFuse() {
   $('#fuClear').onclick = () => { fusePot = []; renderFuse(); };
   $('#fuGo').onclick = doFuse;
 }
-/* categories on the left (Wardrobe, Memories, Pets); the chosen category's tabs along the top */
-const FU_CATS = [['wardrobe', 'wardrobe', 'Wardrobe', [[3, () => `${ctag(3)} → ${ctag(4)}`], [4, () => `${ctag(4)} → ${ctag(5)}`], ['star', () => `${ctag(5)} Stars`]]],
-  ['memory', 'memory', 'Memories', [['mem', () => 'Exchange'], ['memst', () => 'Memory Stars']]], ['pets', 'paw', 'Pets', [['pet', () => 'Pet Stars']]]];
+/* categories on the left (Wardrobe, Memories, Pets) as a glass rail like the Achievements window: icon, name, how
+   many spare items it has and a red dot when something can be fused; the chosen mode's hero card on top with its
+   title, what it does and the category's modes as a glass segmented control (the owner asked for a more premium
+   Fusion window, like the other designs) */
+const FU_CATS = [['wardrobe', 'wardrobe', 'Wardrobe', [[3, () => `${ctag(3)} → ${ctag(4)}`], [4, () => `${ctag(4)} → ${ctag(5)}`], ['star', () => `${ctag(5)} Stars`]], '#ffb35a'],
+  ['memory', 'memory', 'Memories', [['mem', () => 'Exchange'], ['memst', () => 'Memory Stars']], '#7fe0d0'], ['pets', 'paw', 'Pets', [['pet', () => 'Pet Stars']], '#ff9ad8']];
+const FU_MODE = {
+  3: ['Clothes fusion', () => `${ctag(3)} → ${ctag(4)}`, 'Put 3 spare R clothes in the circle to forge 1 random SSR piece.'],
+  4: ['Clothes fusion', () => `${ctag(4)} → ${ctag(5)}`, 'Put 3 spare SSR clothes in the circle to forge 1 random UR piece.'],
+  star: ['Clothes stars', () => `${ctag(5)} Stars`, 'Merge two copies of the same UR piece at the same stars for +1★, up to 3★.'],
+  mem: ['Memory exchange', 'Exchange', 'Trade 3 spare memories for 1 random memory of the same rarity.'],
+  memst: ['Memory stars', 'Memory Stars', 'Fuse spare copies of a memory into another copy: +1★ each, up to 3★.'],
+  pet: ['Pet stars', 'Pet Stars', 'Fuse spare copies of a pet into another copy: +1★ each, up to 6★.']
+};
 const fuseCat = () => FU_CATS.find(c => c[3].some(([k]) => k === fuseR)) || FU_CATS[0];
+/* spare items per category, and whether a fusion can be made there right now */
+function fuSpare(id) {
+  if (id === 'wardrobe') return S.clothes.reduce((t, x) => t + spareOf(x.id), 0);
+  if (id === 'memory') return (S.memories || []).reduce((t, m) => t + memSpare(m.id), 0);
+  return S.pool.filter(e => e.type === 'pet' && owns(e.id)).reduce((t, p) => t + petCopies(p.id).length, 0);
+}
+function fuReady(id) {
+  if (id === 'wardrobe') return [3, 4].some(r => S.clothes.some(x => +x.rarity === FUSE_NEXT[r]) && S.clothes.filter(x => +x.rarity === r).reduce((t, x) => t + spareOf(x.id), 0) >= 3)
+    || S.clothes.some(x => hasClothStars(x) && (spareAt(x.id, 1) >= 2 || spareAt(x.id, 2) >= 2));
+  if (id === 'memory') return [4, 5].some(r => (S.memories || []).filter(m => +m.rarity === r).reduce((t, m) => t + memSpare(m.id), 0) >= 3)
+    || (S.memories || []).some(m => (S.owned[m.id] || 0) >= 2 && memSpare(m.id) >= 1 && memCopiesSt(m.id).some(x => x < MEM_MAXST));
+  return S.pool.some(e => e.type === 'pet' && owns(e.id) && petFusePlan(e.id));
+}
 function fuseTabsHTML() {
-  const cat = fuseCat();
-  return `<nav class="tabs fu-cats" aria-label="Fusion categories">${FU_CATS.map(c => `<button class="tab ${c === cat ? 'on' : ''}" data-fucat="${c[0]}">${icon(c[1])}${c[2]}</button>`).join('')}</nav>
-    <div class="tabs fu-subs">${cat[3].map(([k, l]) => `<button class="tab ${k === fuseR ? 'on' : ''}" data-fur="${k}">${l()}</button>`).join('')}</div>`;
+  const cat = fuseCat(), M = FU_MODE[fuseR] || FU_MODE[3];
+  return `<nav class="fu-cats" aria-label="Fusion categories">${FU_CATS.map(c => { const n = fuSpare(c[0]);
+      return `<button class="fu-cat ${c === cat ? 'on' : ''}" data-fucat="${c[0]}" style="--fc:${c[4]}"><span class="fu-ci">${icon(c[1])}</span><span class="fu-ct"><b>${c[2]}</b><small>${c[3].length} mode${c[3].length === 1 ? '' : 's'} · ${n} spare</small></span>${fuReady(c[0]) ? '<i class="fu-dot" title="Something can be fused"></i>' : ''}</button>`; }).join('')}
+      <div class="fu-tip">${icon('fuse')}<span>Pieces worn or held by a character are never used up.</span></div></nav>
+    <div class="fu-hero" style="--fc:${cat[4]}"><span class="fu-hi">${icon(cat[1])}</span><span class="fu-ht"><small>${M[0]}</small><b>${typeof M[1] === 'function' ? M[1]() : M[1]}</b><span>${M[2]}</span></span>
+      <div class="fu-subs" role="tablist">${cat[3].map(([k, l]) => `<button class="fu-sub ${k === fuseR ? 'on' : ''}" data-fur="${k}" role="tab" aria-selected="${k === fuseR}">${l()}</button>`).join('')}</div></div>`;
 }
 function bindFuseTabs(root) {
   root.querySelectorAll('[data-fur]').forEach(b => b.onclick = () => { fuseR = ['star', 'mem', 'memst', 'pet'].includes(b.dataset.fur) ? b.dataset.fur : +b.dataset.fur; fusePot = []; renderFuse(); });
@@ -352,7 +388,7 @@ function renderMemFuse(root, tabs) {
   const inPot = id => memPot.filter(x => x === id).length, urs = (S.memories || []).filter(m => +m.rarity === memFuseR);
   const list = (S.memories || []).filter(m => +m.rarity === memFuseR && memSpare(m.id) > 0), n = Math.floor(memPot.length / 3);
   root.innerHTML = `<div class="fu">${tabs}
-    <div class="tabs fu-subs fu-mini">${[4, 5].map(r => `<button class="tab ${memFuseR === r ? 'on' : ''}" data-mfr="${r}">3 × ${ctag(r)} → 1 × ${ctag(r)}</button>`).join('')}</div>
+    <div class="fu-subs fu-mini">${[4, 5].map(r => `<button class="fu-sub ${memFuseR === r ? 'on' : ''}" data-mfr="${r}">3 × ${ctag(r)} → 1 × ${ctag(r)}</button>`).join('')}</div>
     <p class="tiny">Exchange 3 spare memories of the same rarity for 1 random memory of that rarity from every memory in the game. Equipped copies are never used.</p>
     <div class="fu-pot"><div class="fu-count"><b>${memPot.length}</b> in the pot · makes <b>${n}</b> ${CRN[memFuseR]} memor${n === 1 ? 'y' : 'ies'}${memPot.length % 3 ? ` · ${3 - memPot.length % 3} more for the next one` : ''}</div>
       <div class="row" style="justify-content:center;gap:8px"><button class="btn ghost sm" id="mfAll" ${list.some(m => memSpare(m.id) > inPot(m.id)) ? '' : 'disabled'}>Add all</button><button class="btn ghost sm" id="mfClear" ${memPot.length ? '' : 'disabled'}>Clear</button>

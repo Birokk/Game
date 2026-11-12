@@ -32,7 +32,7 @@ const hangLeft = () => Math.max(0, HANG_DAILY - hangState().n);
 const hangReady = () => inGuild() && hangLeft() > 0;
 /* a game was completed: count it and pay a pearl while today's pearls aren't all collected; returns the pearls paid */
 function hangWin(id) {
-  const h = hangState(); h.done[id] = (h.done[id] || 0) + 1;
+  const h = hangState(); h.done[id] = (h.done[id] || 0) + 1; statAdd('hang');
   let paid = 0; if (h.n < HANG_DAILY) { h.n++; paid = HANG_PEARLS; S.wallet.pearls += paid; }
   persist(); renderMenu(); return paid;
 }
