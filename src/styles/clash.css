@@ -2145,20 +2145,91 @@ b.ccd-dname{border:0}
 .qm-go .qm-cost .cic{width:18px;height:18px}
 .qm-seed.ro input{pointer-events:none;opacity:.75;background:transparent;border-color:transparent}
 
-/* ---- campaign: lighter, see-through panels (the owner asked for some transparency in the campaign UI); scoped to the
-   campaign screen, not the Great Tree / world map that share these classes ---- */
-.cmp:not(.twr):not(.wm) .cmp-side{background:linear-gradient(180deg,rgba(28,20,58,.46),rgba(12,9,26,.56));backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);border-color:rgba(220,190,255,.2);box-shadow:0 16px 36px rgba(0,0,0,.3);border-radius:26px 6px 26px 6px}
-.cmp:not(.twr):not(.wm) .cmp-map{background:radial-gradient(ellipse 80% 70% at 50% 60%,rgba(60,36,120,.32),rgba(10,7,24,.5) 75%),linear-gradient(160deg,rgba(26,18,64,.45),rgba(10,7,24,.55));border-radius:28px 6px 28px 6px}
-.cmp:not(.twr):not(.wm) .cmp-chest{background:linear-gradient(135deg,rgba(40,26,80,.5),rgba(14,10,30,.58));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.cmp:not(.twr):not(.wm) .cmp-cht:not(.on){background:rgba(12,9,28,.32);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.cmp:not(.twr):not(.wm) .cmp-nm{background:rgba(10,8,22,.48);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.cmp:not(.twr):not(.wm) .cmp-map.has-wp .cmp-nm{background:rgba(8,6,20,.58)}
-.cmp:not(.twr):not(.wm) .cmp-total{background:rgba(10,8,22,.4)}
-.cmp:not(.twr):not(.wm) .cmp-foe{background:rgba(0,0,0,.16)}
-.cmp:not(.twr):not(.wm) .cmp-goals li{background:rgba(255,255,255,.04)}
-.cmp:not(.twr):not(.wm) .cmp-ev{background:linear-gradient(135deg,color-mix(in srgb,var(--ec) 14%,rgba(21,16,34,.5)),rgba(11,8,20,.45))}
-.cmp:not(.twr):not(.wm) .cmp-map::before{opacity:.2}
-/* the campaign header stays on one line on wide screens: the chapter tabs shrink and scroll sideways instead of wrapping */
-@media (min-width:1101px) and (orientation:landscape){.cmp:not(.twr):not(.wm) .cmp-head{flex-wrap:nowrap}.cmp:not(.twr):not(.wm) .cmp-head>.btn,.cmp:not(.twr):not(.wm) .cmp-head>.inv-x,.cmp:not(.twr):not(.wm) .cmp-head>.inv-title{flex:none}}
-/* with see-through panels the moon showed through the stage panel: it now hangs in the sky over the map */
-.cmp:not(.twr):not(.wm) .cmp-moon{right:auto;left:50%;top:13%;width:96px;height:96px;opacity:.55}
+/* ---- campaign: glass UI (the owner asked twice for transparency that looks professional). Glass over a flat dark
+   page looks opaque, so the whole screen now sits on a backdrop worth seeing through: a blurred copy of the chapter's
+   wallpaper (else the Battle screen's Campaign card wallpaper), else coloured glows, stars, the moon and mist. Every
+   panel is clear glass: a faint white-to-clear fill, a blur, a thin bright rim with an inner top highlight, round
+   top-left / bottom-right and nearly sharp top-right / bottom-left corners (like the summon screen) and small light
+   brackets on the sharp corners. Scoped to the campaign (the Great Tree / world map share these classes). ---- */
+.cmp:not(.twr):not(.wm){--gl:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 45%,rgba(255,255,255,.01));--gl-rim:rgba(236,222,255,.22);--gl-hi:inset 0 1px 0 rgba(255,255,255,.14);--bk:rgba(240,226,255,.75);
+  background:radial-gradient(ellipse 60% 55% at 22% 18%,#3b2380,transparent 70%),radial-gradient(ellipse 55% 50% at 88% 86%,#5a1a62,transparent 70%),radial-gradient(ellipse 45% 40% at 70% 22%,#1d3f78,transparent 70%),linear-gradient(180deg,#0c0922,#07060f 75%)}
+.cmp:not(.twr):not(.wm) .cmp-bgart{position:absolute;inset:-4%;width:108%;height:108%;object-fit:cover;filter:blur(18px) saturate(1.25) brightness(.5)}
+.cmp:not(.twr):not(.wm) .cmp-bg.has-art::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 90% 80% at 50% 45%,transparent 40%,rgba(5,3,14,.55)),linear-gradient(rgba(5,3,14,.35),transparent 25%,transparent 75%,rgba(5,3,14,.5))}
+.cmp-glow{position:absolute;border-radius:50%;filter:blur(40px);opacity:.55;animation:cmpGlow 16s ease-in-out infinite alternate}
+.cmp-glow.g1{left:8%;top:30%;width:36vw;height:36vw;background:radial-gradient(circle,rgba(150,100,255,.55),transparent 65%)}
+.cmp-glow.g2{right:4%;top:8%;width:30vw;height:30vw;background:radial-gradient(circle,rgba(255,110,200,.4),transparent 65%);animation-delay:-6s}
+.cmp-glow.g3{left:42%;bottom:-10%;width:40vw;height:28vw;background:radial-gradient(circle,rgba(90,200,255,.3),transparent 65%);animation-delay:-11s}
+.cmp-bg.has-art .cmp-glow{opacity:.25}
+@keyframes cmpGlow{to{transform:translate(3%,-4%) scale(1.08)}}
+.cmp:not(.twr):not(.wm) .cmp-moon{right:auto;left:52%;top:12%;width:92px;height:92px;opacity:.5}
+.cmp:not(.twr):not(.wm) .cmp-bg.has-art .cmp-moon{display:none}
+/* the panels */
+.cmp:not(.twr):not(.wm) .cmp-map,.cmp:not(.twr):not(.wm) .cmp-side{background:var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi),0 18px 40px rgba(0,0,0,.28);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2)}
+.cmp:not(.twr):not(.wm) .cmp-map{border-radius:30px 6px 30px 6px}
+.cmp:not(.twr):not(.wm) .cmp-map::before{opacity:.12}
+.cmp:not(.twr):not(.wm) .cmp-map::after{content:"";position:absolute;inset:9px;z-index:5;pointer-events:none;
+  background:linear-gradient(var(--bk),var(--bk)) top right/22px 1.5px no-repeat,linear-gradient(var(--bk),var(--bk)) top right/1.5px 22px no-repeat,linear-gradient(var(--bk),var(--bk)) bottom left/22px 1.5px no-repeat,linear-gradient(var(--bk),var(--bk)) bottom left/1.5px 22px no-repeat;opacity:.7}
+.cmp:not(.twr):not(.wm) .cmp-side{border-radius:28px 6px 28px 6px;
+  background:linear-gradient(var(--bk),var(--bk)) right 9px top 9px/20px 1.5px no-repeat,linear-gradient(var(--bk),var(--bk)) right 9px top 9px/1.5px 20px no-repeat,linear-gradient(var(--bk),var(--bk)) left 9px bottom 9px/20px 1.5px no-repeat,linear-gradient(var(--bk),var(--bk)) left 9px bottom 9px/1.5px 20px no-repeat,var(--gl)}
+.cmp:not(.twr):not(.wm) .cmp-map.has-wp .cmp-wpshade{opacity:.8}
+.cmp:not(.twr):not(.wm) .cmp-chest{background:var(--gl),rgba(14,10,30,.2);border:1px solid rgba(255,230,170,.3);box-shadow:var(--gl-hi),0 10px 24px rgba(0,0,0,.25);border-radius:22px 5px 22px 5px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.cmp:not(.twr):not(.wm) .cmp-nm{background:rgba(10,8,22,.34);border-color:rgba(255,255,255,.16);border-radius:12px 3px 12px 3px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.cmp:not(.twr):not(.wm) .cmp-map.has-wp .cmp-nm{background:rgba(8,6,20,.5)}
+.cmp:not(.twr):not(.wm) .cmp-total{background:rgba(10,8,22,.28);border-radius:12px 3px 12px 3px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.cmp:not(.twr):not(.wm) .cmp-foe,.cmp:not(.twr):not(.wm) .cmp-goals li{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:16px 4px 16px 4px}
+.cmp:not(.twr):not(.wm) .cmp-goals li.ok{background:rgba(255,217,119,.08);border-color:rgba(255,217,119,.3)}
+.cmp:not(.twr):not(.wm) .cmp-ev{background:linear-gradient(135deg,color-mix(in srgb,var(--ec) 14%,transparent),rgba(255,255,255,.03));border-radius:16px 4px 16px 4px}
+.cmp:not(.twr):not(.wm) .cmp-teach{border-radius:12px 3px 12px 3px}
+.cmp:not(.twr):not(.wm) .cmp-side .btn{border-radius:18px 5px 18px 5px}
+/* the header: glass buttons with the same corners */
+.cmp:not(.twr):not(.wm) .cmp-head{flex-wrap:nowrap}
+.cmp:not(.twr):not(.wm) .cmp-head>.btn.ghost{flex:none;border-radius:16px 4px 16px 4px;background:var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.cmp:not(.twr):not(.wm) .cmp-head>.btn.ghost:hover{border-color:#f5c4ff;box-shadow:var(--gl-hi),0 0 14px var(--cry-glow)}
+.cmp:not(.twr):not(.wm) .cmp-head .inv-title{flex:none;background:rgba(12,9,30,.24);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+/* the Chapters button: the chapter you are on, opens the list of every chapter */
+.cmp-chb{all:unset;box-sizing:border-box;cursor:pointer;position:relative;flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:10px;height:48px;padding:0 14px 0 6px;margin-left:6px;border-radius:18px 5px 18px 5px;
+  background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03)),rgba(12,9,30,.22);border:1px solid rgba(236,222,255,.32);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 18px rgba(0,0,0,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color .2s,box-shadow .2s}
+.cmp-chb:hover{border-color:#f5c4ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 16px var(--cry-glow)}
+.cmp-chb-ic{flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:13px 4px 13px 4px;background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 0 12px var(--cry-glow)}
+.cmp-chb-ic .ic{width:18px;height:18px}
+.cmp-chb-t{min-width:0;display:grid;line-height:1.1}
+.cmp-chb-t small{font:400 10.5px var(--display);letter-spacing:.22em;text-transform:uppercase;color:#d8c8ff}
+.cmp-chb-t b{font:400 17px var(--display);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-chb-all{flex:none;display:flex;align-items:center;gap:7px;margin-left:8px;padding-left:12px;border-left:1px solid rgba(255,255,255,.16);font:400 12.5px var(--display);letter-spacing:.06em;color:rgba(255,255,255,.8)}
+.cmp-chb-v{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.cmp-chb .cmp-dot{top:-3px;right:-3px}
+@media (max-width:1100px){.cmp-chb-all{display:none}}
+@media (max-height:500px) and (orientation:landscape){.cmp-chb{height:36px;padding:0 10px 0 4px;gap:7px}.cmp-chb-ic{width:28px;height:28px}.cmp-chb-t small{display:none}.cmp-chb-t b{font-size:14px}}
+@media (max-width:640px),(orientation:portrait){.cmp-chb{order:3;flex:1 1 100%;margin:4px 0 0}.cmp:not(.twr):not(.wm) .cmp-head{flex-wrap:wrap}}
+/* the chapter list */
+.modal-back[data-kind=cmpch] .modal{max-width:640px;width:calc(100vw - 32px);border-radius:28px 6px 28px 6px;background:linear-gradient(160deg,rgba(40,28,84,.62),rgba(14,10,30,.7));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(236,222,255,.24)}
+.cmpl{display:grid;gap:12px}
+.cmpl-adm{display:flex;align-items:center;gap:8px;margin:0;padding:8px 12px;border-radius:14px 3px 14px 3px;background:rgba(255,200,120,.08);border:1px solid rgba(255,200,120,.25);color:#ffe2b8}
+.cmpl-adm .ic{flex:none;width:16px;height:16px}
+.cmpl-list{display:grid;gap:9px;max-height:min(62vh,640px);overflow-y:auto;padding:2px 4px 2px 2px;scrollbar-width:thin}
+.cmpl-ch{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:11px 16px 11px 11px;border-radius:20px 5px 20px 5px;
+  background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);transition:border-color .2s,background .2s,transform .15s}
+.cmpl-ch:hover{border-color:rgba(245,196,255,.6);transform:translateX(3px)}
+.cmpl-ch.on{border-color:#f5c4ff;background:linear-gradient(160deg,rgba(255,200,240,.16),rgba(180,200,255,.06));box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 18px var(--cry-glow)}
+.cmpl-ch.on::before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 2px 2px 0;background:var(--cry-grad);box-shadow:0 0 10px var(--cry-glow)}
+.cmpl-ch.lock{opacity:.6}
+.cmpl-ch.soon{cursor:default;opacity:.5;border-style:dashed}
+.cmpl-no{width:48px;height:48px;display:grid;place-items:center;border-radius:16px 4px 16px 4px;font:400 22px var(--display);background:radial-gradient(circle at 40% 32%,#3c2a78,#140d30 72%);border:1.5px solid rgba(220,190,255,.5)}
+.cmpl-ch.done .cmpl-no{background:radial-gradient(circle at 40% 32%,#5a3a20,#1e1208 72%);border-color:#f3d98f;color:#ffe9b0}
+.cmpl-no .ic{width:18px;height:18px;opacity:.7}
+.cmpl-t{display:grid;gap:3px;min-width:0}
+.cmpl-t small{font:400 11px var(--display);letter-spacing:.16em;text-transform:uppercase;color:#d8c8ff}
+.cmpl-t small em{font-style:normal;color:#ffc98a}
+.cmpl-t b{font:400 19px var(--display);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmpl-st{display:flex;align-items:center;gap:5px;font:800 12px var(--read);color:rgba(255,255,255,.7)}
+.cmpl-st .ic{width:13px;height:13px;color:#9ff5c6}
+.cmpl-stars{display:grid;justify-items:end;gap:6px;font:400 15px var(--display);white-space:nowrap}
+.cmpl-sn{display:flex;align-items:center;gap:3px}
+.cmpl-stars svg{width:15px;height:15px;fill:#ffd977;vertical-align:-2px;margin-right:4px;filter:drop-shadow(0 0 4px #ffb84a)}
+.cmpl-stars b{font-weight:400;color:#ffe7a6}
+.cmpl-bar{display:block;width:86px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.cmpl-bar i{display:block;height:100%;background:linear-gradient(90deg,#f3d98f,#ffe7a6)}
+.cmpl-ch .cmp-dot{top:6px;right:8px}
+@media (max-width:520px){.cmpl-ch{grid-template-columns:auto minmax(0,1fr);gap:10px}.cmpl-stars{grid-column:2;justify-items:start;grid-auto-flow:column;align-items:center;gap:10px}.cmpl-no{width:40px;height:40px;font-size:18px}.cmpl-t b{font-size:16px}}
+@media (prefers-reduced-motion:reduce){.cmp-glow{animation:none}}
+@media (max-width:640px),(orientation:portrait),(max-height:500px){.cmp:not(.twr):not(.wm) .cmp-moon{display:none}}

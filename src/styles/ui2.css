@@ -430,14 +430,23 @@
 .tabb .tbi.ic-up{transform:scale(1.15)}
 .tt-ib img.ic{padding:0;width:44px;height:44px;background:none;border:0;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
 
-/* ---- lighter home HUD (the owner asked for more transparency behind the currencies, the world chat and the rest so the
-   home screen looks cleaner): same shapes and rims, see-through fills; the text keeps a soft shadow so it stays readable ---- */
-.menu .cur{background:linear-gradient(180deg,rgba(28,21,58,.3),rgba(10,8,26,.4));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.menu .cur b{text-shadow:0 1px 4px rgba(0,0,0,.55)}
-.menu .ticker{background:linear-gradient(90deg,rgba(24,18,50,.36),rgba(10,8,26,.08));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.menu .ticker,.menu .ticker *{text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.menu .rbtn:not(.ic-up),.menu .tool .tc:not(.ic-up){background:linear-gradient(180deg,rgba(32,24,66,.26),rgba(10,8,26,.36)) padding-box,var(--u2-ring) border-box;box-shadow:0 3px 10px rgba(0,0,0,.18)}
-.menu .ev .evo:not(.ic-up){background:radial-gradient(120% 90% at 30% 12%,rgba(255,255,255,.16),transparent 55%) padding-box,linear-gradient(180deg,rgba(32,24,66,.3),rgba(10,8,26,.4)) padding-box,var(--u2-ring) border-box}
-.menu .hm-tabs{background:linear-gradient(180deg,rgba(28,21,58,.3),rgba(10,8,26,.44));backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);box-shadow:0 10px 26px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)}
-.menu .hm-drop{background:linear-gradient(180deg,rgba(30,22,62,.5),rgba(12,10,30,.62))}
-.menu .sx-tab.promo-tab{box-shadow:0 6px 18px rgba(0,0,0,.2)}
+/* ---- see-through home HUD with the summon screen's round / sharp corners (the owner asked twice for more transparency
+   and for nicer shapes): near-clear glass fills with a light blur, thin bright rims, round top-left / bottom-right and
+   nearly sharp top-right / bottom-left corners; text keeps a soft shadow so it stays readable over any wallpaper.
+   Uploaded icons (.ic-up) keep their own look; the crystal Plaza / Battle / Summon buttons stay as they are. ---- */
+.menu .cur{border-radius:16px 5px 16px 5px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015)),rgba(12,9,30,.16);border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(0,0,0,.12);backdrop-filter:blur(6px) saturate(1.2);-webkit-backdrop-filter:blur(6px) saturate(1.2)}
+.menu .cur b,.menu .cur{text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.menu .cur .plus{border-radius:10px 3px 10px 3px}
+.menu .ticker{border-radius:14px 0 0 4px;background:linear-gradient(90deg,rgba(14,10,34,.24),rgba(14,10,34,.04) 70%,transparent);box-shadow:inset 2px 0 0 rgba(232,214,255,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.menu .ticker,.menu .ticker *{text-shadow:0 1px 4px rgba(0,0,0,.7)}
+/* a plain bright rim (the crystal ring gradient used to sit under an opaque fill; with a see-through fill it showed through as a pastel tile) */
+.menu .rbtn:not(.ic-up),.menu .tool .tc:not(.ic-up){border-radius:34% 12% 34% 12%;border:1.5px solid rgba(236,222,255,.5);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02)),rgba(12,9,30,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 10px rgba(0,0,0,.16);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.menu .ev .evo:not(.ic-up){border-radius:36% 12% 36% 12%;border:1.5px solid rgba(236,222,255,.55);background:radial-gradient(110% 80% at 30% 10%,rgba(255,255,255,.16),transparent 55%),linear-gradient(180deg,rgba(255,255,255,.05),rgba(10,8,26,.2));box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 14px rgba(200,170,255,.14),0 4px 12px rgba(0,0,0,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.menu .ev:hover .evo:not(.ic-up),.menu .rbtn:not(.ic-up):hover,.menu .tool:hover .tc:not(.ic-up){border-color:#f5c4ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 16px var(--cry-glow)}
+.menu .el,.menu .tool,.menu .hm-id{text-shadow:0 1px 4px rgba(0,0,0,.65),0 0 10px rgba(0,0,0,.35)}
+.menu .hm-tabs{border-radius:28px 8px 28px 8px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.01)),rgba(12,9,30,.18);border-color:rgba(255,255,255,.18);backdrop-filter:blur(8px) saturate(1.25);-webkit-backdrop-filter:blur(8px) saturate(1.25);box-shadow:0 10px 26px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.12)}
+.menu .hm-tabs .tbl{text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.menu .hm-drop{border-radius:24px 6px 24px 6px;background:linear-gradient(180deg,rgba(30,22,62,.36),rgba(12,10,30,.46));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.menu .hm-drop::before{background:rgba(30,22,62,.4)}
+.menu .sx-tab.promo-tab{border-radius:18px 5px 18px 5px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.menu .hm-me .hm-name,.menu #hmTitle{text-shadow:0 1px 5px rgba(0,0,0,.7)}

@@ -31,6 +31,12 @@
 .smx-sp{flex:1;min-width:0}
 .smx-cur{display:flex;gap:8px;flex:none}
 .smx-cur .cur{min-width:124px;background:rgba(10,8,26,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+/* bigger currency pills (the owner's ask) */
+.smx .smx-cur{gap:10px}
+.smx .smx-cur .cur{min-width:150px;height:46px;padding:4px 5px 4px 12px;gap:10px;font-size:18px;border-radius:18px 5px 18px 5px}
+.smx .smx-cur .cur .cic{width:26px;height:26px}
+.smx .smx-cur .cur .plus{width:32px;height:32px;border-radius:12px 3px 12px 3px}
+.smx .smx-cur .cur .plus .ic{width:16px;height:16px}
 /* banner tabs: a rail of see-through cards on the left */
 .smx-tabs{grid-area:tabs;position:relative;z-index:2;display:flex;flex-direction:column;gap:9px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:clamp(12px,5vh,56px) 10px clamp(12px,5vh,56px) 2px;margin-right:-10px;scrollbar-width:none;-webkit-mask:linear-gradient(transparent,#000 14px,#000 calc(100% - 14px),transparent);mask:linear-gradient(transparent,#000 14px,#000 calc(100% - 14px),transparent)}
 /* the banner list sits in the middle (auto margins collapse to 0 when it overflows, so it still scrolls from the top) */
@@ -83,35 +89,9 @@
 .smx-info{--bc:color-mix(in srgb,var(--tc) 55%,#fff);background:linear-gradient(var(--bc),var(--bc)) right 8px top 8px/20px 1.5px no-repeat,linear-gradient(var(--bc),var(--bc)) right 8px top 8px/1.5px 20px no-repeat,
   linear-gradient(var(--bc),var(--bc)) left 8px bottom 8px/20px 1.5px no-repeat,linear-gradient(var(--bc),var(--bc)) left 8px bottom 8px/1.5px 20px no-repeat,
   radial-gradient(ellipse 90% 40% at 100% 0%,color-mix(in srgb,var(--tc) 16%,transparent),transparent 70%),var(--glass)}
-.smx-ih{display:flex;align-items:center;gap:8px;padding-bottom:10px;margin-bottom:-2px;border-bottom:1px solid transparent;border-image:linear-gradient(90deg,color-mix(in srgb,var(--tc) 70%,transparent),rgba(255,255,255,.12) 60%,transparent) 1}
-.smx-ih i{flex:none;width:9px;height:9px;transform:rotate(45deg);background:var(--tc);box-shadow:0 0 8px var(--tc)}
-.smx-ih small{color:color-mix(in srgb,var(--tc) 45%,#fff)}
-.smx-ih em{margin-left:auto;font-style:normal;font-family:var(--body);font-weight:900;font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap}
 .smx-rt{transform:scale(.8);transform-origin:0 50%;margin-left:2px;vertical-align:middle}
 .smx-fct em{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .smx-fct .stars6{font-size:11px}
-.smx-rates{display:grid;gap:7px}
-.smx-rc{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
-.smx-r{display:grid;justify-items:center;gap:4px;padding:7px 4px 6px;border-radius:11px 3px 11px 3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
-.smx-r.r5{border-color:color-mix(in srgb,var(--r5) 55%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--r5) 16%,transparent),rgba(255,255,255,.03))}
-.smx-r.r4{border-color:color-mix(in srgb,var(--r4) 45%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--r4) 12%,transparent),rgba(255,255,255,.03))}
-.smx-r.r3{border-color:color-mix(in srgb,var(--r3) 35%,transparent)}
-.smx-r b{font-family:var(--body);font-weight:900;font-size:13.5px;line-height:1}
-.smx-r .rtag{transform:scale(.85)}
-.smx-sp4{display:flex;align-items:center;gap:8px;margin-top:6px;font-family:var(--body);font-weight:900;font-size:11px;color:rgba(255,255,255,.6)}
-.smx-pips{flex:1;display:flex;justify-content:space-between;gap:2px;padding:0 2px}
-.smx-pips i{width:7px;height:7px;transform:rotate(45deg);background:rgba(255,255,255,.14)}
-.smx-pips i.on{background:linear-gradient(135deg,#ffd9a8,var(--r4));box-shadow:0 0 6px color-mix(in srgb,var(--r4) 70%,transparent)}
-.smx-sp4 b{font-weight:900;font-size:12px;color:#ffd0a0;min-width:14px;text-align:right}
-.smx-perks{display:grid;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
-.smx-pkr{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
-.smx-pk{display:grid;justify-items:center;gap:2px;padding:7px 4px 6px;border-radius:11px 3px 11px 3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
-.smx-pk .cic{width:20px;height:20px}
-.smx-pk b{font-family:var(--body);font-weight:900;font-size:13.5px;line-height:1}
-.smx-pk small{font-size:9px;letter-spacing:.04em;color:rgba(255,255,255,.6);white-space:nowrap}
-.smx-pkn{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.smx-pkn li{display:flex;align-items:center;gap:8px;font-family:var(--read);font-size:12.5px;line-height:1.3;color:rgba(255,255,255,.8)}
-.smx-pkn li>.ic,.smx-pkn li>.cic,.smx-pkn li>img{flex:none;width:16px;height:16px;color:color-mix(in srgb,var(--tc) 50%,#fff)}
 .smx-lu{display:grid;gap:7px}
 .smx-lui{display:flex;align-items:center;gap:6px}
 .smx-lui span{flex:none;width:36px;height:36px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ffe0b8,var(--r4));box-shadow:0 0 10px color-mix(in srgb,var(--r4) 35%,transparent)}
@@ -193,7 +173,7 @@
 .smx-go .sx-disc{display:inline-flex;align-items:center;gap:7px}
 .smx-go .sx-disc s{font-size:14px}
 @media (min-width:1700px) and (min-height:950px){.smx-go{min-width:240px;height:76px}.smx-go b{font-size:25px}}
-@media (max-height:820px) and (min-width:1101px){.smx-info{gap:10px;padding:15px}.smx-pl b{font-size:28px}.smx-pity{padding-top:10px}.smx-lu,.smx-steps .smx-note,.smx-pkn li:nth-child(n+3){display:none}.smx-ih{padding-bottom:7px}}
+@media (max-height:820px) and (min-width:1101px){.smx-info{gap:10px;padding:15px}.smx-pl b{font-size:28px}.smx-pity{padding-top:10px}.smx-lu,.smx-steps .smx-note{display:none}}
 /* stages narrower than ~1.55:1 (4:3 tablets, small windows): the column goes under the art */
 @container (aspect-ratio < 1.55){
   .smx-show{flex-direction:column;--ih:clamp(140px,28cqh,210px)}
@@ -268,8 +248,7 @@
   .smx-fic{width:38px;height:38px}.smx-fct b{font-size:14px}.smx-gt{font-size:10px;padding:2px 8px}
   .smx-pity{padding-top:8px}.smx-pl b{font-size:22px}
   .smx-pts{height:30px;font-size:11px}
-  .smx-ih,.smx-lu,.smx-pkn,.smx-fct .stars6{display:none}
-  .smx-sp4{margin-top:3px}
+  .smx-lu,.smx-fct .stars6{display:none}
   .smx-bgn{gap:6px}.smx-bgn .smx-note,.smx-bgn-h small,.smx-bgn-p small{display:none}.smx-bgn-ur{width:36px;height:36px}.smx-seg{margin-bottom:14px}.smx-bgn-p{padding-top:6px}
   .smx-info .stp{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.smx-info .stp-n{padding:4px 1px}.smx-info .stp-g{display:none}.smx-steps .smx-note{display:none}
   .smx-foot{gap:10px}
@@ -360,3 +339,7 @@
 .sum .scard.r5{animation:pop .35s both,urAura 3.6s ease-in-out infinite;animation-delay:calc(var(--i) * .05s),calc(var(--i) * .05s + .35s)}
 @keyframes urAura{0%,100%{box-shadow:0 0 16px 2px rgba(214,130,255,.62),0 0 40px 8px rgba(255,120,210,.26)}50%{box-shadow:0 0 20px 3px rgba(150,220,255,.6),0 0 46px 10px rgba(190,140,255,.3)}}
 @media (prefers-reduced-motion:reduce){.sum .scard.r5{animation:pop .35s both;box-shadow:0 0 14px 1px rgba(214,130,255,.5),0 0 32px 5px rgba(190,140,255,.18)}}
+/* the bigger header currency pills, scaled down again where space is short */
+@media (max-width:1100px){.smx .smx-cur .cur{min-width:128px;height:42px;font-size:16px}}
+@media (max-width:760px) and (orientation:portrait){.smx .smx-cur{gap:6px}.smx .smx-cur .cur{min-width:0;height:34px;padding:2px 3px 2px 9px;gap:6px;font-size:14px;border-radius:13px 4px 13px 4px}.smx .smx-cur .cur .cic{width:20px;height:20px}.smx .smx-cur .cur .plus{width:24px;height:24px;border-radius:9px 3px 9px 3px}.smx .smx-cur .cur .plus .ic{width:13px;height:13px}}
+@media (max-height:500px) and (orientation:landscape){.smx .smx-cur .cur{min-width:0;height:32px;padding:2px 3px 2px 9px;gap:6px;font-size:13px;border-radius:12px 3px 12px 3px}.smx .smx-cur .cur .cic{width:19px;height:19px}.smx .smx-cur .cur .plus{width:24px;height:24px}}

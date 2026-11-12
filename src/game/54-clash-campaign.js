@@ -378,8 +378,26 @@ function closeCampaign() { if (cmpEl) { cmpEl.remove(); cmpEl = null; } bthHome(
 /* the stage to show when a chapter tab is picked: its first open stage without a star, else its last open one, else its first */
 /* the chapter you are on: the first open chapter with a stage not cleared yet, else the last open one */
 function ccCampCurCh() { const L = CC_CAMP.filter(ccCampChOpen); return L.find(c => c.stages.some(s => !ccCampHave(s.id)[0])) || L[L.length - 1] || CC_CAMP[0]; }
-/* the chapter tabs show only the chapters you have cleared, the one you are on and the next one; the rest stay hidden */
+/* the chapter list shows only the chapters you have cleared, the one you are on and the next one (the owner's rule);
+   admins see every chapter in the game, hidden ones marked "Hidden from players" */
 const ccCampShown = () => { const i = CC_CAMP.indexOf(ccCampCurCh()); return CC_CAMP.slice(0, i + 2); };
+const ccCampList = () => canAdmin() ? CC_CAMP : ccCampShown();
+const ccCampChDot = c => ccCampClaimable(c) || c.stages.some(s => ccCampOpen({ ...s, ch: c }) && !ccCampHave(s.id)[0]);
+const ccCampChDone = c => c.stages.every(s => ccCampHave(s.id)[0]);
+function ccCampChapters() {
+  const cur = ccCampStage(cmpSel), curCh = cur ? cur.ch : ccCampCurCh(), shown = ccCampShown(), L = ccCampList();
+  const card = c => { const op = ccCampChOpen(c), n = ccCampChN(c), max = ccCampChMax(c), done = ccCampChDone(c), cleared = c.stages.filter(s => ccCampHave(s.id)[0]).length, hidden = !shown.includes(c);
+    const prev = CC_CAMP[CC_CAMP.indexOf(c) - 1], state = done ? 'Cleared' : op ? (cleared ? `${cleared} / ${c.stages.length} stages cleared` : 'Ready to start') : `Clear Chapter ${prev ? prev.no : 0} to open`;
+    return `<button class="cmpl-ch ${c.id === curCh.id ? 'on' : ''} ${op ? '' : 'lock'} ${done ? 'done' : ''}" data-cpch="${c.id}">
+      <span class="cmpl-no">${op ? `<b>${c.no}</b>` : icon('lock')}</span>
+      <span class="cmpl-t"><small>Chapter ${c.no} · ${esc(c.sub)}${hidden ? ' · <em>Hidden from players</em>' : ''}</small><b>${esc(c.name)}</b><span class="cmpl-st">${done ? icon('check') : ''}${state}</span></span>
+      <span class="cmpl-stars"><span class="cmpl-sn">${CC_STAR_SVG}<b>${n}</b> / ${max}</span><span class="cmpl-bar"><i style="width:${(n / max * 100).toFixed(1)}%"></i></span></span>
+      ${ccCampChDot(c) && c.id !== curCh.id ? '<i class="cmp-dot"></i>' : ''}</button>`; };
+  const soon = L.length >= CC_CAMP.length ? `<div class="cmpl-ch soon"><span class="cmpl-no">${icon('lock')}</span><span class="cmpl-t"><small>Chapter ${CC_CAMP.length}</small><b>Coming soon</b><span class="cmpl-st">New chapters are on the way</span></span></div>` : '';
+  openModal({ title: 'Chapters', ic: 'book', kind: 'cmpch', body: `<div class="cmpl">${canAdmin() ? `<p class="tiny cmpl-adm">${icon('wrench')}Admin view: every chapter is listed. Players only see the chapters they have cleared, the one they are on and the next one.</p>` : ''}
+      <div class="cmpl-list">${L.map(card).join('')}${soon}</div></div>`,
+    onMount: b => b.querySelectorAll('[data-cpch]').forEach(x => x.onclick = () => { const c = CC_CAMP.find(y => y.id === x.dataset.cpch); if (!c) return; closeModal(); if (c.id !== curCh.id) { cmpSel = cmpPickIn(c); renderCampaign(); } }) });
+}
 function cmpPickIn(ch) { const L = ch.stages.map(s => ({ ...s, ch })), op = L.filter(ccCampOpen); return (op.find(s => !ccCampHave(s.id)[0]) || op[op.length - 1] || L[0]).id; }
 function renderCampaign() {
   if (!cmpEl) return;
@@ -391,13 +409,13 @@ function renderCampaign() {
     return `<button class="cmp-node ${op ? k === 3 ? 'perfect' : k ? 'clear' : 'new' : 'locked'} ${s.id === st.id ? 'sel' : ''} ${s.boss ? 'boss' : ''}" data-stage="${s.id}" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--px:${px.toFixed(1)}%;--py:${py.toFixed(1)}%;--qx:${qx.toFixed(1)}%;--qy:${qy.toFixed(1)}%" ${op ? '' : 'aria-disabled="true"'}>
       <span class="cmp-med">${op ? `<b>${s.id}</b>` : icon('lock')}${s.boss ? `<i class="cmp-crown">${icon('crown')}</i>` : ''}${op && !k ? '<i class="cmp-newtag">New</i>' : ''}</span>
       ${ccStars(have)}<span class="cmp-nm">${esc(s.name)}</span></button>`; };
-  const tab = c => { const op = ccCampChOpen(c), dot = ccCampClaimable(c) || c.stages.some(s => ccCampOpen({ ...s, ch: c }) && !ccCampHave(s.id)[0]);
-    return `<button class="cmp-cht ${c.id === ch.id ? 'on' : ''} ${op ? '' : 'lock'}" data-ch="${c.id}" title="Chapter ${c.no} · ${esc(c.name)}">${op ? '' : icon('lock')}Chapter ${c.no}${c.id === ch.id ? ` · ${esc(c.sub)}` : ''}${dot && c.id !== ch.id ? '<i class="cmp-dot"></i>' : ''}</button>`; };
-  cmpEl.innerHTML = `<div class="cmp-bg"><i class="cmp-moon"></i><i class="cmp-mist"></i></div>
+  const otherDot = ccCampList().some(c => c.id !== ch.id && ccCampChDot(c));
+  const back = MEDIA.get('camp:bg:' + ch.id) || MEDIA.get('battle:campaign');   // the whole screen sits on a blurred copy, so the glass panels show it
+  cmpEl.innerHTML = `<div class="cmp-bg ${back ? 'has-art' : ''}">${back ? `<img class="cmp-bgart" src="${back}" alt="">` : ''}<i class="cmp-glow g1"></i><i class="cmp-glow g2"></i><i class="cmp-glow g3"></i><i class="cmp-moon"></i><i class="cmp-mist"></i></div>
     <header class="cmp-head"><div class="inv-title"><span class="inv-badge">${icon('map')}</span><h2 class="ts">Campaign</h2></div>
-      <div class="cmp-chtabs">${ccCampShown().map(tab).join('')}${ccCampShown().length >= CC_CAMP.length ? `<button class="cmp-cht soon" disabled>${icon('lock')}Chapter ${CC_CAMP.length} · Coming soon</button>` : ''}</div>
+      <button class="cmp-chb" id="cmpChapters" aria-haspopup="dialog" title="All chapters"><span class="cmp-chb-ic">${icon('book')}</span><span class="cmp-chb-t"><small>Chapter ${ch.no}</small><b>${esc(ch.name)}</b></span><span class="cmp-chb-all">All chapters<i class="cmp-chb-v"></i></span>${otherDot ? '<i class="cmp-dot"></i>' : ''}</button>
       <span class="cmp-sp"></span>
-      <button class="btn ghost cmp-towerb" id="cmpTower">${icon('compass')}World map${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
+      <button class="btn ghost cmp-towerb" id="cmpTower">${icon('compass')}World map${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
     <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `${artImg('camp:bg:' + ch.id, 'cmp-wp')}<i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
@@ -415,16 +433,14 @@ function renderCampaign() {
     <aside class="cmp-side">${ccCampPanel(st)}</aside>`;
   cmpEl.querySelector('#cmpClose').onclick = closeCampaign;
   cmpEl.querySelector('#cmpDeck').onclick = () => { closeCampaign(); openDeck(); };
-  cmpEl.querySelector('#cmpQuick').onclick = () => openQuickMatch();
+  cmpEl.querySelector('#cmpChapters').onclick = () => ccCampChapters();
   cmpEl.querySelector('#cmpTower').onclick = () => openWorld();
   cmpEl.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { cmpSel = b.dataset.stage; renderCampaign(); });
-  cmpEl.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { const c = CC_CAMP.find(x => x.id === b.dataset.ch); if (c && c.id !== ch.id) { cmpSel = cmpPickIn(c); renderCampaign(); } });
   const cl = cmpEl.querySelector('#cmpClaim'); if (cl && ready) cl.onclick = () => ccCampClaim(ch);
   cmpEl.querySelectorAll('[data-cmpm]').forEach(b => b.onclick = () => { if (ccCampClaimable(ch) && ccCampMiles(ch).find(m => m.id === b.dataset.cmpm).ready) ccCampClaim(ch); });   // like the quest gift boxes: tap a reached one to claim
   const go = cmpEl.querySelector('#cmpGo'); if (go) go.onclick = () => ccCampStart(st);
   const ls = cmpEl.querySelector('#cmpLesson'); if (ls) ls.onclick = () => ccRules(st.rules || 0);
   const dp = cmpEl.querySelector('#cmpDeckPick'); if (dp) dp.onclick = () => ccCampDeckPick();
-  const tb = cmpEl.querySelector('.cmp-chtabs'), on = cmpEl.querySelector('.cmp-cht.on'); if (tb && on && tb.scrollWidth > tb.clientWidth) tb.scrollLeft = on.offsetLeft + on.offsetWidth - tb.clientWidth + 8;   // keep the chosen chapter's tab in view
 }
 /* the selected stage: what it teaches (or its twist), the opponent, your deck, the 3 star goals (+1 pearl each the first time) and Start */
 function ccCampPanel(st) {
