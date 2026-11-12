@@ -64,12 +64,13 @@ function renderMenu() {
   $('#bpDot').hidden = !bpReady();
   if (booted && typeof rankSettle === 'function') rankSettle();
   if (booted) gbCheckKills();   // a dragon the guild defeated mails every member a reward
+  if (booted && typeof arSettle === 'function') { arSimDefense(); arSettle(); }   // Arena: attacks on your defense while you were away, the weekly rank rewards
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
   $('#houseDot').hidden = !houseReady();
   $('#guildDot').hidden = !guildReady();
-  { const cd = $('#battleDot'); if (cd) cd.hidden = !(ccCampReady() || ccTowerReady()); }   // Battle gate: a campaign stage or tree floor not cleared yet, or a chapter reward
+  { const cd = $('#battleDot'); if (cd) cd.hidden = !(ccCampReady() || ccTowerReady() || (typeof arUnseen === 'function' && arUnseen().length > 0)); }   // Battle gate: a campaign stage or tree floor not cleared yet, or a chapter reward
   $('#frDot').hidden = !frReady();
   { const lo = liveOffers(); $('#hmOffer').hidden = !lo.length; if (lo.length) { $('#offerName').textContent = lo.length > 1 ? `Offers · ${lo.length}` : lo[0].name; $('#offerTime').textContent = offerLeftTxt(lo[0]); } }
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));

@@ -16,7 +16,8 @@ const BTH_MODES = [
   { id: 'tree', name: 'The Great Tree', kind: 'Card Battle · Climb', ic: 'tree', col: '#9fe6ff', col2: '#7ee0a8' },
   { id: 'quick', name: 'Quick Match', kind: 'Card Battle · Versus', ic: 'bolt', col: '#ffe3a0', col2: '#ff9ac8' },
   { id: 'world', name: 'World Map', kind: 'Card Battle · Regions', ic: 'compass', col: '#f1e2bd', col2: '#b48a52' },
-  { id: 'gboss', name: 'Guild Boss', kind: 'Card Battle · Guild', ic: 'dragon', col: '#ffb07a', col2: '#e0384f' }
+  { id: 'gboss', name: 'Guild Boss', kind: 'Card Battle · Guild', ic: 'dragon', col: '#ffb07a', col2: '#e0384f' },
+  { id: 'arena', name: 'Arena', kind: 'Card Battle · Versus', ic: 'arena', col: '#ff9ab8', col2: '#ffcf6a' }
 ];
 /* the drawn scene of a card: BTH_ART, or for the World Map the parchment map itself (WM_SVG, centred on the tree) */
 const bthScene = id => id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
@@ -34,6 +35,8 @@ function bthInfo(id) {
     return { sub: `Floor ${f.no}`, line: `${icon('tree')}${esc(f.name)}`, dot: ccTowerReady() }; }
   if (id === 'gboss') { if (!inGuild()) return { sub: 'Join a guild', line: `${icon('guild')}Fight it with your guild`, dot: false };
     const bd = gbBoard(); return { sub: `Level ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP`, line: `${icon('swords')}${gbLeft()} of ${GB_TRIES} battles left`, dot: gbReady() }; }
+  if (id === 'arena') { if (!arJoined()) return { sub: 'Join the Arena', line: `${icon('shield')}Set a defense deck`, dot: false };
+    const a = arState(), R = arRankOf(a.vp); return { sub: `${R.label} · ${fmt(a.vp)} VP`, line: `${icon('swords')}${arLeft()} of ${AR_TICKETS} battles left`, dot: arReady() }; }
   if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
     return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
   const st = ccSave().stats;
@@ -49,11 +52,11 @@ function closeBattle() { if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = 
 /* a screen opened from the Battle screen calls this when it closes: back to Battle, unless another screen took over */
 function bthHome() {
   renderMenu(); if (!bthBack) return;
-  setTimeout(() => { if (bthBack && !bthEl && !cmpEl && !raidEl && !twrEl && !wmEl && !ccdEl && !qmEl && !gbEl && !ccM) openBattle(); }, 0);
+  setTimeout(() => { if (bthBack && !bthEl && !cmpEl && !raidEl && !twrEl && !wmEl && !ccdEl && !qmEl && !gbEl && !arEl && !ccM) openBattle(); }, 0);
 }
 function bthGo(id) {
   if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = true;
-  if (id === 'campaign') openCampaign(); else if (id === 'raids') openRaids(); else if (id === 'quick') openQuickMatch(); else if (id === 'world') openWorld(); else if (id === 'gboss') openGuildBoss(); else openTower();
+  if (id === 'campaign') openCampaign(); else if (id === 'raids') openRaids(); else if (id === 'quick') openQuickMatch(); else if (id === 'world') openWorld(); else if (id === 'gboss') openGuildBoss(); else if (id === 'arena') openArena(); else openTower();
 }
 function bthCard(m, i) {
   const x = bthInfo(m.id);
@@ -93,7 +96,8 @@ INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in on
   <li><b>The Great Tree</b>: climb floor by floor with your own deck; each cleared floor opens the next. Stars give pearls, there are no milestone rewards.</li>
   <li><b>Quick Match</b>: a quick battle against a hidden challenger with one of your decks. Pick a battle type (Mirror Duel, Rival Deck, Event Storm, Blitz) and a difficulty (Easy to Expert); tougher challengers give more gold, pearls and gear.</li>
   <li><b>World Map</b>: the regions around the Great Tree. Only the tree is open for now.</li>
-  <li><b>Guild Boss</b>: a dragon your whole guild fights together, ${GB_TRIES} battles every 48 hours, with rewards by the damage you deal.</li></ul>` });
+  <li><b>Guild Boss</b>: a dragon your whole guild fights together, ${GB_TRIES} battles every 48 hours, with rewards by the damage you deal.</li>
+  <li><b>Arena</b>: attack other players' defense decks, ${AR_TICKETS} battles every 12 hours. Climb from Bronze to Celestial for weekly pearls and arena tokens.</li></ul>` });
 
 /* admin → Battle screen: a wallpaper per card (portrait; it covers the card) and the campaign chapter wallpapers */
 function renderBattleTab() {
@@ -105,6 +109,7 @@ function renderBattleTab() {
       <span class="row" style="gap:6px;justify-content:center"><label class="btn mint sm">${icon('upload')}${u ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-btup="${m.id}"></label>${u ? `<button class="btn ghost sm" data-btdel="${m.id}">Default</button>` : ''}</span>${artFrameBtn('battle:' + m.id, 'card', `${m.name} card`)}</div>`; }).join('')}</div>
     <div class="row"><button class="btn ghost sm" id="bthAdOpen">${icon('swords')}Open the Battle screen</button></div>
     ${gbAdminHTML()}
+    ${arAdminHTML()}
     <div><h3>Quick match wallpapers</h3><p class="tiny">One per battle type, behind the Quick match screen and on its battle type card (1920×1080 best). Without one, the screen shows a featured character of the day (a different one per type).</p></div>
     <div class="setx-list ad-art">${QM_MODES.map(m => { const k = 'qm:bg:' + m.id, u = MEDIA.get(k); return setRow(`${m.name} wallpaper`, `<span class="set-wp">${u ? `<img src="${u}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-qmup="${m.id}"></label>${u ? `<button type="button" class="sx-btn" data-qmdel="${m.id}">Default</button>` : ''}${artFrameBtn(k, 'screen', `${m.name} wallpaper`)}`, `${m.kind} · ${m.desc}`); }).join('')}</div>
     <div><h3>Campaign chapter wallpapers</h3><p class="tiny">Each chapter's map on the campaign screen (only inside the map panel, 1920×1080 best). Default: the night sky.</p></div>
@@ -118,4 +123,5 @@ function renderBattleTab() {
   p.querySelectorAll('[data-qmdel]').forEach(b => b.onclick = async () => { await mediaDel('qm:bg:' + b.dataset.qmdel); renderBattleTab(); if (qmEl) renderQuickMatch(); toast('Back to the featured character.'); });
   bindAdminArt(p, renderBattleTab);
   gbAdminBind(p, redo);
+  arAdminBind(p, redo);
 }
