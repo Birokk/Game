@@ -5,7 +5,7 @@
    the left of the popup and breaks out over the top of the rectangle. The first time, the First Top-Up is created from the
    old settings (id 'ftu': the admin's UR, 240 stamina, 10 Standard tickets, 7 days, $4.99).
    Players see live offers as a small popup (openOffer, .ofp: wallpaper, cutout, name, time left, rewards, price; arrows when
-   several are live), a home icon (#hmOffer, the first live offer's name and time left) and banners in Top Up → Pearls.
+   several are live), a mini banner in the home carousel (62-home.js) and banners in Top Up → Pearls.
    While TOPUP_FREE the price button is a free test that still gives VIP EXP. Player state S.offerBought {offerId: count};
    the 'newbie' clock starts at S.account.since (older saves: the first time they see an offer, S.ftuStart). */
 const OFFER_KEYS = ['pearls', 'tickets', 'wishes', 'coins', 'stamina', 'bottles', 'dust', 'starlight', 'cfssr', 'cfur', 'fragssr', 'fragur', 'eggur', 'memtk', 'nametk', 'ursel', 'exp', 'gpts', 'gplush'];

@@ -131,7 +131,7 @@ function openFrProfile(uid) {
     return `<div class="pf-col"><span class="pf-slot r${x.e.rarity}"><img src="${baseCard(x.e)}" alt="" ${baseArt(x.e) ? `style="${cardImgStyle(x.e, 'base')}"` : ''}><span class="pf-cs">${gradeTag(csGrade(x.cs), 'sm')}</span><span class="pf-sl">${rtag(x.e.rarity)}<b>${esc(x.e.name)}</b>${starRow(x.st)}</span></span>${memPrev}<span class="frp-cs">${fmt(x.cs)} CS</span></div>`; }).join('');
   el.innerHTML = `<div class="rdrop-box frp-box">
       <button class="inv-x frp-x" data-frx aria-label="Close">${icon('close')}</button>
-      <div class="pf-card frp-card">${cardLayer(fp.card)}
+      <div class="pf-card frp-card">${cardLayer(fp.card)}${arPlaqueHTML(arVpOf(fp.name), true)}
         <div class="pf-me">${frAvatar(fp, 104)}
           <div class="pf-who"><span class="pf-lvrow">${fp.vip ? vipBadge(fp.vip) : ''}<span class="lbl-sm ts" style="color:#fff">Lv ${fp.lv} · UID ${fp.uid}</span></span><span class="pf-namerow"><b class="ts">${esc(fp.name)}</b></span>${titleHTML(fp.title)}
             ${fp.guild ? `<span class="pf-guild">${guildIcon(fp.guild.icon, 24)}<b>${esc(fp.guild.name)}</b></span>` : ''}</div></div></div>

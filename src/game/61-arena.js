@@ -247,6 +247,16 @@ const arBadge = (vp, cls = '') => { const R = arRankOf(vp); return `<span class=
 const arAva = id => { const e = id && findEntry(id); return e ? baseThumb(e) : `<span class="ar-noav">${icon('user')}</span>`; };
 const arAgo = t => { const s = Math.max(0, Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; };
 
+/* the rank plaque on a profile's namecard (yours opens the Arena; practice players get the VP the Arena ranking gives
+   them, or a seeded one) */
+function arPlaqueHTML(vp, on = true, click = false) {
+  const R = arRankOf(vp), tag = click ? 'button' : 'span';
+  return `<${tag} class="pf-arena ${on ? '' : 'none'}" ${click ? `data-open="arena" aria-label="Arena rank: ${on ? esc(R.label) : 'Unranked'}. Open the Arena"` : ''} style="--rk:${on ? R.r.c2 : '#9aa3b8'}" title="Arena rank">
+    <span class="pf-arem">${arEmblem(on ? R.r.id : 'bronze')}${on ? `<i class="ar-dv">${R.dn}</i>` : ''}</span>
+    <span class="pf-art"><small>Arena</small><b>${on ? esc(R.label) : 'Unranked'}</b><em>${on ? `${fmt(vp)} VP` : 'Join in Battle'}</em></span></${tag}>`;
+}
+const arVpOf = name => { const b = arBoard().find(p => p.bot && p.name === name); return b ? b.vp : Math.round(150 + Math.pow(seeded('arfr:' + name)(), .85) * 5300); };
+
 /* ---- the Arena Shop: items picked every day (the same for everyone), each with a daily limit, paid with arena tokens ---- */
 const AR_SHOP_N = 8, AR_SHOP_REF = 30;
 const AR_SHOP_POOL = [

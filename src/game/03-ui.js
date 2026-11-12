@@ -89,16 +89,11 @@ function renderMenu() {
   $('#guildDot').hidden = !guildReady();
   { const cd = $('#battleDot'); if (cd) cd.hidden = !(ccCampReady() || ccTowerReady() || (typeof arUnseen === 'function' && arUnseen().length > 0)); }   // Battle gate: a campaign stage or tree floor not cleared yet, or a chapter reward
   $('#frDot').hidden = !frReady();
-  { const lo = liveOffers(); $('#hmOffer').hidden = !lo.length; if (lo.length) { $('#offerName').textContent = lo.length > 1 ? `Offers · ${lo.length}` : lo[0].name; $('#offerTime').textContent = offerLeftTxt(lo[0]); } }
   $('#petDot').hidden = !(PS.inc.some(i => i && i.ends <= Date.now()) || (PS.eggs.length && PS.inc.includes(null)) || ['ssr', 'ur'].some(r => PS.frags[r] >= EGG[r].frag));
   $('#stamPill').onclick = openStamina;
   $('#spinDot').hidden = !spinReady();
   renderStamina();
-  const f = limitedUR(), std = standardURs(), sf = std.length ? std[stdRotate % std.length] : null, gl = S.gacha.limited;
-  // same card as the summon screen's banner tabs
-  $('#promo').innerHTML = `<button class="sx-tab lim promo-tab" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
-      <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
-    </button>`;
+  safely(renderHomeBanners, 'home banners');   // the mini banner carousel (62-home.js)
   { const l = shortLeft(); $('#limTime').innerHTML = `${icon('clock')}${l === 'Ended' ? 'Limited summon ended' : `Limited ends in ${l}`}`; }
   $('#moreDot').hidden = ![...document.querySelectorAll('#hmDrop .dot-n')].some(d => !d.hidden);   // the Menu button lights when anything inside it does
   applyWallpaper();

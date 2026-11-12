@@ -5638,3 +5638,17 @@ button.arx-dk:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,2
 .err-log{display:grid;gap:6px;max-height:260px;overflow:auto}
 .err-row{font:600 12.5px/1.4 var(--read);padding:7px 11px;border-radius:12px 4px 12px 4px;background:rgba(255,80,110,.08);border:1px solid rgba(255,130,150,.28);word-break:break-word}
 .err-row b{font-family:var(--display);font-weight:400}.err-row small{display:block;margin-top:2px;font-size:11px;opacity:.6}
+
+/* Arena rank on a profile's namecard (bottom right; yours opens the Arena) */
+.pf-arena{all:unset;box-sizing:border-box;position:absolute;right:14px;bottom:12px;z-index:3;display:flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;border-radius:999px;color:#fff;
+  background:linear-gradient(90deg,rgba(6,5,16,.7),rgba(6,5,16,.5));border:1px solid color-mix(in srgb,var(--rk) 65%,rgba(255,255,255,.25));box-shadow:0 6px 18px rgba(0,0,0,.35),0 0 16px color-mix(in srgb,var(--rk) 30%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+button.pf-arena{cursor:pointer;transition:transform .2s,box-shadow .2s}button.pf-arena:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.4),0 0 22px color-mix(in srgb,var(--rk) 45%,transparent)}
+button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.pf-arem{position:relative;width:44px;height:44px;flex:none;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--rk) 55%,transparent))}
+.pf-arem .ar-dv{font-size:9px;bottom:-10%}
+.pf-arena.none .pf-arem{filter:grayscale(1) brightness(.75)}
+.pf-art{display:grid;line-height:1.15;text-align:left}
+.pf-art small{font:400 9.5px var(--display);letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.pf-art b{font:italic 400 15px var(--display);white-space:nowrap}
+.pf-art em{font:800 11px var(--read);font-style:normal;color:color-mix(in srgb,var(--rk) 55%,#fff)}
+@media (max-width:640px){.pf-card:has(>.pf-arena) .pf-me{margin-bottom:42px}.pf-arena{right:10px;bottom:10px;padding:4px 10px 4px 4px;gap:6px}.pf-arem{width:34px;height:34px}.pf-art small,.pf-art em{display:none}.pf-art b{font-size:12.5px}}
