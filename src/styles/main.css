@@ -4680,3 +4680,39 @@ button.pt-slot:hover{border-color:#fff}
 .afr-clip{position:absolute;inset:0;overflow:hidden;display:block}
 .ld-thumb .ld-adj{left:4px;right:auto}.ld-thumb .ld-adj.on{background:var(--cry-grad);color:var(--cry-ink)}
 @media (max-width:640px){.afr{padding:10px}.afr-box{--mh:42vh;padding:14px}.afr-sl{grid-template-columns:1fr;gap:10px}.afr-prevs.two .afr-prev.phone{display:none}.afr-prevs.two .afr-prev.main{max-width:100%}}
+
+/* ---- raids: Battle to clear + the day's instant clears (23-raids.js raidGo) ---- */
+.raid-go.raid-go2{flex-wrap:wrap;align-items:stretch;gap:12px 14px}
+.raid-bt{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;align-items:center;gap:12px;min-width:300px;padding:10px 16px 10px 10px;border-radius:24px 6px 24px 6px;background:var(--cry-grad);color:var(--cry-ink);border:1px solid var(--cry-edge);box-shadow:inset 0 2px 0 rgba(255,255,255,.7),0 0 22px var(--cry-glow),0 8px 22px rgba(0,0,0,.3);transition:transform .15s,filter .2s}
+.raid-bt:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.raid-bt[disabled]{opacity:.5;cursor:default;transform:none;filter:none}
+.raid-bti{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#fff,#e8d4ff 45%,#9a7ad8);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6),0 2px 8px rgba(60,30,120,.35)}
+.raid-bti .ic{width:24px;height:24px;color:#3b1f72}
+.raid-btt{flex:1;min-width:0;display:grid;gap:2px}
+.raid-btt b{font:400 22px/1 var(--display)}
+.raid-btt small{font:800 12px var(--read);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.raid-btc{flex:none;display:grid;justify-items:center;font:900 15px var(--body)}
+.raid-btc .cic{width:20px;height:20px;vertical-align:-4px}
+.raid-btc i{font:800 10px var(--read);font-style:normal;opacity:.7}
+.raid-inst{display:grid;gap:6px;align-content:center;padding:8px 12px;border-radius:18px 4px 18px 4px;background:rgba(10,8,26,.38);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.raid-il{display:flex;align-items:center;gap:6px;font:400 13px var(--display);color:rgba(255,255,255,.85)}
+.raid-il .ic{width:15px;height:15px;color:#9ff5c6}
+.raid-il b{font-weight:400;color:#9ff5c6}
+.raid-ib{display:flex;gap:8px}
+.raid-ib .btn{padding:6px 12px;font-size:13px}
+.raid-go2 .raid-ward,.raid-go2 #raidFuse{align-self:center}
+@media (max-width:700px){.raid-bt{min-width:0;flex:1 1 100%}.raid-inst{flex:1 1 100%}}
+@media (max-height:500px) and (orientation:landscape){.raid-bt{padding:6px 12px 6px 6px;min-width:240px}.raid-bti{width:34px;height:34px}.raid-btt b{font-size:17px}.raid-inst{padding:5px 10px}}
+/* the raid battle's end box */
+.ccm-rw.rb{display:grid;gap:8px;justify-items:center;margin:6px 0 10px}
+.rb-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.rb-it{position:relative;display:grid;justify-items:center;gap:4px;width:92px;padding:8px 6px;border-radius:14px 3px 14px 3px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15)}
+.rb-it.r5{border-color:#d07bff;box-shadow:0 0 14px rgba(208,123,255,.4)}.rb-it.r4{border-color:#ffaa5c}.rb-it.r3{border-color:#74c7ff}
+.rb-it img{width:56px;height:56px;object-fit:contain}
+.rb-it .cic{width:44px;height:44px}
+.rb-it b{font:900 15px var(--body)}
+.rb-it small{font:800 11px var(--read);opacity:.8;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-it.xp{align-content:center;width:auto;padding:8px 12px}
+.rb-new{position:absolute;top:4px;left:4px;font:900 9px var(--body);font-style:normal;padding:1px 6px;border-radius:999px;background:var(--mint);color:var(--mint-ink)}
+.raid-iu{font:800 12px var(--read);color:rgba(255,255,255,.6);padding:4px 2px}
+.rb-row{align-items:center}

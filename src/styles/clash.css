@@ -2139,3 +2139,26 @@ b.ccd-dname{border:0}
   .gbs-panel{padding:10px;gap:8px}.gbs-you b{font-size:20px}.gbs-go{height:50px}
 }
 @media (prefers-reduced-motion:reduce){.gb-scene .gbe,.gb-svg .gbe,.gb-scene .gbeye-g,.gb-svg .gbeye-g{animation:none}}
+
+/* Quick match: the stamina cost on Battle!, and a read-only seed for players (only admins pick the challenger) */
+.qm-go .qm-cost{flex:none;display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:4px 10px;border-radius:12px 3px 12px 3px;font:900 14px var(--body);background:rgba(255,255,255,.55);color:var(--cry-ink)}
+.qm-go .qm-cost .cic{width:18px;height:18px}
+.qm-seed.ro input{pointer-events:none;opacity:.75;background:transparent;border-color:transparent}
+
+/* ---- campaign: lighter, see-through panels (the owner asked for some transparency in the campaign UI); scoped to the
+   campaign screen, not the Great Tree / world map that share these classes ---- */
+.cmp:not(.twr):not(.wm) .cmp-side{background:linear-gradient(180deg,rgba(28,20,58,.46),rgba(12,9,26,.56));backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);border-color:rgba(220,190,255,.2);box-shadow:0 16px 36px rgba(0,0,0,.3);border-radius:26px 6px 26px 6px}
+.cmp:not(.twr):not(.wm) .cmp-map{background:radial-gradient(ellipse 80% 70% at 50% 60%,rgba(60,36,120,.32),rgba(10,7,24,.5) 75%),linear-gradient(160deg,rgba(26,18,64,.45),rgba(10,7,24,.55));border-radius:28px 6px 28px 6px}
+.cmp:not(.twr):not(.wm) .cmp-chest{background:linear-gradient(135deg,rgba(40,26,80,.5),rgba(14,10,30,.58));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.cmp:not(.twr):not(.wm) .cmp-cht:not(.on){background:rgba(12,9,28,.32);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.cmp:not(.twr):not(.wm) .cmp-nm{background:rgba(10,8,22,.48);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.cmp:not(.twr):not(.wm) .cmp-map.has-wp .cmp-nm{background:rgba(8,6,20,.58)}
+.cmp:not(.twr):not(.wm) .cmp-total{background:rgba(10,8,22,.4)}
+.cmp:not(.twr):not(.wm) .cmp-foe{background:rgba(0,0,0,.16)}
+.cmp:not(.twr):not(.wm) .cmp-goals li{background:rgba(255,255,255,.04)}
+.cmp:not(.twr):not(.wm) .cmp-ev{background:linear-gradient(135deg,color-mix(in srgb,var(--ec) 14%,rgba(21,16,34,.5)),rgba(11,8,20,.45))}
+.cmp:not(.twr):not(.wm) .cmp-map::before{opacity:.2}
+/* the campaign header stays on one line on wide screens: the chapter tabs shrink and scroll sideways instead of wrapping */
+@media (min-width:1101px) and (orientation:landscape){.cmp:not(.twr):not(.wm) .cmp-head{flex-wrap:nowrap}.cmp:not(.twr):not(.wm) .cmp-head>.btn,.cmp:not(.twr):not(.wm) .cmp-head>.inv-x,.cmp:not(.twr):not(.wm) .cmp-head>.inv-title{flex:none}}
+/* with see-through panels the moon showed through the stage panel: it now hangs in the sky over the map */
+.cmp:not(.twr):not(.wm) .cmp-moon{right:auto;left:50%;top:13%;width:96px;height:96px;opacity:.55}

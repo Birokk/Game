@@ -429,3 +429,15 @@
 :is(.ev:hover,.tool:hover,.tabb:hover,.summon2:hover) .ic-up img.ic,.rbtn.ic-up:hover img.ic{filter:drop-shadow(0 0 10px var(--cry-glow)) drop-shadow(0 3px 8px rgba(0,0,0,.5))!important}
 .tabb .tbi.ic-up{transform:scale(1.15)}
 .tt-ib img.ic{padding:0;width:44px;height:44px;background:none;border:0;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
+
+/* ---- lighter home HUD (the owner asked for more transparency behind the currencies, the world chat and the rest so the
+   home screen looks cleaner): same shapes and rims, see-through fills; the text keeps a soft shadow so it stays readable ---- */
+.menu .cur{background:linear-gradient(180deg,rgba(28,21,58,.3),rgba(10,8,26,.4));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.menu .cur b{text-shadow:0 1px 4px rgba(0,0,0,.55)}
+.menu .ticker{background:linear-gradient(90deg,rgba(24,18,50,.36),rgba(10,8,26,.08));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.menu .ticker,.menu .ticker *{text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.menu .rbtn:not(.ic-up),.menu .tool .tc:not(.ic-up){background:linear-gradient(180deg,rgba(32,24,66,.26),rgba(10,8,26,.36)) padding-box,var(--u2-ring) border-box;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.menu .ev .evo:not(.ic-up){background:radial-gradient(120% 90% at 30% 12%,rgba(255,255,255,.16),transparent 55%) padding-box,linear-gradient(180deg,rgba(32,24,66,.3),rgba(10,8,26,.4)) padding-box,var(--u2-ring) border-box}
+.menu .hm-tabs{background:linear-gradient(180deg,rgba(28,21,58,.3),rgba(10,8,26,.44));backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);box-shadow:0 10px 26px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)}
+.menu .hm-drop{background:linear-gradient(180deg,rgba(30,22,62,.5),rgba(12,10,30,.62))}
+.menu .sx-tab.promo-tab{box-shadow:0 6px 18px rgba(0,0,0,.2)}

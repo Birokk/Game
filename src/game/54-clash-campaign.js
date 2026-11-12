@@ -205,6 +205,56 @@ const CC_CAMP = [{
       tips: ccOne('The Frost Titan: a Champion and a Bulwark up front, Thorns in the middle and a Hex Field on the left, and he moves first. This is the hardest fight yet.') }
   ]
 }];
+/* Chapters 3-5 (the owner asked for more chapters up to 5, and for them to be really easy): your own deck against light, fast
+   decks (fragile units, no walls), the bot on 7-10 HP, you always go first, friendly battle events and few units on the board. Built from
+   compact rows by ccEasyCh: [name, twist, bot deck ('p-…' starter or a CC_CAMP_DECKS key), bot HP, event, intro, tip,
+   star goals as [kind, n], setup]; stage 5 and 10 are the bosses. Each chapter has its own path shape: an arc over the
+   meadows (3), a winding river along the coast (4), a spiral into the heart of the isles (5). */
+const ccEasyStar = ([k, n]) => ({ k, n, t: k === 'win' ? 'Clear the stage' : k === 'hp' ? `Finish with ${n} HP or more` : k === 'round' ? `Win by round ${n}` : k === 'kills' ? `Destroy ${n} enemy units` : k === 'lost' ? `Lose no more than ${n} units` : k === 'spells' ? `Cast ${n} spells` : `Move units ${n} times` });
+const ccEasyCh = (no, name, sub, path, rows) => ({ id: 'c' + no, no, name, sub, own: true, easy: true, path,
+  miles: [10, 20, 30].map(n => ({ id: `c${no}:${n}`, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  stages: rows.map(([nm, twist, bot, hp, ev, intro, tip, stars, setup], i) => ({ id: `${no}-${i + 1}`, name: nm, twist, hp: [20, hp], first: 0, seed: no * 100 + 101 + i,
+    ...(bot.startsWith('p-') ? { botDeck: bot } : { bot: CC_CAMP_DECKS[bot] }), ...(ev ? { ev } : {}), ...(i === 4 || i === 9 ? { boss: true } : {}), ...(setup ? { setup } : {}),
+    intro, stars: [['win'], ...stars].map(ccEasyStar), tips: ccOne(tip) })) });
+const CC_CAMP_EASY = [
+  ccEasyCh(3, 'The Sunlit Meadows', 'Sunlit Meadows', 'arc', [
+    ['Morning Dew', 'A gentle start', 'storm', 7, null, 'After the frozen peaks the road comes down into warm green meadows. A sleepy patrol blocks the first gate.', 'Chapter 3: the Sunlit Meadows. An easy road to warm up: fill your lanes and hit the open ones.', [['hp', 14], ['round', 10]]],
+    ['Flower Fields', 'Sacred Ground: units enter with Armor', 'storm', 7, 'sanctuary', 'Wildflowers as far as you can see. The meadow is sacred ground here: every unit enters with Armor 1.', '<b>Sacred Ground</b>: everything has Armor 1, yours too. Bigger hits get through.', [['hp', 12], ['kills', 4]]],
+    ['The Windmill', 'Tailwind: moving is free', 'p-rush', 8, 'wind', 'An old windmill turns in a friendly breeze. Moving costs no AP, so switch lanes as much as you like.', '<b>Tailwind</b>: moving is free. Slide your units to the lane with no defender.', [['moves', 2], ['hp', 12]]],
+    ['Honey Hollow', 'A few bees and a lot of honey', 'storm', 8, null, 'A hollow full of beehives. The keepers send their quick fliers, but they tire fast.', 'The bot\'s units are fast but fragile. Trade them away with your sturdier ones.', [['hp', 12], ['round', 12]]],
+    ['The Meadow Knight', 'Boss: a knight with a shield', 'traps', 10, null, 'The Meadow Knight guards the bridge out of the fields behind a Shieldbearer, but he is not much of a fighter.', 'The Meadow Knight: 10 HP and a Shieldbearer in front. Go around the shield through the side lanes.', [['hp', 10], ['round', 14]], G => { ccCampUnit(G, 1, 'DEF-U03', 1, 0); }],
+    ['Picnic Hill', 'Starfall: draw 3 a turn', 'storm', 8, 'starfall', 'A hill for picnics under a sky full of falling stars. Both sides draw three cards a turn.', '<b>Starfall</b>: three cards a turn. Spend your AP every turn, cards won\'t run out.', [['spells', 1], ['hp', 12]]],
+    ['The Old Orchard', 'Blood Moon: every unit +1 ATK', 'p-rush', 8, 'bloodmoon', 'Apple trees under a red moon: every unit hits a little harder tonight, yours included.', '<b>Blood Moon</b>: +1 ATK for everyone. Attack first and the trades go your way.', [['kills', 4], ['round', 12]]],
+    ['Butterfly Brook', 'A shallow brook to cross', 'arcane', 5, null, 'A brook full of butterflies. A few apprentice mages guard the stepping stones.', 'The mages are weak up close: put Melee units in front of them.', [['hp', 12], ['round', 14]]],
+    ['Sunset Ridge', 'Rainstorm: 5 AP a turn', 'storm', 9, 'rain', 'A warm summer rain over the ridge gives both sides 5 AP a turn.', '<b>Rainstorm</b>: 5 AP a turn. Play an extra card or attack once more each turn.', [['hp', 10], ['kills', 5]]],
+    ['The Scarecrow King', 'Final boss: a straw king', 'p-rush', 10, null, 'At the end of the meadows the Scarecrow King waits with a Warhound at his side. He looks scarier than he is.', 'The Scarecrow King: 10 HP and one Warhound out. Block its lane and push the other two.', [['hp', 10], ['round', 15]], G => { ccCampUnit(G, 1, 'AGG-U06', 1, 0); }]
+  ]),
+  ccEasyCh(4, 'The Coral Coast', 'Coral Coast', 'river', [
+    ['Sandy Shore', 'Waves and seashells', 'storm', 7, null, 'The meadows end at a warm sandy shore. Crabs scuttle off as a lazy beach patrol wakes up.', 'Chapter 4: the Coral Coast. Another easy stretch: keep all three lanes busy.', [['hp', 14], ['round', 10]]],
+    ['Tide Pools', 'Tailwind: moving is free', 'storm', 8, 'wind', 'Shallow pools left by the tide. A sea breeze makes every move free.', '<b>Tailwind</b>: moving is free. Dodge into the lane the bot left open.', [['moves', 2], ['hp', 12]]],
+    ['The Lighthouse', 'Starfall: draw 3 a turn', 'p-rush', 8, 'starfall', 'A lighthouse on the rocks, its lamp shining under falling stars. Both sides draw three cards a turn.', '<b>Starfall</b>: three cards a turn. Play wide and fill the board.', [['kills', 4], ['hp', 12]]],
+    ['Seagull Cliffs', 'Noisy birds, weak fighters', 'p-rush', 8, null, 'Cliffs full of seagulls. The cliff guards are loud, quick and easy to knock over.', 'The rush deck attacks early but runs out of steam. Hold the front row and it falls apart.', [['hp', 12], ['round', 12]]],
+    ['The Pearl Diver', 'Boss: a diver with a net', 'traps', 10, null, 'The Pearl Diver guards the reef with a net trap in the middle lane. Send something cheap in first.', 'The Pearl Diver: 10 HP and a trap in the middle lane. Use the side lanes or spring it with a cheap unit.', [['hp', 10], ['round', 14]], G => { ccCampTrap(G, 1, 'MOB-T02', 1); }],
+    ['Coral Gardens', 'Sacred Ground: units enter with Armor', 'storm', 7, 'sanctuary', 'Glowing coral gardens under clear water. Sacred ground again: every unit enters with Armor 1.', '<b>Sacred Ground</b>: Armor 1 on every unit. Stack your attacks on one target.', [['kills', 3], ['hp', 12]]],
+    ['Shipwreck Bay', 'Blood Moon: every unit +1 ATK', 'raiders', 8, 'bloodmoon', 'An old shipwreck under a red moon. A handful of pirates hide in the hull.', '<b>Blood Moon</b>: +1 ATK for everyone. The pirates are few: clear them out fast.', [['kills', 4], ['round', 12]]],
+    ['Moonlit Lagoon', 'Arcane Surge: spells +1 damage', 'arcane', 7, 'surge', 'A calm lagoon where the moonlight makes magic stronger: spells deal 1 more damage.', '<b>Arcane Surge</b>: spells deal +1 damage. Cast yours at the enemy hero or its best unit.', [['spells', 1], ['hp', 12]]],
+    ['Whale Song Reef', 'Rainstorm: 5 AP a turn', 'frost', 9, 'rain', 'A reef where whales sing in the rain. 5 AP a turn for both sides.', '<b>Rainstorm</b>: 5 AP a turn. Use the extra AP to attack with everything.', [['hp', 10], ['kills', 5]]],
+    ['The Tide Queen', 'Final boss: the queen of the coast', 'storm', 10, null, 'The Tide Queen rules the coast from a coral throne, a Mage at her side. She is gracious, and not too strong.', 'The Tide Queen: 10 HP and a Mage in the back. Push the open lanes and she falls quickly.', [['hp', 10], ['round', 15]], G => { ccCampUnit(G, 1, 'CON-U01', 1, 1); }]
+  ]),
+  ccEasyCh(5, 'The Starlit Isles', 'Starlit Isles', 'spiral', [
+    ['Driftwood Dock', 'Sail to the first isle', 'storm', 7, null, 'A little boat takes you to the Starlit Isles, floating islands joined by bridges of light. A dock keeper waves you in.', 'Chapter 5: the Starlit Isles. The road spirals in to the heart of the isles. Easy fights all the way.', [['hp', 14], ['round', 10]]],
+    ['Lantern Bridge', 'Starfall: draw 3 a turn', 'p-rush', 8, 'starfall', 'A bridge of lanterns between two isles, stars falling all around. Three cards a turn for both sides.', '<b>Starfall</b>: three cards a turn. Keep your AP busy.', [['kills', 4], ['hp', 12]]],
+    ['Cloud Meadow', 'Tailwind: moving is free', 'storm', 8, 'wind', 'A meadow of soft clouds. The wind makes every move free.', '<b>Tailwind</b>: moving costs no AP. Shift to where the enemy is weakest.', [['moves', 2], ['hp', 12]]],
+    ['The Star Well', 'Arcane Surge: spells +1 damage', 'arcane', 7, 'surge', 'A well that holds starlight. Magic is stronger here: spells deal 1 more damage.', '<b>Arcane Surge</b>: spells +1 damage, the bot\'s too. Rush its mages before they cast.', [['spells', 1], ['round', 12]]],
+    ['The Lamplighter', 'Boss: the keeper of the lights', 'traps', 10, null, 'The Lamplighter keeps the isles\' lights burning, a Shieldbearer at his side. He blocks the middle bridge.', 'The Lamplighter: 10 HP and a Shieldbearer in the middle. Go around it through the side lanes.', [['hp', 10], ['round', 14]], G => { ccCampUnit(G, 1, 'DEF-U03', 1, 0); }],
+    ['Moonpetal Grove', 'Sacred Ground: units enter with Armor', 'storm', 7, 'sanctuary', 'A grove of glowing flowers on a floating isle. Sacred ground: every unit enters with Armor 1.', '<b>Sacred Ground</b>: Armor 1 on every unit. Focus your hits.', [['kills', 3], ['hp', 12]]],
+    ['Comet Falls', 'Rainstorm: 5 AP a turn', 'p-rush', 8, 'rain', 'A waterfall pouring off the edge of an isle into the stars. Rain gives 5 AP a turn.', '<b>Rainstorm</b>: 5 AP a turn. The rush deck comes fast: hold the front and hit back.', [['hp', 12], ['round', 12]]],
+    ['Aurora Steps', 'Blood Moon: every unit +1 ATK', 'raiders', 8, 'bloodmoon', 'Steps of light under a red moon climbing to the inner isles. Every unit hits harder.', '<b>Blood Moon</b>: +1 ATK for everyone. Strike first.', [['kills', 4], ['hp', 10]]],
+    ['The Crystal Spire', 'A spire of singing crystals', 'frost', 9, null, 'A spire of crystals that hum when you pass. Frost apprentices guard the last bridge.', 'The frost apprentices can stun. Spread your units so one stun doesn\'t stop everything.', [['hp', 10], ['kills', 4]]],
+    ['The Star Keeper', 'Final boss: the heart of the isles', 'p-rush', 8, null, 'At the heart of the spiral the Star Keeper waits with a Warhound. Win here and the isles are yours.', 'The Star Keeper: 8 HP and a Warhound in front. You know this by now: fill the lanes and push.', [['hp', 10], ['round', 15]], G => { ccCampUnit(G, 1, 'AGG-U06', 1, 0); }]
+  ])
+];
+CC_CAMP.push(...CC_CAMP_EASY);
 const ccCampStages = () => CC_CAMP.flatMap(ch => ch.stages.map(st => ({ ...st, ch })));
 const ccCampStage = id => ccCampStages().find(s => s.id === id) || null;
 
@@ -281,10 +331,21 @@ let cmpEl = null, cmpSel = null;
 const CMP_POS = [[9, 74], [29, 22], [50, 70], [70, 20], [90, 62]];
 /* every chapter has its own path shape (`ch.path`): Chapter 0 a wave, Chapter 1 a snake (top row first), Chapter 2 a
    climb from the bottom left up to the summit at the top right (three rows; on short screens two rows starting at the
-   bottom; on portrait screens a swaying line instead of the zigzag) */
+   bottom; on portrait screens a swaying line instead of the zigzag), Chapter 3 rolling hills (the low row first, then
+   a high rainbow arch back), Chapter 4 a meandering river (a wave on each row), Chapter 5 a ring of isles ending in the
+   middle; on portrait screens each of them sways its own way */
 const cmpLin = (k, a, b) => Array.from({ length: k }, (_, i) => k > 1 ? a + (b - a) * i / (k - 1) : (a + b) / 2);
 function cmpLayout(n, mode, path) {   // mode 'h' tall landscape screens, 'v' portrait, 'q' short landscape screens (flat rows: the field is short)
-  if (mode === 'v') return Array.from({ length: n }, (_, i) => [path === 'climb' ? [22, 52, 82, 52][i % 4] : i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]);
+  if (mode === 'v') return Array.from({ length: n }, (_, i) => [path === 'climb' ? [22, 52, 82, 52][i % 4] : path === 'arc' ? 50 + 30 * Math.sin(i * Math.PI / 2.5) : path === 'river' ? 50 + 30 * Math.sin(i * .95) : path === 'spiral' ? [24, 50, 76, 62, 38][i % 5] : i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]);
+  // Chapters 3-5 are two-row paths too (10 stages with names don't fit on one line), each with its own shape:
+  const q = mode === 'q', A = Math.ceil(n / 2), B = n - A, sin = u => Math.sin(Math.PI * u), U = (i, k) => k > 1 ? i / (k - 1) : .5;
+  // Chapter 3: rolling hills, along the low hill at the bottom first, then back over a high rainbow hill on top
+  if (path === 'arc') return [...cmpLin(A, 8, 92).map((x, i) => [x, (q ? 82 : 86) - (q ? 8 : 14) * sin(U(i, A))]), ...cmpLin(B, 90, 10).map((x, i) => [x, (q ? 30 : 40) - (q ? 16 : 26) * sin(U(i, B))])];
+  // Chapter 4: a river meandering along the coast, a full wave on each row
+  if (path === 'river') return [...cmpLin(A, 8, 92).map((x, i) => [x, (q ? 18 : 22) + (q ? 6 : 12) * Math.sin(2 * Math.PI * U(i, A))]), ...cmpLin(B, 92, 8).map((x, i) => [x, (q ? 80 : 74) + (q ? 6 : 12) * Math.sin(2 * Math.PI * U(i, B))])];
+  // Chapter 5: a ring of isles, over the top and back under the bottom, ending in the heart of the isles in the middle
+  if (path === 'spiral') { if (q) return [...cmpLin(A, 8, 92).map((x, i) => [x, 30 - 14 * sin(U(i, A))]), ...cmpLin(B, 86, 14).map((x, i) => [x, 70 + 14 * sin(U(i, B))])];
+    const a2 = Math.floor(n / 2), b2 = n - a2 - 1; return [...cmpLin(a2, 8, 92).map((x, i) => [x, 34 - 22 * sin(U(i, a2))]), ...cmpLin(b2, 88, 22).map((x, i) => [x, 66 + 22 * sin(U(i, b2))]), [50, 50]]; }
   if (n <= 5) return CMP_POS.slice(0, n);
   if (path === 'climb') {
     if (mode === 'q') { const b = Math.ceil(n / 2); return [...cmpLin(b, 8, 92).map(x => [x, 80]), ...cmpLin(n - b, 92, 8).map(x => [x, 24])]; }   // bottom row first, then back along the top
@@ -315,6 +376,10 @@ function openCampaign(id) {
 }
 function closeCampaign() { if (cmpEl) { cmpEl.remove(); cmpEl = null; } bthHome(); }
 /* the stage to show when a chapter tab is picked: its first open stage without a star, else its last open one, else its first */
+/* the chapter you are on: the first open chapter with a stage not cleared yet, else the last open one */
+function ccCampCurCh() { const L = CC_CAMP.filter(ccCampChOpen); return L.find(c => c.stages.some(s => !ccCampHave(s.id)[0])) || L[L.length - 1] || CC_CAMP[0]; }
+/* the chapter tabs show only the chapters you have cleared, the one you are on and the next one; the rest stay hidden */
+const ccCampShown = () => { const i = CC_CAMP.indexOf(ccCampCurCh()); return CC_CAMP.slice(0, i + 2); };
 function cmpPickIn(ch) { const L = ch.stages.map(s => ({ ...s, ch })), op = L.filter(ccCampOpen); return (op.find(s => !ccCampHave(s.id)[0]) || op[op.length - 1] || L[0]).id; }
 function renderCampaign() {
   if (!cmpEl) return;
@@ -327,10 +392,10 @@ function renderCampaign() {
       <span class="cmp-med">${op ? `<b>${s.id}</b>` : icon('lock')}${s.boss ? `<i class="cmp-crown">${icon('crown')}</i>` : ''}${op && !k ? '<i class="cmp-newtag">New</i>' : ''}</span>
       ${ccStars(have)}<span class="cmp-nm">${esc(s.name)}</span></button>`; };
   const tab = c => { const op = ccCampChOpen(c), dot = ccCampClaimable(c) || c.stages.some(s => ccCampOpen({ ...s, ch: c }) && !ccCampHave(s.id)[0]);
-    return `<button class="cmp-cht ${c.id === ch.id ? 'on' : ''} ${op ? '' : 'lock'}" data-ch="${c.id}">${op ? '' : icon('lock')}Chapter ${c.no} · ${esc(c.sub)}${dot && c.id !== ch.id ? '<i class="cmp-dot"></i>' : ''}</button>`; };
+    return `<button class="cmp-cht ${c.id === ch.id ? 'on' : ''} ${op ? '' : 'lock'}" data-ch="${c.id}" title="Chapter ${c.no} · ${esc(c.name)}">${op ? '' : icon('lock')}Chapter ${c.no}${c.id === ch.id ? ` · ${esc(c.sub)}` : ''}${dot && c.id !== ch.id ? '<i class="cmp-dot"></i>' : ''}</button>`; };
   cmpEl.innerHTML = `<div class="cmp-bg"><i class="cmp-moon"></i><i class="cmp-mist"></i></div>
     <header class="cmp-head"><div class="inv-title"><span class="inv-badge">${icon('map')}</span><h2 class="ts">Campaign</h2></div>
-      <div class="cmp-chtabs">${CC_CAMP.map(tab).join('')}<button class="cmp-cht soon" disabled>${icon('lock')}Chapter ${CC_CAMP.length} · Coming soon</button></div>
+      <div class="cmp-chtabs">${ccCampShown().map(tab).join('')}${ccCampShown().length >= CC_CAMP.length ? `<button class="cmp-cht soon" disabled>${icon('lock')}Chapter ${CC_CAMP.length} · Coming soon</button>` : ''}</div>
       <span class="cmp-sp"></span>
       <button class="btn ghost cmp-towerb" id="cmpTower">${icon('compass')}World map${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button><button class="btn ghost" id="cmpQuick">${icon('bolt')}Quick match</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
@@ -359,6 +424,7 @@ function renderCampaign() {
   const go = cmpEl.querySelector('#cmpGo'); if (go) go.onclick = () => ccCampStart(st);
   const ls = cmpEl.querySelector('#cmpLesson'); if (ls) ls.onclick = () => ccRules(st.rules || 0);
   const dp = cmpEl.querySelector('#cmpDeckPick'); if (dp) dp.onclick = () => ccCampDeckPick();
+  const tb = cmpEl.querySelector('.cmp-chtabs'), on = cmpEl.querySelector('.cmp-cht.on'); if (tb && on && tb.scrollWidth > tb.clientWidth) tb.scrollLeft = on.offsetLeft + on.offsetWidth - tb.clientWidth + 8;   // keep the chosen chapter's tab in view
 }
 /* the selected stage: what it teaches (or its twist), the opponent, your deck, the 3 star goals (+1 pearl each the first time) and Start */
 function ccCampPanel(st) {
