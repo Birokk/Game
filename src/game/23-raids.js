@@ -183,59 +183,73 @@ function showRaidDrops(drops, times) {
 }
 
 let raidEl = null, raidSel = 'ruins';
-/* the action row: Battle (play a match to clear once) and the day's instant clears */
-function raidGo(open, cost, extra) {
-  const left = raidInstLeft(), dk = ccCampMyDeck(), ok = ccValidateDeck(dk.cards).ok, f = raidFoe(raidSel);
-  return `<div class="raid-go raid-go2">
-      <button class="raid-bt" id="raidBattle" ${open ? '' : 'disabled'}><span class="raid-bti">${icon('swords')}</span><span class="raid-btt"><b>Battle</b><small>${ok ? `${esc(dk.name)} vs the guardian · ${raidHp(raidSel, goldStage())} HP` : 'Build a 30-card deck first'}</small></span><span class="raid-btc">${curIcon('stamina')}${cost}<i>on a win</i></span></button>
-      <div class="raid-inst"><span class="raid-il">${icon('bolt')}Instant clears <b>${left} / ${RAID_INSTANT}</b> today</span>
-        <div class="raid-ib">${!left ? `<span class="raid-iu">All used · back at midnight</span>` : `<button class="btn mint" data-clear="1" ${open ? '' : 'disabled'}>Clear ×1 ${curIcon('stamina')}${cost}</button>${left > 1 ? `<button class="btn ghost" data-clear="${Math.min(5, left)}" ${open ? '' : 'disabled'}>×${Math.min(5, left)} ${curIcon('stamina')}${cost * Math.min(5, left)}</button>` : ''}`}</div></div>
-      ${extra}</div>`;
+/* ---- the Raids page (.rdx, its own layout since the owner found the old one messy): a list of raid cards on the left,
+   the raid's hero block, one panel (drops or vault stages) and ONE action bar: your deck vs the guardian, the day's
+   instant clears as a button pair and the big crystal Battle button ---- */
+const RAID_DECK_NM = { traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', raiders: 'Raider deck' };
+function raidSubOf(x) {
+  if (x.kind === 'gold') return `${GOLD_STAGES.length} stages · up to ~${fmt(GOLD_STAGES[GOLD_STAGES.length - 1].gold)} gold`;
+  const ur = [...new Set(dungeonPieces(x, 5).map(clothSetName))].join(' · ');
+  return ur ? `UR set · ${ur}` : 'Gear raid';
+}
+function raidBar(open, cost) {
+  const left = raidInstLeft(), dk = ccCampMyDeck(), ok = ccValidateDeck(dk.cards).ok, f = raidFoe(raidSel), n5 = Math.min(5, left);
+  const inst = !left ? '<span class="rdx-iu">All used · back at midnight</span>'
+    : `<button class="rdx-ib" data-clear="1" ${open ? '' : 'disabled'}><b>×1</b><span>${curIcon('stamina')}${cost}</span></button>${left > 1 ? `<button class="rdx-ib" data-clear="${n5}" ${open ? '' : 'disabled'}><b>×${n5}</b><span>${curIcon('stamina')}${cost * n5}</span></button>` : ''}`;
+  return `<div class="rdx-bar">
+      <div class="rdx-vs">
+        <button class="rdx-side me" id="raidDeck" title="Change the deck you play with"><span class="rdx-si">${icon('cards')}</span><span class="rdx-st"><small>Your deck</small><b>${ok ? esc(dk.name) : 'No ready deck'}</b><em>${ok ? 'Change' : 'Build a 30-card deck'}</em></span></button>
+        <span class="rdx-vsx">VS</span>
+        <div class="rdx-side op"><span class="rdx-si">${icon(raidSel === 'vault' ? 'coin' : 'raid')}</span><span class="rdx-st"><small>Guardian</small><b>${RAID_DECK_NM[f.deck] || 'Guardian deck'}</b><em>${icon('heart')}${raidHp(raidSel, goldStage())} HP</em></span></div>
+      </div>
+      <div class="rdx-inst"><span class="rdx-il">${icon('bolt')}Instant clears <b>${left} / ${RAID_INSTANT}</b></span><div class="rdx-ibs">${inst}</div></div>
+      <button class="rdx-go" id="raidBattle" ${open ? '' : 'disabled'}><span class="rdx-goi">${icon('swords')}</span><span class="rdx-got"><b>Battle</b><small>${curIcon('stamina')}${cost} on a win</small></span></button>
+    </div>`;
 }
 function openRaids(id) {
   closeModal(); ensureRaidSet(); if (id && raidOf(id)) raidSel = id;   // openRaids('vault'): the gold "+" opens the Golden Vault
-  if (!raidEl) { raidEl = document.createElement('div'); raidEl.className = 'raid evp'; raidEl.setAttribute('role', 'dialog'); raidEl.setAttribute('aria-label', 'Raids'); document.body.appendChild(raidEl); }
+  if (!raidEl) { raidEl = document.createElement('div'); raidEl.className = 'raid rdx'; raidEl.setAttribute('role', 'dialog'); raidEl.setAttribute('aria-label', 'Raids'); document.body.appendChild(raidEl); }
   renderRaids();
 }
 function closeRaids() { if (raidEl) { raidEl.remove(); raidEl = null; } const d = document.querySelector('.rdrop'); if (d) d.remove(); bthHome(); }
 function renderRaids() {
   if (!raidEl) return;
-  const d = raidOf(raidSel), bg = MEDIA.get('raid:bg:' + d.id) || MEDIA.get('raid:bg'), gold = d.kind === 'gold';
-  const item = x => `<button class="evp-item ${x.id === d.id ? 'on' : ''}" data-raid="${x.id}"><span class="evp-ic">${icon(x.kind === 'gold' ? 'coin' : 'raid')}</span><b>${esc(x.name)}</b></button>`;
-  const gi = goldStage(), g = GOLD_STAGES[gi];
-  const body = gold ? `
-      <span class="evp-time">${icon('bolt')}${g.st} stamina per clear · ~${fmt(g.gold)} gold · win a battle to clear ${infoBtn('vault')}</span>
-      <p class="evp-sub raid-desc">${esc(d.desc)}</p>
-      <div class="raid-drops"><span class="lbl-sm">Stages</span>
-        <div class="gv-stages">${GOLD_STAGES.map((s, i) => { const open = goldOpen(i); return `<button class="gv-st ${i === gi ? 'on' : ''} ${open ? '' : 'locked'}" data-gstage="${i}" ${open ? '' : `title="Opens at player level ${s.lv}"`}>
-          <b>${ROMAN[i]}</b><span class="gv-gold">${curIcon('coins')}~${fmt(s.gold)}</span><small>${open ? `${curIcon('stamina')}${s.st} · +${s.exp} EXP` : `${icon('lock')}Lv ${s.lv}`}</small></button>`; }).join('')}</div>
-      </div>
-      ${raidGo(goldOpen(gi), g.st, '')}`
-    : `
-      <span class="evp-time">${icon('bolt')}${RAID_STAMINA} stamina per clear · 1–2 drops · win a battle to clear ${infoBtn('raid')}</span>
-      <p class="evp-sub raid-desc">${esc(d.desc)}</p>
-      <div class="raid-drops"><span class="lbl-sm">Possible drops</span>
-        ${[5, 4, 3].map(r => { const L = dungeonPieces(d, r); return `<div class="raid-row r${r}"><span class="raid-rate">${ctag(r)}</span><div class="raid-pieces">${L.map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('') || '<span class="tiny">No pieces yet</span>'}</div>${r === 5 ? `<span class="raid-setnm">${esc([...new Set(L.map(x => clothSetName(x)))].join(' · '))}</span>` : r === 4 ? '<span class="raid-setnm">Same in every gear raid</span>' : ''}</div>`; }).join('')}
-      </div>
-      ${raidGo(true, RAID_STAMINA, `<button class="btn ghost" id="raidFuse">${icon('fuse')}Fuse clothes</button><span class="raid-ward ${wardFree() < 2 ? 'full' : ''}">${icon('hanger')}Wardrobe ${fmt(wardCount())} / ${INV_CAP}${wardFree() < 2 ? ' · full' : ''}</span>`)}`;
-  const bgk = MEDIA.get('raid:bg:' + d.id) ? 'raid:bg:' + d.id : 'raid:bg';
-  raidEl.innerHTML = `<div class="evp-bg ${bg ? '' : 'none raid-none'} ${gold && !bg ? 'gold-none' : ''}">${bg ? artImg(bgk) : ''}</div><div class="evp-shade"></div>
-    <div class="evp-head"><span class="inv-badge">${icon('raid')}</span><h2 class="ts">Raids</h2></div>
-    <div class="raid-top"><div class="cur" id="raidStam">${curIcon('stamina')}<b>${stamina()}/${stamMax()}</b><button class="plus" id="raidPlus" aria-label="Refill stamina">${icon('plus')}</button></div><button class="inv-x" id="raidClose" aria-label="Close">${icon('close')}</button></div>
-    <aside class="evp-side"><span class="evp-pill">${icon('hanger')}Gear raids</span>
-      <div class="evp-list">${RAIDS.filter(x => x.kind === 'gear').map(item).join('')}</div>
-      <span class="evp-pill raid-pill2">${icon('coin')}Gold raids</span>
-      <div class="evp-list">${RAIDS.filter(x => x.kind === 'gold').map(item).join('')}</div></aside>
-    <section class="evp-main raid-main">
-      <h1 class="evp-title">${esc(d.name)}</h1>${body}
-    </section>`;
+  const d = raidOf(raidSel), gold = d.kind === 'gold', bgk = MEDIA.get('raid:bg:' + d.id) ? 'raid:bg:' + d.id : 'raid:bg', bg = MEDIA.get(bgk);
+  const keep = raidEl.querySelector('.rdx-scroll'), top = keep ? keep.scrollTop : 0;
+  const item = x => `<button class="rdx-it ${x.id === d.id ? 'on' : ''} ${x.kind}" data-raid="${x.id}"><span class="rdx-iti">${icon(x.kind === 'gold' ? 'coin' : 'raid')}</span><span class="rdx-itt"><b>${esc(x.name)}</b><small>${esc(raidSubOf(x))}</small></span></button>`;
+  const gi = goldStage(), g = GOLD_STAGES[gi], full = wardFree() < 2;
+  const meta = gold ? [[curIcon('stamina'), `${g.st} stamina per clear`], [curIcon('coins'), `~${fmt(g.gold)} gold · +${g.exp} EXP`], [icon('swords'), 'Win a battle to clear']]
+    : [[curIcon('stamina'), `${RAID_STAMINA} stamina per clear`], [icon('hanger'), '1–2 clothing pieces'], [icon('swords'), 'Win a battle to clear']];
+  const panel = gold ? `<div class="rdx-panel gold"><div class="rdx-ph"><b>Stages</b><small>Deeper stages cost more stamina and hold more gold</small></div>
+      <div class="gv-stages">${GOLD_STAGES.map((st, i) => { const open = goldOpen(i); return `<button class="gv-st ${i === gi ? 'on' : ''} ${open ? '' : 'locked'}" data-gstage="${i}" ${open ? '' : `title="Opens at player level ${st.lv}"`}>
+        <b>${ROMAN[i]}</b><span class="gv-gold">${curIcon('coins')}~${fmt(st.gold)}</span><small>${open ? `${curIcon('stamina')}${st.st} · +${st.exp} EXP` : `${icon('lock')}Lv ${st.lv}`}</small></button>`; }).join('')}</div></div>`
+    : `<div class="rdx-panel"><div class="rdx-ph"><b>Possible drops</b><small>Tap ${infoBtn('raid', 'Drop chances')} for the chances</small><button class="rdx-sec" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
+      ${[5, 4, 3].map(r => { const L = dungeonPieces(d, r), nm = [...new Set(L.map(x => clothSetName(x)))].join(' · ');
+        return `<div class="rdx-row r${r}"><span class="rdx-rl">${ctag(r)}<small>${esc(nm || '—')}${r === 4 || r === 3 ? '<i>every gear raid</i>' : ''}</small></span>
+          <div class="raid-pieces">${L.map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('') || '<span class="tiny">No pieces yet</span>'}</div>${L.length ? `<span class="rdx-own ${L.every(x => owns(x.id)) ? 'all' : ''}"><small>Owned</small><b>${L.filter(x => owns(x.id)).length} / ${L.length}</b></span>` : ''}</div>`; }).join('')}</div>`;
+  raidEl.innerHTML = `<div class="rdx-bg ${bg ? 'art' : gold ? 'gold' : ''}">${bg ? artImg(bgk) : ''}</div><div class="rdx-shade"></div>
+    <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('raid')}</span><h2 class="ts">Raids</h2></div><span class="rdx-sp"></span>
+      ${gold ? '' : `<span class="rdx-ward ${full ? 'full' : ''}" title="Raid drops need free wardrobe space">${icon('hanger')}<b>${fmt(wardCount())} / ${INV_CAP}</b>${full ? '<em>Full</em>' : ''}</span>`}
+      <div class="cur" id="raidStam" data-k="stamina">${curIcon('stamina')}<b>${stamina()}/${stamMax()}</b><button class="plus" id="raidPlus" aria-label="Refill stamina">${icon('plus')}</button></div>
+      <button class="inv-x" id="raidClose" aria-label="Close">${icon('close')}</button></header>
+    <aside class="rdx-rail"><span class="rdx-gh">${icon('hanger')}Gear raids</span>${RAIDS.filter(x => x.kind === 'gear').map(item).join('')}
+      <span class="rdx-gh">${icon('coin')}Gold raids</span>${RAIDS.filter(x => x.kind === 'gold').map(item).join('')}</aside>
+    <section class="rdx-main"><div class="rdx-scroll">
+      <div class="rdx-hero"><span class="rdx-kind">${icon(gold ? 'coin' : 'raid')}${gold ? 'Gold raid' : 'Gear raid'}</span>
+        <h1 class="rdx-title">${esc(d.name)}${gold ? ` <em>${ROMAN[gi]}</em>` : ''}</h1><p class="rdx-desc">${esc(d.desc)}</p>
+        <div class="rdx-meta">${meta.map(([ic, t]) => `<span>${ic}${t}</span>`).join('')}${gold ? infoBtn('vault', 'How the Golden Vault works') : ''}</div></div>
+      ${panel}</div>
+      ${raidBar(gold ? goldOpen(gi) : true, gold ? g.st : RAID_STAMINA)}</section>`;
+  const sc = raidEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;
+  const rl = raidEl.querySelector('.rdx-rail'), on = rl && rl.querySelector('.rdx-it.on'); if (on && rl.scrollWidth > rl.clientWidth + 2) rl.scrollLeft = Math.max(0, on.offsetLeft - (rl.clientWidth - on.offsetWidth) / 2);
   raidEl.querySelector('#raidClose').onclick = closeRaids;
   raidEl.querySelector('#raidPlus').onclick = openStamina;
   raidEl.querySelectorAll('[data-raid]').forEach(b => b.onclick = () => { raidSel = b.dataset.raid; renderRaids(); });
   raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => clearRaid(+b.dataset.clear));
   const bt = raidEl.querySelector('#raidBattle'); if (bt) bt.onclick = () => raidBattle(raidSel, goldStage());
+  const dkb = raidEl.querySelector('#raidDeck'); if (dkb) dkb.onclick = () => { if (ccValidateDeck(ccCampMyDeck().cards).ok || ccAllDecks().some(x => ccValidateDeck(x.cards).ok)) ccDeckPicker(renderRaids); else { closeRaids(); openDeck(); } };
   raidEl.querySelectorAll('[data-gstage]').forEach(b => b.onclick = () => { const i = +b.dataset.gstage; if (!goldOpen(i)) { toast(`Stage ${ROMAN[i]} opens at player level ${GOLD_STAGES[i].lv}.`); return; } S.raidStage = i; persist(); renderRaids(); });
-  const fu = $('#raidFuse'); if (fu) fu.onclick = () => openFuse(3);
+  const fu = raidEl.querySelector('#raidFuse'); if (fu) fu.onclick = () => openFuse(3);
 }
 setInterval(() => { const s = raidEl && raidEl.querySelector('#raidStam b'); if (s) s.textContent = `${stamina()}/${stamMax()}`; }, 5000);
 

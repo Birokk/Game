@@ -161,6 +161,10 @@ UNLOCK.bpcrown = [() => (S.unlocks || []).includes('bp-crown'), 'Unlock Moon Tid
    see-through glass panels and tabs have something to show through. */
 let bpTab = 'rewards', bpMTab = 'bpd', bpEl = null;
 const BPX_PEARLS = [[6, 9, 19, 0], [14, 6, 23, 7], [23, 12, 17, 3], [31, 7, 26, 12], [42, 10, 21, 5], [53, 5, 28, 15], [61, 11, 18, 9], [70, 8, 24, 1], [78, 13, 20, 11], [87, 6, 27, 6], [94, 9, 22, 14]];
+/* the background blur (admin → Pearl Honor, content S.honorBg.blur, 0–30 px, default BPX_BLUR) */
+const BPX_BLUR = 12;
+const bpxBlur = () => { const b = S.honorBg && S.honorBg.blur; return b == null ? BPX_BLUR : Math.max(0, Math.min(30, +b || 0)); };
+function bpxBlurApply() { if (bpEl) bpEl.style.setProperty('--bpxb', bpxBlur() + 'px'); }
 function bpxBgHTML() {
   const art = artImg('honor:bg', 'bpx-wp');
   return `${art}<div class="bpx-sky ${art ? 'art' : ''}"><i class="bpx-glow g1"></i><i class="bpx-glow g2"></i><i class="bpx-glow g3"></i>
@@ -171,6 +175,7 @@ function openHonor(tab) {
   if (tab) bpTab = tab; bpState(); closeModal();
   if (!bpEl) { bpEl = document.createElement('div'); bpEl.className = 'bpx'; bpEl.setAttribute('role', 'dialog'); bpEl.setAttribute('aria-label', 'Pearl Honor');
     bpEl.innerHTML = `<div class="bpx-bg" aria-hidden="true">${bpxBgHTML()}</div><div id="bpRoot" class="bpx-in"></div>`; document.body.appendChild(bpEl); }
+  bpxBlurApply();
   renderHonor(true);
 }
 function bpxBgRefresh() { const b = bpEl && bpEl.querySelector('.bpx-bg'); if (b) b.innerHTML = bpxBgHTML(); }
@@ -249,9 +254,11 @@ function renderHonor(jump) {
         <span class="bpx-season" title="Season ${st.season + 1} ends in ${bpLeftTxt()}">${icon('clock')}<b>Season ${st.season + 1}</b><small>${bpLeftTxt().replace(/ \d+m$/, '')} left</small></span></div>
       <nav class="bpx-tabs" role="tablist">${tabs.map(([k, ic, l]) => `<button class="bpx-tab ${k === bpTab ? 'on' : ''}" role="tab" aria-selected="${k === bpTab}" data-bptab="${k}">${icon(ic)}<span>${l}</span>${k !== bpTab && dotFor(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</nav>
       <div class="bpx-hr"><div class="cur" data-k="pearls" title="Pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b><button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button></div>
+        ${canAdmin() ? `<button class="btn ghost bpx-adm" id="bpxAdm" title="Admin: the Pearl Honor background (wallpaper and blur)">${icon('image')}<span>Background</span></button>` : ''}
         <button class="inv-x" id="bpxClose" aria-label="Close">${icon('close')}</button></div></header>
     <div class="bpx-body t-${bpTab}">${head}${body}</div>`;
   $('#bpxClose').onclick = closeHonor;
+  const adb = $('#bpxAdm'); if (adb) adb.onclick = () => openAdmin('honor');
   root.querySelectorAll('[data-bptab]').forEach(b => b.onclick = () => { bpTab = b.dataset.bptab; renderHonor(true); });
   root.querySelectorAll('[data-bpm]').forEach(b => b.onclick = () => { bpMTab = b.dataset.bpm; renderHonor(); });
   root.querySelectorAll('[data-bpc]').forEach(b => b.onclick = () => { const [l, t] = b.dataset.bpc.split('|'); if (bpCanClaim(+l, t)) bpClaimAll(); else if (t === 'paid' && !st.tier) { bpTab = 'unlock'; renderHonor(); } });
