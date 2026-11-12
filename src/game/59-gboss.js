@@ -2,32 +2,36 @@
    GUILD BOSS (after the owner asked for one): a very high-HP dragon fought in Card Battle by the whole guild together.
    - One boss fight lasts 48 hours (GB_MS, the same windows for everyone from GB_EPOCH; gbKey). Every player gets 2 battles
      a fight (GB_TRIES, S.guild.boss.tries; switching guilds does not give more).
-   - The dragon has 200 HP (GB_HP) shared by the guild: every member's damage comes off the same bar. When it falls a new,
-     stronger one takes its place in the same fight (level 2 = 300 HP, +100 a level, gbLvHp), so you can always fight it.
-     There is no guild server yet: the other members are practice players whose battles are seeded (gbMateHits: about
-     two battles each, spread over the 48 hours, damage by their CS), so the bar goes down over the two days.
+   - The dragon's HP is shared by the guild (every member's damage comes off the same bar) and grows with the guild
+     (the owner's rule): 500 HP with 1 member up to 2,000 with 50, in even steps (gbBaseHp, ~30.6 HP a member, rounded to
+     10). When it falls a stronger one takes its place in the same fight (+25% a level, gbLvHp), so you can always fight
+     it, and every member gets 20 pearls + 60 stamina by mail for each dragon the guild defeats (GB_KILL, gbMailKills).
+     There is no guild server yet: the other members are practice players whose battles are seeded (gbMateHits: 80% fight
+     twice, damage 8-58 by their CS, spread over the 48 hours), so the bar goes down over the two days; a full guild of
+     30 usually brings the first dragon down, 20 now and then, 10 never.
    - A battle: your own deck against the boss's deck (the war council deck of the Great Tree's top floor,
      CC_TOWER_DECKS.spire) with the boss's HP = what is left of the bar, you first, no battle event, and it ends after
      round 12 (GB_ROUNDS, "the dragon flies off"), when your hero falls or when the dragon falls. The boss plays with
-     the auto play planner at its best (GB_AI: no slips, no noise), so it is a strong player: in Node an average player
-     deals ~5-9 damage a battle, a good one ~10 (up to ~27), so it can never be one-shot.
+     the auto play planner at its best (GB_AI: no slips, no noise), so it is a strong player; the dragon takes triple
+     damage from every hit (GB_HITX, the engine's hitX option). In Node an average player deals ~23 damage a battle, a
+     good one ~31 (up to ~54).
    - Rewards after every battle by the damage dealt (GB_TIERS): SSR or UR gear only (no R; UR 20-60%, 5% of UR pieces 2★,
-     better than raids), gold, Standard tickets and 5-50 stamina (gbStam); plus a reward for every dragon your guild
-     defeats that you hit (GB_KILL, more for the final blow GB_LAST), claimed on the boss screen (mailed if the fight
-     ends first, gbMailLeft).
+     better than raids), gold, Standard tickets and 5-50 stamina (gbStam).
    - Art (admin → Battle screen → Guild boss): name (content S.gboss.name), the boss art gboss:art (16:9, framable; the
      boss screen, the VS intro and the card) and its round icon gboss:icon (square; else cut from the art), plus the
      Battle screen card wallpaper battle:gboss. Without uploads it is the drawn dragon (GB_SVG).
    Where: the Battle screen's Guild Boss card and the Guild Boss spot on the guild screen (openGuildBoss).
    ========================================================= */
-const GB_HP = 200, GB_HP_UP = 100, GB_MS = 48 * 36e5, GB_TRIES = 2, GB_ROUNDS = 12, GB_EPOCH = Date.UTC(2026, 0, 5), GB_STAR2 = .05;
+const GB_HP = 500, GB_HP_MAX = 2000, GB_HP_N = 50, GB_LV_UP = .25, GB_HITX = 3, GB_MS = 48 * 36e5, GB_TRIES = 2, GB_ROUNDS = 12, GB_EPOCH = Date.UTC(2026, 0, 5), GB_STAR2 = .05;
 const GB_AI = { ...CC_AUTO, slip: 0, noise: 0 };   // the boss plays like auto play at its best
 // [from damage, gear pieces, UR chance per piece, gold, Standard tickets] — stamina is gbStam(damage)
-const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [5, 1, .3, 9000, 1], [10, 2, .35, 14000, 2], [15, 2, .45, 20000, 2], [20, 3, .5, 26000, 3], [25, 3, .6, 32000, 3]];
-const GB_KILL = { wishes: 2, coins: 15000 }, GB_LAST = { wishes: 3, coins: 25000 };
-const gbStam = d => Math.min(50, 5 + 2 * d);
+const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [15, 1, .3, 9000, 1], [30, 2, .35, 14000, 2], [45, 2, .45, 20000, 2], [60, 3, .5, 26000, 3], [75, 3, .6, 32000, 3]];
+const GB_KILL = { pearls: 20, stamina: 60 };   // mailed to every member for each dragon the guild defeats
+const gbStam = d => Math.min(50, 5 + Math.round(d * .6));
 const gbTier = d => GB_TIERS.filter(t => d >= t[0]).pop();
-const gbLvHp = lv => GB_HP + GB_HP_UP * (lv - 1);
+const r10 = x => Math.round(x / 10) * 10;
+const gbBaseHp = n => r10(GB_HP + (GB_HP_MAX - GB_HP) * (Math.min(GB_HP_N, Math.max(1, n)) - 1) / (GB_HP_N - 1));   // 500 HP for 1 member … 2,000 for 50
+const gbLvHp = (lv, n) => r10(gbBaseHp(n) * (1 + GB_LV_UP * (lv - 1)));
 const gbKey = (t = Date.now()) => Math.floor((t - GB_EPOCH) / GB_MS);
 const gbEnds = (k = gbKey()) => GB_EPOCH + (k + 1) * GB_MS;
 const gbName = () => ((S.gboss && S.gboss.name) || '').trim() || 'Elder Dragon';
@@ -45,7 +49,8 @@ BTH_ART.gboss = gbSvg('540 0 520 900', 'bth-svg gb-scene');
 /* ---- the fight's state (player save, under the guild) ---- */
 function gbState() {
   const st = guildState(), k = gbKey();
-  if (!st.boss || st.boss.key !== k) { if (st.boss && st.boss.fights && st.boss.fights.length) gbMailLeft(st.boss); st.boss = { key: k, tries: 0, fights: [], got: [] }; }
+  if (!st.boss || st.boss.key !== k) { const old = st.boss; st.boss = { key: k, tries: 0, fights: [], mailed: [] }; if (old && old.key != null) gbMailLeft(old); }
+  if (!st.boss.mailed) st.boss.mailed = [];
   return st.boss;
 }
 /* the practice members' battles in this fight, seeded (the same for everyone) */
@@ -53,8 +58,8 @@ function gbMateHits(g, k) {
   const out = [], t0 = GB_EPOCH + k * GB_MS;
   for (const m of g.members) {
     if (m.me) continue;
-    const r = seeded(`gb:${g.id}:${k}:${m.name}`), sk = Math.min(1, (m.total || 0) / 240000), x = r(), n = x < .7 ? 2 : x < .85 ? 1 : 0;
-    for (let i = 0; i < n; i++) { const t = t0 + (.03 + r() * .94) * GB_MS; if (m.joinedAt && t < m.joinedAt) continue; out.push({ t, d: Math.round(r() * 14 + sk * 8), name: m.name }); }
+    const r = seeded(`gb:${g.id}:${k}:${m.name}`), sk = Math.min(1, (m.total || 0) / 240000), x = r(), n = x < .8 ? 2 : x < .9 ? 1 : 0;
+    for (let i = 0; i < n; i++) { const t = t0 + (.03 + r() * .94) * GB_MS; if (m.joinedAt && t < m.joinedAt) continue; out.push({ t, d: Math.round(8 + r() * 36 + sk * 14), name: m.name }); }
   }
   return out;
 }
@@ -63,28 +68,35 @@ function gbBoard(g = myGuild(), now = Date.now(), B = gbState()) {
   if (!g) return null;
   const mine = B.fights.filter(f => f.gid === g.id).map(f => ({ t: f.t, d: f.d, name: S.player.name, me: true }));
   const ev = [...gbMateHits(g, B.key), ...mine].filter(e => e.t <= now && e.d > 0).sort((a, b) => a.t - b.t);
-  let lv = 1, hp = gbLvHp(1), hitThis = false; const dmg = {}, kills = [];
+  const n = g.members.length;   // the HP grows with the guild (you included)
+  let lv = 1, hp = gbLvHp(1, n), hitThis = false; const dmg = {}, kills = [];
   for (const e of ev) {
     const d = Math.min(e.d, hp); hp -= d; dmg[e.name] = (dmg[e.name] || 0) + d; if (e.me) hitThis = true;
-    if (hp <= 0) { kills.push({ lv, t: e.t, by: e.name, last: !!e.me, helped: hitThis }); lv++; hp = gbLvHp(lv); hitThis = false; }
+    if (hp <= 0) { kills.push({ lv, t: e.t, by: e.name, last: !!e.me, helped: hitThis }); lv++; hp = gbLvHp(lv, n); hitThis = false; }
   }
-  return { g, lv, hp, max: gbLvHp(lv), dmg, kills, ends: gbEnds(B.key), key: B.key };
+  return { g, n, lv, hp, max: gbLvHp(lv, n), dmg, kills, ends: gbEnds(B.key), key: B.key };
 }
 const gbLeft = () => Math.max(0, GB_TRIES - gbState().tries);
 const gbReady = () => inGuild() && gbLeft() > 0;
-const gbClaimable = (bd = gbBoard(), B = gbState()) => bd ? bd.kills.filter(k => k.helped && !B.got.includes(k.lv)) : [];
-const gbKillRew = L => { const tot = {}; for (const k of L) for (const [w, n] of Object.entries(k.last ? GB_LAST : GB_KILL)) tot[w] = (tot[w] || 0) + n; return tot; };
-function gbClaim() {
-  const B = gbState(), L = gbClaimable(); if (!L.length) return;
-  const tot = gbKillRew(L); for (const [w, n] of Object.entries(tot)) S.wallet[w] = (S.wallet[w] || 0) + n;
-  L.forEach(k => B.got.push(k.lv)); persist(); renderMenu(); renderGB();
-  showRewards('Dragon defeated', tot, `${L.length === 1 ? `Level ${L[0].lv}` : `Levels ${L.map(k => k.lv).join(', ')}`} · thanks for fighting`);
+/* every dragon the guild defeats: each member (you too, whether you fought it or not) gets GB_KILL by mail, once per
+   dragon (B.mailed = '<guild id>:<level>' keys). Checked whenever the home screen, the Battle card, the guild screen or the boss
+   screen draws, and for the fight that just ended when a new one starts (gbMailLeft). */
+let gbMailing = false;
+function gbMailKills(bd, B = gbState()) {
+  if (gbMailing || !bd) return;
+  const id = k => bd.g.id + ':' + k.lv, since = (S.guild && S.guild.joined) || 0;   // only dragons that fell while you were in this guild
+  const L = bd.kills.filter(k => k.t >= since && !B.mailed.includes(id(k))); if (!L.length) return;
+  gbMailing = true;
+  try {
+    const mails = L.map(k => { B.mailed.push(id(k)); return { id: `gboss-${B.key}-${bd.g.id}-${k.lv}`, date: dayKey(), from: bd.g.name, title: `${gbName()} defeated!`, body: `Your guild brought down the level ${k.lv} ${gbName()}${k.last ? ', and you struck the final blow' : ` (final blow: ${k.by})`}. Every member of ${bd.g.name} gets this reward.`, reward: { ...GB_KILL } }; });
+    S.mailbox = [...(S.mailbox || []), ...mails]; persist(); renderMenu();
+  } finally { gbMailing = false; }
 }
-/* a fight ended with kill rewards still unclaimed: they come by mail */
+const gbCheckKills = () => { if (!gbMailing && inGuild()) gbMailKills(gbBoard()); };
 function gbMailLeft(old) {
   const g = myGuild(); if (!g) return;
-  const L = gbClaimable(gbBoard(g, gbEnds(old.key), old), old); if (!L.length) return;
-  sendMail({ id: 'gboss-' + old.key + '-' + g.id, from: g.name, title: 'Guild boss rewards', body: `Your guild defeated the ${gbName()} ${L.length === 1 ? 'once' : L.length + ' times'} while you fought it. Here are the rewards you had not claimed.`, reward: gbKillRew(L) });
+  if (!old.mailed) old.mailed = (old.got || []).map(lv => g.id + ':' + lv);   // older saves claimed kill rewards on the boss screen
+  gbMailKills(gbBoard(g, gbEnds(old.key) - 1, old), old);
 }
 
 /* ---- a battle ---- */
@@ -95,7 +107,7 @@ function gbStart() {
   closeGuildBoss(false);
   startClash({ id: d.id, name: d.name, cards: d.cards.slice() }, (Math.random() * 4294967296) >>> 0, null, { lv: bd.lv, hp0: bd.hp, max: bd.max, gid: bd.g.id });
 }
-const gbMatch = (deck, seed, names, bs) => ccCreateMatch(seed, deck.cards.slice(), CC_TOWER_DECKS.spire.slice(), names, { ev: null, first: 0, hp: [CC_CFG.hp, bs.hp0], rounds: GB_ROUNDS, limitText: `Round ${GB_ROUNDS} ended: the ${gbName()} flies off` });
+const gbMatch = (deck, seed, names, bs) => ccCreateMatch(seed, deck.cards.slice(), CC_TOWER_DECKS.spire.slice(), names, { ev: null, first: 0, hp: [CC_CFG.hp, bs.hp0], rounds: GB_ROUNDS, hitX: [1, GB_HITX], limitText: `Round ${GB_ROUNDS} ended: the ${gbName()} flies off` });
 /* the boss's move: follows its plan for the turn while it stays right, else plans again (without freezing the page) */
 async function gbBossPick(G) {
   const m = ccM;
@@ -160,7 +172,7 @@ function openGuildBoss() {
 function closeGuildBoss(home = true) { if (gbEl) { gbEl.remove(); gbEl = null; } if (home) { if (fmEl) renderFarm(); else bthHome(); } }
 function renderGB() {
   if (!gbEl) return;
-  const g = myGuild(), B = gbState(), bd = g && gbBoard(g);
+  const g = myGuild(), B = gbState(), bd = g && gbBoard(g); if (bd) gbMailKills(bd, B);
   const art = MEDIA.get('gboss:art') ? `<img src="${MEDIA.get('gboss:art')}" alt="" style="${artPosStyle('gboss:art')}">` : gbSvg('0 0 1600 900', 'gb-svg');
   const head = `<header class="gbs-head"><button class="smx-back" id="gbClose2" aria-label="Back">${icon('back')}</button>
       <div class="inv-title"><span class="inv-badge">${icon('dragon')}</span><h2 class="ts">Guild Boss</h2></div>${infoBtn('gboss', 'How the guild boss works')}
@@ -171,7 +183,8 @@ function renderGB() {
     gbEl.innerHTML = `<div class="gbs-bg" aria-hidden="true">${art}<i></i></div>${head}
       <div class="gbs-join"><h1>${esc(gbName())}</h1><p>The guild boss is fought by a whole guild together. Join or create a guild to take part.</p><button class="btn gold" id="gbGuild">${icon('guild')}Find a guild</button></div>`;
   } else {
-    const left = gbLeft(), claim = gbClaimable(bd), you = bd.dmg[S.player.name] || 0, deck = ccCampMyDeck(), ok = ccValidateDeck(deck.cards).ok;
+    const mailedN = B.mailed.filter(x => x.startsWith(g.id + ':')).length;
+    const left = gbLeft(), you = bd.dmg[S.player.name] || 0, deck = ccCampMyDeck(), ok = ccValidateDeck(deck.cards).ok;
     const rank = Object.entries(bd.dmg).sort((a, b) => b[1] - a[1]), myPos = rank.findIndex(([n]) => n === S.player.name);
     const mate = n => g.members.find(m => m.name === n) || {};
     gbEl.innerHTML = `<div class="gbs-bg" aria-hidden="true">${art}<i></i></div>${head}
@@ -180,18 +193,18 @@ function renderGB() {
           <small class="gbs-lv">Level ${bd.lv}${bd.kills.length ? ` · defeated ${bd.kills.length} time${bd.kills.length === 1 ? '' : 's'} this fight` : ''}<span class="gbs-tm2"> · ends in ${fmtDur2(gbEnds(B.key) - Date.now())}</span></small>
           <h1 class="gbs-name">${esc(gbName())}</h1>
           <div class="gbs-hp"><span class="gbs-hpbar"><i style="width:${bd.hp / bd.max * 100}%"></i><em></em></span><b>${fmt(bd.hp)} <small>/ ${fmt(bd.max)} HP</small></b></div>
-          <p class="gbs-sub">Your whole guild fights the same dragon: every battle's damage comes off this bar. When it falls, a stronger one (+${GB_HP_UP} HP) takes its place until the fight ends.</p>
+          <p class="gbs-sub">Your whole guild fights the same dragon: every battle's damage comes off this bar. Its HP grows with the guild (${bd.n} member${bd.n === 1 ? '' : 's'}: ${fmt(gbBaseHp(bd.n))} HP). Bring it down and <b>every member gets ${curIcon('pearls')}${GB_KILL.pearls} pearls + ${curIcon('stamina')}${GB_KILL.stamina} stamina</b> by mail; a stronger one (+${GB_LV_UP * 100}% HP) then takes its place.</p>
         </section>
         <aside class="gbs-panel">
           <div class="gbs-tries"><span>Your battles</span><span class="gbs-pips">${Array.from({ length: GB_TRIES }, (_, i) => `<i class="${i < left ? 'on' : ''}"></i>`).join('')}</span><b>${left} / ${GB_TRIES}</b></div>
           <div class="gbs-you"><span><small>Your damage this fight</small><b>${you}</b></span><span><small>Guild rank</small><b>${myPos >= 0 ? '#' + (myPos + 1) : '—'}</b></span></div>
-          ${claim.length ? `<button class="btn gold gbs-claim" id="gbClaim">${icon('gift')}Dragon defeated! Claim ${Object.entries(gbKillRew(claim)).map(([k, n]) => `${curIcon(k)}${fmt(n)}`).join(' ')}</button>` : ''}
+          ${mailedN ? `<button class="gbs-killed" id="gbMail">${icon('crown')}<span><b>Dragon defeated${mailedN > 1 ? ` ×${mailedN}` : ''}!</b><small>${curIcon('pearls')}${GB_KILL.pearls * mailedN} + ${curIcon('stamina')}${GB_KILL.stamina * mailedN} sent to your mail</small></span>${icon('mail')}</button>` : ''}
           <div class="gbs-deck"><span>${CC_IC}<b>${esc(deck.name)}</b><small>${ok ? 'Ready' : `${deck.cards.length}/30`}</small></span><button class="btn ghost sm" id="gbDeck">Change deck</button></div>
-          <button class="smx-go ten gbs-go" id="gbFight" ${left && ok ? '' : 'disabled'}><span class="smx-tag">${GB_ROUNDS} rounds · your own deck</span><b>${left ? 'Fight!' : 'No battles left'}</b><small>${left ? `HP ${fmt(bd.hp)} · level ${bd.lv}` : `New fight in ${fmtDur2(gbEnds(B.key) - Date.now())}`}</small></button>
+          <button class="smx-go ten gbs-go" id="gbFight" ${left && ok ? '' : 'disabled'}><span class="smx-tag">${GB_ROUNDS} rounds · every hit ×${GB_HITX}</span><b>${left ? 'Fight!' : 'No battles left'}</b><small>${left ? `HP ${fmt(bd.hp)} · level ${bd.lv}` : `New fight in ${fmtDur2(gbEnds(B.key) - Date.now())}`}</small></button>
           <details class="gbs-det" open><summary>Rewards by damage</summary>
             <table class="gbs-rw"><tr><th>Damage</th><th>Gear</th><th>${curIcon('coins')}</th><th>${curIcon('wishes')}</th><th>${curIcon('stamina')}</th></tr>
-            ${GB_TIERS.map((t, i) => { const nx = GB_TIERS[i + 1]; return `<tr class="${you >= 0 && B.fights.length && gbTier(B.fights[B.fights.length - 1].d) === t ? 'on' : ''}"><td>${nx ? `${t[0]}–${nx[0] - 1}` : `${t[0]}+`}</td><td>${t[1] ? `${t[1]} × ${ctag(4)}/${ctag(5)} <small>${Math.round(t[2] * 100)}% UR</small>` : '—'}</td><td>${fmt(t[3])}</td><td>${t[4] || '—'}</td><td>${gbStam(t[0])}${nx ? `–${gbStam(nx[0] - 1)}` : ''}</td></tr>`; }).join('')}</table>
-            <p class="tiny">Every battle pays by its own damage. Gear is SSR or UR only (5% of UR pieces are 2★). Each dragon your guild defeats that you hit: ${Object.entries(GB_KILL).map(([k, n]) => `${curIcon(k)}${fmt(n)}`).join(' ')}, the final blow ${Object.entries(GB_LAST).map(([k, n]) => `${curIcon(k)}${fmt(n)}`).join(' ')}.</p></details>
+            ${GB_TIERS.map((t, i) => { const nx = GB_TIERS[i + 1]; return `<tr class="${you >= 0 && B.fights.length && gbTier(B.fights[B.fights.length - 1].d) === t ? 'on' : ''}"><td>${nx ? (nx[0] - 1 > t[0] ? `${t[0]}–${nx[0] - 1}` : t[0]) : `${t[0]}+`}</td><td>${t[1] ? `${t[1]} × ${ctag(4)}/${ctag(5)} <small>${Math.round(t[2] * 100)}% UR</small>` : '—'}</td><td>${fmt(t[3])}</td><td>${t[4] || '—'}</td><td>${gbStam(t[0])}${nx && gbStam(nx[0] - 1) > gbStam(t[0]) ? `–${gbStam(nx[0] - 1)}` : ''}</td></tr>`; }).join('')}</table>
+            <p class="tiny">Every battle pays by the damage it deals (after the ×${GB_HITX}). Gear is SSR or UR only (5% of UR pieces are 2★). Each dragon your guild defeats: ${curIcon('pearls')}${GB_KILL.pearls} + ${curIcon('stamina')}${GB_KILL.stamina} for every member, by mail.</p></details>
           <details class="gbs-det" open><summary>Guild damage · this fight</summary>
             <div class="gbs-rank">${rank.length ? rank.slice(0, 30).map(([n, d], i) => { const m = mate(n), me = n === S.player.name; return `<div class="gbs-rr ${me ? 'me' : ''}"><span class="gbs-rk">${i + 1}</span>${me ? `<span class="gd-av me">${avatarHTML(30)}</span>` : `<span class="gd-av" style="--h:${m.hue || 200}">${esc(n[0])}</span>`}<b>${esc(n)}${me ? ' <small>(you)</small>' : ''}</b><em>${d}</em></div>`; }).join('') : '<p class="tiny">Nobody has fought it yet.</p>'}</div></details>
         </aside>
@@ -200,7 +213,8 @@ function renderGB() {
   const q = s => gbEl.querySelector(s), on = (s, f) => { const b = q(s); if (b) b.onclick = f; };
   on('#gbClose', () => closeGuildBoss()); on('#gbClose2', () => closeGuildBoss());
   on('#gbGuild', () => { closeGuildBoss(false); openFarm('guild'); });
-  on('#gbClaim', gbClaim); on('#gbFight', gbStart);
+  on('#gbFight', gbStart);
+  on('#gbMail', () => openMail());
   on('#gbDeck', () => ccDeckPicker(renderGB));
 }
 /* pick the deck you fight with (sets your selected deck) */
@@ -212,15 +226,15 @@ function ccDeckPicker(back) {
 }
 INFO.gboss = () => ({ title: 'Guild Boss', body: `<p class="desc">A dragon your whole guild fights in Card Battle.</p>
   <ul class="info-list"><li>A fight lasts <b>48 hours</b>. You get <b>${GB_TRIES} battles</b> in each fight.</li>
-  <li>The dragon has <b>${GB_HP} HP</b>, shared by the guild: everyone's damage comes off the same bar. When it falls, a stronger one (+${GB_HP_UP} HP) takes its place.</li>
-  <li>A battle is played with your own deck against the dragon's deck. You go first; it ends after <b>round ${GB_ROUNDS}</b>, when your hero falls or when the dragon falls. The dragon is a very strong player, so deal as much damage as you can.</li>
+  <li>The dragon's HP is shared by the guild: everyone's damage comes off the same bar. It grows with the guild, from <b>${fmt(GB_HP)} HP</b> with 1 member to <b>${fmt(GB_HP_MAX)} HP</b> with ${GB_HP_N}. When it falls, a stronger one (+${GB_LV_UP * 100}% HP) takes its place.</li>
+  <li>A battle is played with your own deck against the dragon's deck. You go first; it ends after <b>round ${GB_ROUNDS}</b>, when your hero falls or when the dragon falls. The dragon is a very strong player, but it is huge: <b>every hit on it deals triple damage</b>.</li>
   <li>After every battle you get rewards by the damage you dealt: SSR or UR gear (never R), gold, Standard tickets and 5 to 50 stamina.</li>
-  <li>Every dragon your guild defeats that you hit gives an extra reward; the final blow gives more.</li></ul>` });
+  <li>Every time your guild defeats the dragon, <b>every member gets ${GB_KILL.pearls} pearls and ${GB_KILL.stamina} stamina by mail</b>.</li></ul>` });
 
 /* admin → Battle screen → Guild boss: its name, its art (16:9, framable) and its round icon */
 function gbAdminHTML() {
   const a = MEDIA.get('gboss:art'), i = MEDIA.get('gboss:icon');
-  return `<div><h3>Guild boss</h3><p class="tiny">The dragon your players fight with their guild (2 battles every 48 hours, ${GB_HP} HP shared by the guild). Its card on the Battle screen uses the Guild Boss wallpaper above.</p></div>
+  return `<div><h3>Guild boss</h3><p class="tiny">The dragon your players fight with their guild (2 battles every 48 hours, ${fmt(GB_HP)}–${fmt(GB_HP_MAX)} HP shared by the guild, growing with its members; each kill mails ${GB_KILL.pearls} pearls + ${GB_KILL.stamina} stamina to every member). Its card on the Battle screen uses the Guild Boss wallpaper above.</p></div>
     <div class="gb-ad">
       <label class="gb-adname"><span class="lbl-sm">Name</span><input class="input" id="gbAdName" maxlength="28" value="${esc((S.gboss && S.gboss.name) || '')}" placeholder="Elder Dragon"></label>
       <div class="gb-adit"><span class="gb-adpic wide">${a ? `<img src="${a}" alt="" style="${artPosStyle('gboss:art')}">` : gbSvg('0 0 1600 900')}</span><b>Boss art</b><small>16:9, 1920×1080 best: the boss screen, the battle intro and its card. ${a ? 'Your picture' : 'Drawn default'}</small>

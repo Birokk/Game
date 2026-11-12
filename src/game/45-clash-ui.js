@@ -326,7 +326,7 @@ function ccDo(a, fromAuto) {
   const hit = G.fx.filter(f => f.id === 'hero1' && f.type === 'dmg').reduce((t, f) => t + f.n, 0);
   if (G.active === 1 || G.phase === 'over') ccM.busy = true;
   ccRender(snap);
-  if (hit > CC_SLASH_MIN) { const m = ccM; setTimeout(() => { if (ccM === m) ccSlash(hit); }, ccM.impact || 0); }
+  if (hit > (ccM.boss ? 3 * CC_SLASH_MIN + 3 : CC_SLASH_MIN)) { const m = ccM; setTimeout(() => { if (ccM === m) ccSlash(hit); }, ccM.impact || 0); }
   ccAfter(true);
   return true;
 }
@@ -449,7 +449,7 @@ function ccRender(snap) {
     return `<button class="ccm-hc ${playable ? 'ok' : ''} ${sel && sel.iid === c.iid ? 'sel' : ''}" data-hand="${c.iid}" data-peek="h${c.iid}" style="--r:${rot}deg;--y:${dy}px;--i:${i}"><span class="ccm-hci">${ccCardHTML(c.id, { tip: false })}</span></button>`; }).join('');
   const ot = G.round >= ccOT(G);
   ui.innerHTML = `
-    <div class="ccm-tools">${ccM.boss ? `<span class="ccm-campst" title="Guild boss">${icon('dragon')}<b>Guild Boss</b></span>` : ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tree' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
+    <div class="ccm-tools">${ccM.boss ? `<span class="ccm-campst" title="Guild boss: every hit on the dragon deals triple damage">${icon('dragon')}<b>Guild Boss · ×${GB_HITX}</b></span>` : ccM.camp ? `<span class="ccm-campst" title="${esc(ccM.camp.st.name)}">${icon(ccM.camp.st.ch.tower ? 'tree' : 'map')}<b>${ccStLabel(ccM.camp.st)}</b></span>` : `<button class="ccm-auto ${ccSave().auto ? 'on' : ''}" id="ccAuto" title="Auto play: plays your turns for you">${icon('bolt')}<b>Auto</b><i>${ccSave().auto ? 'On' : 'Off'}</i></button>`}<button class="ccm-tb" id="ccRules" title="How to play">?</button><button class="ccm-tb ${ccM.log ? 'on' : ''}" id="ccLogB" title="Match log">${icon('quests')}</button><button class="ccm-tb" id="ccLeave" title="Leave the match">${icon('close')}</button></div>
     <div class="ccm-ophand" title="Cards in the bot's hand">${op.hand.map((_, i) => `<span class="ccm-back" style="--r:${(i - (op.hand.length - 1) / 2) * -5}deg">${ccBackHTML('', ccBackSkin(1))}</span>`).join('')}<small>${op.hand.length}</small></div>
     ${hero(1)}${hero(0)}
     ${ccM.boss ? `<div class="ccm-lead op" title="${esc(gbName())}: the guild boss">${gbCardHTML()}<span class="ccl-tag">Boss</span></div>` : ''}

@@ -63,6 +63,7 @@ function renderMenu() {
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
   if (booted && typeof rankSettle === 'function') rankSettle();
+  if (booted) gbCheckKills();   // a dragon the guild defeated mails every member a reward
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();
@@ -80,7 +81,7 @@ function renderMenu() {
   $('#promo').innerHTML = `<button class="sx-tab lim promo-tab" data-open="summon" data-banner="limited" aria-label="Open the limited banner">
       <small>Limited · ${shortLeft()}</small>${f ? `<img src="${baseSplash(f)}" alt="" class="${baseArt(f) ? '' : 'chibi'}">` : ''}<b>${f ? esc(f.name) : esc(bannerName('limited'))}<br>Summon</b>${canPull(10, 'limited') || freeReady('limited') ? '<span class="dot-n"></span>' : ''}
     </button>`;
-  $('#limTime').innerHTML = `${icon('clock')}Limited ends in ${shortLeft()}`;
+  { const l = shortLeft(); $('#limTime').innerHTML = `${icon('clock')}${l === 'Ended' ? 'Limited summon ended' : `Limited ends in ${l}`}`; }
   $('#moreDot').hidden = ![...document.querySelectorAll('#hmDrop .dot-n')].some(d => !d.hidden);   // the Menu button lights when anything inside it does
   applyWallpaper();
 }

@@ -157,9 +157,10 @@ function ccShuffle(G, a) { for (let i = a.length - 1; i > 0; i--) { const j = Ma
 /* opts (all optional; the campaign uses them): ev = battle event key or null, first = 0 | 1 (else the seed decides),
    hp = [your HP, bot HP] at the start, order = keep both decks in the given order (deck[0] is drawn first) instead of
    shuffling, setup(G) = runs after the opening hands, before the first turn (place units / traps); the guild boss also
-   uses rounds = an earlier round limit (with limitText = why it ended), apB = [your extra AP, bot extra AP] every turn */
+   uses rounds = an earlier round limit (with limitText = why it ended), apB = [your extra AP, bot extra AP] every turn,
+   hitX = [x, x] damage multiplier on each hero (the dragon takes ×3) */
 function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
-  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now(), maxRound: opts.rounds || 0, limitText: opts.limitText || '', apB: opts.apB || null };
+  const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now(), maxRound: opts.rounds || 0, limitText: opts.limitText || '', apB: opts.apB || null, hitX: opts.hitX || null };
   G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
   G.players.forEach(P => opts.order ? P.deck.reverse() : ccShuffle(G, P.deck));   // cards are drawn from the end of the array
   G.first = G.active = opts.first === 0 || opts.first === 1 ? opts.first : ccRand(G) < 0.5 ? 0 : 1;
@@ -197,7 +198,7 @@ function ccDamage(G, u, n) {
 }
 function ccEnrage(G, u) { if (u.hp > 0 && u.id === 'AGG-U03' && !u.enraged) { u.enraged = true; u.up++; ccLog(G, `Berserker survives and gains +1 ATK`, 'buff', u.owner); } }
 function ccHeal(G, u, n) { const h = Math.min(n, ccMaxHp(u) - u.hp); if (h > 0) { u.hp += h; ccFx(G, u.iid, 'heal', h); } return Math.max(0, h); }
-function ccHit(G, p, n) { if (n <= 0) return; G.players[p].hp -= n; ccFx(G, 'hero' + p, 'dmg', n); }
+function ccHit(G, p, n) { if (n <= 0) return; if (G.hitX) n *= G.hitX[p]; G.players[p].hp -= n; ccFx(G, 'hero' + p, 'dmg', n); }   // hitX: the guild boss takes triple damage
 function ccHealHero(G, p, n) { const P = G.players[p], h = Math.max(0, Math.min(n, 1 - P.healed, CC_CFG.hp - P.hp)); if (h > 0) { P.hp += h; P.healed += h; ccFx(G, 'hero' + p, 'heal', h); } return h; }
 function ccStun(G, u) { if (u.owner === G.active) u.stunNow = true; else u.stunNext = true; ccFx(G, u.iid, 'stun', 0); }
 function ccPoison(G, u, n) { u.poison = Math.max(u.poison, n); ccFx(G, u.iid, 'poison', n); }

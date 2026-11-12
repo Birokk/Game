@@ -316,23 +316,23 @@ function renderSummon() {
     return `<button class="smx-tab ${on ? 'on' : ''}" data-bk="${k}" aria-pressed="${on}">${art ? `<img src="${baseSplash(art)}" alt="" class="${baseArt(art) ? '' : 'chibi'}">` : ''}<i class="smx-tsh"></i>
       <small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small><b>${esc(I.feat ? I.feat.name : bannerName(k))}</b>${dotFor(k)}</button>`; };
   const pts = PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm';
-  const time = B.ends ? `<span class="smx-time">${icon('clock')}${bk === 'weekly' ? 'Changes in' : 'Ends in'} ${shortLeft(B.ends)}</span>` : '';
+  const left0 = B.ends && shortLeft(B.ends), time = B.ends ? `<span class="smx-time">${icon('clock')}${left0 === 'Ended' ? 'Ended' : `${bk === 'weekly' ? 'Changes in' : 'Ends in'} ${left0}`}</span>` : '';
   const chips = (L, label) => L.length > 1 ? `<div class="smx-chips"><small>${label}</small><div class="sx-feat">${L.map((u, i) => `<button class="${u === hero ? 'on' : ''}" data-focus="${i}" aria-label="Show ${esc(u.name)}">${baseThumb(u)}</button>`).join('')}</div></div>` : '';
   // the words over the art (lower left) and the column's contents
   let ov, info;
   const step = bk === 'stepup' && f, sg = step ? stepState() : null;
   if (B.begin) {
     ov = { kind: 'Beginner · ×10 only · 20% off', name: B.title, sub: B.ur.length ? `Pull ${BEGIN_PULLS} is a guaranteed UR character` : `No UR characters chosen for pull ${BEGIN_PULLS} yet` };
-    info = B.ur.length ? smxBeginner(B, hero) : smxSetup();
+    info = B.ur.length ? smxHead(bk, g) + smxBeginner(B, hero) + smxRates(bk) : smxSetup();
   } else if (bk === 'stepup') {
     ov = f ? { kind: 'Step-Up · pearls only', name: f.name, sub: B.title, r5: true } : { kind: 'Step-Up', name: B.title, sub: 'No rate-up character set yet' };
-    info = f ? smxFeat(f, sg.guarantee) + smxSteps(sg.step || 0) : smxSetup();
+    info = f ? smxHead(bk, g) + smxFeat(f, sg.guarantee) + smxSteps(sg.step || 0) + smxRates(bk) : smxSetup();
   } else if (!line.length) {
     ov = { kind: B.tab, name: B.title, sub: B.skins ? 'No UR outfits on this banner yet' : B.mems ? 'No UR memories yet' : 'No UR on this banner yet' };
     info = smxSetup(B.skins ? 'skins' : B.mems ? 'memories' : 'banners');
   } else {
     ov = { kind: `${B.tab} summon${f ? ' · Rate up' : ''}`, name: f ? f.name : B.title, sub: f ? B.title : B.note || `${B.ur.length} UR ${B.skins ? 'outfits' : B.mems ? 'memories' : 'characters'} · equal chance`, r5: !!f };
-    info = (f ? smxFeat(f, g.guarantee) : chips(B.ur, 'Shown on the banner')) + smxPity(left, g.pity5)
+    info = smxHead(bk, g) + (f ? smxFeat(f, g.guarantee) : chips(B.ur, 'Shown on the banner')) + smxRates(bk) + smxPity(left, g.pity5, g.pity4) + smxLineup(B)
       + `<button class="smx-pts" id="sxPts" title="Summon points: 1 per pull, spend ${PT_PRICE} in the shop">${curIcon(pts === 'perm' ? 'sptp' : 'spt')}<span>Summon points <b>${fmt(ptOf(pts))}</b></span><em>Exchange</em></button>`;
   }
   smEl.className = 'smx';
@@ -381,12 +381,25 @@ function renderSummon() {
 }
 /* pieces of the glass column */
 const smxSetup = (tab = 'banners') => `<p class="smx-note">Nothing to summon here yet.</p><button class="btn ghost sm" data-open="admin" data-adtab="${tab}">${icon('wrench')}Set it up in admin</button>`;
+/* the column's header: banner kind with a diamond, and how many times you pulled here */
+const smxHead = (bk, g) => `<div class="smx-ih"><i></i><small>${esc(bannerInfo(bk).tab)} banner</small><em>${fmt(g.total || 0)} pull${g.total === 1 ? '' : 's'} here</em></div>`;
 function smxFeat(f, guar) {
-  const own = S.owned[f.id] ? (hasStars(f) ? `Owned · ${starsOf(f.id)}★` : 'Owned') : 'Not owned yet';
-  return `<div class="smx-fc"><span class="smx-fic">${baseThumb(f)}</span><span class="smx-fct"><small>Rate up</small><b>${esc(f.name)}</b><em>${own}</em></span></div>
+  const own = S.owned[f.id] ? 'Owned' : 'Not owned yet';
+  return `<div class="smx-fc"><span class="smx-fic">${baseThumb(f)}</span><span class="smx-fct"><small>Rate up ${rtag(5, 'smx-rt')}</small><b>${esc(f.name)}</b><em>${own}${S.owned[f.id] && hasStars(f) ? starRow(starsOf(f.id), -1, f) : ''}</em></span></div>
     <span class="smx-gt ${guar ? 'on' : ''}">${guar ? `${icon('check')}Your next UR is ${esc(f.name)}` : `Every UR is a 50/50 for ${esc(f.name)}`}</span>`;
 }
-const smxPity = (left, n) => `<div class="smx-pity"><small>UR guaranteed in</small><div class="smx-pl"><b>${left}</b><span>${left === 1 ? 'pull' : 'pulls'}</span><em>${n} / ${HARD_PITY}</em></div><span class="smx-bar"><i style="width:${n / HARD_PITY * 100}%"></i></span></div>`;
+const smxPity = (left, n, n4) => `<div class="smx-pity"><small>UR guaranteed in</small><div class="smx-pl"><b>${left}</b><span>${left === 1 ? 'pull' : 'pulls'}</span><em>${n} / ${HARD_PITY}</em></div><span class="smx-bar"><i style="width:${n / HARD_PITY * 100}%"></i></span>
+  ${n4 == null ? '' : `<div class="smx-sp4" title="At least one SSR every 10 pulls"><span>SSR within</span><span class="smx-pips">${Array.from({ length: 10 }, (_, i) => `<i class="${i < n4 ? 'on' : ''}"></i>`).join('')}</span><b>${10 - n4}</b></div>`}</div>`;
+/* rates per pull (from the Probability page's numbers) as three chips */
+function smxRates(bk) {
+  const o = bannerOdds(bk), pc = p => { const v = p * 100; return (v >= 10 ? v.toFixed(1) : v.toFixed(2)).replace(/\.?0+$/, '') + '%'; };
+  return `<div class="smx-rates"><small>Rates per pull${o.X > 1 ? ' · ×' + o.X : ''}</small><div class="smx-rc">${o.tiers.filter(t => t.p > 0).map(t => `<span class="smx-r r${t.r}">${prTag(t.r)}<b>${pc(t.p)}</b></span>`).join('')}</div></div>`;
+}
+/* a few of the banner's SSRs */
+function smxLineup(B) {
+  const L = B.ssr.filter(e => e.type === 'character' || e.type === 'skin').slice(0, 5); if (!L.length) return '';
+  return `<div class="smx-lu"><small>SSR ${B.skins ? 'outfits' : 'characters'} on this banner</small><div class="smx-lui">${L.map(e => `<span title="${esc(e.name)}">${baseThumb(e)}</span>`).join('')}${B.ssr.length > L.length ? `<em>+${B.ssr.length - L.length}</em>` : ''}</div></div>`;
+}
 /* the Beginner Wish: 50 pulls drawn as 5 steps of ×10 leading to the guaranteed UR at pull 50 */
 function smxBeginner(B, hero) {
   const done = BEGIN_PULLS - beginLeft(), segs = BEGIN_PULLS / 10;

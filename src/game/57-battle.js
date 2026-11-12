@@ -33,7 +33,7 @@ function bthInfo(id) {
   if (id === 'tree') { const L = ccTowerFloors(), f = next(L) || L[L.length - 1];   // the floor you're on (never how many there are)
     return { sub: `Floor ${f.no}`, line: `${icon('tree')}${esc(f.name)}`, dot: ccTowerReady() }; }
   if (id === 'gboss') { if (!inGuild()) return { sub: 'Join a guild', line: `${icon('guild')}Fight it with your guild`, dot: false };
-    const bd = gbBoard(); return { sub: `Level ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP`, line: `${icon('swords')}${gbLeft()} of ${GB_TRIES} battles left`, dot: gbReady() || gbClaimable(bd).length > 0 }; }
+    const bd = gbBoard(); return { sub: `Level ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP`, line: `${icon('swords')}${gbLeft()} of ${GB_TRIES} battles left`, dot: gbReady() }; }
   if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
     return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
   const st = ccSave().stats;

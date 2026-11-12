@@ -69,7 +69,7 @@ function myGuild() {
 }
 const guildCS = g => g.members.reduce((t, m) => t + (m.total || 0), 0);
 const guildDayReady = () => inGuild() && guildState().day !== dayKey();
-const guildReady = () => guildDayReady() || gqReady() || (typeof gbReady === 'function' && (gbReady() || gbClaimable().length > 0));
+const guildReady = () => guildDayReady() || gqReady() || (typeof gbReady === 'function' && gbReady());
 
 function joinGuild(id) {
   const g = practiceGuilds().find(x => x.id === id); if (!g || inGuild()) return;
@@ -305,7 +305,7 @@ function renderGuild() {
     return;
   }
   fmEl.innerHTML = `<div class="fm-scroll"><div class="fm-stage">${guildBg()}
-      ${GUILD_SPOTS.map(p => { const q = farmPos('g:' + p.id), bd = p.id === 'boss' ? gbBoard(g) : null, ready = (p.id === 'reward' && guildDayReady()) || (p.id === 'quests' && gqReady()) || (bd && (gbReady() || gbClaimable(bd).length > 0)), done = GQUESTS.filter(gqDone).length;
+      ${GUILD_SPOTS.map(p => { const q = farmPos('g:' + p.id), bd = p.id === 'boss' ? gbBoard(g) : null, ready = (p.id === 'reward' && guildDayReady()) || (p.id === 'quests' && gqReady()) || (bd && gbReady()), done = GQUESTS.filter(gqDone).length;
         return `<button class="fm-spot ${fmSel === p.id ? 'on' : ''}" data-gs="${p.id}" style="left:${q.x}%;top:${q.y}%;--fc:${p.col}">${ready ? `<span class="fm-bubble">${bd ? icon('swords') : curIcon('gpts')}</span>` : ''}<span class="fm-label"><b>${esc(p.name)}</b><span>${p.id === 'reward' ? (ready ? `+${guildDaily()} guild points` : 'Come back tomorrow') : p.id === 'quests' ? `${done} / ${GQUESTS.length} done · Lv ${guildLvOf(g)}` : bd ? `Lv ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP · ${gbLeft()} battle${gbLeft() === 1 ? '' : 's'} left` : esc(p.sub)}</span></span></button>`; }).join('')}
     </div></div>
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><span class="gd-tname">${guildIcon(g.icon, 38)}<h2 class="ts">${esc(g.name)}</h2></span>${infoBtn('guild', 'How guilds work')}<span class="fm-rate ts">Guild Lv ${guildLvOf(g)} · ${g.members.length} / ${guildCap(guildLvOf(g))} members · Total CS ${fmt(guildCS(g))}</span></div>${cur}
