@@ -5228,3 +5228,65 @@ button.rdx-side{cursor:pointer;transition:background .2s,border-color .2s}button
 .modal-back[data-kind=quests] .dq-bar{background:rgba(255,255,255,.14)}
 .modal-back[data-kind=quests] .dq-pts b,.modal-back[data-kind=quests] .dq-prog,.modal-back[data-kind=quests] .dq-m{text-shadow:0 1px 4px rgba(0,0,0,.55)}
 .modal-back[data-kind=quests] .dq-list{background:radial-gradient(120% 90% at 50% 0%,rgba(200,162,255,.08),transparent 60%),var(--gl)}
+
+/* ---- Achievements (07-shop.js renderAch): a glass category rail and glass cards; ready ones first with a
+   "Completed" tag, then in progress, then claimed ---- */
+.modal-back[data-kind=ach]{background:rgba(8,8,24,.3);--gl:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.025));--gl-rim:rgba(238,224,255,.26);--gl-hi:inset 0 1px 0 rgba(255,255,255,.16)}
+.achx{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;height:min(calc(100vh - 110px),800px);min-height:0}
+.achx-cats{display:flex;flex-direction:column;gap:6px;min-height:0;overflow-y:auto;padding:12px;border-radius:26px 6px 26px 6px;background:var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi),0 14px 34px rgba(0,0,0,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);scrollbar-width:none}
+.achx-cat{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 8px;border-radius:16px 4px 16px 4px;border:1px solid transparent;transition:background .2s,border-color .2s}
+.achx-cat:hover{background:rgba(255,255,255,.07)}
+.achx-cat.on{background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 26%,transparent),rgba(255,255,255,.03));border-color:color-mix(in srgb,var(--ac) 60%,#fff);box-shadow:0 0 16px color-mix(in srgb,var(--ac) 30%,transparent),inset 0 1px 0 rgba(255,255,255,.2)}
+.achx-cat:focus-visible{outline:2px solid #f5afe8;outline-offset:1px}
+.achx-ci{flex:none;width:36px;height:36px;border-radius:12px 3px 12px 3px;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:var(--ac)}
+.achx-ci .ic{width:19px;height:19px}
+.achx-cat.on .achx-ci{background:radial-gradient(circle at 35% 30%,#fff,color-mix(in srgb,var(--ac) 70%,#fff) 50%,var(--ac));color:#2a1640;border-color:#fff}
+.achx-ct{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 6px;align-items:center}
+.achx-ct b{font:400 14px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.achx-ct small{font:800 11px var(--body);color:rgba(240,232,255,.65)}
+.achx-cb{grid-column:1/-1;display:block;height:3px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.achx-cb>i{display:block;height:100%;border-radius:inherit;background:var(--ac)}
+.achx-n{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;display:grid;place-items:center;background:#ff4f7b;color:#fff;font:900 11px var(--body);font-style:normal;box-shadow:0 0 8px rgba(255,80,120,.6)}
+.achx-main{min-height:0;display:flex;flex-direction:column;gap:12px}
+.achx-top{flex:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;border-radius:24px 6px 24px 6px;background:radial-gradient(ellipse 50% 120% at 0 50%,color-mix(in srgb,var(--ac) 18%,transparent),transparent 70%),var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.achx-hi{flex:none;width:46px;height:46px;border-radius:15px 4px 15px 4px;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#fff,color-mix(in srgb,var(--ac) 70%,#fff) 50%,var(--ac));color:#2a1640;box-shadow:0 0 16px color-mix(in srgb,var(--ac) 45%,transparent)}
+.achx-hi .ic{width:24px;height:24px}
+.achx-ht{display:grid;gap:3px;min-width:0}
+.achx-ht b{font:italic 400 24px/1 var(--display)}
+.achx-ht small{font:700 12.5px var(--read);color:rgba(240,232,255,.72)}
+.achx-ht em{font-style:normal;color:#ffd0f0}
+.achx-pg{flex:1;min-width:120px;height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}
+.achx-pg>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--ac),#fff);box-shadow:0 0 10px var(--ac)}
+.achx-each{display:inline-flex;align-items:center;gap:5px;font:700 12px var(--read);color:rgba(240,232,255,.7)}.achx-each .cic{width:16px;height:16px}
+.modal-back[data-kind=ach] .ach-list{flex:1;min-height:0;overflow-y:auto;align-content:start;padding:8px 4px 4px;scrollbar-width:thin}
+.modal-back[data-kind=ach] .modal.wide .ach-list{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+.modal-back[data-kind=ach] .ach{position:relative;border-radius:20px 5px 20px 5px;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.015));border:1px solid rgba(238,224,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.modal-back[data-kind=ach] .ach-ic{border-radius:14px 4px 14px 4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:var(--ac)}
+.modal-back[data-kind=ach] .ach-ic .ic{width:22px;height:22px}
+.modal-back[data-kind=ach] .ach.ready{border-color:rgba(251,230,255,.7);background:linear-gradient(160deg,rgba(255,220,245,.2),rgba(190,160,255,.06));box-shadow:0 0 22px rgba(220,170,255,.3),inset 0 1px 0 rgba(255,255,255,.25)}
+.modal-back[data-kind=ach] .ach.ready .ach-ic{background:var(--cry-grad);color:var(--cry-ink);border-color:#fff;box-shadow:0 0 14px var(--cry-glow)}
+.modal-back[data-kind=ach] .ach.ready .bar i{background:var(--cry-grad)}
+.modal-back[data-kind=ach] .ach .bar{background:rgba(255,255,255,.1)}
+.modal-back[data-kind=ach] .ach .bar i{background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 70%,#fff),var(--ac))}
+.modal-back[data-kind=ach] .ach.got{opacity:.62}
+.modal-back[data-kind=ach] .ach.got .ach-ic{background:rgba(120,255,190,.14);border-color:rgba(140,255,200,.4);color:#9ff5c6}
+.ach-txt{display:grid;gap:3px;min-width:0}
+.ach-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ach-cat{display:inline-flex;align-items:center;gap:4px;padding:1px 8px 1px 5px;border-radius:8px 2px 8px 2px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font:400 10px var(--display);letter-spacing:.06em;color:var(--ac)}
+.ach-cat .ic{width:11px;height:11px}
+.ach-done{position:absolute;top:-8px;left:58px;padding:2px 10px;border-radius:9px 3px 9px 3px;background:var(--cry-grad);color:var(--cry-ink);font:400 10px var(--display);font-style:normal;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 0 12px var(--cry-glow)}
+.ach-claimed{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:12px 3px 12px 3px;background:rgba(120,255,190,.1);border:1px solid rgba(140,255,200,.35);font:400 12px var(--display);color:#9ff5c6}
+.ach-claimed .ic{width:14px;height:14px}
+.modal-back[data-kind=ach] .ach .btn{border-radius:14px 4px 14px 4px}
+@media (max-width:860px){
+  .achx{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);height:calc(100dvh - 96px)}
+  .achx-cats{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:6px;border-radius:18px 5px 18px 5px}
+  .achx-cat{flex:none;padding:6px 10px 6px 6px}.achx-ci{width:30px;height:30px}.achx-cb{display:none}.achx-ct{display:flex;gap:6px}
+  .modal-back[data-kind=ach] .modal.wide .ach-list{grid-template-columns:minmax(0,1fr)}
+  .achx-pg{display:none}.achx-ht b{font-size:19px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .achx{grid-template-columns:200px minmax(0,1fr);grid-template-rows:minmax(0,1fr);height:calc(100dvh - 70px);gap:10px}
+  .achx-cats{flex-direction:column;overflow-y:auto;overflow-x:hidden}.achx-cat{padding:5px 8px 5px 5px}.achx-ci{width:26px;height:26px}.achx-cb{display:none}
+  .achx-top{padding:6px 12px;gap:10px}.achx-hi{width:34px;height:34px}.achx-ht b{font-size:17px}.achx-pg{display:none}
+}

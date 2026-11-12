@@ -47,7 +47,10 @@ function renderDeck() {
   const uniq = [...new Set(cards)].sort((a, b) => ccDef(a).ap - ccDef(b).ap || ccDef(a).name.localeCompare(ccDef(b).name));
   const byType = t => cards.filter(id => ccDef(id).type === t).length, bySt = s => cards.filter(id => ccDef(id).style === s).length;
   const deckRow = d => `<button class="ccd-dk ${d.id === sv.sel ? 'on' : ''}" data-deck="${d.id}"><span class="ccd-dkic">${d.preset ? icon('lock') : CC_IC}</span><b>${esc(d.name)}</b><small class="${ccValidateDeck(d.cards).ok ? 'ok' : ''}">${d.cards.length}/30</small></button>`;
-  ccdEl.innerHTML = `<div class="ccd-bg"></div>
+  // the screen sits on a blurred copy of the deck leader's splash art (else coloured glows), so the glass panels show it;
+  // the layer is kept across redraws while the art stays the same (every added card redraws the screen)
+  const lead = ccLeaderOf(deck.id), bgSrc = (lead && baseArt(lead)) || '', oldBg = ccdEl.querySelector('.ccd-bg');
+  ccdEl.innerHTML = `<div class="ccd-bg ${bgSrc ? 'art' : ''}" data-src="${esc(bgSrc)}">${bgSrc ? `<img class="ccd-bgart" src="${bgSrc}" alt="">` : ''}<i class="ccd-glow g1"></i><i class="ccd-glow g2"></i><i class="ccd-glow g3"></i></div>
     <header class="ccd-head"><div class="inv-title"><span class="inv-badge">${CC_IC}</span><h2 class="ts">Deck</h2></div>
       <span class="ccd-rec" title="Quick match record">${icon('trophy')}<b>${sv.stats.w}</b> W · <b>${sv.stats.l}</b> L · <b>${sv.stats.d}</b> D</span>
       <button class="btn ghost ccd-help" id="ccdSkin" title="Board skins and card backs">${ccSkinIco(ccMySkin(), 'ccd-skic')}Skins</button>
@@ -84,6 +87,7 @@ function renderDeck() {
         ${ro ? '' : `<button class="btn ghost" id="ccdImport">${icon('edit')}Import</button><button class="btn ghost" id="ccdClear">${icon('trash')}Clear</button><button class="btn ghost danger" id="ccdDel">Delete</button>`}
       </div>
     </aside>`;
+  if (oldBg && oldBg.dataset.src === bgSrc) ccdEl.querySelector('.ccd-bg').replaceWith(oldBg);
   const ng = ccdEl.querySelector('.ccd-grid'); if (ng) ng.scrollTop = keep;
   const nl = ccdEl.querySelector('.ccd-list'); if (nl) nl.scrollTop = keepL;
   const $$ = s => ccdEl.querySelectorAll(s), one = s => ccdEl.querySelector(s);

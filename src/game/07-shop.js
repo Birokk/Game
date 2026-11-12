@@ -356,21 +356,64 @@ const ACH = [
   { id: 'friend5', name: 'Social Butterfly', desc: 'Have 5 friends', n: () => ((S.friends || {}).list || []).length, goal: 5 },
   { id: 'bp30', name: 'Honored', desc: 'Reach Pearl Honor level 30', n: () => bpLv(), goal: 30 },
   { id: 'spin', name: 'Wheel of Fortune', desc: 'Spin the daily wheel', n: () => S.spin.last ? 1 : 0, goal: 1 }
-].map(a => ({ ...a, pearls: a.long ? ACH_LONG_PEARLS : ACH_PEARLS, ok: () => a.n() >= a.goal }));
-function openAch() {
+].map(a => ({ ...a, cat: achCatOf(a.id), pearls: a.long ? ACH_LONG_PEARLS : ACH_PEARLS, ok: () => a.n() >= a.goal }));
+/* achievement categories (the owner asked for them organised in categories, with completed ones on top of the
+   category you are on): a rail of category tabs on the left (All first), each with its claimed count, a bar and a
+   red count of rewards waiting; the list puts ready-to-claim achievements first, then the ones in progress (closest
+   to done first), then the claimed ones */
+const ACH_CATS = [
+  { id: 'all', name: 'All', ic: 'grid', col: '#f5c4ff' },
+  { id: 'summon', name: 'Summons', ic: 'sparkle', col: '#ff9ad8' },
+  { id: 'chars', name: 'Characters', ic: 'chars', col: '#c9a6ff' },
+  { id: 'bond', name: 'Bond & Style', ic: 'heart', col: '#ff8fb8' },
+  { id: 'collect', name: 'Collection', ic: 'paw', col: '#7fe0b0' },
+  { id: 'adventure', name: 'Adventure', ic: 'swords', col: '#ffb35a' },
+  { id: 'base', name: 'Base & Social', ic: 'home', col: '#ffd977' },
+  { id: 'journey', name: 'Journey', ic: 'calendar', col: '#8fd8ff' }
+];
+function achCatOf(id) {
+  if (/^(pull|maxwin)/.test(id)) return 'summon';
+  if (/^(char|ur|star6|sss|cs)/.test(id)) return 'chars';
+  if (/^(bond|wed|gift|skin)/.test(id)) return 'bond';
+  if (/^(pet|mem|cloth|fullset)/.test(id)) return 'collect';
+  if (/^(raid|stam|gold|wish|scr|exp)/.test(id)) return 'adventure';
+  if (/^(farm|house|guild|friend)/.test(id)) return 'base';
+  return 'journey';   // logins, player level, VIP, Pearl Honor, the wheel
+}
+let achCat = 'all';
+const achState = a => S.ach.includes(a.id) ? 'got' : a.ok() ? 'ready' : 'prog';
+function openAch(cat) {
+  if (cat && ACH_CATS.some(c => c.id === cat)) achCat = cat;
   openModal({ title: 'Achievements', ic: 'trophy', wide: true, kind: 'ach', body: '<div id="achRoot"></div>', onMount: renderAch });
 }
 function renderAch() {
   const root = $('#achRoot'); if (!root) return;
-  const done = S.ach.length, ready = ACH.filter(a => a.ok() && !S.ach.includes(a.id));
-  root.innerHTML = `<div class="stack">
-    <div class="balance"><span>${done} / ${ACH.length} achievements</span><b>${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.reduce((t, a) => t + a.pearls, 0))}</button>` : `${curIcon('pearls')}${ACH_PEARLS} each`}</b></div>
-    <div class="ach-list">${ACH.map(a => { const got = S.ach.includes(a.id), ok = a.ok(), v = Math.min(a.goal, a.n());
-      return `<div class="ach ${got ? 'got' : ok ? 'ready' : ''}"><span class="ach-ic">${icon(got ? 'check' : 'trophy')}</span>
-        <div style="display:grid;gap:3px;min-width:0"><b>${esc(a.name)}${a.long ? ' <em class="ach-long">Legendary</em>' : ''}</b><span class="tiny">${esc(a.desc)}</span><span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${got ? '' : expTag(EXP.ach)}</div>
-        ${got ? '<span class="chip">Done</span>' : `<button class="btn sm ${ok ? 'gold' : 'ghost'}" data-ach="${a.id}" ${ok ? '' : 'disabled'}>${costHTML(a.pearls)}</button>`}</div>`; }).join('')}</div></div>`;
-  const claim = ids => { ids.forEach(id => { if (!S.ach.includes(id)) { S.ach.push(id); S.wallet.pearls += (ACH.find(a => a.id === id) || {}).pearls || ACH_PEARLS; gainExp(EXP.ach); } }); persist(); renderMenu(); renderAch(); toast(`+${ids.length * ACH_PEARLS} pearl${ids.length * ACH_PEARLS === 1 ? '' : 's'}`); };
+  const keep = root.querySelector('.ach-list'), top = keep && keep.dataset.cat === achCat ? keep.scrollTop : 0;
+  const inCat = c => c === 'all' ? ACH : ACH.filter(a => a.cat === c);
+  const C = ACH_CATS.find(c => c.id === achCat) || ACH_CATS[0], list = inCat(C.id);
+  const rank = { ready: 0, prog: 1, got: 2 }, frac = a => Math.min(1, a.n() / a.goal);
+  const sorted = list.map((a, i) => ({ a, i, st: achState(a) })).sort((x, y) => rank[x.st] - rank[y.st] || (x.st === 'prog' ? frac(y.a) - frac(x.a) : 0) || x.i - y.i);
+  const ready = list.filter(a => achState(a) === 'ready'), gotN = list.filter(a => S.ach.includes(a.id)).length;
+  const catBtn = c => { const L = inCat(c.id), g = L.filter(a => S.ach.includes(a.id)).length, r = L.filter(a => achState(a) === 'ready').length;
+    return `<button class="achx-cat ${c.id === C.id ? 'on' : ''}" data-achc="${c.id}" style="--ac:${c.col}"><span class="achx-ci">${icon(c.ic)}</span>
+      <span class="achx-ct"><b>${c.name}</b><small>${g} / ${L.length}</small><i class="achx-cb"><i style="width:${L.length ? g / L.length * 100 : 0}%"></i></i></span>${r ? `<em class="achx-n">${r}</em>` : ''}</button>`; };
+  const card = ({ a, st }) => { const v = Math.min(a.goal, a.n()), cc = ACH_CATS.find(c => c.id === a.cat);
+    return `<div class="ach ${st === 'got' ? 'got' : st === 'ready' ? 'ready' : ''}" style="--ac:${cc.col}">${st === 'ready' ? '<i class="ach-done">Completed</i>' : ''}<span class="ach-ic">${icon(st === 'got' ? 'check' : st === 'ready' ? 'trophy' : cc.ic)}</span>
+      <div class="ach-txt"><b>${esc(a.name)}${a.long ? ' <em class="ach-long">Legendary</em>' : ''}</b><span class="tiny">${esc(a.desc)}</span>
+        <span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="ach-meta"><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${st === 'got' ? '' : expTag(EXP.ach)}${C.id === 'all' ? `<span class="ach-cat">${icon(cc.ic)}${cc.name}</span>` : ''}</span></div>
+      ${st === 'got' ? `<span class="ach-claimed">${icon('check')}Claimed</span>` : `<button class="btn sm ${st === 'ready' ? 'gold' : 'ghost'}" data-ach="${a.id}" ${st === 'ready' ? '' : 'disabled'}>${st === 'ready' ? 'Claim ' : ''}${costHTML(a.pearls)}</button>`}</div>`; };
+  root.innerHTML = `<div class="achx">
+    <aside class="achx-cats" role="tablist">${ACH_CATS.map(catBtn).join('')}</aside>
+    <section class="achx-main">
+      <div class="achx-top" style="--ac:${C.col}"><span class="achx-hi">${icon(C.ic)}</span>
+        <span class="achx-ht"><b>${C.name}</b><small>${gotN} / ${list.length} claimed${ready.length ? ` · <em>${ready.length} ready</em>` : ''}${C.id === 'all' ? '' : ` · ${S.ach.length} / ${ACH.length} in all`}</small></span>
+        <span class="achx-pg"><i style="width:${list.length ? gotN / list.length * 100 : 0}%"></i></span>
+        ${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.reduce((t, a) => t + a.pearls, 0))}</button>` : `<span class="achx-each">${curIcon('pearls')}${ACH_PEARLS} each · ${ACH_LONG_PEARLS} for Legendary</span>`}</div>
+      <div class="ach-list" data-cat="${C.id}">${sorted.map(card).join('')}</div></section></div>`;
+  const nl = root.querySelector('.ach-list'); if (nl && top) nl.scrollTop = top;
+  const claim = ids => { let p = 0; ids.forEach(id => { if (!S.ach.includes(id)) { const a = ACH.find(x => x.id === id) || {}; S.ach.push(id); p += a.pearls || ACH_PEARLS; gainExp(EXP.ach); } }); S.wallet.pearls += p; persist(); renderMenu(); renderAch(); if (p) toast(`+${p} pearl${p === 1 ? '' : 's'}`); };
   root.querySelectorAll('[data-ach]').forEach(b => b.onclick = () => claim([b.dataset.ach]));
+  root.querySelectorAll('[data-achc]').forEach(b => b.onclick = () => { achCat = b.dataset.achc; renderAch(); });
   const all = $('#achAll'); if (all) all.onclick = () => claim(ready.map(a => a.id));
 }
 
