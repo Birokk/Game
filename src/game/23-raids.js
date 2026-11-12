@@ -192,8 +192,8 @@ function raidGo(open, cost, extra) {
         <div class="raid-ib">${!left ? `<span class="raid-iu">All used · back at midnight</span>` : `<button class="btn mint" data-clear="1" ${open ? '' : 'disabled'}>Clear ×1 ${curIcon('stamina')}${cost}</button>${left > 1 ? `<button class="btn ghost" data-clear="${Math.min(5, left)}" ${open ? '' : 'disabled'}>×${Math.min(5, left)} ${curIcon('stamina')}${cost * Math.min(5, left)}</button>` : ''}`}</div></div>
       ${extra}</div>`;
 }
-function openRaids() {
-  closeModal(); ensureRaidSet();
+function openRaids(id) {
+  closeModal(); ensureRaidSet(); if (id && raidOf(id)) raidSel = id;   // openRaids('vault'): the gold "+" opens the Golden Vault
   if (!raidEl) { raidEl = document.createElement('div'); raidEl.className = 'raid evp'; raidEl.setAttribute('role', 'dialog'); raidEl.setAttribute('aria-label', 'Raids'); document.body.appendChild(raidEl); }
   renderRaids();
 }

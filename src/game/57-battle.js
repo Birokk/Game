@@ -76,7 +76,7 @@ function renderBattle() {
   bthEl.innerHTML = `<div class="bth-bg" aria-hidden="true"><div class="bth-bga"></div><div class="bth-bga"></div><i class="bth-vig"></i></div>
     <header class="bth-head"><div class="inv-title"><span class="inv-badge">${icon('swords')}</span><h2 class="ts">Battle</h2></div>${infoBtn('battle', 'How Battle works')}
       <span class="bth-sp"></span>
-      <div class="bth-curs">${cur('stamina', 'Stamina', `<button class="plus" id="bthStam" aria-label="Get more stamina">${icon('plus')}</button>`)}${cur('coins', 'Gold coins', '')}${cur('pearls', 'Pearls', `<button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button>`)}</div>
+      <div class="bth-curs">${cur('stamina', 'Stamina', `<button class="plus" id="bthStam" aria-label="Get more stamina">${icon('plus')}</button>`)}${cur('coins', 'Gold coins', `<button class="plus" data-open="vault" aria-label="Get more gold: Golden Vault">${icon('plus')}</button>`)}${cur('pearls', 'Pearls', `<button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button>`)}</div>
       ${canAdmin() ? `<button class="btn ghost bth-adm" id="bthAdm" title="Admin: card wallpapers">${icon('image')}<span>Wallpapers</span></button>` : ''}
       <button class="inv-x" id="bthClose" aria-label="Close">${icon('close')}</button></header>
     <section class="bth-stage"><div class="bth-row">${BTH_MODES.map(bthCard).join('')}</div></section>`;

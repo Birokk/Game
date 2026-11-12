@@ -156,17 +156,36 @@ FRAMES.push({ id: 'crown', name: 'Moonlit Halo', need: 'bpcrown', premium: true 
 CARDS.push({ id: 'honor', name: 'Pearl Honor', need: 'bpcrown', premium: true });
 UNLOCK.bpcrown = [() => (S.unlocks || []).includes('bp-crown'), 'Unlock Moon Tide in Pearl Honor'];
 
-/* ---------- the Pearl Honor window ---------- */
-let bpTab = 'rewards', bpMTab = 'bpd';
-function openHonor(tab) { if (tab) bpTab = tab; bpState(); openModal({ title: 'Pearl Honor', ic: 'medal', wide: true, kind: 'honor', body: '<div id="bpRoot"></div>', onMount: () => renderHonor(true) }); }
+/* ---------- the Pearl Honor page (a full screen of its own, .bpx; it was a wide window before) ----------
+   A drawn moonlit sea behind (or the admin's wallpaper, media key honor:bg, framed with Adjust position) so the
+   see-through glass panels and tabs have something to show through. */
+let bpTab = 'rewards', bpMTab = 'bpd', bpEl = null;
+const BPX_PEARLS = [[6, 9, 19, 0], [14, 6, 23, 7], [23, 12, 17, 3], [31, 7, 26, 12], [42, 10, 21, 5], [53, 5, 28, 15], [61, 11, 18, 9], [70, 8, 24, 1], [78, 13, 20, 11], [87, 6, 27, 6], [94, 9, 22, 14]];
+function bpxBgHTML() {
+  const art = artImg('honor:bg', 'bpx-wp');
+  return `${art}<div class="bpx-sky ${art ? 'art' : ''}"><i class="bpx-glow g1"></i><i class="bpx-glow g2"></i><i class="bpx-glow g3"></i>
+    ${art ? '' : '<i class="bpx-stars s1"></i><i class="bpx-stars s2"></i><i class="bpx-moon"></i><span class="bpx-sea"><i class="w1"></i><i class="w2"></i><i class="w3"></i></span><i class="bpx-path"></i>'}
+    ${BPX_PEARLS.map(([x, s, d, dl]) => `<i class="bpx-pl" style="--x:${x}%;--s:${s}px;--d:${d}s;--dl:-${dl}s;--sw:${(x % 3 - 1) * 24}px"></i>`).join('')}</div><i class="bpx-vig"></i>`;
+}
+function openHonor(tab) {
+  if (tab) bpTab = tab; bpState(); closeModal();
+  if (!bpEl) { bpEl = document.createElement('div'); bpEl.className = 'bpx'; bpEl.setAttribute('role', 'dialog'); bpEl.setAttribute('aria-label', 'Pearl Honor');
+    bpEl.innerHTML = `<div class="bpx-bg" aria-hidden="true">${bpxBgHTML()}</div><div id="bpRoot" class="bpx-in"></div>`; document.body.appendChild(bpEl); }
+  renderHonor(true);
+}
+function bpxBgRefresh() { const b = bpEl && bpEl.querySelector('.bpx-bg'); if (b) b.innerHTML = bpxBgHTML(); }
+function closeHonor() { if (bpEl) { bpEl.remove(); bpEl = null; } renderMenu(); }
+addEventListener('keydown', e => { if (bpEl && e.key === 'Escape' && !document.querySelector('.modal-back,.mall,.rewpop')) { e.stopPropagation(); closeHonor(); } }, true);
 const bpLeftTxt = () => { const s = Math.max(0, bpEnds() - Date.now()) / 1000, d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60); return `${d}d ${h}h ${m}m`; };
+/* where a level column sits inside the scrolling track, whatever its offset parent is */
+const bpColX = (t, c) => c.getBoundingClientRect().left - t.getBoundingClientRect().left + t.scrollLeft;
 function renderHonor(jump) {
   const root = $('#bpRoot'); if (!root) return;
   const st = bpState(), lv = bpLv(), into = lv >= BP_MAX ? BP_LV_XP : st.xp - (lv - 1) * BP_LV_XP, keep = $('#bpTrack') ? $('#bpTrack').scrollLeft : null;
   const tabs = [['rewards', 'gift', 'Rewards'], ['missions', 'quests', 'Missions'], ['unlock', 'medal', 'Unlock']];
   const dotFor = k => k === 'rewards' ? bpClaimable().length : k === 'missions' ? bpMissionsReady() : 0;
   const head = `<div class="bp-head"><span class="bp-lvc"><small>Lv</small><b>${lv}</b></span>
-    <div class="bp-hinfo"><div class="bp-hrow"><span><b>Season ${st.season + 1}</b> · Ends in ${bpLeftTxt()}</span><span>${lv >= BP_MAX ? 'Max level' : `${fmt(into)} / ${fmt(BP_LV_XP)}`}</span></div>
+    <div class="bp-hinfo"><div class="bp-hrow"><span><b class="bp-hlv">Honor level ${lv}</b><span class="bp-hseason"> · Season ${st.season + 1} · Ends in ${bpLeftTxt()}</span></span><span>${lv >= BP_MAX ? 'Max level' : `${curIcon('honor')}${fmt(into)} / ${fmt(BP_LV_XP)}`}</span></div>
       <div class="bp-bar"><i style="width:${Math.min(100, into / BP_LV_XP * 100)}%"></i></div>
       <div class="bp-hrow tiny"><span>${st.tier === 2 ? 'Moon Tide active' : st.tier === 1 ? 'Coral Tide active' : 'Free track'}</span><span>Weekly EXP limit ${fmt(st.wk.xp)} / ${fmt(BP_WEEK_CAP)}</span></div></div>
     <button class="btn gold sm bp-buylv" id="bpBuyLv" ${lv >= BP_MAX ? 'disabled' : ''}>${icon('plus')}Purchase level</button></div>`;
@@ -175,13 +194,21 @@ function renderHonor(jump) {
     const cell = (l, t) => { const [k, n] = Object.entries(bpReward(l, t))[0], got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
       return bpItem(k, n, got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : '', `bp-cell ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''} ${lock ? 'locked' : ''}`, `data-bpc="${l}|${t}"`); };
     const cols = Array.from({ length: BP_MAX }, (_, i) => i + 1).map(l => `<div class="bp-col ${l === lv ? 'now' : ''} ${l <= lv ? 'reached' : ''} ${l % 10 === 0 ? 'big' : ''}" data-lv="${l}"><span class="bp-lvt">Lv. ${l}</span>${cell(l, 'free')}${cell(l, 'paid')}</div>`).join('');
-    const n = bpClaimable().length;
+    const n = bpClaimable().length, nm = (k, v) => `${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}`;
+    const next = Math.min(BP_MAX, Math.ceil((lv + 1) / 10) * 10);
+    const miles = Array.from({ length: BP_MAX / 10 }, (_, i) => (i + 1) * 10).map(l => { const [fk, fn] = Object.entries(bpReward(l, 'free'))[0], [pk, pn] = Object.entries(bpReward(l, 'paid'))[0];
+      const gf = st.free.includes(l), gp = st.paid.includes(l);
+      return `<button type="button" class="bp-mile ${l <= lv ? 'on' : ''} ${l === next && lv < BP_MAX ? 'next' : ''}" data-bpml="${l}" title="Level ${l}: ${nm(fk, fn)} · ${BP_NAMES.paid}: ${nm(pk, pn)}">
+        <span class="bp-mlv">Lv ${l}</span><span class="bp-mits"><i class="r${REW_R[fk] || 4} ${gf ? 'got' : bpCanClaim(l, 'free') ? 'can' : ''}">${curIcon(fk)}<b>${fmt(fn)}</b>${gf ? icon('check') : ''}</i><i class="r${REW_R[pk] || 4} ${gp ? 'got' : bpCanClaim(l, 'paid') ? 'can' : ''} ${st.tier ? '' : 'lk'}">${curIcon(pk)}<b>${fmt(pn)}</b>${gp ? icon('check') : st.tier ? '' : icon('lock')}</i></span></button>`; }).join('');
+    const mlFill = Math.min(100, Math.max(0, (lv - 10) / (BP_MAX - 10) * 100));
     body = `<div class="bp-rew">
       <div class="bp-labels"><div class="bp-lab"><span class="bp-emb">${bpEmblem(0)}</span><b>${BP_NAMES.free}</b></div><div class="bp-lab paid ${st.tier ? '' : 'locked'}"><span class="bp-emb">${bpEmblem(1)}</span><b>${BP_NAMES.paid}</b>${st.tier ? '' : `<small>${icon('lock')}Locked</small>`}</div></div>
       <div class="bp-track" id="bpTrack">${cols}</div>
       <div class="bp-side"><div class="bp-show"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(64, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + namecard</small></div>
         ${st.tier ? `<button class="btn gold bp-claim" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>` : `<button class="btn gold bp-claim" data-bptab="unlock">Unlock ${BP_NAMES.paid}</button><button class="btn ghost sm" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>`}</div>
-    </div>`;
+    </div>
+    <div class="bp-mls"><div class="bp-mlh"><b>Season milestones</b><small>Every 10th level · tap one to see it on the track</small></div>
+      <div class="bp-mlrow" style="--mf:${mlFill}%"><span class="bp-mlbar" aria-hidden="true"><i></i></span>${miles}</div></div>`;
   } else if (bpTab === 'missions') {
     const set = bpMTab, L = BP_SETS[set].list, order = q => qCan(q, set) ? 0 : qDone(q, set) ? 2 : 1;
     const ready = L.filter(q => qCan(q, set)).length, total = L.reduce((t, q) => t + q.xp, 0);
@@ -217,18 +244,27 @@ function renderHonor(jump) {
       <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
       <div class="bp-offers">${BP_OFFERS.map(card).join('')}</div></div>`;
   }
-  root.innerHTML = `<div class="bp"><div class="bp-tabs">${tabs.map(([k, ic, l]) => `<button class="bp-tab ${k === bpTab ? 'on' : ''}" data-bptab="${k}" aria-label="${l}"><span class="bp-ti">${icon(ic)}</span><small>${l}</small>${k !== bpTab && dotFor(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div>${head}${body}</div>`;
+  root.innerHTML = `<header class="bpx-head">
+      <div class="bpx-hl"><div class="inv-title"><span class="inv-badge">${icon('medal')}</span><h2 class="ts">Pearl Honor</h2></div>
+        <span class="bpx-season" title="Season ${st.season + 1} ends in ${bpLeftTxt()}">${icon('clock')}<b>Season ${st.season + 1}</b><small>${bpLeftTxt().replace(/ \d+m$/, '')} left</small></span></div>
+      <nav class="bpx-tabs" role="tablist">${tabs.map(([k, ic, l]) => `<button class="bpx-tab ${k === bpTab ? 'on' : ''}" role="tab" aria-selected="${k === bpTab}" data-bptab="${k}">${icon(ic)}<span>${l}</span>${k !== bpTab && dotFor(k) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</nav>
+      <div class="bpx-hr"><div class="cur" data-k="pearls" title="Pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b><button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button></div>
+        <button class="inv-x" id="bpxClose" aria-label="Close">${icon('close')}</button></div></header>
+    <div class="bpx-body t-${bpTab}">${head}${body}</div>`;
+  $('#bpxClose').onclick = closeHonor;
   root.querySelectorAll('[data-bptab]').forEach(b => b.onclick = () => { bpTab = b.dataset.bptab; renderHonor(true); });
   root.querySelectorAll('[data-bpm]').forEach(b => b.onclick = () => { bpMTab = b.dataset.bpm; renderHonor(); });
   root.querySelectorAll('[data-bpc]').forEach(b => b.onclick = () => { const [l, t] = b.dataset.bpc.split('|'); if (bpCanClaim(+l, t)) bpClaimAll(); else if (t === 'paid' && !st.tier) { bpTab = 'unlock'; renderHonor(); } });
   root.querySelectorAll('[data-bpmc]').forEach(b => b.onclick = () => bpClaimMissions(bpMTab));
-  root.querySelectorAll('[data-bpgo]').forEach(b => b.onclick = () => { closeModal(); Q_GO[b.dataset.bpgo] && Q_GO[b.dataset.bpgo](); });
+  root.querySelectorAll('[data-bpgo]').forEach(b => b.onclick = () => { closeHonor(); Q_GO[b.dataset.bpgo] && Q_GO[b.dataset.bpgo](); });
   root.querySelectorAll('[data-bpbuy]').forEach(b => b.onclick = () => bpBuy(b.dataset.bpbuy));
   const ma = $('#bpMAll'); if (ma) ma.onclick = () => bpClaimMissions(bpMTab);
   const ca = $('#bpClaim'); if (ca) ca.onclick = bpClaimAll;
   $('#bpBuyLv').onclick = bpBuyLevels;
+  root.querySelectorAll('[data-bpml]').forEach(b => b.onclick = () => { const t = $('#bpTrack'), c = t && t.querySelector(`.bp-col[data-lv="${b.dataset.bpml}"]`); if (!c) return;
+    t.scrollTo({ left: Math.max(0, bpColX(t, c) - (t.clientWidth - c.offsetWidth) / 2), behavior: 'smooth' }); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); });
   const tr = $('#bpTrack');
-  if (tr) { if (jump || keep === null) { const c = tr.querySelector('.bp-col.now'); if (c) tr.scrollLeft = Math.max(0, c.offsetLeft - tr.offsetLeft - 120); } else tr.scrollLeft = keep;
+  if (tr) { if (jump || keep === null) { const c = tr.querySelector('.bp-col.now'); if (c) tr.scrollLeft = Math.max(0, bpColX(tr, c) - 120); } else tr.scrollLeft = keep;
     tr.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { tr.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false }); }
 }
 

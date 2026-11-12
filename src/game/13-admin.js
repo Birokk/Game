@@ -23,7 +23,8 @@ const ADMIN_NAV = [
   { g: 'Events & shop', ic: 'gift', items: [
     ['events', 'Events', 'calendar', 'daily login mystery fountain monthly sign-in scratch daily spin art event wallpaper', 'The event page: built-in events, your own events, their wallpapers and the daily spin art'],
     ['offers', 'Special offers', 'gift', 'first top-up bundles offer popup', 'Time-limited offers: when they sell, their rewards and their pictures'],
-    ['shopart', 'Shop pictures', 'shop', 'top up icons membership cards pearl packs', 'Top Up pack pictures and the membership cards']] },
+    ['shopart', 'Shop pictures', 'shop', 'top up icons membership cards pearl packs', 'Top Up pack pictures and the membership cards'],
+    ['honor', 'Pearl Honor', 'medal', 'battle pass honor wallpaper emblems pearl gift coral tide moon tide season', 'The Pearl Honor page wallpaper and the three track emblems']] },
   { g: 'Modes & places', ic: 'swords', items: [
     ['battle', 'Battle screen', 'swords', 'campaign raids great tree quick match card wallpapers chapter guild boss dragon', 'The Battle screen cards, the guild boss and the campaign chapter wallpapers'],
     ['raids', 'Raids', 'raid', 'dungeons wallpaper gear sets golden vault', 'Raid wallpapers and the pieces of every raid set'],
@@ -35,7 +36,7 @@ const ADMIN_NAV = [
   { g: 'Look & icons', ic: 'image', items: [
     ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
     ['icons', 'Interface icons', 'grid', 'replace any icon ui', 'Replace any icon of the interface with a picture'],
-    ['art', 'Item icons', 'coin', 'exp egg memory ticket name selector fragments summon points guild points pearl honor emblems currency', 'Icons of currencies and items: EXP, eggs, tickets, fragments, points, Pearl Honor emblems']] },
+    ['art', 'Item icons', 'coin', 'exp egg memory ticket name selector fragments summon points guild points currency', 'Icons of currencies and items: EXP, eggs, tickets, fragments, points']] },
   { g: 'Testing & server', ic: 'wrench', items: [
     ['wallet', 'Test tools', 'wrench', 'wallet currencies reset pity unlock level vip honor guild farm stamina rankings', 'Test balances and resets for every feature (only this browser)'],
     ['server', 'Server', 'upload', 'publish supabase cloud support inbox connection', 'The server connection, publishing content and the support inbox']] }
@@ -87,6 +88,7 @@ function renderAdminTab() {
   if (adminTab === 'pullfx') return renderPullFxTab();
   if (adminTab === 'art') return renderArtTab();
   if (adminTab === 'shopart') return renderShopArtTab();
+  if (adminTab === 'honor') return renderHonorArtTab();
   if (adminTab === 'battle') return renderBattleTab();
   renderPoolTab();
 }
@@ -974,13 +976,18 @@ function bindPullBg(rerender) {
   document.querySelectorAll('[data-pv="ten"]').forEach(b => { if (!b.onclick) b.onclick = () => { closeSettings(); previewPull('ten'); }; });
 }
 
-/* Item icons: the currency and item icons (EXP, eggs, tickets, fragments, points, Pearl Honor emblems); Shop pictures: the Top Up
+/* Item icons: the currency and item icons (EXP, eggs, tickets, fragments, points); Pearl Honor: its wallpaper and emblems; Shop pictures: the Top Up
    pack pictures and the membership cards. Rows from adminArtRows (04-modals.js); the other admin pictures sit on their own pages
    (summon art → Summon animation, chapter wallpapers → Battle screen, Camp / Expedition wallpapers → Camp / Expedition, daily spin art → Events) */
 function renderArtTab() {
   const p = $('#adPanel'); if (!p) return;
   p.innerHTML = `<div class="stack"><p class="tiny">Players see these icons wherever the item appears (shop, Bag, rewards). Square PNGs with a transparent background work best.</p><div class="setx-list ad-art">${adminArtRows('icons')}</div></div>`;
   bindAdminArt(p, renderArtTab);
+}
+function renderHonorArtTab() {
+  const p = $('#adPanel'); if (!p) return;
+  p.innerHTML = `<div class="stack"><p class="tiny">The Pearl Honor page fills the screen. Without a wallpaper it shows a drawn moonlit sea; the panels and tabs are see-through glass over it.</p><div class="setx-list ad-art">${adminArtRows('honor')}</div></div>`;
+  bindAdminArt(p, renderHonorArtTab);
 }
 function renderShopArtTab() {
   const p = $('#adPanel'); if (!p) return;
