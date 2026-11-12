@@ -44,7 +44,26 @@ let mailSel = null;
 const allMail = () => [...(S.mailbox || []).slice().reverse(), ...MAILS];
 const mailList = () => allMail().filter(m => !(S.mailDel || []).includes(m.id));
 /* add a letter to the player's mailbox (redeem codes use it); newest is shown first */
-function sendMail(m) { S.mailbox = [...(S.mailbox || []), { date: dayKey(), ...m }]; persist(); renderMenu(); }
+function sendMail(m) { mailAdd([{ date: dayKey(), ...m }]); persist(); renderMenu(); }
+/* every letter sent in the game goes through mailAdd; the mailbox keeps at most MAIL_CAP letters (the oldest letters that
+   are read, claimed and not starred go first). Each letter id is only ever sent once (the senders keep their own state:
+   S.redeemed, S.rankRew, S.memberDay, S.guild.boss.mailed, S.arena.wk), so a deleted letter can be dropped for good. */
+const MAIL_IDS = new Set(MAILS.map(m => m.id));
+function mailAdd(list) {
+  S.mailbox = [...(S.mailbox || []), ...list];
+  let over = S.mailbox.length + MAILS.length - MAIL_CAP;
+  if (over > 0) { const done = m => mailRead(m.id) && !mailFav(m.id) && (!m.reward || S.mailClaimed.includes(m.id)), gone = new Set();
+    for (const m of S.mailbox) { if (over <= 0) break; if (done(m)) { gone.add(m.id); over--; } }
+    if (gone.size) mailForget(gone); }
+}
+/* drop letters from the mailbox with their read / claimed / starred marks; the built-in letters (MAILS) stay hidden by S.mailDel */
+function mailForget(ids) {
+  const set = ids instanceof Set ? ids : new Set(ids), mine = id => set.has(id) && !MAIL_IDS.has(id), keep = a => (a || []).filter(id => !mine(id));
+  S.mailbox = (S.mailbox || []).filter(m => !set.has(m.id));
+  S.mailRead = keep(S.mailRead); S.mailClaimed = keep(S.mailClaimed); S.mailFav = keep(S.mailFav); S.mailDel = keep(S.mailDel);
+}
+/* older saves only hid deleted letters: drop them for real once (boot) */
+function mailTidy() { const del = (S.mailDel || []).filter(id => !MAIL_IDS.has(id)); if (del.length) mailForget(del); }
 const mailRead = id => (S.mailRead || []).includes(id) || S.mailClaimed.includes(id);
 const mailOpen = m => !mailRead(m.id) || (m.reward && !S.mailClaimed.includes(m.id));   // still needs attention
 const mailFav = id => (S.mailFav || []).includes(id);
@@ -56,7 +75,7 @@ function claimMail(ids) {
   persist(); renderMail(); renderMenu(); refreshSummon();
   if (Object.keys(got).length) showRewards('Mail rewards', got, `${ids.filter(id => S.mailClaimed.includes(id)).length > 1 ? 'Every attachment claimed' : 'Attachment claimed'}`);
 }
-function deleteMail(ids) { S.mailDel = [...new Set([...(S.mailDel || []), ...ids])]; persist(); renderMail(); renderMenu(); }
+function deleteMail(ids) { mailForget(ids); S.mailDel = [...new Set([...(S.mailDel || []), ...ids.filter(id => MAIL_IDS.has(id))])]; if (ids.includes(mailSel)) mailSel = null; persist(); renderMail(); renderMenu(); }
 function renderMail() {
   const el = $('#mailList'); if (!el) return;
   const list = mailList();
@@ -191,8 +210,8 @@ const infoBtn = (key, label = 'Drop chances and info') => `<button type="button"
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-info]'); if (!b || !INFO[b.dataset.info]) return;
   e.stopPropagation(); e.preventDefault();
-  const { title, body } = INFO[b.dataset.info]();
-  openModal({ title, ic: 'info', kind: 'info', body: `<div class="stack info-body">${body}</div>` });
+  const { title, body, kind } = INFO[b.dataset.info]();   // kind: an optional window kind for a wider info window
+  openModal({ title, ic: 'info', kind: kind || 'info', body: `<div class="stack info-body">${body}</div>` });
 }, true);
 
 /* admin-only pictures (formerly Settings → Admin), in sections so each sits on the admin page it belongs to:
@@ -200,12 +219,14 @@ document.addEventListener('click', e => {
    'campaign' = chapter wallpapers (admin → Battle screen), 'camp' / 'exp' = the Base's Camp and Expedition wallpapers (admin → Camp /
    Expedition), 'spin' = the Daily spin art, 'summon' = the summon animation pictures. No section = all of them. Bound by bindAdminArt. */
 const adArtBtn = (id, label, cls = '') => `<button type="button" class="sx-btn ${cls}" id="${id}">${label}</button>`;
+/* one row to replace an item icon (icon slot k, stored as icon:<k>): the current icon, Change, and Default once replaced */
+const adIconRow = (k, label, desc) => setRow(label, `<span class="set-exp">${curIcon(k)}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="${k}"></label>${customIcon(k) ? `<button type="button" class="sx-btn" data-iconreset="${k}">Default</button>` : ''}`, desc);
 const ADMIN_ART = {
   exp: () => setRow('EXP icon', `<span class="set-exp">${curIcon('exp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpUp"></label>${customIcon('exp') ? adArtBtn('setExpReset', 'Default') : ''}`, 'Shown only where EXP is given as a reward'),
   egg: () => ['ssr', 'ur'].map(r => setRow(`${r.toUpperCase()} egg icon`, `<span class="set-exp">${eggHTML(r, 'sm')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-eggup="${r}"></label>${customIcon('egg' + r) ? `<button type="button" class="sx-btn" data-eggreset="${r}">Default</button>` : ''}`, 'The full egg in the hatchery, inventory and hatch animation')).join(''),
   topup: () => `<div class="sx-row sx-block"><span class="sx-l">Top Up icons<small>The picture of each pearl pack in the shop's Top Up tab (shown as is, no frame)</small></span><div class="sx-c"><div class="tu-ad">${TOPUP.map(([n], i) => `<div class="tu-slot"><span class="tu-pic">${topupIcon(i)}</span><small>${fmt(n)}</small><label class="sx-btn tu-btn">${icon('upload')}<input type="file" accept="image/*" class="sr" data-tuup="${i}"></label>${MEDIA.get('topup:' + i) ? `<button type="button" class="link" data-tureset="${i}">Default</button>` : ''}</div>`).join('')}</div></div></div>`,
   pass: () => PASSES.map(p => setRow(`${p.name} card`, `<span class="set-exp pass-set">${curIcon(p.icon)}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="${p.icon}"></label>${customIcon(p.icon) ? `<button type="button" class="sx-btn" data-iconreset="${p.icon}">Default</button>` : ''}`, `The membership card in the shop's Hot Picks (${p.price} pearls)`)).join(''),
-  memtk: () => setRow('UR memory ticket icon', `<span class="set-exp">${curIcon('memtk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="memtk"></label>${customIcon('memtk') ? '<button type="button" class="sx-btn" data-iconreset="memtk">Default</button>' : ''}`, 'From the Prism Membership; used from the Bag for a random UR memory'),
+  memtk: () => adIconRow('memtk', 'UR memory ticket icon', 'From the Prism Membership; used from the Bag for a random UR memory'),
   campbg: () => setRow('Camp wallpaper', `<span class="set-wp">${MEDIA.get('camp:bg') ? `<img src="${MEDIA.get('camp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setCampBg"></label>${MEDIA.get('camp:bg') ? adArtBtn('setCampBgDel', 'Default') : ''}${artFrameBtn('camp:bg', 'stage', 'Camp wallpaper')}`, 'Behind the Base\'s Camp tab (1920×1080 best). Default: black'),
   chapters: () => CC_CAMP.map(c => { const k = 'camp:bg:' + c.id, u = MEDIA.get(k); return setRow(`Campaign · Chapter ${c.no} wallpaper`, `<span class="set-wp">${u ? `<img src="${u}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-campbg="${c.id}"></label>${u ? `<button type="button" class="sx-btn" data-campbgdel="${c.id}">Default</button>` : ''}${artFrameBtn(k, 'map', `Chapter ${c.no} wallpaper`)}`, `Fills the map of Chapter ${c.no} · ${c.name} on the campaign screen, only inside its panel (1920×1080 best). Default: the night sky`); }).join(''),
   expbg: () => setRow('Expedition wallpaper', `<span class="set-wp">${MEDIA.get('exp:bg') ? `<img src="${MEDIA.get('exp:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setExpBg"></label>${MEDIA.get('exp:bg') ? adArtBtn('setExpBgDel', 'Default') : ''}${artFrameBtn('exp:bg', 'stage', 'Expedition wallpaper')}`, 'Behind the Base\'s Expedition tab (1920×1080 best). Default: black'),
@@ -217,13 +238,13 @@ const ADMIN_ART = {
   honorbg: () => setRow('Pearl Honor wallpaper', `<span class="set-wp">${MEDIA.get('honor:bg') ? `<img src="${MEDIA.get('honor:bg')}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="setHonorBg"></label>${MEDIA.get('honor:bg') ? adArtBtn('setHonorBgDel', 'Default') : ''}${artFrameBtn('honor:bg', 'screen', 'Pearl Honor wallpaper')}`, 'Behind the whole Pearl Honor page (1920×1080 best; default: a drawn moonlit sea)'),
   honorblur: () => setRow('Pearl Honor background blur', `<input type="range" min="0" max="30" step="1" value="${bpxBlur()}" id="setHonorBlur" class="afr-range" aria-label="Background blur"><b class="set-num" id="setHonorBlurN">${bpxBlur()} px</b>${S.honorBg && S.honorBg.blur != null ? adArtBtn('setHonorBlurDef', 'Default') : ''}`, `How soft the background looks behind the glass panels (0 = sharp, default ${BPX_BLUR} px). Applies to the wallpaper and to the drawn sea.`),
   bp: () => [['bp0', 'Pearl Honor: Pearl Gift icon', 'The free track emblem in Pearl Honor'], ['bp1', 'Pearl Honor: Coral Tide icon', 'The paid track emblem and the Coral Tide offer card'], ['bp2', 'Pearl Honor: Moon Tide icon', 'The Moon Tide offer card ($19.99)']].map(([k, l, d]) => setRow(l, `<span class="set-exp">${bpEmblem(+k[2])}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="${k}"></label>${customIcon(k) ? `<button type="button" class="sx-btn" data-iconreset="${k}">Default</button>` : ''}`, d)).join(''),
-  gpts: () => setRow('Guild points icon', `<span class="set-exp">${curIcon('gpts')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="gpts"></label>${customIcon('gpts') ? '<button type="button" class="sx-btn" data-iconreset="gpts">Default</button>' : ''}`, 'Earned from the guild daily reward, spent in the Guild Shop'),
-  spt: () => setRow('Banner points icon', `<span class="set-exp">${curIcon('spt')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="spt"></label>${customIcon('spt') ? '<button type="button" class="sx-btn" data-iconreset="spt">Default</button>' : ''}`, 'Summon points of the Limited, Weekly and Outfit banners'),
-  sptp: () => setRow('Permanent points icon', `<span class="set-exp">${curIcon('sptp')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="sptp"></label>${customIcon('sptp') ? '<button type="button" class="sx-btn" data-iconreset="sptp">Default</button>' : ''}`, 'Permanent summon points (Permanent and Memory banners)'),
-  ursel: () => setRow('UR selector icon', `<span class="set-exp">${curIcon('ursel')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="ursel"></label>${customIcon('ursel') ? '<button type="button" class="sx-btn" data-iconreset="ursel">Default</button>' : ''}`, 'The UR selector from the permanent banner milestones (300 and 600 pulls)'),
-  cfur: () => setRow('UR character fragment icon', `<span class="set-exp">${curIcon('cfur')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="cfur"></label>${customIcon('cfur') ? '<button type="button" class="sx-btn" data-iconreset="cfur">Default</button>' : ''}`, 'Dropped by summons; 60 = random UR, 120 = chosen UR'),
-  cfssr: () => setRow('SSR character fragment icon', `<span class="set-exp">${curIcon('cfssr')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="cfssr"></label>${customIcon('cfssr') ? '<button type="button" class="sx-btn" data-iconreset="cfssr">Default</button>' : ''}`, 'Dropped by summons; 60 = random SSR, 120 = chosen SSR'),
-  nametk: () => setRow('Name change ticket icon', `<span class="set-exp">${curIcon('nametk')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="nametk"></label>${customIcon('nametk') ? '<button type="button" class="sx-btn" data-iconreset="nametk">Default</button>' : ''}`, 'The ticket used to change a player name (shop, Bag, rewards)'),
+  gpts: () => adIconRow('gpts', 'Guild points icon', 'Earned from the guild daily reward, spent in the Guild Shop'),
+  spt: () => adIconRow('spt', 'Banner points icon', 'Summon points of the Limited, Weekly and Outfit banners'),
+  sptp: () => adIconRow('sptp', 'Permanent points icon', 'Permanent summon points (Permanent and Memory banners)'),
+  ursel: () => adIconRow('ursel', 'UR selector icon', 'The UR selector from the permanent banner milestones (300 and 600 pulls)'),
+  cfur: () => adIconRow('cfur', 'UR character fragment icon', 'Dropped by summons; 60 = random UR, 120 = chosen UR'),
+  cfssr: () => adIconRow('cfssr', 'SSR character fragment icon', 'Dropped by summons; 60 = random SSR, 120 = chosen SSR'),
+  nametk: () => adIconRow('nametk', 'Name change ticket icon', 'The ticket used to change a player name (shop, Bag, rewards)'),
 };
 const ADMIN_ART_SECS = {'icons': ['exp', 'egg', 'memtk', 'nametk', 'ursel', 'cfur', 'cfssr', 'spt', 'sptp', 'gpts'], 'honor': ['honorbg', 'honorblur', 'bp'], 'shop': ['topup', 'pass'], 'campaign': ['chapters'], 'camp': ['campbg'], 'exp': ['expbg'], 'spin': ['spin'], 'summon': ['pullbg', 'dbl', 'mw', 'up']};
 function adminArtRows(sec) {

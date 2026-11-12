@@ -307,14 +307,28 @@ function sampleState() {
     ]
   };
 }
+/* Loading the save. A save that can't be read is never thrown away silently (the next persist would overwrite it): its
+   raw text is copied to '<key>.broken', the last good copy ('<key>.bak', written at every boot that loaded cleanly) is
+   used instead, and LOAD_FAIL tells the player at boot. A player save without content (or the other way round) still
+   loads with the defaults for the missing half. */
+let LOAD_FAIL = null, LOAD_RAW = null;
 let S = (() => {
   const base = sampleState();
+  let raw = null, rawC = null;
+  try { raw = localStorage.getItem(KEY); rawC = localStorage.getItem(CONTENT_KEY); } catch (e) { return base; }
+  if (!raw && !rawC) return base;
+  const tryParse = t => { if (!t) return null; try { const v = JSON.parse(t); return v && typeof v === 'object' ? v : undefined; } catch (e) { return undefined; } };   // undefined = broken
+  const keepBroken = (k, t) => { try { if (t) localStorage.setItem(k + '.broken', t); } catch (e) {} };
+  let ds = tryParse(raw), dc = tryParse(rawC);
+  if (ds === undefined) { keepBroken(KEY, raw); ds = tryParse(localStorage.getItem(KEY + '.bak')) || null; LOAD_FAIL = { save: true, restored: !!ds }; }
+  if (dc === undefined) { keepBroken(CONTENT_KEY, rawC); dc = tryParse(localStorage.getItem(CONTENT_KEY + '.bak')) || null; LOAD_FAIL = { ...(LOAD_FAIL || {}), content: true, restoredC: !!dc }; }
+  if (!LOAD_FAIL) LOAD_RAW = { raw, rawC };   // a clean load: boot backs these up
   try {
-    const raw = localStorage.getItem(KEY), rawC = localStorage.getItem(CONTENT_KEY);
-    if (raw || rawC) {
+    {
       // older saves kept the content inside the player save; the content copy wins when both exist
-      const d = { ...(raw ? JSON.parse(raw) : {}), ...(rawC ? JSON.parse(rawC) : {}) };
-      if (d && Array.isArray(d.pool)) {
+      const d = { ...(ds || {}), ...(dc || {}) };
+      if (!Array.isArray(d.pool)) delete d.pool;   // no content: keep the default pool, still load the player's progress
+      {
         const s = Object.assign(base, d);
         s.wallet = { ...sampleState().wallet, ...(d.wallet || {}) };
         if ('gems' in s.wallet) { delete s.wallet.gems; }
@@ -337,8 +351,8 @@ let S = (() => {
         return s;
       }
     }
-  } catch (e) {}
-  return base;
+  } catch (e) { keepBroken(KEY, raw); keepBroken(CONTENT_KEY, rawC); LOAD_FAIL = { ...(LOAD_FAIL || {}), err: String(e && e.message || e) }; LOAD_RAW = null; console.error('Save could not be loaded', e); }
+  return sampleState();
 })();
 if (!S.media) S.media = {};
 let lastContentJSON = JSON.stringify(splitState(S).content);

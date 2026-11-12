@@ -102,7 +102,7 @@ async function signOut() {
 function signedOut() {
   Backend.user = null; Backend.isAdmin = false;
   // the progress belongs to the account (it is in the cloud): start this browser fresh
-  localStorage.removeItem(KEY); sessionStorage.removeItem('pp.cloudLoad');
+  [KEY, KEY + '.bak', KEY + '.broken'].forEach(k => localStorage.removeItem(k)); sessionStorage.removeItem('pp.cloudLoad');   // the backups belong to the account too
   location.reload();
 }
 function confirmSignOut() {

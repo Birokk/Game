@@ -10,6 +10,23 @@ function toast(msg, error) {
   document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), error ? 6000 : 3000);
 }
 
+/* ---------- the error safety net ----------
+   Any uncaught error or failed promise is kept in ERR_LOG (the last 30, shown in admin → Test tools with a Copy button) and
+   shows one short error toast at most every 15 s. safely(fn, name) runs a piece of work and logs instead of throwing, so one
+   broken feature (a weekly settlement, a simulation) can't stop the home screen from drawing. */
+const ERR_LOG = [];
+let errToastAt = 0;
+function noteError(err, where) {
+  const msg = String(err && err.message || err || 'Unknown error');
+  if (/ResizeObserver loop|^Script error\.?$/.test(msg)) return;   // harmless browser noise
+  ERR_LOG.unshift({ t: Date.now(), msg: msg.slice(0, 300), where: where || '', stack: String(err && err.stack || '').split('\n').slice(1, 4).join(' | ').slice(0, 300) });
+  if (ERR_LOG.length > 30) ERR_LOG.length = 30;
+  if (Date.now() - errToastAt > 15000) { errToastAt = Date.now(); toast(`Something went wrong${where ? ` (${where})` : ''}. If it keeps happening, tell us in Support.`, true); }
+}
+addEventListener('error', e => noteError(e.error || e.message, e.filename ? 'script' : ''));
+addEventListener('unhandledrejection', e => noteError(e.reason, 'async'));
+function safely(fn, where) { try { return fn(); } catch (e) { console.error(where, e); noteError(e, where); } }
+
 /* ---------- main menu & wallpaper ---------- */
 const menuEl = $('#menu'), hudEl = $('#hud'), wpEl = $('#wallpaper');
 let menuOpen = true, stdRotate = 0;
@@ -48,7 +65,7 @@ function hmZoom() {
 addEventListener('resize', hmZoom);
 function renderMenu() {
   hmZoom();
-  passDaily();   // a membership's daily reward goes to Mail once a day
+  safely(passDaily, 'memberships');   // a membership's daily reward goes to Mail once a day
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>` + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');
   $('#lvDot').hidden = !lvReady();
@@ -62,9 +79,9 @@ function renderMenu() {
   $('#evDot').hidden = !loginReady() && !msignReady();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
-  if (booted && typeof rankSettle === 'function') rankSettle();
-  if (booted) gbCheckKills();   // a dragon the guild defeated mails every member a reward
-  if (booted && typeof arSettle === 'function') { arSimDefense(); arSettle(); }   // Arena: attacks on your defense while you were away, the weekly rank rewards
+  if (booted) safely(() => rankSettle(), 'ranking rewards');
+  if (booted) safely(gbCheckKills, 'guild boss');   // a dragon the guild defeated mails every member a reward
+  if (booted) safely(() => { arSimDefense(); arSettle(); }, 'arena');   // Arena: attacks on your defense while you were away, the weekly rank rewards
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
   $('#farmDot').hidden = !farmReady();

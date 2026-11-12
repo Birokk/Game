@@ -89,7 +89,7 @@ function gbMailKills(bd, B = gbState()) {
   gbMailing = true;
   try {
     const mails = L.map(k => { B.mailed.push(id(k)); return { id: `gboss-${B.key}-${bd.g.id}-${k.lv}`, date: dayKey(), from: bd.g.name, title: `${gbName()} defeated!`, body: `Your guild brought down the level ${k.lv} ${gbName()}${k.last ? ', and you struck the final blow' : ` (final blow: ${k.by})`}. Every member of ${bd.g.name} gets this reward.`, reward: { ...GB_KILL } }; });
-    S.mailbox = [...(S.mailbox || []), ...mails]; persist(); renderMenu();
+    mailAdd(mails); persist(); renderMenu();
   } finally { gbMailing = false; }
 }
 const gbCheckKills = () => { if (!gbMailing && inGuild()) gbMailKills(gbBoard()); };

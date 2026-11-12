@@ -97,11 +97,12 @@ function qLeft(set = qTab) { const s = Math.max(0, Q_SETS[set].next() - new Date
   return `${d ? `${d}d ` : ''}${Math.floor(s % 86400 / 3600)}h ${Math.floor(s % 3600 / 60)}m`; }
 let qTab = 'daily';
 
+let qTimer = 0;   // one refresh timer, however often the window is reopened
 function openQuests(tab) {
   if (Q_SETS[tab]) qTab = tab;
   openModal({ title: 'Quests', ic: 'quests', wide: true, kind: 'quests', body: '<div id="dqRoot"></div>', onMount: () => {
     renderQuests();
-    const t = setInterval(() => { const r = $('#dqRoot'); if (!r) { clearInterval(t); return; } if (S.quests.day !== dayKey() || S.wquests.day !== dayKey(weekStart())) renderQuests(); else { const el = $('#dqLeft'); if (el) el.textContent = qLeft(); } }, 30000);
+    clearInterval(qTimer); qTimer = setInterval(() => { const r = $('#dqRoot'); if (!r) { clearInterval(qTimer); return; } if (S.quests.day !== dayKey() || S.wquests.day !== dayKey(weekStart())) renderQuests(); else { const el = $('#dqLeft'); if (el) el.textContent = qLeft(); } }, 30000);
   } });
 }
 function renderQuests() {

@@ -36,7 +36,7 @@ const AR_ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 const AR_VP = { bronze: [25, 0, 25, 0], silver: [22, -2, 22, -2], gold: [20, -4, 20, -4], platinum: [18, -6, 18, -6], diamond: [15, -8, 15, -8],
   mythic5: [12, -10, 12, -10], mythic: [12, -5, 12, -5], ascendant: [10, -8, 10, -6], celestial: [10, -10, 10, -10] };
 /* the weekly mail by rank: [pearls, arena tokens] */
-const AR_WEEK = { bronze: [10, 50], silver: [20, 80], gold: [30, 120], platinum: [45, 160], diamond: [60, 200], mythic: [80, 260], ascendant: [100, 320], celestial: [150, 400] };
+const AR_WEEK = { bronze: [5, 50], silver: [10, 80], gold: [15, 120], platinum: [20, 160], diamond: [25, 200], mythic: [30, 260], ascendant: [40, 320], celestial: [50, 400] };   // top rank: 50 pearls (the owner's cap)
 /* opponents get tougher with their rank: hero HP and the bot's brain (the Quick match brains: easy / bot / plan / best) */
 const AR_HP = [16, 17, 18, 20, 20, 20, 22, 22];
 const AR_BRAIN = ['easy', 'easy', 'bot', 'bot', 'plan', 'plan', 'best', 'best'];
@@ -68,7 +68,7 @@ function arState() {
   if (typeof a.best !== 'number') a.best = a.vp;
   if (!Array.isArray(a.log)) a.log = [];
   if (!a.st || typeof a.st !== 'object') a.st = { w: 0, l: 0, d: 0, dw: 0, dl: 0 };
-  const w = arWin(); if (a.win !== w.key) { a.win = w.key; a.used = 0; a.ref = 0; a.beat = []; a.foes = null; }
+  const w = arWin(); if (a.win !== w.key) { a.win = w.key; a.used = 0; a.ref = 0; a.round = 0; a.beat = []; a.foes = null; }
   if (!Array.isArray(a.beat)) a.beat = [];
   return a;
 }
@@ -87,22 +87,31 @@ function arFoe(id, vp) {
   return { id, name, vp, lv: Math.min(LV_MAX, 8 + R.i * 6 + Math.floor(r() * 10)), lead: lead ? lead.id : null, dk, cards: D.cards, deckName: D.name,
     hp: AR_HP[R.i], brain: AR_BRAIN[R.i], power: Math.round(15000 + vp * 55 + r() * 18000), seed, skin: ccBotSkin(seed), back: ccBotBack(seed) };
 }
-/* the 3 opponents of this window (or refresh): one a little below you, one level with you, one above */
+/* the 3 opponents of this window (or refresh): random players of YOUR rank (the owner's rule), with VP near yours.
+   The list is kept for the window; it is rebuilt after a refresh, when your rank changes, or when all 3 are beaten
+   (a new set then appears for free: S.arena.round counts those). */
+const arRankMax = R => AR_RANKS[R.i + 1] ? AR_RANKS[R.i + 1].min - 1 : R.r.min + R.r.divs * R.r.step + 400;
 function arFoes() {
-  const a = arState(), k = a.win + ':' + (a.ref || 0);
-  if (!a.foes || a.foes.k !== k || Math.abs(a.vp - (a.foes.base ?? a.vp)) > 250) {   // a new window / refresh, or your VP moved far from the list
-    const off = [[-150, -30], [-50, 60], [50, 220]];
-    a.foes = { k, base: a.vp, list: off.map(([lo, hi], i) => { const r = seeded('arfv:' + arUid() + ':' + k + ':' + Math.round(a.vp / 250) + ':' + i); return { id: `${arUid()}:${k}:${Math.round(a.vp / 250)}:${i}`, vp: Math.max(0, Math.round(a.vp + lo + r() * (hi - lo))) }; }) };
+  const a = arState(), R = arRankOf(a.vp), k = `${a.win}:${a.ref || 0}:${a.round || 0}:${R.r.id}`;
+  if (!a.foes || a.foes.k !== k) {
+    const lo = R.r.min, hi = arRankMax(R), sp = R.r.step * 1.2;
+    a.foes = { k, list: [0, 1, 2].map(i => { const r = seeded('arfv:' + arUid() + ':' + k + ':' + i), v = a.vp + (r() * 2 - 1) * sp;
+      return { id: `${arUid()}:${k}:${i}`, vp: Math.round(Math.max(lo, Math.min(hi, v))) }; }) };
     persist();
   }
-  return a.foes.list.map(x => arFoe(x.id, x.vp));
+  const L = a.foes.list.map(x => arFoe(x.id, x.vp));
+  if (L.every(f => a.beat.includes(f.id))) { a.round = (a.round || 0) + 1; a.foes = null; return arFoes(); }   // all beaten: a new set, free
+  return L;
 }
-const AR_REF_COST = 10;   // refreshing the opponents costs tokens unless all 3 are beaten
-const arRefCost = () => arFoes().every(f => arState().beat.includes(f.id)) ? 0 : AR_REF_COST;
+/* New opponents: 2 free refreshes every 12 hours, then 1 pearl each */
+const AR_REF_FREE = 2, AR_REF_PEARLS = 1;
+const arRefFree = () => Math.max(0, AR_REF_FREE - (arState().ref || 0));
 function arRefresh() {
-  const c = arRefCost(); if ((S.wallet.atok || 0) < c) { toast(`A refresh costs ${c} arena tokens. You have ${fmt(S.wallet.atok || 0)}.`); return; }
-  S.wallet.atok = (S.wallet.atok || 0) - c; const a = arState(); a.ref = (a.ref || 0) + 1; arSel = null; persist(); renderArena();
-  toast(c ? `New opponents (−${c} arena tokens)` : 'New opponents');
+  const free = arRefFree() > 0;
+  if (!free && S.wallet.pearls < AR_REF_PEARLS) { toast(`A refresh costs ${AR_REF_PEARLS} pearl. You have ${fmt(S.wallet.pearls)}.`); return; }
+  if (!free) S.wallet.pearls -= AR_REF_PEARLS;
+  const a = arState(); a.ref = (a.ref || 0) + 1; arSel = null; persist(); renderMenu(); renderArena();
+  toast(free ? `New opponents · ${arRefFree()} free refresh${arRefFree() === 1 ? '' : 'es'} left` : `New opponents (−${AR_REF_PEARLS} pearl)`);
 }
 /* the ranking: 40 practice players (the Ranking's practice players + more), their VP moves a little each week */
 function arBoard() {
@@ -292,7 +301,7 @@ const arShopBind = (root) => { root.querySelectorAll('[data-arbuy]').forEach(b =
 if (!SHOP_TABS.some(t => t[0] === 'arena')) SHOP_TABS.push(['arena', 'arena', 'Arena Shop']);
 
 /* ---- the Arena page (.arx on the Raids page layout .rdx) ---- */
-const AR_TABS = [['battle', 'swords', 'Battle'], ['defense', 'shield', 'Defense'], ['rank', 'trophy', 'Ranking'], ['rewards', 'gift', 'Rewards'], ['shop', 'shop', 'Arena Shop'], ['log', 'scroll', 'Battle log']];
+const AR_TABS = [['battle', 'swords', 'Battle'], ['defense', 'shield', 'Defense'], ['rank', 'trophy', 'Ranking'], ['shop', 'shop', 'Shop']];
 function openArena(tab) {
   closeModal(); arState(); arSimDefense(); arSettle();
   if (tab) arTab = tab;
@@ -307,95 +316,80 @@ function arAwayPop(list) {
   if (!arEl || ccM) return;
   const a = arState(); a.seenT = Date.now(); persist(); renderMenu();
   const held = list.filter(e => e.res === 'win').length, vp = list.reduce((t, e) => t + e.d, 0), tok = list.reduce((t, e) => t + e.tok, 0);
-  openModal({ title: 'While you were away', ic: 'shield', kind: 'araway', body: `<div class="ara"><p class="ara-sum"><b>${list.length}</b> attack${list.length === 1 ? '' : 's'} on your defense · <b>${held}</b> held · <b class="${vp < 0 ? 'neg' : 'pos'}">${vp >= 0 ? '+' : '−'}${Math.abs(vp)} VP</b>${tok ? ` · ${curIcon('atok')}<b>+${tok}</b>` : ''}</p>
-    <div class="ara-list">${list.slice(0, 8).map(e => `<div class="arl-row ${e.res}"><span class="arl-av">${arAva(e.lead)}</span><span class="arl-t"><b>${esc(e.name)}</b><small>${arBadge(e.ov, 'sm')}${fmt(e.ov)} VP · ${arAgo(e.t)}</small></span><span class="arl-res">${e.res === 'win' ? 'Held' : 'Fell'}</span><span class="arl-d ${e.d < 0 ? 'neg' : ''}">${e.d >= 0 ? '+' : '−'}${Math.abs(e.d)} VP</span></div>`).join('')}</div>
+  openModal({ title: 'While you were away', ic: 'shield', kind: 'araway', body: `<div class="ara"><p class="ara-sum"><b>${list.length}</b> attack${list.length === 1 ? '' : 's'} on your defense · <b>${held}</b> held · <b class="${vp < 0 ? 'neg' : 'pos'}">${arSign(vp)} VP</b>${tok ? ` · ${curIcon('atok')}<b>+${tok}</b>` : ''}</p>
+    <div class="ara-list">${list.slice(0, 8).map(e => `<div class="arl-row ${e.res}"><span class="arl-av">${arAva(e.lead)}</span><span class="arl-t"><b>${esc(e.name)}</b><small>${arBadge(e.ov, 'sm')}${fmt(e.ov)} VP · ${arAgo(e.t)}</small></span><span class="arl-res">${e.res === 'win' ? 'Held' : 'Fell'}</span><span class="arl-d ${e.d < 0 ? 'neg' : ''}">${arSign(e.d)} VP</span></div>`).join('')}</div>
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn gold" data-close2>OK</button></div></div>`,
     onMount: b => { b.querySelector('[data-close2]').onclick = closeModal; } });
 }
+const arSign = d => `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d)}`;
+/* the page: header (with your rank and the battles left), ONE compact strip of 4 tabs, the tab's content; the rules,
+   ranks and rewards live in the (i) window (INFO.arena) */
 function renderArena() {
   if (!arEl) return;
   const a = arState(), joined = arJoined(), R = arRankOf(a.vp), left = arLeft(), bg = MEDIA.get('arena:bg');
-  if (!joined && arTab !== 'rewards' && arTab !== 'rank') arTab = 'battle';
-  const keep = arEl.querySelector('.rdx-scroll'), top = keep ? keep.scrollTop : 0;
+  if (!AR_TABS.some(t => t[0] === arTab) || (!joined && arTab !== 'rank')) arTab = joined ? (AR_TABS.some(t => t[0] === arTab) ? arTab : 'battle') : arTab === 'rank' ? 'rank' : 'battle';
+  const keep = arEl.querySelector('.rdx-scroll'), top = keep && keep.dataset.tab === arTab ? keep.scrollTop : 0;
   const pips = `<span class="hgx-pips">${Array.from({ length: AR_TICKETS }, (_, i) => `<i class="${i < left ? 'on' : ''}"></i>`).join('')}</span>`;
-  const tabBtn = ([id, ic, nm]) => { const dis = !joined && !['battle', 'rank', 'rewards'].includes(id), dot = id === 'log' && arUnseen().length;
-    return `<button class="rdx-it arx-tab ${id === arTab ? 'on' : ''}" data-art="${id}" ${dis ? 'disabled' : ''}><span class="rdx-iti">${icon(ic)}</span><span class="rdx-itt"><b>${nm}</b><small>${arTabSub(id)}</small></span>${dot ? '<i class="cmp-dot"></i>' : ''}</button>`; };
+  const tab = ([id, ic, nm]) => { const dis = !joined && id !== 'battle' && id !== 'rank', dot = id === 'defense' && arUnseen().length;
+    return `<button class="arx-tb ${id === arTab ? 'on' : ''}" data-art="${id}" ${dis ? 'disabled' : ''} aria-pressed="${id === arTab}" title="${nm}">${icon(ic)}<span>${id === 'battle' && !joined ? 'Join' : nm}</span>${dot ? '<i class="cmp-dot"></i>' : ''}</button>`; };
   arEl.style.setProperty('--rk', R.r.c2);
   arEl.innerHTML = `<div class="rdx-bg arx-bg ${bg ? 'art' : ''}">${bg ? artImg('arena:bg') : `<div class="arx-scene">${typeof bthArt === 'function' ? bthArt('arena', true) : ''}</div>`}<i class="hgx-glow g1 arx-g1"></i><i class="hgx-glow g2 arx-g2"></i><i class="hgx-glow g3 arx-g3"></i></div><div class="rdx-shade arx-shade"></div>
-    <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('arena')}</span><h2 class="ts">Arena</h2></div>${infoBtn('arena', 'How the Arena works')}
-      ${canAdmin() ? `<button class="rdx-sec arx-adm" id="arAdm" title="Admin: Arena wallpaper and rank icons">${icon('image')}<span>Wallpaper</span></button>` : ''}<span class="rdx-sp"></span>
-      ${joined ? `<span class="rdx-ward arx-tk" title="Battles left in this 12-hour window">${icon('swords')}Battles <b>${left} / ${AR_TICKETS}</b>${pips}<em>${icon('clock')}${arResetTxt()}</em></span>` : ''}
+    <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('arena')}</span><h2 class="ts">Arena</h2></div>${infoBtn('arena', 'Arena rules, ranks and rewards')}
+      ${canAdmin() ? `<button class="rdx-sec arx-adm" id="arAdm" title="Admin: Arena wallpaper and rank icons">${icon('image')}<span>Wallpaper</span></button>` : ''}
+      <div class="arx-tabw"><nav class="arx-tabs" aria-label="Arena">${AR_TABS.map(tab).join('')}</nav></div><span class="rdx-sp arx-sp"></span>
+      ${joined ? `<span class="rdx-ward arx-rkc" title="${esc(R.label)} · ${fmt(a.vp)} VP">${arBadge(a.vp)}<b>${esc(R.label)}</b><small>${fmt(a.vp)} VP</small></span>
+        <span class="rdx-ward arx-tk" title="Battles left in this 12-hour window · ${AR_TICKETS} new ones in ${arResetTxt()}">${icon('swords')}<b>${left} / ${AR_TICKETS}</b>${pips}<em>${icon('clock')}${arResetTxt()}</em></span>` : ''}
       <div class="cur" data-k="atok" title="Arena tokens">${curIcon('atok')}<b>${fmt(S.wallet.atok || 0)}</b></div>
       <div class="cur arx-pearl" data-k="pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b></div>
       <button class="inv-x" id="arClose" aria-label="Close">${icon('close')}</button></header>
-    <aside class="rdx-rail">
-      ${joined ? `<div class="arx-me" style="--rk:${R.r.c2}"><span class="arx-meem">${arEmblem(R.r.id)}<i class="ar-dv">${R.dn}</i></span><span class="arx-met"><small>Your rank</small><b>${esc(R.label)}</b><em>${fmt(a.vp)} VP</em></span>
-        <span class="arx-mebar"><i style="width:${R.pct}%"></i></span><span class="arx-menx">${R.next == null ? 'Top division reached' : `${fmt(R.next - a.vp)} VP to ${esc(arRankOf(R.next).label)}`}</span></div>` : ''}
-      <span class="rdx-gh">${icon('arena')}Arena</span>${AR_TABS.map(tabBtn).join('')}</aside>
-    <section class="rdx-main"><div class="rdx-scroll">${joined ? arTabHTML() : arJoinHTML()}</div>${(joined && arTab === 'battle') || !joined ? arBarHTML() : ''}</section>`;
+    <section class="rdx-main"><div class="rdx-scroll" data-tab="${arTab}">${joined ? arTabHTML() : arTab === 'rank' ? arRankHTML() : arJoinHTML()}</div>${arTab === 'battle' ? arBarHTML() : ''}</section>`;
   const sc = arEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;
-  const rl = arEl.querySelector('.rdx-rail'), on = rl && rl.querySelector('.rdx-it.on'); if (on && rl.scrollWidth > rl.clientWidth + 2) rl.scrollLeft = Math.max(0, on.offsetLeft - (rl.clientWidth - on.offsetWidth) / 2);
   arBind();
-}
-function arTabSub(id) {
-  const a = arState();
-  if (id === 'battle') return arJoined() ? `${arLeft()} of ${AR_TICKETS} battles left` : 'Join the Arena';
-  if (id === 'defense') return a.def ? esc(a.def.name) : 'Set a defense deck';
-  if (id === 'rank') return arJoined() ? `#${arBoard().findIndex(p => p.me) + 1} on the board` : 'The top players';
-  if (id === 'rewards') return 'Weekly pearls + tokens';
-  if (id === 'shop') return `${fmt(S.wallet.atok || 0)} arena tokens`;
-  const un = arUnseen().length; return un ? `${un} new defense${un === 1 ? '' : 's'}` : `${a.log.length} battle${a.log.length === 1 ? '' : 's'}`;
 }
 /* not joined yet: pick the deck that will defend you */
 function arJoinHTML() {
-  if (arTab === 'rank') return arRankHTML();
-  if (arTab === 'rewards') return arRewardsHTML();
   const ok = ccAllDecks().filter(d => ccValidateDeck(d.cards).ok);
   if (!arPick || !ok.some(d => d.id === arPick)) arPick = (ok.find(d => d.id === ccSave().sel) || ok[0] || {}).id || null;
   return `<div class="rdx-hero"><span class="rdx-kind">${icon('arena')}Card Battle · Versus players</span>
       <h1 class="rdx-title arx-title">Arena</h1>
       <p class="rdx-desc">Battle other players' defense decks and climb from Bronze to Celestial. To join, choose a <b>defense deck</b>: it defends you while you're away, played for you when other players attack.</p>
-      <div class="rdx-meta"><span>${icon('swords')}${AR_TICKETS} battles every 12 hours</span><span>${icon('trophy')}Victory Points by rank</span><span>${curIcon('pearls')}Weekly pearls</span><span>${curIcon('atok')}Arena tokens</span></div></div>
+      <div class="rdx-meta"><span>${icon('swords')}${AR_TICKETS} battles every 12 hours</span><span>${curIcon('pearls')}Weekly pearls</span><span>${curIcon('atok')}Arena tokens</span><button class="rdx-sec arx-rinfo" data-info="arena">${icon('info')}Ranks &amp; rewards</button></div></div>
     <div class="rdx-panel"><div class="rdx-ph"><b>Choose your defense deck</b><small>You can change it any time in the Defense tab</small></div>
       ${ok.length ? `<div class="arx-dks">${ok.map(d => { const le = ccLeaderOf(d.id); return `<button class="arx-dk ${d.id === arPick ? 'on' : ''}" data-arpick="${d.id}"><span class="arx-dkav">${le ? baseThumb(le) : icon('cards')}</span><span class="arx-dkt"><b>${esc(d.name)}</b><small>${le ? `${icon('crown')}${esc(le.name)}` : 'No leader'} · ${d.preset ? 'Starter deck' : 'Your deck'}</small></span>${arMixHTML(d.cards)}</button>`; }).join('')}</div>`
-        : `<p class="tiny">You need a ready 30-card deck first. <button class="btn gold sm" id="arBuild">${icon('cards')}Build a deck</button></p>`}</div>
-    ${arRankStripHTML()}`;
+        : `<p class="tiny">You need a ready 30-card deck first. <button class="btn gold sm" id="arBuild">${icon('cards')}Build a deck</button></p>`}</div>`;
 }
 /* a deck's make-up: a bar of its playstyles and its type counts */
 function arMixHTML(cards) {
   const st = {}, ty = { unit: 0, spell: 0, trap: 0, equipment: 0 }; cards.forEach(id => { const d = ccDef(id); if (!d) return; st[d.style] = (st[d.style] || 0) + 1; ty[d.type]++; });
   return `<span class="arx-mix"><span class="arx-sbar">${Object.entries(st).sort((x, y) => y[1] - x[1]).map(([k, n]) => `<i style="flex:${n};background:${CC_STYLES[k][1]}" title="${CC_STYLES[k][0]} ×${n}"></i>`).join('')}</span><small>${ty.unit} units · ${ty.spell} spells · ${ty.trap} traps · ${ty.equipment} gear</small></span>`;
 }
-const arRankStripHTML = () => `<div class="rdx-panel"><div class="rdx-ph"><b>Ranks</b><small>Bronze to Celestial by Victory Points</small></div><div class="arx-strip">${AR_RANKS.map(r => `<span class="arx-sr" style="--rk:${r.c2}">${arEmblem(r.id)}<b>${r.name}</b><small>${fmt(r.min)}+ VP</small></span>`).join('')}</div></div>`;
 function arTabHTML() {
   if (arTab === 'defense') return arDefHTML();
   if (arTab === 'rank') return arRankHTML();
-  if (arTab === 'rewards') return arRewardsHTML();
   if (arTab === 'shop') return `<div class="rdx-panel arx-shop"><div class="rdx-ph"><b>Arena Shop</b><small>Spend arena tokens · limits reset at midnight</small></div>${arShopHTML()}</div>`;
-  if (arTab === 'log') return arLogHTML();
   return arBattleHTML();
 }
 function arBattleHTML() {
-  const a = arState(), R = arRankOf(a.vp), row = arVpRow(a.vp), foes = arFoes(), rc = arRefCost();
+  const a = arState(), R = arRankOf(a.vp), row = arVpRow(a.vp), foes = arFoes(), free = arRefFree();
   if (!arSel || !foes.some(f => f.id === arSel && !a.beat.includes(f.id))) { const f = foes.find(x => !a.beat.includes(x.id)); arSel = f ? f.id : null; }
   const foe = (f, i) => { const beat = a.beat.includes(f.id), le = f.lead && findEntry(f.lead), art = le && baseArt(le), FR = arRankOf(f.vp);
     return `<button class="arx-foe ${f.id === arSel ? 'on' : ''} ${beat ? 'beat' : ''}" data-arfoe="${f.id}" style="--rk:${FR.r.c2};--i:${i}" ${beat ? 'disabled' : ''}>
       ${art ? `<span class="arx-fart"><img src="${art}" alt=""></span>` : ''}<span class="arx-fsh"></span>
-      <span class="arx-ftag">${['Easier', 'Even', 'Tougher'][i]}</span>
       <span class="arx-fhead"><span class="arx-fav">${arAva(f.lead)}</span><span class="arx-fnm"><b>${esc(f.name)}</b><small>Lv ${f.lv} · Power ${fmt(f.power)}</small></span></span>
       <span class="arx-frk">${arBadge(f.vp)}<span><b>${esc(FR.label)}</b><small>${fmt(f.vp)} VP</small></span></span>
       <span class="arx-fdk">${icon('cards')}<span><small>Defense deck</small><b>${esc(f.deckName)}</b></span><em>${icon('heart')}${f.hp} HP</em></span>
-      <span class="arx-fvp"><span class="w">Win <b>+${row[0]} VP</b></span><span class="l">Loss <b>${row[1] ? '−' + Math.abs(row[1]) : '0'} VP</b></span></span>
+      <span class="arx-fvp"><span class="w">Win <b>${arSign(row[0])} VP</b></span><span class="l">Loss <b>${arSign(row[1])} VP</b></span></span>
       ${beat ? `<span class="arx-beat">${icon('check')}Defeated</span>` : ''}</button>`; };
   return `<div class="rdx-hero arx-hero"><span class="arx-hem" style="--rk:${R.r.c2}">${arEmblem(R.r.id)}<i class="ar-dv">${R.dn}</i></span>
-      <div class="arx-het"><span class="rdx-kind">${icon('arena')}Arena · Card Battle</span><h1 class="rdx-title arx-title">${esc(R.label)}</h1>
+      <div class="arx-het"><span class="rdx-kind">${icon('arena')}Arena · ${esc(R.r.name)} league</span><h1 class="rdx-title arx-title">${esc(R.label)}</h1>
         <div class="arx-hvp"><b>${fmt(a.vp)}</b><small>VP</small><span class="arx-hbar"><i style="width:${R.pct}%"></i></span><em>${R.next == null ? 'Top division' : `${fmt(R.next - a.vp)} VP to ${esc(arRankOf(R.next).label)}`}</em></div>
-        <div class="rdx-meta"><span>${icon('trophy')}W ${a.st.w} · L ${a.st.l} · D ${a.st.d}</span><span>${icon('shield')}Defense ${a.st.dw} held · ${a.st.dl} fell</span><span>${icon('star')}Best ${fmt(a.best)} VP</span></div></div></div>
-    <div class="rdx-panel"><div class="rdx-ph"><b>Opponents</b><small>Pick a defense deck to attack · win ${curIcon('atok')}${AR_TOK.win}, draw ${AR_TOK.draw}, loss ${AR_TOK.lose}</small><button class="rdx-sec" id="arRef">${icon('refresh')}New opponents${rc ? ` · ${curIcon('atok')}${rc}` : ' · free'}</button></div>
+        <div class="rdx-meta"><span>${icon('trophy')}W ${a.st.w} · L ${a.st.l} · D ${a.st.d}</span><span>${icon('shield')}Defense ${a.st.dw} held · ${a.st.dl} fell</span><span>${icon('gift')}This week: ${curIcon('pearls')}${AR_WEEK[R.r.id][0]} ${curIcon('atok')}${AR_WEEK[R.r.id][1]}</span></div></div></div>
+    <div class="rdx-panel"><div class="rdx-ph"><b>Opponents</b><small>Players of your rank · win ${curIcon('atok')}${AR_TOK.win}, draw ${AR_TOK.draw}, loss ${AR_TOK.lose}</small>
+      <button class="rdx-sec" id="arRef" title="${AR_REF_FREE} free refreshes every 12 hours, then ${AR_REF_PEARLS} pearl each">${icon('refresh')}New opponents · ${free ? `free (${free} left)` : `${curIcon('pearls')}${AR_REF_PEARLS}`}</button></div>
       <div class="arx-foes">${foes.map(foe).join('')}</div></div>`;
 }
 function arBarHTML() {
-  const joined = arJoined(), sv = ccSave(), dk = ccCampMyDeck(), valid = ccValidateDeck(dk.cards).ok, le = ccLeaderOf(dk.id), left = arLeft();
+  const joined = arJoined(), dk = ccCampMyDeck(), valid = ccValidateDeck(dk.cards).ok, le = ccLeaderOf(dk.id), left = arLeft();
   if (!joined) { const d = arPick && ccDeck(arPick), dl = d && ccLeaderOf(d.id);
     return `<div class="rdx-bar arx-bar"><div class="rdx-vs"><div class="rdx-side me"><span class="rdx-si qmx-av">${dl ? baseThumb(dl) : icon('shield')}</span><span class="rdx-st"><small>Defense deck</small><b>${d ? esc(d.name) : 'No ready deck'}</b><em>${dl ? `${icon('crown')}${esc(dl.name)}` : 'Build a 30-card deck'}</em></span></div></div>
       <div class="rdx-inst"><span class="rdx-il">${icon('gift')}Weekly · up to <b>${AR_WEEK.celestial[0]} pearls</b></span></div>
@@ -408,53 +402,45 @@ function arBarHTML() {
     <div class="rdx-inst"><span class="rdx-il">${icon('clock')}${AR_TICKETS} new battles in <b>${arResetTxt()}</b></span></div>
     <button class="rdx-go" id="arGo" ${f && valid && left ? '' : 'disabled'}><span class="rdx-goi">${icon('swords')}</span><span class="rdx-got"><b>Battle!</b><small>${left ? `1 of ${left} battle${left === 1 ? '' : 's'} left` : 'No battles left'}</small></span></button></div>`;
 }
+/* Defense: the deck that defends you, changing it, and the battle log (your attacks and the attacks on your defense) */
 function arDefHTML() {
-  const a = arState(), D = a.def, le = D.lead && findEntry(D.lead), ok = ccAllDecks().filter(d => ccValidateDeck(d.cards).ok), ch = arDefChanged(), defs = a.log.filter(e => e.k === 'def').slice(0, 6);
-  return `<div class="rdx-hero"><span class="rdx-kind">${icon('shield')}Arena · Defense</span><h1 class="rdx-title arx-title">Your defense</h1>
-      <p class="rdx-desc">Other players attack this deck while you're away; it is played for you. A held defense gives VP and ${curIcon('atok')}${AR_DEF_TOK}, a fallen one loses VP. Changing the deck later doesn't change your defense until you set it again.</p></div>
-    <div class="rdx-panel arx-def"><div class="rdx-ph"><b>Defense deck</b><small>Set ${arAgo(D.at)}</small>${ch ? `<button class="rdx-sec" data-ardef="${D.src}">${icon('refresh')}Update: the deck changed</button>` : ''}</div>
+  const a = arState(), D = a.def, le = D.lead && findEntry(D.lead), ok = ccAllDecks().filter(d => ccValidateDeck(d.cards).ok), ch = arDefChanged(), seen = a.seenT || 0, L = a.log.slice(0, 20);
+  const html = `<div class="rdx-panel arx-def"><div class="rdx-ph"><b>Your defense deck</b><small>Set ${arAgo(D.at)} · other players attack it while you're away; a held defense gives VP and ${curIcon('atok')}${AR_DEF_TOK}</small>${ch ? `<button class="rdx-sec" data-ardef="${D.src}">${icon('refresh')}Update: the deck changed</button>` : ''}</div>
       <div class="arx-defrow"><div class="arx-defcard">${le ? ccLeaderCard(le) : `<span class="ar-noav big">${icon('user')}</span>`}</div>
         <div class="arx-defi"><b class="arx-defn">${esc(D.name)}</b><small>${le ? `${icon('crown')}Leader ${esc(le.name)}` : 'No leader'}</small>${arMixHTML(D.cards)}
           <div class="arx-defst"><span><b>${a.st.dw}</b><small>Held</small></span><span><b>${a.st.dl}</b><small>Fell</small></span><span><b>${a.st.dw + a.st.dl ? Math.round(a.st.dw / (a.st.dw + a.st.dl) * 100) : 0}%</b><small>Held rate</small></span></div>
           <div class="arx-cards">${[...new Set(D.cards)].map(id => { const n = D.cards.filter(x => x === id).length, d = ccDef(id); return `<span class="arx-cc st-${d.style}" style="--cs:${CC_STYLES[d.style][1]}" title="${esc(d.name)} · ${esc(d.text)}">${ccIco(id)}<b>${esc(d.name)}</b>${n > 1 ? `<em>×${n}</em>` : ''}</span>`; }).join('')}</div></div></div></div>
     <div class="rdx-panel"><div class="rdx-ph"><b>Change your defense</b><small>Pick one of your ready decks</small></div>
       <div class="arx-dks">${ok.map(d => { const l = ccLeaderOf(d.id), cur = d.id === D.src; return `<div class="arx-dk ${cur ? 'on' : ''}"><span class="arx-dkav">${l ? baseThumb(l) : icon('cards')}</span><span class="arx-dkt"><b>${esc(d.name)}</b><small>${l ? `${icon('crown')}${esc(l.name)}` : 'No leader'}</small></span>${arMixHTML(d.cards)}<button class="btn ${cur && !ch ? 'ghost' : 'gold'} sm" data-ardef="${d.id}" ${cur && !ch ? 'disabled' : ''}>${cur && !ch ? 'Defending' : 'Use'}</button></div>`; }).join('')}</div></div>
-    <div class="rdx-panel"><div class="rdx-ph"><b>Recent defenses</b><small>The last attacks on your deck</small></div>${defs.length ? `<div class="arl">${defs.map(arLogRow).join('')}</div>` : '<p class="tiny">No attacks yet. Other players find your deck over the next hours.</p>'}</div>`;
-}
-const arLogRow = e => `<div class="arl-row ${e.res} ${e.k}"><span class="arl-k" title="${e.k === 'atk' ? 'You attacked' : 'You were attacked'}">${icon(e.k === 'atk' ? 'swords' : 'shield')}</span><span class="arl-av">${arAva(e.lead)}</span>
-  <span class="arl-t"><b>${e.k === 'atk' ? `You attacked ${esc(e.name)}` : `${esc(e.name)} attacked you`}</b><small>${arBadge(e.ov, 'sm')}${esc(arRankOf(e.ov).label)} · ${fmt(e.ov)} VP · ${arAgo(e.t)}</small></span>
-  <span class="arl-res">${e.k === 'atk' ? (e.res === 'win' ? 'Victory' : e.res === 'lose' ? 'Defeat' : 'Draw') : (e.res === 'win' ? 'Held' : 'Fell')}</span>
-  <span class="arl-d ${e.d < 0 ? 'neg' : ''}">${e.d > 0 ? '+' : e.d < 0 ? '−' : '±'}${Math.abs(e.d)} VP</span><span class="arl-tok">${e.tok ? `${curIcon('atok')}+${e.tok}` : ''}</span></div>`;
-function arLogHTML() {
-  const a = arState(), seen = a.seenT || 0, L = a.log;
-  const html = `<div class="rdx-panel"><div class="rdx-ph"><b>Battle log</b><small>Your attacks and the attacks on your defense · the last ${L.length}</small></div>${L.length ? `<div class="arl">${L.map(e => arLogRow(e).replace('class="arl-row', `class="arl-row ${e.k === 'def' && e.t > seen ? 'new' : ''}`)).join('')}</div>` : '<p class="tiny">No battles yet.</p>'}</div>`;
+    <div class="rdx-panel"><div class="rdx-ph"><b>Battle log</b><small>Your attacks and the attacks on your defense${a.log.length > 20 ? ' · the last 20' : ''}</small></div>
+      ${L.length ? `<div class="arl">${L.map(e => arLogRow(e, e.k === 'def' && e.t > seen)).join('')}</div>` : '<p class="tiny">No battles yet. Other players find your deck over the next hours.</p>'}</div>`;
   if (arUnseen().length) { a.seenT = Date.now(); persist(); setTimeout(renderMenu, 0); }
   return html;
 }
+const arLogRow = (e, fresh) => `<div class="arl-row ${e.res} ${e.k} ${fresh ? 'new' : ''}"><span class="arl-k" title="${e.k === 'atk' ? 'You attacked' : 'You were attacked'}">${icon(e.k === 'atk' ? 'swords' : 'shield')}</span><span class="arl-av">${arAva(e.lead)}</span>
+  <span class="arl-t"><b>${e.k === 'atk' ? `You attacked ${esc(e.name)}` : `${esc(e.name)} attacked you`}</b><small>${arBadge(e.ov, 'sm')}${esc(arRankOf(e.ov).label)} · ${fmt(e.ov)} VP · ${arAgo(e.t)}</small></span>
+  <span class="arl-res">${e.k === 'atk' ? (e.res === 'win' ? 'Victory' : e.res === 'lose' ? 'Defeat' : 'Draw') : (e.res === 'win' ? 'Held' : 'Fell')}</span>
+  <span class="arl-d ${e.d < 0 ? 'neg' : ''}">${arSign(e.d)} VP</span><span class="arl-tok">${e.tok ? `${curIcon('atok')}+${e.tok}` : ''}</span></div>`;
 function arRankHTML() {
   const L = arBoard(), me = L.findIndex(p => p.me), row = (p, i) => `<div class="arr-row ${p.me ? 'me' : ''} ${i < 3 ? 'top top' + (i + 1) : ''}"><span class="arr-n">${i < 3 ? `<i class="arr-medal">${i + 1}</i>` : i + 1}</span><span class="arr-av">${p.me ? avatarHTML(40) : p.lead ? baseThumb(p.lead) : icon('user')}</span>
     <span class="arr-nm"><b>${esc(p.name)}${p.me ? ' <em>You</em>' : ''}</b><small>Lv ${p.lv}${p.lead ? ` · ${icon('crown')}${esc(p.lead.name)}` : ''}</small></span>${arBadge(p.vp)}<span class="arr-rk"><b>${esc(arRankOf(p.vp).label)}</b><small>${fmt(p.vp)} VP</small></span></div>`;
-  const top = L.slice(0, 30);
   return `<div class="rdx-panel arx-rank"><div class="rdx-ph"><b>Arena ranking</b><small>By Victory Points · practice players until the arena server is connected</small></div>
-    <div class="arr">${top.map(row).join('')}</div>${me >= 30 ? `<div class="arr arr-pin">${row(L[me], me)}</div>` : !arJoined() ? '<p class="tiny">Join the Arena to appear here.</p>' : ''}</div>`;
+    <div class="arr">${L.slice(0, 30).map(row).join('')}</div>${me >= 30 ? `<div class="arr arr-pin">${row(L[me], me)}</div>` : !arJoined() ? '<p class="tiny">Join the Arena to appear here.</p>' : ''}</div>`;
 }
-function arRewardsHTML() {
-  const cur = arJoined() ? arRankOf(arState().vp).r.id : null;
-  return `<div class="rdx-hero"><span class="rdx-kind">${icon('gift')}Arena · Rewards</span><h1 class="rdx-title arx-title">Weekly rewards</h1>
-      <p class="rdx-desc">Every Monday at 00:00 your rank is rewarded by mail. Every battle gives arena tokens too: win ${curIcon('atok')}${AR_TOK.win}, draw ${AR_TOK.draw}, loss ${AR_TOK.lose}; every defense your deck holds gives ${AR_DEF_TOK}.</p>
-      <div class="rdx-meta"><span>${icon('clock')}Next rewards in ${arWeekTxt()}</span>${cur ? `<span>${icon('trophy')}You: ${esc(arRankOf(arState().vp).label)}</span>` : ''}</div></div>
-    <div class="rdx-panel arx-rew"><div class="rdx-ph"><b>Ranks and rewards</b><small>Victory Points won and lost by rank (attack and defense)</small></div>
-      <div class="arw-tbl"><div class="arw-th"><span>Rank</span><span>Divisions</span><span>Attack win / loss</span><span>Defense win / loss</span><span>Weekly</span></div>
-      ${AR_RANKS.map(r => { const v = AR_VP[r.id], [p, t] = AR_WEEK[r.id], divs = Array.from({ length: r.divs }, (_, k) => `${AR_ROMAN[r.divs - 1 - k]} ${fmt(r.min + k * r.step)}`).join(' · ');
-        const vp = x => x > 0 ? `+${x}` : x < 0 ? '−' + Math.abs(x) : '0', att = r.id === 'mythic' ? `${vp(v[0])} / ${vp(AR_VP.mythic5[1])} (V), ${vp(v[1])} (IV–I)` : `${vp(v[0])} / ${vp(v[1])}`, def = r.id === 'mythic' ? `${vp(v[2])} / ${vp(AR_VP.mythic5[3])} (V), ${vp(v[3])} (IV–I)` : `${vp(v[2])} / ${vp(v[3])}`;
-        return `<div class="arw-tr ${r.id === cur ? 'on' : ''}" style="--rk:${r.c2}"><span class="arw-rk">${arEmblem(r.id)}<span><b>${r.name}</b><small>${fmt(r.min)}+ VP</small></span>${r.id === cur ? '<em>You</em>' : ''}</span><span class="arw-dv" data-l="Divisions">${divs}</span><span data-l="Attack win / loss">${att}</span><span data-l="Defense win / loss">${def}</span>
-          <span class="arw-wk"><span>${curIcon('pearls')}${p}</span><span>${curIcon('atok')}${t}</span></span></div>`; }).join('')}</div></div>`;
+/* the (i) window's ranks table: every rank with its emblem, divisions, VP won / lost and weekly rewards */
+function arRanksTableHTML() {
+  const cur = arJoined() ? arRankOf(arState().vp).r.id : null, vp = x => x > 0 ? `+${x}` : x < 0 ? '−' + Math.abs(x) : '0';
+  return `<div class="arw-tbl"><div class="arw-th"><span>Rank</span><span>Divisions</span><span>Attack win / loss</span><span>Defense win / loss</span><span>Weekly</span></div>
+    ${AR_RANKS.map(r => { const v = AR_VP[r.id], [p, t] = AR_WEEK[r.id], divs = Array.from({ length: r.divs }, (_, k) => `${AR_ROMAN[r.divs - 1 - k]} ${fmt(r.min + k * r.step)}`).join(' · ');
+      const att = r.id === 'mythic' ? `${vp(v[0])} / ${vp(AR_VP.mythic5[1])} (V), ${vp(v[1])} (IV–I)` : `${vp(v[0])} / ${vp(v[1])}`, def = r.id === 'mythic' ? `${vp(v[2])} / ${vp(AR_VP.mythic5[3])} (V), ${vp(v[3])} (IV–I)` : `${vp(v[2])} / ${vp(v[3])}`;
+      return `<div class="arw-tr ${r.id === cur ? 'on' : ''}" style="--rk:${r.c2}"><span class="arw-rk">${arEmblem(r.id)}<span><b>${r.name}</b><small>${fmt(r.min)}+ VP</small></span>${r.id === cur ? '<em>You</em>' : ''}</span><span class="arw-dv" data-l="Divisions">${divs}</span><span data-l="Attack win / loss">${att}</span><span data-l="Defense win / loss">${def}</span>
+        <span class="arw-wk"><span>${curIcon('pearls')}${p}</span><span>${curIcon('atok')}${t}</span></span></div>`; }).join('')}</div>`;
 }
 function arBind() {
   const $a = s => arEl.querySelector(s);
   $a('#arClose').onclick = () => closeArena();
   const ad = $a('#arAdm'); if (ad) ad.onclick = () => openAdmin('battle');
-  arEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { if (b.disabled) return; arTab = b.dataset.art; renderArena(); });
+  arEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { if (b.disabled || arTab === b.dataset.art) return; arTab = b.dataset.art; renderArena(); });
   arEl.querySelectorAll('[data-arpick]').forEach(b => b.onclick = () => { arPick = b.dataset.arpick; renderArena(); });
   arEl.querySelectorAll('[data-arfoe]').forEach(b => b.onclick = () => { arSel = b.dataset.arfoe; renderArena(); });
   arEl.querySelectorAll('[data-ardef]').forEach(b => b.onclick = () => { if (arSetDefense(b.dataset.ardef)) renderArena(); });
@@ -465,15 +451,19 @@ function arBind() {
   const go = $a('#arGo'); if (go) go.onclick = () => arBattle(arSel);
   arShopBind(arEl);
 }
-setInterval(() => { if (!arEl) return; const t = arEl.querySelector('.arx-tk em'); if (t) t.innerHTML = `${icon('clock')}${arResetTxt()}`; if (arEl && arState().win !== (arEl.dataset.win || arState().win)) renderArena(); arEl.dataset.win = arState().win; }, 30000);
+/* the countdown, and a redraw when a new 12-hour window starts while the page is open */
+let arWinShown = '';
+setInterval(() => { if (!arEl) { arWinShown = ''; return; } const w = arState().win; if (arWinShown && w !== arWinShown) renderArena(); arWinShown = w;
+  const t = arEl.querySelector('.arx-tk em'); if (t) t.innerHTML = `${icon('clock')}${arResetTxt()}`; }, 30000);
 
-INFO.arena = () => ({ title: 'Arena', body: `<p class="desc">Battle other players' defense decks in Card Battle and climb the ranks.</p>
+INFO.arena = () => ({ title: 'Arena', kind: 'arinfo', body: `<p class="desc">Battle other players' defense decks in Card Battle and climb the ranks.</p>
   <ul class="info-list"><li>To join, choose a <b>defense deck</b>. It defends you while you're away: when other players attack you, it is played for you. A held defense gives VP and ${AR_DEF_TOK} arena tokens; a fallen one loses VP.</li>
   <li>You get <b>${AR_TICKETS} battles every 12 hours</b> (at 00:00 and 12:00); unused battles don't carry over. A battle is used when it starts, and leaving it counts as a loss.</li>
-  <li>Pick one of 3 opponents (a little below you, level with you, a little above) and play your attack deck against their defense deck. Tougher ranks defend with more HP and smarter play.</li>
-  <li><b>Victory Points</b> decide your rank: Bronze, Silver, Gold, Platinum and Diamond (1,000 VP each, divisions V to I every 200 VP), then Mythic (5,000), Ascendant (5,250) and Celestial (5,500), with a division every 50 VP. How many VP you win or lose depends on your rank (see Rewards). VP never go below 0.</li>
+  <li>You attack <b>players of your own rank</b>: 3 at a time, with their defense deck. <b>New opponents</b> are free ${AR_REF_FREE} times every 12 hours, then cost ${AR_REF_PEARLS} pearl each; when you beat all 3, new ones come for free. Higher ranks defend with more HP and smarter play.</li>
+  <li><b>Victory Points</b> decide your rank. How many you win or lose depends on your rank (below). VP never go below 0.</li>
   <li><b>Arena tokens</b>: win ${AR_TOK.win}, draw ${AR_TOK.draw}, loss ${AR_TOK.lose}, ${AR_DEF_TOK} per held defense, plus the weekly rewards. Spend them in the <b>Arena Shop</b> (new items every day, also in the Shop).</li>
-  <li>Every <b>Monday at 00:00</b> your rank earns <b>pearls and arena tokens</b> by mail.</li></ul>
+  <li>Every <b>Monday at 00:00</b> your rank earns <b>pearls and arena tokens</b> by mail${arJoined() ? ` (next in ${arWeekTxt()})` : ''}.</li></ul>
+  <h3 class="arw-h">Ranks, Victory Points and weekly rewards</h3>${arRanksTableHTML()}
   <p class="tiny">The arena server isn't connected yet, so the opponents, the attackers and the ranking are practice players.</p>` });
 
 /* ---- admin: Battle screen → Arena (wallpaper + rank icons), test tools ---- */
@@ -482,13 +472,13 @@ function arAdminHTML() {
   return `<div><h3>Arena</h3><p class="tiny">The Arena page's wallpaper (1920×1080 best; without one the drawn arena, blurred) and an icon per rank (square PNG; without one the drawn crest). The Arena's Battle card uses the Arena wallpaper above.</p></div>
     <div class="setx-list ad-art">${setRow('Arena wallpaper', `<span class="set-wp">${u ? `<img src="${u}" alt="">` : '<i></i>'}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" id="arBgUp"></label>${u ? '<button type="button" class="sx-btn" id="arBgDel">Default</button>' : ''}${artFrameBtn('arena:bg', 'screen', 'Arena wallpaper')}`, 'Behind the whole Arena page')}
       ${AR_RANKS.map(r => setRow(`${r.name} rank icon`, `<span class="set-exp ar-adic">${arEmblem(r.id)}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="ark-${r.id}"></label>${customIcon('ark-' + r.id) ? `<button type="button" class="sx-btn" data-iconreset="ark-${r.id}">Default</button>` : ''}`, `${fmt(r.min)}+ VP · divisions ${AR_ROMAN[r.divs - 1]} to I`)).join('')}
-      ${setRow('Arena token icon', `<span class="set-exp">${curIcon('atok')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="atok"></label>${customIcon('atok') ? '<button type="button" class="sx-btn" data-iconreset="atok">Default</button>' : ''}`, 'Earned in the Arena, spent in the Arena Shop')}</div>`;
+      ${ADMIN_ART.atok()}</div>`;
 }
 function arAdminBind(p, redo) {
   const up = p.querySelector('#arBgUp'); if (up) up.onchange = async () => { try { if (await mediaSet('arena:bg', await resizeImage(up.files[0], 1920, 'image/jpeg'))) { redo(); if (arEl) renderArena(); toast('Arena wallpaper saved.'); } } catch (e) { toast(e.message, true); } };
   const del = p.querySelector('#arBgDel'); if (del) del.onclick = async () => { await mediaDel('arena:bg'); redo(); if (arEl) renderArena(); toast('Arena wallpaper back to the drawn arena.'); };
 }
-ADMIN_ART.atok = () => setRow('Arena token icon', `<span class="set-exp">${curIcon('atok')}</span><label class="sx-btn">${icon('upload')}Change<input type="file" accept="image/*" class="sr" data-iconup="atok"></label>${customIcon('atok') ? '<button type="button" class="sx-btn" data-iconreset="atok">Default</button>' : ''}`, 'Earned in the Arena, spent in the Arena Shop');
+ADMIN_ART.atok = () => adIconRow('atok', 'Arena token icon', 'Earned in the Arena, spent in the Arena Shop');
 if (!ADMIN_ART_SECS.icons.includes('atok')) ADMIN_ART_SECS.icons.push('atok');
 const arTestHTML = () => `<div><h3>Arena</h3><p class="tiny">Test helpers for the Arena.</p></div>
   <div class="row"><button class="btn ghost sm" id="wArTk">${icon('swords')}Arena: battles back to ${AR_TICKETS}</button><button class="btn ghost sm" id="wArVp">${icon('trophy')}Arena: +500 VP</button><button class="btn ghost sm" id="wArVpM">Arena: −500 VP</button><button class="btn ghost sm" id="wArTok">${curIcon('atok')}+500 arena tokens</button><button class="btn ghost sm" id="wArDef">${icon('shield')}Arena: attacks on my defense now</button><button class="btn ghost sm" id="wArWk">${icon('mail')}Arena: settle the week now</button><button class="btn danger sm" id="wArReset">Arena: reset</button></div>`;

@@ -7,13 +7,14 @@ const MEM_MAXST = 3;
 const memStarRow = (st, cls = '') => `<span class="mem-st ms${st} ${cls}" aria-label="${st} of ${MEM_MAXST} stars">${Array.from({ length: MEM_MAXST }, (_, i) => `<i class="${i < st ? 'on' : ''}">★</i>`).join('')}</span>`;
 function openMemView(id, st) {
   const m = memOf(id); if (!m) return;
-  const old = document.querySelector('.memview'); if (old) old.remove();
+  const old = document.querySelector('.memview'); if (old) { if (old._close) old._close(); else old.remove(); }   // its Esc listener goes too
   const art = artFrom(m.img), el = document.createElement('div');
   el.className = 'memview'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', m.name);
   el.innerHTML = `<div class="mv-card mem-fr mst${st}">${art ? `<img src="${art}" alt="${esc(m.name)}">` : `<span class="wd-ph">${icon('memory')}</span>`}</div>
     <div class="mv-info">${rtag(m.rarity)}<b class="ts">${esc(m.name)}</b>${memStarRow(st, 'big')}${m.desc ? `<p>${esc(m.desc)}</p>` : ''}</div>`;
   const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 180); document.removeEventListener('keydown', key); };
   const key = e => { if (e.key === 'Escape') close(); };
+  el._close = close;
   el.addEventListener('click', close);
   document.addEventListener('keydown', key);
   document.body.appendChild(el);

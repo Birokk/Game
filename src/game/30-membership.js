@@ -43,8 +43,8 @@ function passDaily() {
   for (const p of PASSES) {
     if (!passOn(p.id) || S.memberDay[p.id] === d) continue;
     S.memberDay[p.id] = d;
-    S.mailbox = [...(S.mailbox || []), { id: `pass-${p.id}-${d}`, from: 'Membership', title: `${p.name}: daily reward`, date: d,
-      body: `Thank you for being a member! Here is today's ${p.name} reward.\n${passDaysLeft(p.id)} day${passDaysLeft(p.id) === 1 ? '' : 's'} left on your membership.`, reward: { ...p.daily } }];
+    mailAdd([{ id: `pass-${p.id}-${d}`, from: 'Membership', title: `${p.name}: daily reward`, date: d,
+      body: `Thank you for being a member! Here is today's ${p.name} reward.\n${passDaysLeft(p.id)} day${passDaysLeft(p.id) === 1 ? '' : 's'} left on your membership.`, reward: { ...p.daily } }]);
     persist();
   }
 }

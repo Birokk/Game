@@ -82,14 +82,31 @@ function renderBattle() {
       <div class="bth-curs">${cur('stamina', 'Stamina', `<button class="plus" id="bthStam" aria-label="Get more stamina">${icon('plus')}</button>`)}${cur('coins', 'Gold coins', `<button class="plus" data-open="vault" aria-label="Get more gold: Golden Vault">${icon('plus')}</button>`)}${cur('pearls', 'Pearls', `<button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button>`)}</div>
       ${canAdmin() ? `<button class="btn ghost bth-adm" id="bthAdm" title="Admin: card wallpapers">${icon('image')}<span>Wallpapers</span></button>` : ''}
       <button class="inv-x" id="bthClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="bth-stage"><div class="bth-row">${BTH_MODES.map(bthCard).join('')}</div></section>`;
+    <section class="bth-stage"><button class="bth-arr l" id="bthL" aria-label="Scroll left" hidden>${icon('back')}</button><div class="bth-row">${BTH_MODES.map(bthCard).join('')}</div><button class="bth-arr r" id="bthR" aria-label="Scroll right" hidden>${icon('back')}</button></section>`;
   const q = s => bthEl.querySelector(s);
   q('#bthClose').onclick = closeBattle;
   q('#bthStam').onclick = openStamina;
   const ad = q('#bthAdm'); if (ad) ad.onclick = () => openAdmin('battle');
   bthEl.querySelectorAll('[data-bt]').forEach(b => { b.onclick = () => bthGo(b.dataset.bt); b.onpointerenter = b.onfocus = () => { bthHov = b.dataset.bt; bthBg(bthHov); }; });
   bthBg(bthHov);
+  bthScroller();
 }
+/* the cards are big and the row scrolls sideways: arrows and edge fades show where there is more, the mouse wheel scrolls
+   it, and it keeps its place across redraws (bthScrollX) */
+let bthScrollX = 0;
+function bthScroller() {
+  const st = bthEl && bthEl.querySelector('.bth-stage'), row = st && st.querySelector('.bth-row'); if (!row) return;
+  const L = st.querySelector('#bthL'), R = st.querySelector('#bthR');
+  const upd = () => { const max = row.scrollWidth - row.clientWidth, x = row.scrollLeft, side = max > 4 && getComputedStyle(row).display === 'flex';
+    L.hidden = !side || x < 4; R.hidden = !side || x > max - 4; st.classList.toggle('more-l', !L.hidden); st.classList.toggle('more-r', !R.hidden); bthScrollX = x; };
+  const step = d => row.scrollBy({ left: d * Math.max(260, row.clientWidth * .7), behavior: 'smooth' });
+  L.onclick = () => step(-1); R.onclick = () => step(1);
+  row.addEventListener('scroll', upd, { passive: true });
+  row.addEventListener('wheel', e => { if (getComputedStyle(row).display !== 'flex' || Math.abs(e.deltaX) > Math.abs(e.deltaY) || row.scrollWidth <= row.clientWidth) return; e.preventDefault(); row.scrollLeft += e.deltaY; }, { passive: false });
+  if (bthScrollX) row.scrollLeft = bthScrollX;
+  upd(); requestAnimationFrame(upd);
+}
+addEventListener('resize', () => { if (bthEl) { const row = bthEl.querySelector('.bth-row'); if (row) row.dispatchEvent(new Event('scroll')); } });
 INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in one place. Pick a mode:</p>
   <ul class="info-list"><li><b>Campaign</b>: Card Battle stages in chapters, each teaching or twisting the rules. Up to 3 stars per stage (1 pearl each) and star rewards per chapter.</li>
   <li><b>Raids</b>: spend stamina in the gear raids for clothes, or in the Golden Vault for gold.</li>
