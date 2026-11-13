@@ -427,3 +427,21 @@
   .menu .hm-bot .mode2{padding:0 12px 0 5px;gap:6px}.menu .hm-bot .mode2 .so{width:30px;height:30px}.menu .hm-bot .mode2 .st b{font-size:16.5px}
   .menu .hm-plaza{width:44px}.menu .hm-plaza .evo,.menu .hm-plaza .evo:not(.ic-up){width:34px;height:34px}
 }
+
+/* ---- v5.1 (the owner's ask): the dock sits right next to Summon (left) instead of in the middle, and the "Limited ends"
+   chip is smaller and hangs centred UNDER the Summon button (out of the flow, so the centre line stays the same) ---- */
+.menu .hm-bot{grid-template-columns:auto auto minmax(0,1fr)}
+.menu .hm-bot>.hm-tabs{justify-self:start}
+.menu .hm-bot>.hm-br{position:relative}
+.menu .hm-br>.lim-time{position:absolute;left:50%;top:calc(100% + 5px);transform:translateX(-50%);margin:0;white-space:nowrap;font-size:9.5px;padding:2px 9px;gap:4px;letter-spacing:.03em}
+.menu .hm-br>.lim-time .ic{width:11px;height:11px}
+.menu .hm-br>.lim-time:empty{display:none}
+@media (min-width:821px), (orientation:landscape){.menu .hm-bot{bottom:calc(32px + var(--sb))}}
+@media (max-width:820px) and (orientation:portrait){
+  .menu .hm-bot{grid-template-columns:minmax(0,1fr) auto;row-gap:26px}
+  .menu .hm-bot>.hm-tabs{justify-self:stretch}   /* portrait: the dock is the line under Summon, across the screen */
+  .menu .hm-br>.lim-time{font-size:9px;padding:1px 8px;top:calc(100% + 4px)}
+}
+@media (max-width:820px) and (orientation:portrait) and (max-height:700px){.menu .hm-bot{row-gap:22px}}
+@media (max-height:500px) and (orientation:landscape){.menu .hm-bot{bottom:calc(24px + var(--sb))}.menu .hm-br>.lim-time{font-size:8.5px;padding:1px 7px;top:calc(100% + 3px)}}
+@media (max-height:500px) and (orientation:landscape) and (max-width:700px){.menu .hm-bot{bottom:calc(22px + var(--sb))}}
