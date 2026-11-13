@@ -100,7 +100,7 @@ function openEvents(id) {
   closeModal();
   const live = eventList().filter(eventLive);
   evSel = id && live.some(e => e.id === id) ? id : live.some(e => e.id === evSel) ? evSel : 'login';
-  if (!evEl) { evEl = document.createElement('div'); evEl.className = 'evp'; evEl.setAttribute('role', 'dialog'); evEl.setAttribute('aria-label', 'Events'); document.body.appendChild(evEl); }
+  if (!evEl) { evEl = document.createElement('div'); evEl.className = 'evp evx'; evEl.setAttribute('role', 'dialog'); evEl.setAttribute('aria-label', 'Events'); document.body.appendChild(evEl); }
   renderEvents();
   clearInterval(evTimer); evTimer = setInterval(() => { if (!evEl) return clearInterval(evTimer); const t = $('#evTime'); if (t) t.textContent = eventTimer(eventOf(evSel)); }, 30e3);
 }
@@ -112,6 +112,14 @@ function eventTimer(e) {
   if (e.id === 'login' || e.id === 'scratch') { const t = new Date(); t.setHours(24, 0, 0, 0); return `Resets in ${dhLeft(t - Date.now())}`; }
   return eventEnd(e) ? dhLeft(eventEnd(e) - Date.now()) : 'Ongoing';
 }
+/* the status line under each event in the list (the glass list of the remade Event page) */
+function evSubOf(x) {
+  if (x.id === 'login') return loginReady() ? 'Today’s reward is waiting' : 'Claimed today';
+  if (x.id === 'msign') return msignReady() ? 'Sign in for today' : 'Signed in today';
+  if (x.id === 'scratch') { const left = SCRATCH_DAILY - ((S.scratch && S.scratch.day === dayKey() && S.scratch.n) || 0); return left > 0 ? `${left} card${left === 1 ? '' : 's'} left today` : 'All cards used today'; }
+  if (x.id === 'mystery') { const n = mboxState().got.length; return n >= MB_COST.length ? 'The fountain is empty' : `${n} / ${MB_COST.length} wishes made`; }
+  const t = eventTimer(x); return t === 'Ongoing' ? 'Ongoing' : `Ends in ${t}`;
+}
 /* the wallpaper: the admin's upload, else the limited banner's art, else a night-sky gradient */
 function eventBg(e) {
   // the Mystery Fountain shows its premium outfit's art; other events use the admin's upload, else the limited banner's art
@@ -122,12 +130,12 @@ function eventBg(e) {
 function renderEvents() {
   if (!evEl) return;
   const list = eventList().filter(eventLive), e = eventOf(evSel) || list[0];
-  evEl.innerHTML = `<div class="evp-bg ${eventBg(e) ? '' : 'none'} ${e.id === 'mystery' ? 'full' : ''}">${eventBg(e)}</div><div class="evp-shade"></div>
+  evEl.innerHTML = `<div class="evp-bg ${eventBg(e) ? '' : 'none'} ${e.id === 'mystery' ? 'full' : ''}">${eventBg(e)}<i class="hgx-glow g1 evx-g1"></i><i class="hgx-glow g2 evx-g2"></i><i class="hgx-glow g3 evx-g3"></i></div><div class="evp-shade"></div>
     <div class="evp-head"><span class="inv-badge">${icon('calendar')}</span><h2 class="ts">Event</h2></div>
     ${e.id === 'mystery' || e.id === 'scratch' ? `<div class="evp-cur"><span class="cur" title="Pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b><button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button></span></div>` : ''}
     <button class="inv-x evp-x" id="evClose" aria-label="Close">${icon('close')}</button>
-    <aside class="evp-side"><span class="evp-pill">${icon('clock')}Limited-Time</span>
-      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' || x.id === 'msign' ? 'calendar' : 'gift')}</span><b>${esc(x.name || 'Event')}</b>${(x.id === 'login' && loginReady()) || (x.id === 'msign' && msignReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
+    <aside class="evp-side"><span class="evp-pill evx-gh">${icon('clock')}Limited-time events<em>${list.length}</em></span>
+      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' || x.id === 'msign' ? 'calendar' : 'gift')}</span><span class="evx-it"><b>${esc(x.name || 'Event')}</b><small>${esc(evSubOf(x))}</small></span>${(x.id === 'login' && loginReady()) || (x.id === 'msign' && msignReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
     ${e.id === 'login' ? loginCharHTML(e) : ''}
     <section class="evp-main ${e.id === 'msign' ? 'cal' : ''} ${e.id === 'login' ? 'tlm' + (loginCharHTML(e) ? '' : ' nochar') : ''}">
       <h1 class="evp-title">${esc(e.name || 'Event')}</h1>

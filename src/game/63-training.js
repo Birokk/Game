@@ -144,7 +144,7 @@ function renderTraining() {
   const brain = b => `<button class="ftx-br ${b.id === f.brain ? 'on' : ''}" data-ftb="${b.id}" style="--dc:${b.col}" aria-pressed="${b.id === f.brain}">
       <span class="ftx-brh"><span class="qmx-pips">${Array.from({ length: 4 }, (_, i) => `<i class="${i < b.pips ? 'on' : ''}"></i>`).join('')}</span><b>${b.name}</b></span><small>${esc(b.desc)}</small></button>`;
   const opAv = ch ? baseThumb(ch) : f.brain === 'dummy' ? icon('target') : '?', opName = ch ? ch.name : f.brain === 'dummy' ? 'Training Dummy' : 'Random character';
-  ftEl.innerHTML = `<div class="rdx-bg ftx-bg ${bg ? 'art' : ''}">${bg ? artImg('ft:bg') : `<div class="ftx-scene">${bthArt('training', true)}</div>`}<i class="hgx-glow g1 ftx-g1"></i><i class="hgx-glow g2 ftx-g2"></i><i class="hgx-glow g3 ftx-g3"></i></div><div class="rdx-shade ftx-shade"></div>
+  ftEl.innerHTML = `<div class="rdx-bg ftx-bg ${bg ? 'art' : ''}">${bg ? `<span class="ftx-wp">${artImg('ft:bg')}</span>` : `<div class="ftx-scene">${bthArt('training', true)}</div>`}<i class="hgx-glow g1 ftx-g1"></i><i class="hgx-glow g2 ftx-g2"></i><i class="hgx-glow g3 ftx-g3"></i></div><div class="rdx-shade ftx-shade"></div>
     <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('target')}</span><h2 class="ts">Free Training</h2></div>
       ${infoBtn('training', 'How Free Training works')}<button class="cs-info info-btn" id="ftRules" title="How to play" aria-label="How to play">${icon('book')}</button><span class="rdx-sp"></span>
       <span class="rdx-ward ftx-free" title="Training costs no stamina and gives no rewards">${icon('check')}Free<em>No stamina · no rewards</em></span>

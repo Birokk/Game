@@ -73,22 +73,34 @@ function spinSlices() {
   let a0 = 0;
   return sz.map(v => { const d = v / tot * 360, r = { a0, sz: d, mid: a0 + d / 2 }; a0 += d; return r; });
 }
+/* the Daily Spin window, remade in glass after the owner asked for more transparency and the newer design (styles .spx at
+   the end of main.css): the admin's art panel with the title and today's spin pips, a see-through wheel with a crystal rim,
+   twinkling bulbs and a slow halo, a status bar (spins left, reset countdown, the result) and the prizes as glass chips
+   (their chances show after tapping the (i), like every other odds list) */
+const spinMidnight = () => { const d = new Date(); d.setHours(24, 0, 0, 0); return d.getTime(); };
+const spinPips = () => Array.from({ length: spinsPerDay() }, (_, i) => `<i class="${i < spinsLeft() ? 'on' : ''}"></i>`).join('');
 function openSpin() {
   const SL = spinSlices();
-  const conic = SPIN.map((s, i) => `${s.jackpot ? '#f2b8ee' : i % 2 ? '#2c2560' : '#4a2f7e'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
-  const art = MEDIA.get('spin:art');
-  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="spin-lay"><div class="spin-art">${art ? artImg('spin:art') : MCAL_ART}<div class="mcal-hd"><b>Daily Spin</b><span>${spinsPerDay()} spin${spinsPerDay() > 1 ? 's' : ''} a day · resets at midnight</span></div></div>
-    <div class="stack" style="justify-items:center">
-    <div class="wheel-wrap"><span class="wheel-ptr"></span>
-      <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">
-        ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
-      </div>
-      <button class="wheel-hub" id="spinGo" ${spinReady() ? '' : 'disabled'}>${spinReady() ? 'Spin' : 'Done'}</button></div>
-    <div class="tiny" id="spinNote">${spinNoteText()}</div>
-    <div class="row" style="justify-content:center;gap:8px"><span class="tiny">Chances</span><button type="button" class="cs-info" id="spinInfo" aria-label="Spin chances">${icon('info')}</button></div>
-    <div class="spin-odds" id="spinOdds" hidden>${SPIN.map(s => `<span>${curIcon(s.give)}${spinName(s)}</span><b>${s.w}%</b>`).join('')}</div>
-  </div></div>`, onMount: () => {
-    $('#spinInfo').onclick = () => { const o = $('#spinOdds'); o.hidden = !o.hidden; };
+  const conic = SPIN.map((s, i) => `${s.jackpot ? 'rgba(246,190,240,.9)' : i % 2 ? 'rgba(40,32,92,.58)' : 'rgba(86,54,148,.58)'} ${SL[i].a0}deg ${SL[i].a0 + SL[i].sz}deg`).join(',');
+  const art = MEDIA.get('spin:art'), per = spinsPerDay();
+  const bulbs = Array.from({ length: 16 }, (_, i) => `<i style="--b:${i * 22.5}deg;--d:${(i % 2) * -.8}s"></i>`).join('');
+  openModal({ title: 'Daily spin', ic: 'wheel', kind: 'spin', body: `<div class="spx">
+    <div class="spx-art">${art ? artImg('spin:art') : MCAL_ART}<span class="spx-artsh"></span>
+      <div class="spx-arthd"><span class="spx-kind">${icon('wheel')}Daily</span><b>Daily Spin</b><small>${per} free spin${per > 1 ? 's' : ''} a day · resets at midnight</small></div>
+      <div class="spx-artft"><span class="spx-pips" id="spinPips">${spinPips()}</span><em id="spinLeftA">${spinsLeft()} of ${per} left today</em></div></div>
+    <div class="spx-main">
+      <div class="spx-stage"><i class="spx-halo"></i>
+        <div class="wheel-wrap spx-wheel"><span class="wheel-ptr"></span><span class="spx-bulbs" aria-hidden="true">${bulbs}</span>
+          <div class="wheel" id="wheel" style="background:conic-gradient(${conic});transform:rotate(${spinAngle}deg)">
+            ${SPIN.map((s, i) => `<div class="wseg ${s.jackpot ? 'jack' : ''}" style="--a:${SL[i].mid}deg;--h:${SL[i].sz / 2}deg;--k:${Math.max(.62, Math.min(1.25, Math.sqrt(SL[i].sz / 45)))}"><span>${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b></span></div>`).join('')}
+          </div>
+          <button class="wheel-hub" id="spinGo" ${spinReady() ? '' : 'disabled'}>${spinReady() ? 'Spin' : 'Done'}</button></div></div>
+      <div class="spx-status"><span class="spx-st">${icon('wheel')}<b id="spinLeftB">${spinsLeft()} / ${per}</b> spins left</span><span class="spx-st">${icon('clock')}Resets in <b>${dhLeft(spinMidnight() - Date.now())}</b></span></div>
+      <div class="spx-note" id="spinNote">${spinNoteText()}</div>
+      <div class="spx-prizes"><div class="spx-ph"><b>Prizes</b><button type="button" class="cs-info" id="spinInfo" aria-label="Spin chances" aria-pressed="false">${icon('info')}</button><small id="spinOddsHint">Tap (i) to see the chances</small></div>
+        <div class="spx-pr" id="spinOdds">${SPIN.map(s => `<span class="spx-p ${s.jackpot ? 'jack' : ''}" title="${esc(spinName(s))}">${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b><i>${s.w}%</i></span>`).join('')}</div></div>
+    </div></div>`, onMount: () => {
+    $('#spinInfo').onclick = () => { const o = $('#spinOdds'), on = o.classList.toggle('show'); $('#spinInfo').setAttribute('aria-pressed', on); $('#spinOddsHint').textContent = on ? 'Chance of each prize per spin' : 'Tap (i) to see the chances'; };
     $('#spinGo').onclick = () => {
       if (!spinReady()) return;
       let r = Math.random() * SPIN.reduce((a, s) => a + s.w, 0), i = 0;
@@ -97,12 +109,17 @@ function openSpin() {
       // the reward is granted right away so closing the window mid-spin loses nothing
       S.spin.n = spinsUsed() + 1; S.spin.last = dayKey(); S.wallet[s.give] += s.n; gainExp(EXP.spin); persist(); renderMenu();
       $('#spinGo').disabled = true; $('#spinGo').textContent = '…';
+      const pp = $('#spinPips'); if (pp) pp.innerHTML = spinPips();
+      [['#spinLeftA', `${spinsLeft()} of ${spinsPerDay()} left today`], ['#spinLeftB', `${spinsLeft()} / ${spinsPerDay()}`]].forEach(([k, t]) => { const e = $(k); if (e) e.textContent = t; });
+      $('#spinNote').classList.add('turning'); $('#spinNote').textContent = 'The wheel is turning…';
       spinAngle = spinAngle - (spinAngle % 360) + 360 * 6 + (360 - SL[i].mid) % 360 + (Math.random() - .5) * SL[i].sz * .6;
       const wh = $('#wheel'); wh.style.transform = `rotate(${spinAngle}deg)`;
       wh.addEventListener('transitionend', () => {
         if (!$('#spinNote')) return;
         const more = spinReady(); $('#spinGo').textContent = more ? 'Spin' : 'Done'; $('#spinGo').disabled = !more;
-        $('#spinNote').innerHTML = `<span class="spin-win ${s.jackpot ? 'jack' : ''}">${curIcon(s.give)}You won ${spinName(s)}!</span>${more ? `<br>${spinsLeft()} more spin${spinsLeft() > 1 ? 's' : ''} today.` : ''}`;
+        $('#spinNote').classList.remove('turning');
+        $('#spinNote').innerHTML = `<span class="spin-win ${s.jackpot ? 'jack' : ''}">${curIcon(s.give)}You won ${spinName(s)}!</span>${more ? `<small>${spinsLeft()} more spin${spinsLeft() > 1 ? 's' : ''} today.</small>` : ''}`;
+        document.querySelectorAll('.spx-p').forEach((c, k) => c.classList.toggle('won', k === i));
         if (s.jackpot) { const f = document.createElement('div'); f.className = 'tele-flash jackpot'; document.body.appendChild(f); setTimeout(() => f.remove(), 900); toast('JACKPOT! You won a marriage ring!'); }
       }, { once: true });
     };

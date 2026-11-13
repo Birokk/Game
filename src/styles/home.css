@@ -134,3 +134,24 @@
   .menu .hm-tabs{padding:4px 5px 3px;border-radius:16px}.menu .tabb .tbi{width:30px;height:30px}.menu .tabb .tbi:not(.ic-up)::before{border-radius:9px}.menu .tabb .tbi .ic{width:15px;height:15px}
 }
 @media (max-height:500px) and (orientation:landscape) and (max-width:700px){.menu .hm-me{padding:1px 8px 1px 1px}.menu .hm-tl{gap:4px}.menu .hm-tools{gap:3px}}
+
+/* ---- the mini banner, smaller (the owner asked for it): about 20% under the first size at every breakpoint
+   (desktop 340×150 → 272×120, under 1240 px 300×132 → 248×108, portrait phones 300×118 → 248×98, sideways 230×86 → 188×70) ---- */
+.hbx{width:272px}.hbx-card{height:120px}.hbx-view{border-radius:16px}
+.hbx-arr{top:60px;width:28px;height:28px}.hbx-arr .ic{width:14px;height:14px}.hbx-arr.l{left:-12px}.hbx-arr.r{right:-12px}
+.hbx-kind{left:10px;top:10px;font-size:9.5px;padding:2px 8px 2px 6px}.hbx-kind .ic{width:12px;height:12px}
+.hbx-time{top:10px;right:8px;font-size:10px;padding:2px 8px}.hbx-time .ic{width:11px;height:11px}
+.hbx-card:has(.dot-n) .hbx-time{right:22px}.hbx-card .dot-n{top:6px;right:6px}
+.hbx-t{left:12px;right:64px;bottom:10px}.hbx-t b{font-size:19px}.hbx-t small{font-size:11px}
+.hbx-draw{padding-right:20px}.hbx-draw .ic{width:64px;height:64px}
+.hbx-dots{margin-top:6px}.hbx-dot{width:6px;height:6px}.hbx-dot.on{width:18px}
+@media (max-width:1240px){.hbx{width:248px}.hbx-card{height:108px}.hbx-arr{top:54px}.hbx-t b{font-size:17px}}
+@media (max-width:820px) and (orientation:portrait){
+  .hbx{width:min(248px,calc(100vw - var(--sl) - var(--sr) - 84px))}.hbx-card{height:98px}.hbx-arr{top:49px;width:26px;height:26px}.hbx-arr.l{left:-9px}.hbx-arr.r{right:-9px}
+  .hbx-t b{font-size:16px}.hbx-t small{font-size:10px}.hbx-kind{font-size:8.5px;top:8px;left:8px}.hbx-time{top:8px;right:7px;font-size:9.5px}.hbx-t{left:10px;bottom:8px;right:56px}.hbx-draw .ic{width:52px;height:52px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .hbx{width:188px}.hbx-card{height:70px}.hbx-view{border-radius:12px}.hbx-arr{top:35px;width:22px;height:22px}.hbx-arr.l{left:-8px}.hbx-arr.r{right:-8px}.hbx-arr .ic{width:11px;height:11px}
+  .hbx-dots{margin-top:4px}.hbx-t b{font-size:13px;-webkit-line-clamp:1}.hbx-t small{font-size:9px}.hbx-kind{font-size:7.5px;top:5px;left:6px;padding:1px 6px 1px 4px}.hbx-kind .ic{width:10px;height:10px}
+  .hbx-time{top:5px;right:5px;font-size:8px;padding:1px 6px}.hbx-card:has(.dot-n) .hbx-time{right:18px}.hbx-t{left:8px;bottom:5px;right:8px}.hbx-draw .ic{width:40px;height:40px}
+}
