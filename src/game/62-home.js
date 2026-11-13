@@ -2,7 +2,8 @@
    The home screen's left column shows every active banner as a mini banner (the owner asked for more than the limited
    one): the summon banners that are open (Limited, Weekly, Step-Up, Beginner, Outfit), live special offers, the live
    events (Mystery Fountain, the admin's events, and the daily ones only while something is left to claim: Daily Login,
-   Monthly Sign-in, Scratch cards), Pearl Honor, the Arena and the Guild Boss. One banner shows at a time; ‹ › arrows and
+   Monthly Sign-in, Scratch cards). Only summon banners, offers and events: no battles or the battle pass (the owner's
+   rule; Pearl Honor, the Arena and the Guild Boss have their own buttons). One banner shows at a time; ‹ › arrows and
    dots move between them, a swipe too, and they advance by themselves every HB_MS while the home screen is really in view
    (not covered by another screen or window, the tab visible, not hovered, not just moved by hand).
    hmBanners() builds the list; renderHomeBanners() (end of renderMenu) only rebuilds the markup when the list changes,
@@ -34,17 +35,11 @@ function hmBanners() {
   sumB('stepup', 'Step-Up summon', '#ffb84a');
   sumB('beginner', 'Beginner banner', '#4fd1a5');
   sumB('skins', 'Outfit banner', '#ff7ccf');
-  L.push({ id: 'x:honor', kind: 'Pearl Honor', col: '#f5afe8', ic: 'medal', title: `Season ${bpSeason() + 1}`, sub: `Honor level ${bpLevel()}`, ends: bpEnds(), art: MEDIA.get('honor:bg'), dot: bpReady(), go: () => openHonor() });
-  { const R = arJoined() && arRankOf(arState().vp);
-    L.push({ id: 'x:arena', kind: 'Arena', col: '#ff9ab8', ic: 'arena', title: R ? R.label : 'Arena', sub: R ? `${arLeft()} of ${AR_TICKETS} battles left` : 'Battle other players’ decks', art: MEDIA.get('battle:arena'), scene: 'arena', dot: arReady(), go: () => openArena() }); }
-  if (inGuild()) { const bd = gbBoard(); L.push({ id: 'x:gboss', kind: 'Guild Boss', col: '#ffb07a', ic: 'dragon', title: gbName(), sub: `Level ${bd.lv} · ${gbLeft()} of ${GB_TRIES} battles left`, art: MEDIA.get('gboss:art') || MEDIA.get('battle:gboss'), scene: 'gboss', dot: gbReady(), go: () => openGuildBoss() }); }
   return L;
 }
-const bpLevel = () => { try { return bpLv(); } catch (e) { return 1; } };
 function hbCardHTML(b, i) {
-  const scene = !b.art && b.scene && typeof bthArt === 'function' ? bthArt(b.scene, true) : '';
   return `<button class="hbx-card" data-hb="${i}" style="--hc:${b.col}" aria-label="${esc(b.kind)}: ${esc(b.title)}${b.sub ? ', ' + esc(b.sub) : ''}" ${i === hbI ? '' : 'tabindex="-1"'}>
-    <span class="hbx-art">${b.art ? `<img src="${b.art}" alt="" loading="lazy">` : scene ? `<span class="hbx-scene">${scene}</span>` : `<span class="hbx-draw">${icon(b.ic)}</span>`}${b.png ? `<img class="hbx-png" src="${b.png}" alt="">` : ''}</span>
+    <span class="hbx-art">${b.art ? `<img src="${b.art}" alt="" loading="lazy">` : `<span class="hbx-draw">${icon(b.ic)}</span>`}${b.png ? `<img class="hbx-png" src="${b.png}" alt="">` : ''}</span>
     <span class="hbx-shade"></span>
     <span class="hbx-kind">${icon(b.ic)}${esc(b.kind)}</span>
     <span class="hbx-t"><b>${esc(b.title)}</b>${b.sub ? `<small>${esc(b.sub)}</small>` : ''}</span>
