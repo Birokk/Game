@@ -88,20 +88,22 @@ function arFoe(id, vp) {
     hp: AR_HP[R.i], brain: AR_BRAIN[R.i], power: Math.round(15000 + vp * 55 + r() * 18000), seed, skin: ccBotSkin(seed), back: ccBotBack(seed) };
 }
 /* the 3 opponents of this window (or refresh): random players of YOUR rank (the owner's rule), with VP near yours.
-   The list is kept for the window; it is rebuilt after a refresh, when your rank changes, or when all 3 are beaten
-   (a new set then appears for free: S.arena.round counts those). */
+   The list is kept for the window; it is rebuilt after a refresh or when your rank changes, and a beaten opponent's
+   slot gets a new opponent at once (arFoeSlot; S.arena.foes.n counts them, S.arena.round is from older saves). */
 const arRankMax = R => AR_RANKS[R.i + 1] ? AR_RANKS[R.i + 1].min - 1 : R.r.min + R.r.divs * R.r.step + 400;
+/* one opponent slot: a seeded VP near yours, kept inside your rank */
+function arFoeSlot(a, R, k, tag) {
+  const lo = R.r.min, hi = arRankMax(R), sp = R.r.step * 1.2, r = seeded('arfv:' + arUid() + ':' + k + ':' + tag), v = a.vp + (r() * 2 - 1) * sp;
+  return { id: `${arUid()}:${k}:${tag}`, vp: Math.round(Math.max(lo, Math.min(hi, v))) };
+}
 function arFoes() {
   const a = arState(), R = arRankOf(a.vp), k = `${a.win}:${a.ref || 0}:${a.round || 0}:${R.r.id}`;
-  if (!a.foes || a.foes.k !== k) {
-    const lo = R.r.min, hi = arRankMax(R), sp = R.r.step * 1.2;
-    a.foes = { k, list: [0, 1, 2].map(i => { const r = seeded('arfv:' + arUid() + ':' + k + ':' + i), v = a.vp + (r() * 2 - 1) * sp;
-      return { id: `${arUid()}:${k}:${i}`, vp: Math.round(Math.max(lo, Math.min(hi, v))) }; }) };
-    persist();
-  }
-  const L = a.foes.list.map(x => arFoe(x.id, x.vp));
-  if (L.every(f => a.beat.includes(f.id))) { a.round = (a.round || 0) + 1; a.foes = null; return arFoes(); }   // all beaten: a new set, free
-  return L;
+  if (!a.foes || a.foes.k !== k) { a.foes = { k, n: 0, list: [0, 1, 2].map(i => arFoeSlot(a, R, k, i)) }; persist(); }
+  // a beaten opponent is replaced by a new one of your rank at once (the owner's ask), marked "New" for a while
+  let changed = false;
+  a.foes.list.forEach((x, i) => { if (a.beat.includes(x.id)) { a.foes.n = (a.foes.n || 0) + 1; a.foes.list[i] = { ...arFoeSlot(a, R, k, 'n' + a.foes.n), nw: Date.now() }; changed = true; } });
+  if (changed) persist();
+  return a.foes.list.map(x => ({ ...arFoe(x.id, x.vp), nw: x.nw || 0 }));
 }
 /* New opponents: 2 free refreshes every 12 hours, then 1 pearl each */
 const AR_REF_FREE = 2, AR_REF_PEARLS = 1;
@@ -389,7 +391,7 @@ function arBattleHTML() {
       <span class="arx-frk">${arBadge(f.vp)}<span><b>${esc(FR.label)}</b><small>${fmt(f.vp)} VP</small></span></span>
       <span class="arx-fdk">${icon('cards')}<span><small>Defense deck</small><b>${esc(f.deckName)}</b></span><em>${icon('heart')}${f.hp} HP</em></span>
       <span class="arx-fvp"><span class="w">Win <b>${arSign(row[0])} VP</b></span><span class="l">Loss <b>${arSign(row[1])} VP</b></span></span>
-      ${beat ? `<span class="arx-beat">${icon('check')}Defeated</span>` : ''}</button>`; };
+      ${beat ? `<span class="arx-beat">${icon('check')}Defeated</span>` : f.nw && Date.now() - f.nw < 10 * 6e4 ? `<span class="arx-new">${icon('sparkle')}New challenger</span>` : ''}</button>`; };
   return `<div class="rdx-hero arx-hero"><span class="arx-hem" style="--rk:${R.r.c2}">${arEmblem(R.r.id)}<i class="ar-dv">${R.dn}</i></span>
       <div class="arx-het"><span class="rdx-kind">${icon('arena')}Arena · ${esc(R.r.name)} league</span><h1 class="rdx-title arx-title">${esc(R.label)}</h1>
         <div class="arx-hvp"><b>${fmt(a.vp)}</b><small>VP</small><span class="arx-hbar"><i style="width:${R.pct}%"></i></span><em>${R.next == null ? 'Top division' : `${fmt(R.next - a.vp)} VP to ${esc(arRankOf(R.next).label)}`}</em></div>
@@ -469,7 +471,7 @@ setInterval(() => { if (!arEl) { arWinShown = ''; return; } const w = arState().
 INFO.arena = () => ({ title: 'Arena', kind: 'arinfo', body: `<p class="desc">Battle other players' defense decks in Card Battle and climb the ranks.</p>
   <ul class="info-list"><li>To join, choose a <b>defense deck</b>. It defends you while you're away: when other players attack you, it is played for you. A held defense gives VP and ${AR_DEF_TOK} arena tokens; a fallen one loses VP.</li>
   <li>You get <b>${AR_TICKETS} battles every 12 hours</b> (at 00:00 and 12:00); unused battles don't carry over. A battle is used when it starts, and leaving it counts as a loss.</li>
-  <li>You attack <b>players of your own rank</b>: 3 at a time, with their defense deck. <b>New opponents</b> are free ${AR_REF_FREE} times every 12 hours, then cost ${AR_REF_PEARLS} pearl each; when you beat all 3, new ones come for free. Higher ranks defend with more HP and smarter play.</li>
+  <li>You attack <b>players of your own rank</b>: 3 at a time, with their defense deck. <b>New opponents</b> are free ${AR_REF_FREE} times every 12 hours, then cost ${AR_REF_PEARLS} pearl each; an opponent you beat is replaced by a new one straight away. Higher ranks defend with more HP and smarter play.</li>
   <li><b>Victory Points</b> decide your rank. How many you win or lose depends on your rank (below). VP never go below 0.</li>
   <li><b>Arena tokens</b>: win ${AR_TOK.win}, draw ${AR_TOK.draw}, loss ${AR_TOK.lose}, ${AR_DEF_TOK} per held defense, plus the weekly rewards. Spend them in the <b>Arena Shop</b> (new items every day, also in the Shop).</li>
   <li>Every <b>Monday at 00:00</b> your rank earns <b>pearls and arena tokens</b> by mail${arJoined() ? ` (next in ${arWeekTxt()})` : ''}.</li></ul>

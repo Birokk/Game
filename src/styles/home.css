@@ -321,3 +321,9 @@
   .menu .hm-ql .ev .dot-n{right:calc(50% - 16px)}.menu .hm-ql .badge{right:calc(50% - 21px);min-width:14px;height:14px;font-size:8px}
   .menu .tool .tc{width:30px;height:30px}.menu .tool .tc .ic{width:14px;height:14px}
 }
+
+/* ---- the bottom dock without its bar (the owner's ask: they will upload their own icons, so no background behind the
+   row): no glass panel, border or shadow; labels get a stronger shadow so they stay readable over the wallpaper.
+   The tiles behind the default icons stay (an uploaded icon hides its tile, .ic-up). ---- */
+.menu .hm-tabs{background:none!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.menu .hm-tabs .tbl,.menu .tabb{text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 10px rgba(0,0,0,.55)}

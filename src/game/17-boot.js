@@ -9,6 +9,7 @@
   if (cloud === 'reload') return;
   if (cloud === 'timeout') { Backend.on = false; cloudStatus = 'offline'; console.warn('Server did not answer in time, playing offline'); }
   ensureRaidSet();   // server content may predate the raid sets
+  if (S.settings && !S.settings.hmV) { S.settings.hmSize = 'large'; S.settings.hmV = 1; }   // Large is the default home screen size (the owner's ask): saves that picked Normal before switch once
   // move art saved by the first version (inside localStorage) into IndexedDB
   for (const e of S.pool) if (e.art && e.art.startsWith('data:')) { await mediaSet('art:' + e.id, e.art); e.art = 'idb:art:' + e.id; }
   // keep the save we just loaded cleanly as the backup (used if the main copy is ever unreadable), then save

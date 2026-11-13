@@ -6212,3 +6212,6 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media (max-width:620px){.chx-panel{margin:0;width:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}.chx-panel::before,.chx-panel::after{display:none}}
 @media (max-height:500px) and (orientation:landscape){.chx-panel{margin:8px;width:min(420px,calc(100% - 16px))}.chx-head{padding:8px 12px 6px}.chx-head h2{font-size:18px}.chx-ic{width:30px;height:30px}.chx-tab{height:30px}.chx-sub{margin-top:6px;padding:5px 10px}.chx-list{padding:8px 12px;gap:8px}.chx-quick{display:none}.chx-bar{padding:6px 12px 10px}.chx-bar .input{height:38px}.chx-send{width:38px;height:38px}}
 @media (prefers-reduced-motion:reduce){.chx-panel,.chm{animation:none}}
+/* Arena: a new opponent that took a beaten one's place */
+.arx-new{position:absolute!important;top:10px;right:10px;z-index:3;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font:400 11px var(--display);letter-spacing:.06em;background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 0 14px var(--cry-glow);animation:pop .4s both}
+.arx-new .ic{width:12px;height:12px}

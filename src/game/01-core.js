@@ -257,7 +257,7 @@ function sampleState() {
     version: 4,
     player: { name: 'Traveler', look: { hair:'#3c4cff', style:2, skin:'#f6c9a4', shirt:'#2f3a66', pants:'#1e2440' } },
     wallet: { coins: 24580, pearls: 90, tickets: 10, wishes: 10, rings: 0, bottles: 0, dust: 0, starlight: 0, memtk: 0, nametk: 0 },
-    settings: { names: true, music: true, sfx: true, gfx: 'high', pullFit: false },
+    settings: { names: true, music: true, sfx: true, gfx: 'high', pullFit: false, hmSize: 'large', hmV: 1 },
     featuredId: 'aria',
     wallpaper: null,
     owned: {},
