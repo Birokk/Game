@@ -294,11 +294,11 @@
 .menu .hm-me .vipc{left:-3px;bottom:-3px}
 .menu .hm-ql{gap:2px}
 .menu .hm-ql .ev{min-width:54px;padding:0 2px}
-.menu .hm-ql .ev .evo:not(.ic-up){width:40px;height:40px}
-.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:18px;height:18px}
+.menu .hm-ql .ev .evo,.menu .hm-ql .ev .evo:not(.ic-up){width:36px;height:36px}   /* uploaded icons too (.ic-up): the same size as the Wallpaper / Hide UI tools */
+.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:17px;height:17px}
 .menu .hm-ql .ev .el{font-size:9.5px}
-.menu .hm-ql .ev .dot-n{right:calc(50% - 21px)}
-.menu .hm-ql .badge{right:calc(50% - 28px);min-width:17px;height:17px;font-size:9.5px}
+.menu .hm-ql .ev .dot-n{right:calc(50% - 19px)}
+.menu .hm-ql .badge{right:calc(50% - 26px);min-width:17px;height:17px;font-size:9.5px}
 .menu .hm-tools{gap:6px}
 .menu .tool{font-size:10px;gap:2px}
 .menu .tool .tc{width:36px;height:36px}
@@ -308,15 +308,15 @@
   .menu .hm-rc .hm-drop .ev{width:66px}
   .menu .hm-me .vipc{min-width:19px;height:19px;left:-2px;bottom:-2px}.menu .hm-me .vipc b{font-size:10.5px}
   .menu .hm-ql .ev{min-width:48px;padding:0 1px}
-  .menu .hm-ql .ev .evo:not(.ic-up){width:34px;height:34px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:16px;height:16px}
+  .menu .hm-ql .ev .evo,.menu .hm-ql .ev .evo:not(.ic-up){width:32px;height:32px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:15px;height:15px}
   .menu .hm-ql .ev .el{font-size:8.5px}
-  .menu .hm-ql .ev .dot-n{right:calc(50% - 18px)}.menu .hm-ql .badge{right:calc(50% - 24px);min-width:15px;height:15px;font-size:8.5px}
+  .menu .hm-ql .ev .dot-n{right:calc(50% - 17px)}.menu .hm-ql .badge{right:calc(50% - 23px);min-width:15px;height:15px;font-size:8.5px}
   .menu .tool .tc{width:32px;height:32px}.menu .tool .tc .ic{width:15px;height:15px}
 }
 @media (max-height:500px) and (orientation:landscape){
   .menu .hm-me .vipc{min-width:17px;height:17px;left:-2px;bottom:-2px;border-width:1.5px}.menu .hm-me .vipc b{font-size:9.5px}
   .menu .hm-ql .ev{min-width:44px;padding:0 1px}
-  .menu .hm-ql .ev .evo:not(.ic-up){width:30px;height:30px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:14px;height:14px}
+  .menu .hm-ql .ev .evo,.menu .hm-ql .ev .evo:not(.ic-up){width:30px;height:30px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:14px;height:14px}
   .menu .hm-ql .ev .el{font-size:8px}
   .menu .hm-ql .ev .dot-n{right:calc(50% - 16px)}.menu .hm-ql .badge{right:calc(50% - 21px);min-width:14px;height:14px;font-size:8px}
   .menu .tool .tc{width:30px;height:30px}.menu .tool .tc .ic{width:14px;height:14px}
