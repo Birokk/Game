@@ -129,7 +129,7 @@ const CC_RULES = [
   { t: 'Auto play', ic: 'bolt', h: () => `
     <div class="ccr-fig ccr-autofig"><span class="ccm-auto on">${icon('bolt')}<b>Auto</b><i>On</i></span><p>Tap <b>Auto</b> in the top right of the match to let the game play your turns. Tap it again (or Stop auto play) to take over.</p></div>
     <div class="ccr-txt"><h3>Let the game play for you</h3>
-      <p>Auto play is a good player, not a perfect one. Each turn it tries out whole sequences of moves and predicts how the bot will answer, but it can't see face-down traps and now and then it makes a weaker move. It wins most matches, not all of them. You can still tap cards yourself; it simply plans again.</p>
+      <p>Auto play is a decent player, not a great one. Each turn it tries out whole sequences of moves and guesses how the bot will answer, but it can't see face-down traps and it often makes a weaker move. Against an even opponent it wins a bit more than half of its matches, so playing yourself is usually better. You can still tap cards yourself; it simply plans again.</p>
       <p>It plays at the same pace as you would, with every animation, and a win still gives <b>+${CC_WIN_PEARLS} pearl</b>.</p>
       <p class="ccr-credit">${CC_ICON_CREDIT}</p></div>` }
 ];

@@ -1,13 +1,20 @@
 /* ---------- Raids: dungeons that cost stamina and drop Wardrobe clothes ----------
    Three gear dungeons (shared R and SSR sets, a UR set of their own) and the Golden Vault (gold, 5 stages; S.raidStage).
-   Each gear clear costs RAID_STAMINA and gives 1 clothing piece, or 2 with RAID_DOUBLE chance:
-   UR 4%, SSR 10%, R the rest. The sets are ordinary Wardrobe clothes (S.clothes, flag raid + set) so the admin edits
+   Every raid has stages (S.raidStages {id: i}). Gear stages all cost the raid's stamina (RAID_STAMINA) and differ in their
+   drops (GEAR_STAGES: no UR before stage III, stage V always 2 pieces and the best UR rate, less R the deeper you go). The sets are ordinary Wardrobe clothes (S.clothes, flag raid + set) so the admin edits
    their pictures in admin → Raids or Wardrobe; without a picture each piece shows white line art for its slot.
    No summon animation: the drops pop up in a see-through results window.
    A clear is won in a Card Clash battle against the raid's guardian (raidBattle → startClash(…, raid) → raidMatch): your
    own deck against the dungeon's deck (RAID_FOE); the stamina is only spent when you win (raidFinish). Every player also
    gets RAID_INSTANT instant clears a day across all raids (the old Clear buttons, S.raidInst {day, n}). */
-const RAID_STAMINA = 10, RAID_DOUBLE = .33, RAID_RATES = { 5: .08, 4: .20 }, RAID_INSTANT = 10;
+const RAID_STAMINA = 10, RAID_INSTANT = 10;
+/* gear raid stages (the owner's ask: the same cost on every stage, but UR gear only from stage III, stage V always gives
+   2 pieces and a little more UR than stage IV, and less R): player level it opens at, UR %, SSR % (R = the rest), % of
+   clears with 2 pieces */
+const GEAR_STAGES = [
+  { lv: 1, ur: 0, ssr: 30, dbl: 25 }, { lv: 10, ur: 0, ssr: 36, dbl: 30 }, { lv: 20, ur: 6, ssr: 40, dbl: 33 },
+  { lv: 30, ur: 9, ssr: 44, dbl: 40 }, { lv: 40, ur: 11, ssr: 48, dbl: 100 }
+];
 const CRN = { 3: 'R', 4: 'SSR', 5: 'UR' };
 const RAID_SETS = [
   { set: 'r', rarity: 3, name: "Wanderer's", pieces: { hat: 'Hood', top: 'Tunic', pants: 'Trousers', shoes: 'Boots', acc: 'Charm', hand: 'Gloves' } },
@@ -29,8 +36,9 @@ const RAID_BASE = [
 /* ---- raid editor (admin → Raids): the built-in raids above plus the admin's edits and new raids, kept as content
    S.raidDefs {id: changed fields of a built-in raid, or a whole new raid with custom: true}. raidSync() rebuilds RAIDS in
    place from both, so every place that reads RAIDS sees the edits. Fields: kind 'gear' | 'gold', name, desc, icon, hidden
-   (not shown to players), foe {deck, hp, skin, back} (the guardian), gear: stam (stamina per clear), ur / ssr (drop %,
-   R = the rest), dbl (% of clears with 2 drops); gold: stages [{st, gold, exp, lv}] (1–6). ---- */
+   (not shown to players), foe {deck, hp, skin, back} (the guardian), gear: stam (stamina per clear, every stage) and
+   stages [{lv, ur, ssr, dbl}] (opens at, UR / SSR drop %, R = the rest, % of clears with 2 drops); gold: stages
+   [{st, gold, exp, lv}] (1–6). ---- */
 const RAIDS = [];
 const RAID_ICS = ['raid', 'coin', 'swords', 'dragon', 'tree', 'crown', 'star', 'shield', 'peak', 'wave', 'shell', 'fountain', 'door', 'tower', 'map', 'bolt', 'heart', 'gift', 'compass', 'arena'];
 function raidDefs() { if (!S.raidDefs || typeof S.raidDefs !== 'object' || Array.isArray(S.raidDefs)) S.raidDefs = {}; return S.raidDefs; }
@@ -39,7 +47,10 @@ function raidNorm(x) {
   x.kind = x.kind === 'gold' ? 'gold' : 'gear';
   x.name = String(x.name || (x.kind === 'gold' ? 'New gold raid' : 'New gear raid')).slice(0, 30); x.desc = String(x.desc || '').slice(0, 300);
   x.foe = { deck: 'traps', hp: 14, skin: 'default', back: 'default', ...(x.foe || {}) }; x.foe.hp = RAID_NUM(x.foe.hp, 14, 1, 60);
-  if (x.kind === 'gear') { x.stam = RAID_NUM(x.stam, RAID_STAMINA, 1, 200); x.ur = RAID_NUM(x.ur, 8, 0, 100); x.ssr = RAID_NUM(x.ssr, 20, 0, 100 - x.ur); x.dbl = RAID_NUM(x.dbl, 33, 0, 100); }
+  if (x.kind === 'gear') {
+    x.stam = RAID_NUM(x.stam, RAID_STAMINA, 1, 200); delete x.ur; delete x.ssr; delete x.dbl;   // the old one-rate fields: stages now
+    x.stages = (Array.isArray(x.stages) && x.stages.length ? x.stages : GEAR_STAGES).slice(0, 6).map(g => { const ur = RAID_NUM(g.ur, 0, 0, 100); return { lv: RAID_NUM(g.lv, 1, 1, 999), ur, ssr: RAID_NUM(g.ssr, 30, 0, 100 - ur), dbl: RAID_NUM(g.dbl, 33, 0, 100) }; });
+  }
   else x.stages = (Array.isArray(x.stages) && x.stages.length ? x.stages : GOLD_STAGES).slice(0, 6).map(g => ({ st: RAID_NUM(g.st, 5, 1, 200), gold: RAID_NUM(g.gold, 3000, 0, 9999999), exp: RAID_NUM(g.exp, 10, 0, 9999), lv: RAID_NUM(g.lv, 1, 1, 999) }));
   x.hidden = !!x.hidden;
   return x;
@@ -56,9 +67,13 @@ const raidOf = id => RAIDS.find(x => x.id === id) || raidShown()[0] || RAIDS[0];
 const urHome = x => x.dungeon || RAID_UR_HOME[x.set] || 'ruins';   // 'none' = drops in no raid
 const raidIc = d => d.icon || (d.kind === 'gold' ? 'coin' : 'raid');
 const raidStam = d => d.stam || RAID_STAMINA;
-const raidRates = d => ({ 5: (d.ur ?? 8) / 100, 4: (d.ssr ?? 20) / 100 });
-const raidDbl = d => (d.dbl ?? 33) / 100;
-const goldStages = d => d && d.stages && d.stages.length ? d.stages : GOLD_STAGES;
+const raidStages = d => d && d.stages && d.stages.length ? d.stages : d && d.kind === 'gear' ? GEAR_STAGES : GOLD_STAGES;
+const raidStg = (d, i) => { const L = raidStages(d); return L[Math.min(L.length - 1, Math.max(0, i ?? raidStage(d)))]; };
+const raidRates = (d, i) => { const g = raidStg(d, i); return { 5: g.ur / 100, 4: g.ssr / 100 }; };
+const raidDbl = (d, i) => raidStg(d, i).dbl / 100;
+const raidRpct = g => Math.max(0, 100 - g.ur - g.ssr);
+const raidUrFrom = d => raidStages(d).findIndex(g => g.ur > 0);   // the first stage that drops UR (-1: none)
+const raidPcs = (g, t = 1) => g.dbl >= 100 ? `${2 * t}` : g.dbl <= 0 ? `${t}` : `${t}–${2 * t}`;   // clothing pieces for t clears
 /* the guardian decks the admin can pick: the starters, the campaign decks and the Great Tree's war council */
 const raidDeckList = () => [...CC_PRESETS.map(p => ({ id: p.id, name: p.name })), ...Object.keys(CC_CAMP_DECKS).map(k => ({ id: k, name: raidDeckName(k) })), { id: 'spire', name: 'Sky Sovereign deck' }];
 function raidDeckName(k) { const p = CC_PRESETS.find(x => x.id === k); return p ? p.name : k === 'spire' ? 'Sky Sovereign deck' : QM_RIVAL_NM[k] || (k ? k[0].toUpperCase() + k.slice(1) + ' deck' : 'Guardian deck'); }
@@ -102,14 +117,13 @@ function clothLine(slot) {
   return lineCache[slot] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 const ctag = (r, cls = '') => `<span class="rtag r${r} ${cls}">${CRN[r] || ''}</span>`;   // the summon rarity tags, plus R
-INFO.raid = () => { const d = raidOf(raidSel).kind === 'gear' ? raidOf(raidSel) : raidGear()[0], R = raidRates(d), p = r => r === 3 ? Math.max(0, Math.round((1 - R[5] - R[4]) * 100)) : Math.round(R[r] * 100);
-  return { title: `${d.name} · drops`, body: `<p class="desc">Clear a raid by <b>winning a card battle</b> against its guardian with your own deck. A clear costs ${raidStam(d)} stamina, spent only when you win, and gives 1 clothing piece; ${Math.round(raidDbl(d) * 100)}% of clears give 2. Every clear also gives ${EXP.raid} EXP. You also get <b>${RAID_INSTANT} instant clears a day</b> (all raids together): same cost and drops, no battle.</p>
-    <table class="cs-table"><thead><tr><th>Drop</th><th>Chance</th></tr></thead><tbody>
-      <tr><td>${ctag(5)} 2★ UR piece</td><td>${RAID_STAR2 * 100}%</td></tr>
-      ${[5, 4, 3].map(r => `<tr><td>${ctag(r)} ${CRN[r]} piece</td><td>${p(r)}%</td></tr>`).join('')}
-    </tbody></table><p class="tiny">The 2★ roll comes first; otherwise the piece is UR, SSR or R at the rates above, picked at random from that rarity's raid sets.</p>` }; };
-function rollRaidPiece(d) {
-  const R = raidRates(d), x = Math.random(), r = x < R[5] ? 5 : x < R[5] + R[4] ? 4 : 3;
+INFO.raid = () => { const d = raidOf(raidSel).kind === 'gear' ? raidOf(raidSel) : raidGear()[0], L = raidStages(d), cur = raidStage(d);
+  return { title: `${d.name} · drops`, body: `<p class="desc">Clear a raid by <b>winning a card battle</b> against its guardian with your own deck (deeper stages have a tougher guardian). Every stage costs the same <b>${raidStam(d)} stamina</b>, spent only when you win; deeper stages open at higher player levels and drop better gear. Every clear also gives ${EXP.raid} EXP. You also get <b>${RAID_INSTANT} instant clears a day</b> (all raids together): same cost and drops, no battle.</p>
+    <table class="cs-table rd-stt"><thead><tr><th>Stage</th><th>Opens at</th><th>${ctag(5)}</th><th>${ctag(4)}</th><th>${ctag(3)}</th><th>Pieces</th></tr></thead><tbody>
+      ${L.map((g, i) => `<tr${i === cur ? ' class="on"' : ''}><td><b>${ROMAN[i]}</b></td><td>Lv ${g.lv}</td><td>${g.ur ? g.ur + '%' : '—'}</td><td>${g.ssr}%</td><td>${raidRpct(g)}%</td><td>${g.dbl >= 100 ? 'Always 2' : g.dbl <= 0 ? '1' : `1, or 2 (${g.dbl}%)`}</td></tr>`).join('')}
+    </tbody></table><p class="tiny">On stages that drop UR, ${RAID_STAR2 * 100}% of pieces are a 2★ UR piece (rolled first). Otherwise the piece is UR, SSR or R at the stage's rates, picked at random from that rarity's raid sets.</p>` }; };
+function rollRaidPiece(d, i) {
+  const R = raidRates(d, i), x = Math.random(), r = x < R[5] ? 5 : x < R[5] + R[4] ? 4 : 3;
   for (let k = r; k >= 3; k--) { const list = dungeonPieces(d, k); if (list.length) return rpick(list); }   // a raid without pieces at that rarity drops the next one down
   return null;
 }
@@ -128,11 +142,11 @@ function wardFullMsg(times) {
 function raidInst() { const d = dayKey(); if (!S.raidInst || S.raidInst.day !== d) S.raidInst = { day: d, n: 0 }; return S.raidInst; }
 const raidInstLeft = () => Math.max(0, RAID_INSTANT - raidInst().n);
 /* the pieces `times` gear clears give (added to the wardrobe) */
-function rollGearDrops(d, times) {
-  const drops = [];
-  let n = 0; for (let t = 0; t < times; t++) n += Math.random() < raidDbl(d) ? 2 : 1;
+function rollGearDrops(d, times, si = raidStage(d)) {
+  const drops = [], g = raidStg(d, si);
+  let n = 0; for (let t = 0; t < times; t++) n += Math.random() < g.dbl / 100 ? 2 : 1;
   for (let i = 0; i < n; i++) {
-    const ur = dungeonPieces(d, 5), st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d); if (!x) continue;   // 1.5%: a 2★ UR piece
+    const ur = g.ur > 0 ? dungeonPieces(d, 5) : [], st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d, si); if (!x) continue;   // 1.5% on UR stages: a 2★ UR piece
     const isNew = !owns(x.id); addCloth(x.id, st2 ? 2 : 1); drops.push({ x, isNew, st: st2 ? 2 : (hasClothStars(x) ? 1 : 0) });
   }
   return drops.sort((a, b) => b.x.rarity - a.x.rarity);
@@ -142,26 +156,27 @@ function clearRaid(times) {
   times = Math.min(times, raidInstLeft());
   if (times < 1) { toast(`No instant clears left today (${RAID_INSTANT} a day). Win a battle to clear, or come back tomorrow.`); return; }
   if (d.kind === 'gold') return clearGold(times);
+  const si = raidStage(d); if (!stageOpen(si, d)) { toast(`Stage ${ROMAN[si]} opens at player level ${raidStg(d, si).lv}.`); return; }
   if (wardFree() < 2 * times) { wardFullMsg(times); return; }
   const cost = raidStam(d) * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
   spendStamina(cost); questAdd('raid', times); raidInst().n += times;
-  const drops = rollGearDrops(d, times);
+  const drops = rollGearDrops(d, times, si);
   gainExp(EXP.raid * times); persist(); renderMenu(); renderRaids();
   showRaidDrops(drops, times);
 }
 /* instant clears ask first (the owner: a misclick used to clear at once): the same checks as clearRaid, then a small
    glass window with the cost, the clears left and what you get; Yes runs clearRaid */
 function confirmRaidClear(times) {
-  const d = raidOf(raidSel), gold = d.kind === 'gold', gi = goldStage(d), g = goldStages(d)[gi];
+  const d = raidOf(raidSel), gold = d.kind === 'gold', gi = raidStage(d), g = raidStages(d)[gi];
   times = Math.min(times, raidInstLeft());
   if (times < 1) { toast(`No instant clears left today (${RAID_INSTANT} a day). Win a battle to clear, or come back tomorrow.`); return; }
-  if (gold && !goldOpen(gi, d)) { toast(`Stage ${ROMAN[gi]} opens at player level ${g.lv}.`); return; }
+  if (!stageOpen(gi, d)) { toast(`Stage ${ROMAN[gi]} opens at player level ${g.lv}.`); return; }
   if (!gold && wardFree() < 2 * times) { wardFullMsg(times); return; }
   const cost = (gold ? g.st : raidStam(d)) * times, have = stamina(), left = raidInstLeft();
   if (have < cost) { toast(`This needs ${cost} stamina. You have ${have}.`); openStamina(); return; }
-  const name = gold ? `${d.name} ${ROMAN[gi]}` : d.name;
-  const get = gold ? `${curIcon('coins')}~${fmt(g.gold * times)} gold · ${expTag(g.exp * times)}` : `${icon('hanger')}${times}–${times * 2} clothing pieces · ${expTag(EXP.raid * times)}`;
+  const name = `${d.name} ${ROMAN[gi]}`;
+  const get = gold ? `${curIcon('coins')}~${fmt(g.gold * times)} gold · ${expTag(g.exp * times)}` : `${icon('hanger')}${raidPcs(g, times)} clothing pieces · ${expTag(EXP.raid * times)}`;
   openModal({ title: 'Instant clear?', ic: raidIc(d), small: true, kind: 'raidclr', body: `<div class="rcf">
     <p class="desc">Clear <b>${esc(name)}</b> ${times > 1 ? `<b>${times} times</b>` : 'once'} without a battle?</p>
     <div class="rcf-rows">
@@ -171,15 +186,17 @@ function confirmRaidClear(times) {
     <div class="row rcf-btns"><button class="btn ghost" id="rcfNo">Cancel</button><button class="btn gold" id="rcfYes">Clear ×${times} ${curIcon('stamina')}${cost}</button></div></div>`,
     onMount: () => { $('#rcfNo').onclick = closeModal; $('#rcfYes').onclick = () => { closeModal(); clearRaid(times); }; } });
 }
+/* each raid remembers its own picked stage (S.raidStages {id: i}; the Golden Vault's older S.raidStage still counts);
+   a gear raid nobody picked a stage in opens on its deepest open stage (every stage costs the same) */
+const stageOpen = (i, d = raidOf(raidSel)) => { const g = raidStages(d)[i]; return !!g && playerLv().lv >= g.lv; };
+const raidTopStage = d => { const L = raidStages(d); let i = 0; L.forEach((g, k) => { if (playerLv().lv >= g.lv) i = k; }); return i; };
+const raidStage = (d = raidOf(raidSel)) => { const L = raidStages(d), v = (S.raidStages || {})[d.id] ?? (d.id === 'vault' ? S.raidStage : null); return Math.min(L.length - 1, Math.max(0, v == null ? (d.kind === 'gear' ? raidTopStage(d) : 0) : v || 0)); };
+const setRaidStage = (d, i) => { S.raidStages = S.raidStages || {}; S.raidStages[d.id] = i; if (d.id === 'vault') S.raidStage = i; };
 /* gold raid: no wardrobe space needed; each clear gives the stage's gold (±15%) and EXP */
-/* each gold raid remembers its own picked stage (S.raidStages {id: i}; the Golden Vault's older S.raidStage still counts) */
-const goldStage = (d = raidOf(raidSel)) => { const L = goldStages(d), v = (S.raidStages || {})[d.id] ?? (d.id === 'vault' ? S.raidStage : 0); return Math.min(L.length - 1, Math.max(0, v || 0)); };
-const setGoldStage = (d, i) => { S.raidStages = S.raidStages || {}; S.raidStages[d.id] = i; if (d.id === 'vault') S.raidStage = i; };
-const goldOpen = (i, d = raidOf(raidSel)) => playerLv().lv >= goldStages(d)[i].lv;
 const rollGold = (g, times) => { let coins = 0; for (let t = 0; t < times; t++) coins += Math.round(g.gold * (.85 + Math.random() * .3) / 10) * 10; return coins; };
 function clearGold(times) {
-  const d = raidOf(raidSel), i = goldStage(d), g = goldStages(d)[i];
-  if (!goldOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${g.lv}.`); return; }
+  const d = raidOf(raidSel), i = raidStage(d), g = raidStages(d)[i];
+  if (!stageOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${g.lv}.`); return; }
   const cost = g.st * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
   spendStamina(cost); questAdd('raid', times); raidInst().n += times;
@@ -191,17 +208,17 @@ function clearGold(times) {
    The guardian is a character from the pool (picked by the seed, like Quick match), plays the dungeon's deck on its
    own board skin and card back, with a little less HP than a hero; you play your selected deck. */
 const raidFoe = id => raidOf(id).foe;
-const raidHp = (id, stage) => { const d = raidOf(id); return d.foe.hp + (d.kind === 'gold' ? 2 * (stage || 0) : 0); };   // deeper gold stages: a tougher guardian
-const raidLabel = r => { const d = raidOf(r.id); return d.kind === 'gold' ? `${d.name} ${ROMAN[r.stage || 0]}` : d.name; };
+const raidHp = (id, stage) => { const d = raidOf(id); return d.foe.hp + (d.kind === 'gold' ? 2 : 1) * (stage || 0); };   // deeper stages: a tougher guardian (gold +2 HP a stage, gear +1)
+const raidLabel = r => { const d = raidOf(r.id); return `${d.name} ${ROMAN[r.stage || 0]}`; };
 const raidMatch = (deck, seed, names, r) => ccCreateMatch(seed, deck.cards.slice(), raidDeckCards(raidFoe(r.id).deck), names, { hp: [CC_CFG.hp, r.hp] });
-function raidBattle(id = raidSel, stage = goldStage(raidOf(id))) {
-  const d = raidOf(id), gold = d.kind === 'gold', G = goldStages(d); stage = Math.min(stage || 0, G.length - 1); const cost = gold ? G[stage].st : raidStam(d);
-  if (gold && !goldOpen(stage, d)) { toast(`Stage ${ROMAN[stage]} opens at player level ${G[stage].lv}.`); return; }
+function raidBattle(id = raidSel, stage = raidStage(raidOf(id))) {
+  const d = raidOf(id), gold = d.kind === 'gold', G = raidStages(d); stage = Math.min(stage || 0, G.length - 1); const cost = gold ? G[stage].st : raidStam(d);
+  if (!stageOpen(stage, d)) { toast(`Stage ${ROMAN[stage]} opens at player level ${G[stage].lv}.`); return; }
   if (!gold && wardFree() < 2) { wardFullMsg(1); return; }
   if (stamina() < cost) { toast(`This raid needs ${cost} stamina to clear. You have ${stamina()}.`); openStamina(); return; }
   const deck = ccCampMyDeck(); if (!ccValidateDeck(deck.cards).ok) { toast('Build a deck with 30 cards first.', true); openDeck(); return; }
-  raidSel = id; if (gold) setGoldStage(d, stage);
-  startClash({ id: deck.id, name: deck.name, cards: deck.cards.slice() }, (Math.random() * 4294967296) >>> 0, null, null, { id, stage: gold ? stage : 0, cost, hp: raidHp(id, stage) });
+  raidSel = id; setRaidStage(d, stage);
+  startClash({ id: deck.id, name: deck.name, cards: deck.cards.slice() }, (Math.random() * 4294967296) >>> 0, null, null, { id, stage, cost, hp: raidHp(id, stage) });
 }
 /* the battle ended: a win spends the stamina and gives one clear's rewards; a loss or draw spends nothing */
 function raidFinish(G, r) {
@@ -209,8 +226,8 @@ function raidFinish(G, r) {
   const d = raidOf(r.id), gold = d.kind === 'gold';
   if (!spendStamina(r.cost)) return { win: true, broke: true, cost: r.cost };   // stamina went elsewhere during the battle
   questAdd('raid', 1);
-  if (gold) { const g = goldStages(d)[r.stage] || goldStages(d)[0], coins = rollGold(g, 1); S.wallet.coins += coins; gainExp(g.exp); return { win: true, gold: true, coins, exp: g.exp, cost: r.cost }; }
-  const drops = rollGearDrops(d, 1); gainExp(EXP.raid); return { win: true, drops, exp: EXP.raid, cost: r.cost };
+  if (gold) { const g = raidStages(d)[r.stage] || raidStages(d)[0], coins = rollGold(g, 1); S.wallet.coins += coins; gainExp(g.exp); return { win: true, gold: true, coins, exp: g.exp, cost: r.cost }; }
+  const drops = rollGearDrops(d, 1, r.stage || 0); gainExp(EXP.raid); return { win: true, drops, exp: EXP.raid, cost: r.cost };
 }
 function raidEndHTML(res) {
   if (!res.win) return `<div class="ccm-rw rb"><span class="lbl-sm">Raid not cleared</span><p class="tiny">No stamina was spent. Try again with another plan, or use an instant clear.</p></div>`;
@@ -220,8 +237,8 @@ function raidEndHTML(res) {
   return `<div class="ccm-rw rb"><span class="lbl-sm">Raid cleared · ${curIcon('stamina')}${res.cost} spent</span><div class="rb-row">${items}<span class="rb-it xp">${expTag(res.exp)}</span></div></div>`;
 }
 const raidEndBtns = r => `<div class="ccm-endb"><button class="btn gold" id="rbAgain">${icon('swords')}Battle again ${curIcon('stamina')}${r.cost}</button><button class="btn ghost" id="rbBack">${icon('raid')}Raids</button></div>`;
-INFO.vault = () => { const d = raidOf(raidSel).kind === 'gold' ? raidOf(raidSel) : RAIDS.find(x => x.kind === 'gold') || RAID_BASE[3], GOLD_STAGES_V = goldStages(d); return ({ title: d.name, body: `<p class="desc">Win a card battle against the vault's guardian to clear a stage (deeper stages have a tougher guardian), or use one of your ${RAID_INSTANT} instant clears a day. Each clear gives gold (the stage's amount, give or take 15%) and EXP. No clothes drop, so it needs no wardrobe space. Deeper stages open at higher player levels.</p>
-  <table class="cs-table"><thead><tr><th>Stage</th><th>Stamina</th><th>Gold per clear</th><th>EXP</th><th>Opens at</th></tr></thead><tbody>${GOLD_STAGES_V.map((g, i) => `<tr><td>${ROMAN[i]}</td><td>${g.st}</td><td>~${fmt(g.gold)}</td><td>${g.exp}</td><td>Lv ${g.lv}</td></tr>`).join('')}</tbody></table>` }); };
+INFO.vault = () => { const d = raidOf(raidSel).kind === 'gold' ? raidOf(raidSel) : RAIDS.find(x => x.kind === 'gold') || RAID_BASE[3], STV = raidStages(d); return ({ title: d.name, body: `<p class="desc">Win a card battle against the vault's guardian to clear a stage (deeper stages have a tougher guardian), or use one of your ${RAID_INSTANT} instant clears a day. Each clear gives gold (the stage's amount, give or take 15%) and EXP. No clothes drop, so it needs no wardrobe space. Deeper stages open at higher player levels.</p>
+  <table class="cs-table"><thead><tr><th>Stage</th><th>Stamina</th><th>Gold per clear</th><th>EXP</th><th>Opens at</th></tr></thead><tbody>${STV.map((g, i) => `<tr><td>${ROMAN[i]}</td><td>${g.st}</td><td>~${fmt(g.gold)}</td><td>${g.exp}</td><td>Lv ${g.lv}</td></tr>`).join('')}</tbody></table>` }); };
 /* results: a see-through window over the raid screen with every piece on a soft glow, rarity badge, NEW tag */
 function showRaidDrops(drops, times) {
   const st = raidStam(raidOf(raidSel)), again = Math.min(times, raidInstLeft());
@@ -243,7 +260,7 @@ let raidEl = null, raidSel = 'ruins';
    the raid's hero block, one panel (drops or vault stages) and ONE action bar: your deck vs the guardian, the day's
    instant clears as a button pair and the big crystal Battle button ---- */
 function raidSubOf(x) {
-  if (x.kind === 'gold') { const G = goldStages(x); return `${G.length} stage${G.length > 1 ? 's' : ''} · up to ~${fmt(Math.max(...G.map(g => g.gold)))} gold`; }
+  if (x.kind === 'gold') { const G = raidStages(x); return `${G.length} stage${G.length > 1 ? 's' : ''} · up to ~${fmt(Math.max(...G.map(g => g.gold)))} gold`; }
   const ur = [...new Set(dungeonPieces(x, 5).map(clothSetName))].join(' · ');
   return ur ? `UR set · ${ur}` : 'Gear raid';
 }
@@ -255,7 +272,7 @@ function raidBar(open, cost) {
       <div class="rdx-vs">
         <button class="rdx-side me" id="raidDeck" title="Change the deck you play with"><span class="rdx-si">${icon('cards')}</span><span class="rdx-st"><small>Your deck</small><b>${ok ? esc(dk.name) : 'No ready deck'}</b><em>${ok ? 'Change' : 'Build a 30-card deck'}</em></span></button>
         <span class="rdx-vsx">VS</span>
-        <div class="rdx-side op"><span class="rdx-si">${icon(raidIc(d))}</span><span class="rdx-st"><small>Guardian</small><b>${esc(raidDeckName(f.deck))}</b><em>${icon('heart')}${raidHp(d.id, goldStage(d))} HP</em></span></div>
+        <div class="rdx-side op"><span class="rdx-si">${icon(raidIc(d))}</span><span class="rdx-st"><small>Guardian</small><b>${esc(raidDeckName(f.deck))}</b><em>${icon('heart')}${raidHp(d.id, raidStage(d))} HP</em></span></div>
       </div>
       <div class="rdx-inst"><span class="rdx-il">${icon('bolt')}Instant clears <b>${left} / ${RAID_INSTANT}</b></span><div class="rdx-ibs">${inst}</div></div>
       <button class="rdx-go" id="raidBattle" ${open ? '' : 'disabled'}><span class="rdx-goi">${icon('swords')}</span><span class="rdx-got"><b>Battle</b><small>${curIcon('stamina')}${cost} on a win</small></span></button>
@@ -274,17 +291,21 @@ function renderRaids() {
   const d = raidOf(raidSel), gold = d.kind === 'gold', bgk = MEDIA.get('raid:bg:' + d.id) ? 'raid:bg:' + d.id : 'raid:bg', bg = MEDIA.get(bgk);
   const keep = raidEl.querySelector('.rdx-scroll'), top = keep ? keep.scrollTop : 0;
   const item = x => `<button class="rdx-it ${x.id === d.id ? 'on' : ''} ${x.kind}" data-raid="${x.id}"><span class="rdx-iti">${icon(raidIc(x))}</span><span class="rdx-itt"><b>${esc(x.name)}</b><small>${esc(raidSubOf(x))}</small></span></button>`;
-  const GS = goldStages(d), gi = goldStage(d), g = GS[gi], full = wardFree() < 2, shown = raidShown();
+  const GS = raidStages(d), gi = raidStage(d), g = GS[gi], full = wardFree() < 2, shown = raidShown();
   const meta = gold ? [[curIcon('stamina'), `${g.st} stamina per clear`], [curIcon('coins'), `~${fmt(g.gold)} gold · +${g.exp} EXP`], [icon('swords'), 'Win a battle to clear']]
-    : [[curIcon('stamina'), `${raidStam(d)} stamina per clear`], [icon('hanger'), '1–2 clothing pieces'], [icon('swords'), 'Win a battle to clear']];
+    : [[curIcon('stamina'), `${raidStam(d)} stamina per clear`], [icon('hanger'), `${raidPcs(g)} clothing piece${raidPcs(g) === '1' ? '' : 's'}`], [icon('swords'), 'Win a battle to clear']];
+  const uf = raidUrFrom(d), noUr = !gold && !g.ur;   // this stage drops no UR: the UR rows say from which stage they do
   /* one drop row per clothing set: several UR sets in one raid stack under each other (the owner's ask) */
   const setsOf = L => { const m = new Map(); L.forEach(x => { const k = x.set || x.id; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return [...m.values()]; };
-  const dropRow = (r, L) => `<div class="rdx-row r${r}"><span class="rdx-rl">${ctag(r)}<small>${esc(L.length ? clothSetName(L[0]) : '—')}${r === 4 || r === 3 ? '<i>every gear raid</i>' : ''}</small></span>
+  const dropRow = (r, L) => `<div class="rdx-row r${r} ${r === 5 && noUr ? 'off' : ''}"><span class="rdx-rl">${ctag(r)}<small>${esc(L.length ? clothSetName(L[0]) : '—')}${r === 4 || r === 3 ? '<i>every gear raid</i>' : r === 5 && noUr ? `<i>${uf < 0 ? 'drops on no stage' : `from stage ${ROMAN[uf]}`}</i>` : ''}</small></span>
           <div class="raid-pieces">${L.map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('') || '<span class="tiny">No pieces yet</span>'}</div>${L.length ? `<span class="rdx-own ${L.every(x => owns(x.id)) ? 'all' : ''}"><small>Owned</small><b>${L.filter(x => owns(x.id)).length} / ${L.length}</b></span>` : ''}</div>`;
-  const panel = gold ? `<div class="rdx-panel gold"><div class="rdx-ph"><b>Stages</b><small>Deeper stages cost more stamina and hold more gold</small></div>
-      <div class="gv-stages">${GS.map((st, i) => { const open = goldOpen(i, d); return `<button class="gv-st ${i === gi ? 'on' : ''} ${open ? '' : 'locked'}" data-gstage="${i}" ${open ? '' : `title="Opens at player level ${st.lv}"`}>
-        <b>${ROMAN[i]}</b><span class="gv-gold">${curIcon('coins')}~${fmt(st.gold)}</span><small>${open ? `${curIcon('stamina')}${st.st} · +${st.exp} EXP` : `${icon('lock')}Lv ${st.lv}`}</small></button>`; }).join('')}</div></div>`
-    : `<div class="rdx-panel"><div class="rdx-ph"><b>Possible drops</b><small>Tap ${infoBtn('raid', 'Drop chances')} for the chances</small><button class="rdx-sec" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
+  const stCard = (st, i) => { const open = stageOpen(i, d); return `<button class="gv-st ${i === gi ? 'on' : ''} ${open ? '' : 'locked'}" data-gstage="${i}" ${open ? '' : `title="Opens at player level ${st.lv}"`}>
+        <b>${ROMAN[i]}</b>${gold ? `<span class="gv-gold">${curIcon('coins')}~${fmt(st.gold)}</span><small>${open ? `${curIcon('stamina')}${st.st} · +${st.exp} EXP` : `${icon('lock')}Lv ${st.lv}`}</small>`
+          : `<span class="gv-ur ${st.ur ? '' : 'no'}">${st.ur ? `${ctag(5)}${st.ur}%` : 'No UR'}</span><small>${open ? `${icon('hanger')}${st.dbl >= 100 ? 'Always 2' : raidPcs(st)} · SSR ${st.ssr}%` : `${icon('lock')}Lv ${st.lv}`}</small>`}</button>`; };
+  const stages = `<div class="gv-stages ${gold ? '' : 'gear'}" style="--n:${GS.length}">${GS.map(stCard).join('')}</div>`;
+  const panel = gold ? `<div class="rdx-panel gold"><div class="rdx-ph"><b>Stages</b><small>Deeper stages cost more stamina and hold more gold</small></div>${stages}</div>`
+    : `<div class="rdx-panel"><div class="rdx-ph"><b>Stages</b><small>The same ${raidStam(d)} stamina on every stage · deeper stages drop better gear</small></div>${stages}
+      <div class="rdx-ph sub"><b>Possible drops · stage ${ROMAN[gi]}</b><small>${g.ur ? `UR ${g.ur}% · ` : ''}SSR ${g.ssr}% · R ${raidRpct(g)}% · tap ${infoBtn('raid', 'Drop chances')} for every stage</small><button class="rdx-sec" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
       ${[5, 4, 3].map(r => { const G = setsOf(dungeonPieces(d, r)); return (G.length ? G : [[]]).map(L => dropRow(r, L)).join(''); }).join('')}</div>`;
   raidEl.innerHTML = `<div class="rdx-bg ${bg ? 'art' : gold ? 'gold' : ''}">${bg ? artImg(bgk) : ''}</div><div class="rdx-shade"></div>
     <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('raid')}</span><h2 class="ts">Raids</h2></div><span class="rdx-sp"></span>
@@ -295,19 +316,19 @@ function renderRaids() {
       ${shown.some(x => x.kind === 'gold') ? `<span class="rdx-gh">${icon('coin')}Gold raids</span>${shown.filter(x => x.kind === 'gold').map(item).join('')}` : ''}</aside>
     <section class="rdx-main"><div class="rdx-scroll">
       <div class="rdx-hero"><span class="rdx-kind">${icon(raidIc(d))}${gold ? 'Gold raid' : 'Gear raid'}${d.hidden ? ' · hidden from players' : ''}</span>
-        <h1 class="rdx-title">${esc(d.name)}${gold ? ` <em>${ROMAN[gi]}</em>` : ''}</h1><p class="rdx-desc">${esc(d.desc)}</p>
+        <h1 class="rdx-title">${esc(d.name)} <em>${ROMAN[gi]}</em></h1><p class="rdx-desc">${esc(d.desc)}</p>
         <div class="rdx-meta">${meta.map(([ic, t]) => `<span>${ic}${t}</span>`).join('')}${gold ? infoBtn('vault', 'How the Golden Vault works') : ''}</div></div>
       ${panel}</div>
-      ${raidBar(gold ? goldOpen(gi, d) : true, gold ? g.st : raidStam(d))}</section>`;
+      ${raidBar(stageOpen(gi, d), gold ? g.st : raidStam(d))}</section>`;
   const sc = raidEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;
   const rl = raidEl.querySelector('.rdx-rail'), on = rl && rl.querySelector('.rdx-it.on'); if (on && rl.scrollWidth > rl.clientWidth + 2) rl.scrollLeft = Math.max(0, on.offsetLeft - (rl.clientWidth - on.offsetWidth) / 2);
   raidEl.querySelector('#raidClose').onclick = closeRaids;
   raidEl.querySelector('#raidPlus').onclick = openStamina;
   raidEl.querySelectorAll('[data-raid]').forEach(b => b.onclick = () => { raidSel = b.dataset.raid; renderRaids(); });
   raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => confirmRaidClear(+b.dataset.clear));
-  const bt = raidEl.querySelector('#raidBattle'); if (bt) bt.onclick = () => raidBattle(raidSel, goldStage(d));
+  const bt = raidEl.querySelector('#raidBattle'); if (bt) bt.onclick = () => raidBattle(raidSel, raidStage(d));
   const dkb = raidEl.querySelector('#raidDeck'); if (dkb) dkb.onclick = () => { if (ccValidateDeck(ccCampMyDeck().cards).ok || ccAllDecks().some(x => ccValidateDeck(x.cards).ok)) ccDeckPicker(renderRaids); else { closeRaids(); openDeck(); } };
-  raidEl.querySelectorAll('[data-gstage]').forEach(b => b.onclick = () => { const i = +b.dataset.gstage; if (!goldOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${GS[i].lv}.`); return; } setGoldStage(d, i); persist(); renderRaids(); });
+  raidEl.querySelectorAll('[data-gstage]').forEach(b => b.onclick = () => { const i = +b.dataset.gstage; if (!stageOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${GS[i].lv}.`); return; } setRaidStage(d, i); persist(); renderRaids(); });
   const fu = raidEl.querySelector('#raidFuse'); if (fu) fu.onclick = () => openFuse(3);
 }
 setInterval(() => { const s = raidEl && raidEl.querySelector('#raidStam b'); if (s) s.textContent = `${stamina()}/${stamMax()}`; }, 5000);
@@ -322,20 +343,21 @@ function raidEdSave(id, fn, quiet) {
   const def = raidDefOf(id); fn(def); persist(); raidSync(); if (raidEl) renderRaids();
   if (!quiet) { renderRaidsTab(); return; }
   const d = raidOf(id), card = document.querySelector(`[data-raed="${id}"] .rae-itt`), h = document.querySelector('.rae-edh b'), r = document.querySelector('#raeR');
-  if (card) card.innerHTML = raidCardTxt(d); if (h) h.textContent = d.name; if (r) r.textContent = Math.max(0, 100 - (d.ur || 0) - (d.ssr || 0)) + '%';
+  if (card) card.innerHTML = raidCardTxt(d); if (h) h.textContent = d.name;
+  document.querySelectorAll('[data-rr]').forEach(c => { const g = d.stages[+c.dataset.rr]; if (g) c.textContent = raidRpct(g) + '%'; });
 }
-const raidCardTxt = x => `<b>${esc(x.name)}</b><small>${x.kind === 'gold' ? `${goldStages(x).length} stages` : `${raidStam(x)} stamina · UR ${x.ur}%`} · ${esc(raidDeckName(x.foe.deck))} ${x.foe.hp} HP</small>`;
+const raidCardTxt = x => { const L = raidStages(x), uf = raidUrFrom(x); return `<b>${esc(x.name)}</b><small>${L.length} stage${L.length > 1 ? 's' : ''}${x.kind === 'gold' ? '' : ` · ${raidStam(x)} stamina · ${uf < 0 ? 'no UR' : `UR from ${ROMAN[uf]}`}`} · ${esc(raidDeckName(x.foe.deck))} ${x.foe.hp} HP</small>`; };
 function raidNew(kind) {
   const id = 'r-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   raidDefs()[id] = kind === 'gold'
     ? { id, custom: true, at: Date.now(), kind: 'gold', hidden: true, name: 'New gold raid', desc: 'A new treasure vault. Write its story here.', foe: { deck: 'raiders', hp: 8, skin: 'inferno', back: 'royal' }, stages: GOLD_STAGES.map(g => ({ ...g })) }
-    : { id, custom: true, at: Date.now(), kind: 'gear', hidden: true, name: 'New gear raid', desc: 'A new dungeon. Write its story here.', foe: { deck: 'traps', hp: 14, skin: 'default', back: 'default' }, stam: RAID_STAMINA, ur: 8, ssr: 20, dbl: 33 };
+    : { id, custom: true, at: Date.now(), kind: 'gear', hidden: true, name: 'New gear raid', desc: 'A new dungeon. Write its story here.', foe: { deck: 'traps', hp: 14, skin: 'default', back: 'default' }, stam: RAID_STAMINA, stages: GEAR_STAGES.map(g => ({ ...g })) };
   raidEd = id; persist(); raidSync(); renderRaidsTab(); toast('New raid added. It stays hidden from players until you tick "Shown to players".');
 }
 function raidEditorHTML(d) {
   const sel = (key, list, val) => `<select class="input sm" data-rfoe="${key}">${list.map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
   const urSets = raidSetList().filter(st => st.rarity === 5), home = st => urHome(raidPieces(5).find(p => p.set === st.set) || {});
-  const w = MEDIA.get('raid:bg:' + d.id), rR = Math.max(0, 100 - (d.ur || 0) - (d.ssr || 0));
+  const w = MEDIA.get('raid:bg:' + d.id);
   const num = (k, v, lo, hi, lbl, sfx = '') => `<label class="rae-f"><span>${lbl}</span><span class="rae-n"><input class="input sm" type="number" min="${lo}" max="${hi}" step="1" data-rnum="${k}" value="${v}">${sfx}</span></label>`;
   return `<div class="rae-ed">
     <div class="rae-edh"><span class="rae-ic">${icon(raidIc(d))}</span><div><small>${d.kind === 'gold' ? 'Gold raid' : 'Gear raid'}${d.base ? ' · built in' : ' · made by you'}</small><b>${esc(d.name)}</b></div>
@@ -345,9 +367,10 @@ function raidEditorHTML(d) {
       <label class="rae-f wide"><span>Description</span><textarea class="input" id="raeDesc" rows="3" maxlength="300">${esc(d.desc)}</textarea></label>
       <div class="rae-f wide"><span>Icon</span><div class="rae-ics">${RAID_ICS.filter(k => ICONS[k]).map(k => `<button type="button" class="rae-icb ${raidIc(d) === k ? 'on' : ''}" data-ric="${k}" title="${k}">${icon(k)}</button>`).join('')}</div></div>
     </div>
-    ${d.kind === 'gear' ? `<div class="rae-sec"><b>Clears and drops</b><div class="rae-grid four">
-        ${num('stam', d.stam, 1, 200, 'Stamina per clear')}${num('ur', d.ur, 0, 100, 'UR drop chance', '%')}${num('ssr', d.ssr, 0, 100, 'SSR drop chance', '%')}${num('dbl', d.dbl, 0, 100, 'Clears with 2 drops', '%')}</div>
-        <p class="tiny">R pieces drop the rest of the time: <b id="raeR">${rR}%</b>. When the raid has no piece of a rarity, the next rarity down drops instead.</p></div>
+    ${d.kind === 'gear' ? `<div class="rae-sec"><b>Stages and drops</b><p class="tiny">Every stage costs the same stamina. Each stage: the player level it opens at, the UR and SSR drop chances (R = the rest) and the % of clears that give 2 pieces (100 = always 2). The guardian gets +1 HP per stage. Up to 6 stages. When the raid has no piece of a rarity, the next rarity down drops instead.</p>
+        <div class="rae-grid four">${num('stam', d.stam, 1, 200, 'Stamina per clear (every stage)')}</div>
+        <div class="rae-stages gear"><span class="rae-sh"><i>Stage</i><i>Opens at Lv</i><i>UR %</i><i>SSR %</i><i>2 pieces %</i><i>R %</i><i></i></span>${d.stages.map((g, i) => `<span class="rae-st"><b>${ROMAN[i]}</b>${['lv', 'ur', 'ssr', 'dbl'].map(k => `<input class="input sm" type="number" min="${k === 'lv' ? 1 : 0}" max="${k === 'lv' ? 999 : 100}" step="1" data-rstage="${i}" data-rsk="${k}" value="${g[k]}" aria-label="Stage ${ROMAN[i]} ${k}">`).join('')}<em class="rae-r" data-rr="${i}">${raidRpct(g)}%</em><button class="link" data-rstdel="${i}" ${d.stages.length < 2 ? 'disabled' : ''}>Remove</button></span>`).join('')}</div>
+        ${d.stages.length < 6 ? `<button class="btn ghost sm" id="raeStAdd">${icon('plus')}Add a stage</button>` : ''}</div>
       <div class="rae-sec"><b>UR sets in this raid</b><p class="tiny">Tick the UR sets that drop here (a set drops in one raid at a time). The SSR and R sets drop in every gear raid. Several UR sets show under each other on the raid page.</p>
         <div class="rae-sets">${urSets.map(st => { const h = home(st), on = h === d.id, other = !on && h !== 'none' && RAIDS.find(x => x.id === h); return `<label class="rae-set ${on ? 'on' : ''}"><input type="checkbox" data-rset="${esc(st.set)}" ${on ? 'checked' : ''}><span class="rae-setpc">${raidPieces(5).filter(p => p.set === st.set).slice(0, 3).map(p => `<img src="${clothImg(p)}" alt="">`).join('')}</span><span><b>${esc(st.name)}</b><small>${on ? 'Drops here' : other ? `Drops in ${esc(other.name)}` : 'Drops nowhere'}</small></span></label>`; }).join('') || '<p class="tiny">No UR raid sets yet.</p>'}</div>
         <div class="row rae-newset"><input class="input sm" id="raeSetName" maxlength="24" placeholder="New UR set name, e.g. Coral Empress"><button class="btn mint sm" id="raeSetAdd">${icon('plus')}Add a UR set to this raid</button></div>
@@ -397,7 +420,8 @@ function renderRaidsTab() {
   p.querySelectorAll('[data-rfoe]').forEach(i => i.onchange = () => raidEdSave(d.id, f => { f.foe = { ...(f.foe || {}), [i.dataset.rfoe]: i.value }; }));
   p.querySelectorAll('[data-rstage]').forEach(i => i.onchange = () => { const j = +i.dataset.rstage, k = i.dataset.rsk; raidEdSave(d.id, f => { f.stages = raidOf(d.id).stages.map(g => ({ ...g })); f.stages[j][k] = +i.value; }, true); i.value = raidOf(d.id).stages[j][k]; });
   p.querySelectorAll('[data-rstdel]').forEach(b => b.onclick = () => raidEdSave(d.id, f => { f.stages = raidOf(d.id).stages.filter((_, j) => j !== +b.dataset.rstdel); }));
-  const sta = $('#raeStAdd'); if (sta) sta.onclick = () => raidEdSave(d.id, f => { const G = raidOf(d.id).stages, last = G[G.length - 1]; f.stages = [...G.map(g => ({ ...g })), { st: last.st + 5, gold: Math.round(last.gold * 1.4 / 100) * 100, exp: last.exp + 5, lv: last.lv + 10 }]; });
+  const sta = $('#raeStAdd'); if (sta) sta.onclick = () => raidEdSave(d.id, f => { const G = raidOf(d.id).stages, last = G[G.length - 1];
+    f.stages = [...G.map(g => ({ ...g })), d.kind === 'gear' ? { lv: last.lv + 10, ur: Math.min(100, last.ur + 2), ssr: last.ssr, dbl: last.dbl } : { st: last.st + 5, gold: Math.round(last.gold * 1.4 / 100) * 100, exp: last.exp + 5, lv: last.lv + 10 }]; });
   p.querySelectorAll('[data-rset]').forEach(i => i.onchange = () => { raidPieces(5).filter(x => x.set === i.dataset.rset).forEach(x => { x.dungeon = i.checked ? d.id : 'none'; }); persist(); renderRaidsTab(); });
   const sa = $('#raeSetAdd'); if (sa) sa.onclick = () => {
     const name = $('#raeSetName').value.trim(); if (!name) { toast('Give the set a name first.'); return; }

@@ -96,4 +96,5 @@ function artPosRefresh() {
   if (gbEl) run(renderGB);
   if (bpEl) run(bpxBgRefresh);
   if (qmEl) run(renderQuickMatch);
+  if (shopEl) run(renderShop);
 }

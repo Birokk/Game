@@ -445,7 +445,7 @@ async function ccAutoStep() {
   const G = m.G; if (G.phase === 'over' || G.active !== 0 || m.busy || m.loading || m.intro) return;
   if (!m.autoPlan || !ccAutoStill(G, m.autoPlan[0])) {   // plan again when the next step is illegal or a hidden trap changed the board
     m.autoBusy = true; m.autoThinking = true; ccActRender(ccTargets(), null);
-    const plan = await ccAutoPlanAsync(G, CC_AUTO, () => ccM === m && ccAutoOn());
+    const plan = await ccAutoPlanAsync(G, CC_AUTO_PLAY, () => ccM === m && ccAutoOn());   // your auto play: the weaker config
     m.autoBusy = false; m.autoThinking = false;
     if (ccM !== m || !ccAutoOn()) return;
     m.autoPlan = plan && plan.length && ccAutoStill(G, plan[0]) ? plan : [{ k: G.phase === 'choice' ? 'choice' : 'end', pick: G.phase === 'choice' ? G.pending.opts[0] : undefined }];

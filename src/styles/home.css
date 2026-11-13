@@ -112,8 +112,9 @@
 .menu .mode2 .st b{color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.2)}
 .menu .lim-time{border-radius:999px;background:var(--h-ink);border:1px solid var(--h-line);color:#ffc9f0;box-shadow:var(--h-shadow)}
 
-/* ---- wallpaper arrows and the show-UI button: glass circles ---- */
-.menu .wp-arrow{background:var(--h-glass);border:1px solid var(--h-rim);-webkit-backdrop-filter:var(--h-blur);backdrop-filter:var(--h-blur)}
+/* ---- wallpaper arrows: just the chevrons, no background (the owner's ask) ---- */
+.menu .wp-arrow{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.menu .wp-arrow .ic{filter:drop-shadow(0 2px 6px rgba(0,0,0,.7)) drop-shadow(0 0 14px rgba(0,0,0,.35))}
 
 /* ---- sizes ---- */
 @media (max-width:1240px){.hbx{width:300px}.hbx-card{height:132px}.hbx-arr{top:66px}.hbx-t b{font-size:21px}}

@@ -141,8 +141,8 @@ function ccGrantRewards(winner) {
     questAdd('clash', 1);   // guild quest: win a Card Clash match
     if (D && !D.gear) { /* Easy gives no gear */ }
     else if (wardFree() < 1) out.full = true;
-    else {   // one piece, rolled like a gear raid clear (a random gear dungeon: its UR set, the shared R / SSR sets, 1.5% a 2★ UR)
-      const d = rpick(raidGear()), ur = dungeonPieces(d, 5), st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d);
+    else {   // one piece, rolled like a gear raid clear on your deepest open stage of a random gear dungeon (its UR set, the shared R / SSR sets, 1.5% a 2★ UR on UR stages)
+      const d = rpick(raidGear()), si = raidTopStage(d), ur = raidStg(d, si).ur > 0 ? dungeonPieces(d, 5) : [], st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d, si);
       if (x) { const isNew = !owns(x.id); addCloth(x.id, st2 ? 2 : 1); out.gear = { x, isNew, st: st2 ? 2 : (hasClothStars(x) ? 1 : 0) }; }
     }
   }

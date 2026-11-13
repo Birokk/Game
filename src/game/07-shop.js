@@ -103,12 +103,22 @@ function openShop(tab) {
   else if (tab === 'backs' || tab === 'boards') { ccShopSub = tab; tab = 'board'; }
   else if (tab === 'starlight') { tab = 'exchange'; exSub = 'corals'; } else if (tab === 'premium') { tab = 'exchange'; exSub = 'premium'; }
   shopTab = SHOP_TABS.some(t => t[0] === tab) ? tab : tab ? shopTab : 'hot';
-  if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
+  if (!shopEl) { shopEl = document.createElement('div'); shopEl.className = 'mall mallx'; shopEl.setAttribute('role', 'dialog'); shopEl.setAttribute('aria-label', 'Shop'); document.body.appendChild(shopEl); }
   renderShop();
 }
 function closeShop() { if (shopEl) { shopEl.remove(); shopEl = null; } renderMenu(); refreshSummon(); }
 const shopSkins = () => S.pool.filter(buyable).slice().reverse();
 const hotPicks = () => { const all = shopSkins(); return [...all.filter(e => !owns(e.id)), ...all.filter(e => owns(e.id))].slice(0, 4); };
+/* the glass shop (.mall.mallx, the owner asked for the newer transparent design): the whole screen sits on a blurred
+   picture worth seeing through (the admin's shop wallpaper shop:bg, else the home wallpaper's art) with soft drifting
+   glows; the sidebar rows carry a line on what is inside (SHOP_SUB). The backdrop node is kept across redraws while its
+   picture stays the same, so buying or switching tabs never re-decodes or flashes it. */
+const SHOP_SUB = { hot: 'Memberships · new outfits', skins: 'Every outfit for sale', topup: 'Pearls and bundles', pearl: 'Tickets · rings · name ticket', exchange: 'Corals · Seaweeds · more', points: 'Featured · Permanent shop', board: 'Board skins · card backs', arena: 'Spend arena tokens' };
+function shopBgHTML() {
+  const up = MEDIA.get('shop:bg'), w = !up && wallpaperInfo(), src = up || (w && wpHasArt(w) ? wpSrc(w) : '');
+  const k = up ? 'shop:' + ((S.media || {})['shop:bg'] || 1) + artPosStyle('shop:bg') : src ? 'wp:' + src.slice(-40) : 'none';
+  return `<div class="mallx-bg ${src ? 'art' : ''}" data-k="${esc(k)}">${up ? artImg('shop:bg', 'mallx-bgart') : src ? `<img class="mallx-bgart" src="${src}" alt="">` : ''}<i class="mallx-g g1"></i><i class="mallx-g g2"></i><i class="mallx-g g3"></i></div>`;
+}
 function renderShop() {
   if (!shopEl) return;
   const m = monthly(), W = S.wallet;
@@ -164,12 +174,19 @@ function renderShop() {
       return item('mo-' + bk, TK(bk), `Monthly ${TK_NAME[TK(bk)]}`, `${left} / ${MONTHLY_LIMIT} left this month`, MONTHLY_PRICE, 'dust', left <= 0 ? 'soldout' : '', bk === 'limited' ? 5 : 4); }).join('')}</div>
     <h3 class="mall-h">Gifts</h3><p class="tiny">Tap one to choose how many to buy.</p>
     <div class="mall-grid">${Object.entries(DUST_GIFTS).map(([k, p], i) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust', '', 3 + i)).join('')}</div>`;
-  shopEl.innerHTML = `<div class="mall-word">SHOP</div>
+  const oldBg = shopEl.querySelector('.mallx-bg'), ob = shopEl.querySelector('.mall-body'), os = shopEl.querySelector('.mall-side');
+  const view = [shopTab, topSub, exSub, hotSub, ccShopSub].join('|'), keep = shopEl._view === view ? { b: ob ? ob.scrollTop : 0, s: os ? os.scrollLeft : 0 } : null;   // a redraw of the same page (a buy) keeps its scroll
+  shopEl.innerHTML = `${shopBgHTML()}<div class="mall-word">SHOP</div>
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
       <div class="inv-cur">${(shopTab === 'points' ? ['spt', 'sptp', 'pearls'] : shopTab === 'arena' ? ['atok', 'pearls'] : shopTab === 'exchange' && exSub === 'frags' ? ['cfssr', 'cfur', 'pearls'] : ['pearls', 'starlight', 'dust']).map(k => `<div class="cur">${curIcon(k)}<b>${fmt(k === 'spt' ? PT_FEAT.reduce((a, b) => a + ptOf(b), 0) : k === 'sptp' ? ptOf('perm') : W[k] || 0)}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
-    <aside class="mall-side">${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><b>${l}</b>${k === 'topup' && packsReady() ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</aside>
+    <aside class="mall-side"><span class="mallx-gh">${icon('shop')}Store<em>${SHOP_TABS.length}</em></span>${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><span class="mallx-it"><b>${l}</b>${SHOP_SUB[k] ? `<small>${SHOP_SUB[k]}</small>` : ''}</span>${k === 'topup' && packsReady() ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</aside>
     <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && hotSub === 'pass' ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
     <p class="mall-foot">Please spend responsibly.</p>`;
+  const nb = shopEl.querySelector('.mallx-bg'); if (oldBg && nb && oldBg.dataset.k === nb.dataset.k) nb.replaceWith(oldBg);
+  const side = shopEl.querySelector('.mall-side'), bodyEl = shopEl.querySelector('.mall-body'), onIt = side && side.querySelector('.evp-item.on');
+  if (keep) { if (bodyEl) bodyEl.scrollTop = keep.b; if (side) side.scrollLeft = keep.s; }
+  else if (onIt && side.scrollWidth > side.clientWidth + 2) side.scrollLeft = Math.max(0, onIt.offsetLeft - (side.clientWidth - onIt.offsetWidth) / 2);   // phones: the sidebar is a strip, show the picked tab
+  shopEl._view = view;
   $('#shopClose').onclick = closeShop;
   shopEl.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { shopTab = b.dataset.stab; renderShop(); });
   shopEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { shopPick = b.dataset.pick; renderShop(); });

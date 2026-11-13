@@ -3634,7 +3634,7 @@ button.pt-slot:hover{border-color:#fff}
 .raid-pill2{margin-top:14px}
 .raid-setnm{font-family:var(--read);font-size:12px;color:rgba(233,236,255,.65);white-space:nowrap;align-self:center;margin-left:auto;padding-left:10px}
 .evp-bg.none.raid-none.gold-none{background:radial-gradient(ellipse at 70% 30%,rgba(255,200,90,.35),transparent 55%),radial-gradient(ellipse at 20% 90%,rgba(180,110,20,.35),transparent 60%),linear-gradient(160deg,#120b02,#2a1a05 50%,#0c0702)!important}
-.gv-stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:8px}
+.gv-stages{display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:10px;margin-top:8px}
 .gv-st{position:relative;display:grid;justify-items:center;gap:6px;padding:12px 6px 10px;border-radius:16px;color:#fff;background:linear-gradient(180deg,rgba(70,48,10,.75),rgba(25,16,4,.85));border:1.5px solid rgba(255,214,120,.35);box-shadow:inset 0 1px 0 rgba(255,240,200,.15)}
 .gv-st b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1;color:#ffe08a;text-shadow:0 0 10px rgba(255,200,80,.6)}
 .gv-gold{display:inline-flex;align-items:center;gap:4px;font-family:var(--display);font-size:14px}.gv-gold .cic{width:18px;height:18px}
@@ -4964,6 +4964,19 @@ button.pt-slot:hover{border-color:#fff}
 .rdx .gv-st{padding:14px 6px 12px;border-radius:18px 5px 18px 5px;background:linear-gradient(180deg,rgba(255,214,120,.14),rgba(255,214,120,.03));border:1px solid rgba(255,224,150,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);transition:background .2s,border-color .2s,transform .15s}
 .rdx .gv-st:hover:not(.locked){transform:translateY(-2px);border-color:rgba(255,230,160,.6)}
 .rdx .gv-st.on{background:linear-gradient(180deg,rgba(255,224,150,.32),rgba(255,190,80,.08));border:1px solid #ffe6a6;box-shadow:0 0 22px rgba(255,200,90,.35),inset 0 1px 0 rgba(255,255,255,.3)}
+/* gear raid stages (23-raids.js, GEAR_STAGES): violet crystal glass instead of the vault's gold */
+.rdx .gv-stages.gear .gv-st{background:linear-gradient(180deg,rgba(205,180,255,.15),rgba(205,180,255,.03));border-color:rgba(222,204,255,.32)}
+.rdx .gv-stages.gear .gv-st b{color:#fff;text-shadow:0 0 12px rgba(190,160,255,.8)}
+.rdx .gv-stages.gear .gv-st:hover:not(.locked){border-color:rgba(232,218,255,.6)}
+.rdx .gv-stages.gear .gv-st.on{background:linear-gradient(180deg,rgba(222,204,255,.32),rgba(160,130,255,.08));border-color:#e8ddff;box-shadow:0 0 22px rgba(170,140,255,.42),inset 0 1px 0 rgba(255,255,255,.3)}
+.rdx .gv-stages.gear .gv-st small{color:rgba(238,230,255,.75)}
+.gv-ur{display:inline-flex;align-items:center;gap:5px;font:400 15px var(--display);color:#fff;min-height:20px}.gv-ur .rtag{font-size:10px;padding:1px 6px}
+.gv-ur.no{font:600 12px var(--read);color:rgba(240,232,255,.45);letter-spacing:.04em}
+.rdx-ph.sub{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)}
+.rdx-row.off .raid-pieces,.rdx-row.off .rdx-own{opacity:.35;filter:grayscale(.7)}
+.rdx-row.off .rdx-rl small i{color:#ffb3e0}
+.cs-table.rd-stt tr.on td{background:rgba(200,170,255,.14)}
+
 /* the one action bar */
 .rdx-bar{flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:18px;padding:12px 14px 12px 16px;border-radius:var(--rc);background:var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi),0 16px 40px rgba(0,0,0,.32);-webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}
 .rdx-vs{display:flex;align-items:center;gap:10px;min-width:0}
@@ -6146,7 +6159,7 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .rae-setpc{display:flex;flex:none;padding-right:6px}.rae-setpc img{width:26px;height:26px;margin-right:-6px;border-radius:7px;object-fit:contain;padding:3px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2)}
 .rae-set b{display:block;font-size:12.5px}.rae-set small{font:600 10.5px var(--read);opacity:.7}
 .rae-newset{gap:8px;flex-wrap:wrap}.rae-newset input{flex:1;min-width:180px}
-.rae-stages{display:grid;gap:6px}.rae-sh,.rae-st{display:grid;grid-template-columns:40px repeat(4,minmax(0,1fr)) 64px;gap:6px;align-items:center}
+.rae-stages{display:grid;gap:6px}.rae-stages.gear .rae-sh,.rae-stages.gear .rae-st{grid-template-columns:40px repeat(4,minmax(0,1fr)) 48px 64px}.rae-r{font-style:normal;font-size:13px;text-align:center;color:#9fd0ff}.rae-sh,.rae-st{display:grid;grid-template-columns:40px repeat(4,minmax(0,1fr)) 64px;gap:6px;align-items:center}
 .rae-sh i{font-style:normal;font-size:10.5px;opacity:.7}.rae-st b{font-size:15px;color:#ffd77a;text-align:center}.rae-st input{min-width:0}
 .rae-acts{gap:8px;justify-content:flex-end;flex-wrap:wrap}
 @media (max-width:900px){.rae{grid-template-columns:1fr}.rae-list{position:static}.rae-grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -6215,3 +6228,92 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 /* Arena: a new opponent that took a beaten one's place */
 .arx-new{position:absolute!important;top:10px;right:10px;z-index:3;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font:400 11px var(--display);letter-spacing:.06em;background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 0 14px var(--cry-glow);animation:pop .4s both}
 .arx-new .ic{width:12px;height:12px}
+
+/* ---------- Shop, remade in glass (07-shop.js, root .mall.mallx; the owner asked for the newer transparent design):
+   a blurred picture under everything (.mallx-bg: the admin's shop:bg, else the home wallpaper's art) with three drifting
+   glows, and every panel, row, pill and card as clear glass with mixed round / sharp corners and light brackets on the
+   sharp corners of the two big panels. Only looks: the layout, tabs and buttons stay where they were. The crystal Buy
+   buttons and the inventory rarity colours of the item icons are kept. (--mrad, not --rc: --rc is the rarity colour.) ---------- */
+.mallx{--gl:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.03));--gl-rim:rgba(238,224,255,.28);--gl-hi:inset 0 1px 0 rgba(255,255,255,.18);--mrad:22px 6px 22px 6px;--glc:linear-gradient(180deg,rgba(255,255,255,.13),rgba(16,12,34,.34));
+  --bkc:rgba(255,236,255,.75);--bk:linear-gradient(var(--bkc),var(--bkc));
+  --brk:var(--bk) right 8px top 8px/16px 2px no-repeat,var(--bk) right 8px top 8px/2px 16px no-repeat,var(--bk) left 8px bottom 8px/16px 2px no-repeat,var(--bk) left 8px bottom 8px/2px 16px no-repeat;
+  background:#0b0a18}
+.mallx-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+  background:radial-gradient(ellipse 70% 60% at 66% 28%,rgba(120,86,200,.42),transparent 70%),radial-gradient(ellipse 55% 45% at 14% 92%,rgba(255,110,199,.2),transparent 70%),linear-gradient(#17142b,#08070f)}
+.mallx-bgart{position:absolute;left:-50px;top:-50px;width:calc(100% + 100px);height:calc(100% + 100px);object-fit:cover;object-position:50% 30%;filter:blur(18px) saturate(1.15) brightness(.6)}
+.mallx-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 120% 95% at 55% 40%,transparent 38%,rgba(4,3,10,.62)),linear-gradient(90deg,rgba(6,5,14,.5),transparent 32%)}
+.mallx-g{position:absolute;width:54vmax;height:54vmax;border-radius:50%;opacity:.6;animation:mallxDrift 26s ease-in-out infinite alternate;will-change:transform}
+.mallx-g.g1{left:-14vmax;top:-16vmax;background:radial-gradient(circle,rgba(200,162,255,.5),transparent 64%)}
+.mallx-g.g2{right:-16vmax;top:8vmax;background:radial-gradient(circle,rgba(245,175,232,.36),transparent 64%);animation-duration:31s;animation-direction:alternate-reverse}
+.mallx-g.g3{left:26vw;bottom:-24vmax;background:radial-gradient(circle,rgba(148,184,255,.34),transparent 64%);animation-duration:28s}
+.mallx-bg.art .mallx-g{opacity:.32}
+@keyframes mallxDrift{to{transform:translate(7vmax,5vmax) scale(1.14)}}
+.mallx .mall-word{display:none}
+/* header */
+.mallx .mall-top .cur{background:rgba(21,18,45,.38);border:1px solid rgba(255,255,255,.24);box-shadow:none;-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3)}
+.mallx .mall-top .cur b{text-shadow:0 1px 4px rgba(0,0,0,.45)}
+/* the sidebar */
+.mallx .mall-side{gap:8px;padding:14px;border-radius:var(--mrad);background:var(--brk),var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi),0 16px 40px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px) saturate(1.1);backdrop-filter:blur(16px) saturate(1.1)}
+.mallx-gh{display:flex;align-items:center;gap:7px;padding:2px 20px 10px 6px;color:rgba(240,232,255,.7);font:400 12px var(--display);letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)}
+.mallx-gh .ic{width:15px;height:15px}
+.mallx-gh em{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:99px;background:rgba(255,255,255,.12);font:400 11px var(--display);font-style:normal;text-align:center;color:#fff}
+.mallx .mall-side .evp-item{gap:12px;padding:9px 12px;border-radius:18px 5px 18px 5px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);box-shadow:none;color:#fff;transition:background .2s,border-color .2s,transform .15s}
+.mallx .mall-side .evp-item:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.26)}
+.mallx .mall-side .evp-item.on{background:linear-gradient(90deg,rgba(245,175,232,.24),rgba(200,162,255,.07));border-color:rgba(251,230,255,.6);box-shadow:0 0 18px rgba(200,162,255,.25),inset 0 1px 0 rgba(255,255,255,.2)}
+.mallx-it{display:grid;gap:2px;min-width:0;text-align:left}
+.mallx .mall-side .evp-item b{font:400 15px/1.15 var(--display);font-style:normal;letter-spacing:.02em}
+.mallx-it small{font:600 11px/1.3 var(--read);color:rgba(240,232,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mallx .mall-side .evp-item.on .mallx-it small{color:#ffe4f6}
+.mallx .mall-side .evp-ic{width:36px;height:36px;flex:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+.mallx .mall-side .evp-item.on .evp-ic{background:var(--cry-grad);color:var(--cry-ink);border-color:var(--cry-edge)}
+.mallx .mall-side .evp-item .dot-n{top:8px;right:8px}
+/* the main panel and the pill strip */
+.mallx .mall-main{border-radius:var(--mrad);background:var(--brk),var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi),0 18px 46px rgba(0,0,0,.32);-webkit-backdrop-filter:blur(16px) saturate(1.1);backdrop-filter:blur(16px) saturate(1.1)}
+.mallx .mall-main.hot{background:#0c0c18}
+.mallx .mall-strip{gap:4px;padding:4px;border-radius:16px 5px 16px 5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);justify-self:start;max-width:100%}
+.mallx .mall-strip .mall-pill,.mallx .mall-strip button.mall-pill{position:relative;display:inline-flex;align-items:center;gap:7px;padding:7px 18px;border-radius:12px 4px 12px 4px;border:1px solid transparent;background:none;box-shadow:none;color:rgba(240,232,255,.78);font:400 clamp(14px,1.25vw,17px) var(--display);font-style:normal;letter-spacing:.05em}
+.mallx .mall-strip button.mall-pill:hover{background:rgba(255,255,255,.08);color:#fff}
+.mallx .mall-strip .mall-pill.on,.mallx .mall-strip button.mall-pill.on{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border-color:rgba(251,230,255,.55);color:#fff;box-shadow:0 0 16px rgba(200,162,255,.25),inset 0 1px 0 rgba(255,255,255,.25)}
+.mallx .mall-strip .mall-pill.on::after{content:"";position:absolute;left:20%;right:20%;bottom:-1px;height:2px;border-radius:2px;background:var(--cry-grad);box-shadow:0 0 8px var(--cry-glow)}
+.mallx .mall-strip .mall-pill .ic{width:16px;height:16px}
+/* cards */
+.mallx .mall-item,.mallx .pk,.mallx .ccsk-card{border-radius:var(--mrad);background:var(--glc);border:1px solid rgba(238,224,255,.22);box-shadow:var(--gl-hi),0 10px 26px rgba(0,0,0,.2);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:transform .15s,border-color .2s,background .2s}
+.mallx .mall-item:hover,.mallx .pk:hover{transform:translateY(-2px);border-color:rgba(251,230,255,.45);background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.04))}
+.mallx .mall-skin,.mallx .mall-mem{border-radius:var(--mrad);background:var(--glc);border:1px solid color-mix(in srgb,var(--rc) 55%,rgba(255,255,255,.2));box-shadow:var(--gl-hi),0 10px 26px rgba(0,0,0,.2);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:transform .15s}
+.mallx .mall-skin:hover,.mallx .mall-mem:hover{transform:translateY(-2px)}
+.mallx .mall-skin>img,.mallx .mall-mem-art{border-radius:16px 4px 16px 4px}
+.mallx .pk{background:linear-gradient(170deg,rgba(200,162,255,.18),rgba(16,12,34,.32) 70%)}
+.mallx .pk.free{background:linear-gradient(170deg,rgba(120,240,190,.2),rgba(16,12,34,.32) 70%);border-color:rgba(140,240,200,.38)}
+.mallx .pass-box{border-radius:26px 8px 26px 8px;background:linear-gradient(160deg,color-mix(in srgb,var(--pc) 24%,transparent),rgba(255,255,255,.03) 62%);border:1px solid color-mix(in srgb,var(--pc) 50%,rgba(255,255,255,.2));box-shadow:var(--gl-hi),0 14px 34px rgba(0,0,0,.25);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.mallx .pass-box.on{box-shadow:0 0 0 2px var(--pc),0 0 26px color-mix(in srgb,var(--pc) 45%,transparent),var(--gl-hi)}
+.mallx .ccsk-card.eq{border:2px solid transparent;background:linear-gradient(rgba(36,28,64,.72),rgba(36,28,64,.72)) padding-box,var(--cry-grad) border-box}
+.mallx .mall-limit{border-radius:16px 5px 16px 5px;background:linear-gradient(90deg,rgba(245,175,232,.18),rgba(255,255,255,.04));border:1px solid rgba(251,230,255,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.mallx .mall-limit b{color:#ffe4f6}
+.mallx .mall-h{display:flex;align-items:center;gap:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)}
+.mallx .mall-h::before{content:"";width:7px;height:7px;flex:none;transform:rotate(45deg);background:linear-gradient(135deg,#ffe4f6,#c8a2ff 55%,#94b8ff);box-shadow:0 0 8px rgba(200,162,255,.85)}
+.mallx .mall-body>.tiny,.mallx .mall-body>p.tiny{color:rgba(244,238,255,.8);text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.mallx .mall-item .tiny,.mallx .mall-skin-nm small,.mallx .pk .tiny{color:rgba(244,238,255,.78);text-shadow:0 1px 3px rgba(0,0,0,.45)}
+/* buttons: the crystal Buy stays, the plain ones turn to glass */
+.mallx .mall-buy{border-radius:14px 4px 14px 4px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);transition:filter .15s,transform .1s}
+.mallx .mall-buy.ok{background:var(--cry-grad-h);color:var(--cry-ink);border-color:var(--cry-edge,rgba(255,255,255,.4));box-shadow:0 0 14px var(--cry-glow)}
+.mallx .mall-buy.ok:hover:not(:disabled){filter:brightness(1.07)}
+.mallx .mall-buy:active:not(:disabled){transform:scale(.97)}
+.mallx .mall-go{border-radius:22px 6px 22px 6px}
+.mallx .mall-go.owned{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.mallx .mall-price{border-radius:20px 6px 20px 6px;background:rgba(21,18,45,.42);border:1px solid rgba(255,255,255,.24);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.mallx .mall-thumb{border-radius:14px 4px 14px 4px}
+.mallx .mall-time{background:rgba(21,18,45,.42);border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.mallx .pk-reset{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+.mallx .mall-foot{color:rgba(240,232,255,.6);text-shadow:0 1px 4px rgba(0,0,0,.5)}
+@media (max-width:760px){
+  .mallx .mall-side{display:flex;gap:6px;padding:8px;background:var(--gl)}
+  .mallx-gh,.mallx-it small{display:none}
+  .mallx .mall-side .evp-item{padding:6px 12px 6px 6px}
+  .mallx .mall-side .evp-ic{width:30px;height:30px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .mallx .mall-side{gap:5px;padding:8px}.mallx-gh,.mallx-it small{display:none}.mallx .mall-side .evp-item{padding:5px 10px 5px 5px}.mallx .mall-side .evp-ic{width:28px;height:28px}
+  .mallx .mall-side .evp-item b{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){.mallx-g{animation:none}}
+.mallx .mall-thumb.on{border-color:#f5c4ff;box-shadow:0 0 0 3px rgba(200,162,255,.35),0 0 18px var(--cry-glow)}

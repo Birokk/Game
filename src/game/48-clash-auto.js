@@ -5,10 +5,17 @@
    does not play the future forward. Now and then it slips and takes its second or third best line (`slip`, decided
    by ccNoise from the match state, so the same seed and moves still replay the same match). When a hidden trap
    changes the board, the rest of the turn is planned again. Against the bot it wins most matches, not all of them
-   (the owner asked for no 100% win rate; tested in Node, see CLAUDE.md). Pure functions, no DOM: the UI in
+   (the owner asked for no 100% win rate; tested in Node, see CLAUDE.md); the Auto button itself uses the weaker CC_AUTO_PLAY below. Pure functions, no DOM: the UI in
    45-clash-ui.js runs the plan. */
 
 const CC_AUTO = { beam: 6, depth: 10, reply: 6, horizon: 0, lateFrom: 22, lateHorizon: 10, slip: .15, slipTop: 4, noise: 30 };
+/* the Auto button plays YOUR turns with a weaker version (the owner: "too good, I never lost once with auto play"): a
+   narrower search (beam 4), only its 2 best ideas judged after the bot's answer, no looking ahead late in the match,
+   slips on 40% of its turns and judges with more noise. Tested in Node against the normal bot (auto2/sim2.js, 80 games
+   per deck): about 54% wins / 45% losses in a fair fight (Balanced mirror 45%, Rush mirror 60%, random decks 58%; the
+   Defensive mirror still mostly draws), where the full CC_AUTO wins 75–88%. CC_AUTO itself (Expert Quick match, the
+   arena's top ranks, Free Training's Expert, the guild boss) keeps its full strength. */
+const CC_AUTO_PLAY = { ...CC_AUTO, beam: 4, reply: 2, lateHorizon: 0, slip: .4, noise: 60 };
 function ccAutoUnit(G, u) {
   const d = ccDef(u.id), atk = ccPermAtk(u), max = ccMaxHp(u);
   let v = atk * 1.7 + u.hp * 1.15 + (ccArm(u) ? 2.2 : 0) + (max - d.hp) * .2 + (u.eq ? .8 : 0);
