@@ -113,6 +113,27 @@ function clearRaid(times) {
   gainExp(EXP.raid * times); persist(); renderMenu(); renderRaids();
   showRaidDrops(drops, times);
 }
+/* instant clears ask first (the owner: a misclick used to clear at once): the same checks as clearRaid, then a small
+   glass window with the cost, the clears left and what you get; Yes runs clearRaid */
+function confirmRaidClear(times) {
+  const d = raidOf(raidSel), gold = d.kind === 'gold', gi = goldStage(), g = GOLD_STAGES[gi];
+  times = Math.min(times, raidInstLeft());
+  if (times < 1) { toast(`No instant clears left today (${RAID_INSTANT} a day). Win a battle to clear, or come back tomorrow.`); return; }
+  if (gold && !goldOpen(gi)) { toast(`Stage ${ROMAN[gi]} opens at player level ${g.lv}.`); return; }
+  if (!gold && wardFree() < 2 * times) { wardFullMsg(times); return; }
+  const cost = (gold ? g.st : RAID_STAMINA) * times, have = stamina(), left = raidInstLeft();
+  if (have < cost) { toast(`This needs ${cost} stamina. You have ${have}.`); openStamina(); return; }
+  const name = gold ? `Golden Vault ${ROMAN[gi]}` : d.name;
+  const get = gold ? `${curIcon('coins')}~${fmt(g.gold * times)} gold · ${expTag(g.exp * times)}` : `${icon('hanger')}${times}–${times * 2} clothing pieces · ${expTag(EXP.raid * times)}`;
+  openModal({ title: 'Instant clear?', ic: gold ? 'coin' : 'raid', small: true, kind: 'raidclr', body: `<div class="rcf">
+    <p class="desc">Clear <b>${esc(name)}</b> ${times > 1 ? `<b>${times} times</b>` : 'once'} without a battle?</p>
+    <div class="rcf-rows">
+      <span><small>Stamina</small><b>${curIcon('stamina')}${fmt(have)} → ${fmt(have - cost)}</b><em>−${cost}</em></span>
+      <span><small>Instant clears today</small><b>${left} → ${left - times} left</b><em>of ${RAID_INSTANT}</em></span>
+      <span><small>You get</small><b>${get}</b></span></div>
+    <div class="row rcf-btns"><button class="btn ghost" id="rcfNo">Cancel</button><button class="btn gold" id="rcfYes">Clear ×${times} ${curIcon('stamina')}${cost}</button></div></div>`,
+    onMount: () => { $('#rcfNo').onclick = closeModal; $('#rcfYes').onclick = () => { closeModal(); clearRaid(times); }; } });
+}
 /* gold raid: no wardrobe space needed; each clear gives the stage's gold (±15%) and EXP */
 const goldStage = () => Math.min(GOLD_STAGES.length - 1, Math.max(0, S.raidStage || 0));
 const goldOpen = i => playerLv().lv >= GOLD_STAGES[i].lv;
@@ -179,7 +200,7 @@ function showRaidDrops(drops, times) {
   const close = () => el.remove();
   el.addEventListener('click', e => { if (e.target === el) close(); });
   el.querySelector('#rdDone').onclick = close;
-  const ag = el.querySelector('#rdAgain'); if (ag) ag.onclick = () => { close(); clearRaid(again); };
+  const ag = el.querySelector('#rdAgain'); if (ag) ag.onclick = () => { close(); confirmRaidClear(again); };
 }
 
 let raidEl = null, raidSel = 'ruins';
@@ -245,7 +266,7 @@ function renderRaids() {
   raidEl.querySelector('#raidClose').onclick = closeRaids;
   raidEl.querySelector('#raidPlus').onclick = openStamina;
   raidEl.querySelectorAll('[data-raid]').forEach(b => b.onclick = () => { raidSel = b.dataset.raid; renderRaids(); });
-  raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => clearRaid(+b.dataset.clear));
+  raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => confirmRaidClear(+b.dataset.clear));
   const bt = raidEl.querySelector('#raidBattle'); if (bt) bt.onclick = () => raidBattle(raidSel, goldStage());
   const dkb = raidEl.querySelector('#raidDeck'); if (dkb) dkb.onclick = () => { if (ccValidateDeck(ccCampMyDeck().cards).ok || ccAllDecks().some(x => ccValidateDeck(x.cards).ok)) ccDeckPicker(renderRaids); else { closeRaids(); openDeck(); } };
   raidEl.querySelectorAll('[data-gstage]').forEach(b => b.onclick = () => { const i = +b.dataset.gstage; if (!goldOpen(i)) { toast(`Stage ${ROMAN[i]} opens at player level ${GOLD_STAGES[i].lv}.`); return; } S.raidStage = i; persist(); renderRaids(); });

@@ -463,10 +463,12 @@ function renderAch() {
 /* ---------- redeem codes ---------- */
 const CODES = { TESTBLANK: { pearls: 30 }, REGELEBYORU: { pearls: 2000 } };
 function openRedeem() {
-  openModal({ title: 'Redeem code', ic: 'gift', body: `<form class="form" id="rdForm">
-    <p class="desc">Enter a gift code to claim its rewards. Each code works once per account.</p>
-    <label class="field"><span>Code</span><input class="input" id="rdIn" maxlength="24" autocomplete="off" placeholder="e.g. TESTBLANK" style="text-transform:uppercase;letter-spacing:.12em"></label>
-    <div class="row" style="justify-content:space-between"><span class="err" id="rdErr" hidden></span><button class="btn gold" type="submit" style="margin-left:auto">Redeem</button></div>
+  // a see-through glass window (the owner asked for it to be transparent; styles .rdm at the end of main.css)
+  openModal({ title: 'Redeem code', ic: 'gift', kind: 'redeem', body: `<form class="form rdm" id="rdForm">
+    <div class="rdm-hero"><span class="rdm-ic">${icon('gift')}</span><div><b>Gift code</b><p class="desc">Enter a gift code to claim its rewards. Each code works once per account, and the rewards arrive in your Mail.</p></div></div>
+    <label class="field rdm-field"><span>Code</span><input class="input" id="rdIn" maxlength="24" autocomplete="off" spellcheck="false" placeholder="e.g. TESTBLANK" style="text-transform:uppercase;letter-spacing:.12em"></label>
+    <div class="row rdm-row"><span class="err" id="rdErr" hidden></span><button class="btn gold" type="submit" style="margin-left:auto">${icon('gift')}Redeem</button></div>
+    ${S.redeemed.length ? `<p class="tiny rdm-used">${S.redeemed.length} code${S.redeemed.length === 1 ? '' : 's'} redeemed on this account</p>` : ''}
   </form>`, onMount: () => {
     const inp = $('#rdIn'); inp.focus();
     $('#rdForm').onsubmit = e => {

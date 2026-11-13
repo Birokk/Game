@@ -26,7 +26,7 @@ const ADMIN_NAV = [
     ['shopart', 'Shop pictures', 'shop', 'top up icons membership cards pearl packs', 'Top Up pack pictures and the membership cards'],
     ['honor', 'Pearl Honor', 'medal', 'battle pass honor wallpaper emblems pearl gift coral tide moon tide season', 'The Pearl Honor page wallpaper and the three track emblems']] },
   { g: 'Modes & places', ic: 'swords', items: [
-    ['battle', 'Battle screen', 'swords', 'campaign raids great tree quick match card wallpapers chapter guild boss dragon battle types mirror rival storm blitz arena rank icons tokens', 'The Battle screen cards, the guild boss, the Arena wallpaper and rank icons, the Quick match wallpapers and the campaign chapter wallpapers'],
+    ['battle', 'Battle screen', 'swords', 'campaign raids great tree quick match card wallpapers chapter guild boss dragon battle types mirror rival storm blitz arena rank icons tokens free training practice', 'The Battle screen cards, the guild boss, the Arena wallpaper and rank icons, the Free Training wallpaper, the Quick match wallpapers and the campaign chapter wallpapers'],
     ['raids', 'Raids', 'raid', 'dungeons wallpaper gear sets golden vault', 'Raid wallpapers and the pieces of every raid set'],
     ['farm:base', 'Base town', 'farm', 'buildings fountain labels wallpaper town', 'The Base wallpaper and where each building label sits'],
     ['farm:exp', 'Expedition', 'compass', 'places wallpaper expedition labels', 'The Expedition wallpaper and its five places'],

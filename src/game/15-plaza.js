@@ -622,7 +622,7 @@ const typing = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagNam
 document.addEventListener('keydown', e => {
   if (titleOn && !pullEl) {
     if (e.key === 'Escape' && modalEl) closeModal();
-    else if (!modalEl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $('#ttStart').click(); }
+    else if (!modalEl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); const ts = $('#ttStart'); if (ts) ts.click(); }
     return;
   }
   if (pullEl) {
