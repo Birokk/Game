@@ -46,7 +46,7 @@
 <main class="menu is-open" id="menu" aria-label="Main menu">
   <header class="hm hm-tl">
     <button class="hm-me" data-open="profile" aria-label="Open your profile"><span style="position:relative;display:block" id="hmAvatar"></span>
-      <span class="hm-id ts"><span class="hm-name" id="pname">Traveler</span><span id="hmTitle"></span></span></button>
+      <span class="hm-id ts"><span class="hm-l1"><span class="hm-lv" id="hmLv">Lv.1</span><span class="hm-vip" id="hmVip"></span><span class="hm-name" id="pname">Traveler</span></span><span id="hmTitle"></span></span></button>
     <div class="hm-tools">
       <button class="tool ts" data-open="wallpaper"><span class="tc glass"><span data-ic="image"></span></span>Wallpaper</button>
       <button class="tool ts" id="hideUi" aria-label="Hide the menu and show only the wallpaper"><span class="tc glass"><span data-ic="eyeOff"></span></span>Hide UI</button>
@@ -71,12 +71,12 @@
     <nav class="hm-right" aria-label="Banners, events, quests, pass and more">
       <div id="promo"></div>
       <div class="hm-icons">
-        <button class="ev ts" data-open="spin"><span class="evo"><span data-ic="wheel"></span></span><span class="el">Daily Spin</span><time>Free</time><span class="dot-n" id="spinDot" hidden></span></button>
         <button class="ev ts" data-open="events" style="--ec:#ff6f91"><span class="evo"><span data-ic="calendar"></span></span><span class="el">Events</span><span class="dot-n" id="evDot" hidden></span></button>
-        <button class="ev ts" data-open="quests" style="--ec:#4fd1a5"><span class="evo"><span data-ic="quests"></span></span><span class="el">Quests</span><time>Daily</time><span class="dot-n" id="qDot" hidden></span></button>
+        <button class="ev ts" data-open="spin"><span class="evo"><span data-ic="wheel"></span></span><span class="el">Daily Spin</span><time>Free</time><span class="dot-n" id="spinDot" hidden></span></button>
         <button class="ev ts" data-open="honor" style="--ec:#f5afe8"><span class="evo"><span data-ic="medal"></span></span><span class="el">Honor</span><time>Pass</time><span class="dot-n" id="bpDot" hidden></span></button>
-        <button class="ev ts" data-open="guild" style="--ec:#e6a63c"><span class="evo"><span data-ic="guild"></span></span><span class="el">Guild</span><span class="dot-n" id="guildDot" hidden></span></button>
         <button class="ev ts hm-more" id="hmMore" style="--ec:#8f86ff" aria-expanded="false" aria-controls="hmDrop"><span class="evo"><span data-ic="grid"></span></span><span class="el">Menu</span><span class="dot-n" id="moreDot" hidden></span></button>
+        <button class="ev ts hi-q" data-open="quests" style="--ec:#4fd1a5"><span class="evo"><span data-ic="quests"></span></span><span class="el">Quests</span><time>Daily</time><span class="dot-n" id="qDot" hidden></span></button>
+        <button class="ev ts hi-g" data-open="guild" style="--ec:#e6a63c"><span class="evo"><span data-ic="guild"></span></span><span class="el">Guild</span><span class="dot-n" id="guildDot" hidden></span></button>
         <div class="hm-drop" id="hmDrop" hidden>
           <button class="ev ts" data-open="shop" style="--ec:#ff9f43"><span class="evo"><span data-ic="shop"></span></span><span class="el">Shop</span></button>
           <button class="ev ts" data-open="bag" style="--ec:#a78bfa"><span class="evo"><span data-ic="bag"></span></span><span class="el">Bag</span></button>

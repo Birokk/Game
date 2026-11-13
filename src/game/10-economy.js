@@ -97,10 +97,9 @@ function openSpin() {
           <button class="wheel-hub" id="spinGo" ${spinReady() ? '' : 'disabled'}>${spinReady() ? 'Spin' : 'Done'}</button></div></div>
       <div class="spx-status"><span class="spx-st">${icon('wheel')}<b id="spinLeftB">${spinsLeft()} / ${per}</b> spins left</span><span class="spx-st">${icon('clock')}Resets in <b>${dhLeft(spinMidnight() - Date.now())}</b></span></div>
       <div class="spx-note" id="spinNote">${spinNoteText()}</div>
-      <div class="spx-prizes"><div class="spx-ph"><b>Prizes</b><button type="button" class="cs-info" id="spinInfo" aria-label="Spin chances" aria-pressed="false">${icon('info')}</button><small id="spinOddsHint">Tap (i) to see the chances</small></div>
-        <div class="spx-pr" id="spinOdds">${SPIN.map(s => `<span class="spx-p ${s.jackpot ? 'jack' : ''}" title="${esc(spinName(s))}">${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b><i>${s.w}%</i></span>`).join('')}</div></div>
+      <div class="spx-prizes"><div class="spx-ph"><b>Prizes</b><small>Chance of each prize per spin</small></div>
+        <div class="spx-pr show" id="spinOdds">${SPIN.map(s => `<span class="spx-p ${s.jackpot ? 'jack' : ''}" title="${esc(spinName(s))}">${curIcon(s.give)}<b>${s.give === 'coins' ? fmt(s.n) : '×' + s.n}</b><i>${s.w}%</i></span>`).join('')}</div></div>
     </div></div>`, onMount: () => {
-    $('#spinInfo').onclick = () => { const o = $('#spinOdds'), on = o.classList.toggle('show'); $('#spinInfo').setAttribute('aria-pressed', on); $('#spinOddsHint').textContent = on ? 'Chance of each prize per spin' : 'Tap (i) to see the chances'; };
     $('#spinGo').onclick = () => {
       if (!spinReady()) return;
       let r = Math.random() * SPIN.reduce((a, s) => a + s.w, 0), i = 0;
