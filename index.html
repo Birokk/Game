@@ -53,38 +53,41 @@
     </div>
   </header>
 
-  <div class="hm hm-tr">
-    <div class="currencies" id="wallet" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-    <button class="rbtn glass" data-open="mail" aria-label="Mail"><span data-ic="mail"></span><span class="badge" id="mailBadge"></span></button>
-    <button class="rbtn glass" data-open="settings" aria-label="Settings"><span data-ic="gear"></span></button>
-    <button class="rbtn glass" data-open="admin" aria-label="Admin panel"><span data-ic="wrench"></span></button>
+  <!-- under the profile: Mail, Settings, Achievements, Level (and Admin for admins) -->
+  <nav class="hm hm-ql" aria-label="Mail, settings, achievements and level">
+    <button class="ev ts" data-open="mail" style="--ec:#5aa9ff"><span class="evo"><span data-ic="mail"></span></span><span class="el">Mail</span><span class="badge" id="mailBadge"></span></button>
+    <button class="ev ts" data-open="settings" style="--ec:#c9b8ff"><span class="evo"><span data-ic="gear"></span></span><span class="el">Settings</span></button>
+    <button class="ev ts" data-open="ach" style="--ec:#ffb84a"><span class="evo"><span data-ic="ach"></span></span><span class="el">Achievements</span><span class="dot-n" id="achDot" hidden></span></button>
+    <button class="ev ts" data-open="level" style="--ec:#3fd47e"><span class="evo"><span data-ic="level"></span></span><span class="el">Level</span><span class="dot-n" id="lvDot" hidden></span></button>
+    <button class="ev ts hm-adm" data-open="admin" style="--ec:#ff8f8f" aria-label="Admin panel"><span class="evo"><span data-ic="wrench"></span></span><span class="el">Admin</span></button>
+  </nav>
+
+  <!-- the right column, stacked so nothing can overlap: currencies, the world chat, the mini banners, then the round icons -->
+  <div class="hm hm-rc">
+    <div class="hm-tr">
+      <div class="currencies" id="wallet" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
+    <button class="ticker ts" id="ticker" aria-label="World chat, enter the plaza to talk"><span data-ic="chat"></span><span id="tickerText"></span></button>
+    <nav class="hm-right" aria-label="Banners, events, quests, pass and more">
+      <div id="promo"></div>
+      <div class="hm-icons">
+        <button class="ev ts" data-open="spin"><span class="evo"><span data-ic="wheel"></span></span><span class="el">Daily Spin</span><time>Free</time><span class="dot-n" id="spinDot" hidden></span></button>
+        <button class="ev ts" data-open="events" style="--ec:#ff6f91"><span class="evo"><span data-ic="calendar"></span></span><span class="el">Events</span><span class="dot-n" id="evDot" hidden></span></button>
+        <button class="ev ts" data-open="quests" style="--ec:#4fd1a5"><span class="evo"><span data-ic="quests"></span></span><span class="el">Quests</span><time>Daily</time><span class="dot-n" id="qDot" hidden></span></button>
+        <button class="ev ts" data-open="honor" style="--ec:#f5afe8"><span class="evo"><span data-ic="medal"></span></span><span class="el">Honor</span><time>Pass</time><span class="dot-n" id="bpDot" hidden></span></button>
+        <button class="ev ts" data-open="guild" style="--ec:#e6a63c"><span class="evo"><span data-ic="guild"></span></span><span class="el">Guild</span><span class="dot-n" id="guildDot" hidden></span></button>
+        <button class="ev ts hm-more" id="hmMore" style="--ec:#8f86ff" aria-expanded="false" aria-controls="hmDrop"><span class="evo"><span data-ic="grid"></span></span><span class="el">Menu</span><span class="dot-n" id="moreDot" hidden></span></button>
+        <div class="hm-drop" id="hmDrop" hidden>
+          <button class="ev ts" data-open="shop" style="--ec:#ff9f43"><span class="evo"><span data-ic="shop"></span></span><span class="el">Shop</span></button>
+          <button class="ev ts" data-open="bag" style="--ec:#a78bfa"><span class="evo"><span data-ic="bag"></span></span><span class="el">Bag</span></button>
+          <button class="ev ts" data-open="ranking" style="--ec:#ffb84a"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Ranking</span></button>
+          <button class="ev ts" data-open="fuse" style="--ec:#ff7ccf"><span class="evo"><span data-ic="fuse"></span></span><span class="el">Fusion</span></button>
+          <button class="ev ts" data-open="friends" style="--ec:#5aa9ff"><span class="evo"><span data-ic="friends"></span></span><span class="el">Friends</span><span class="dot-n" id="frDot" hidden></span></button>
+          <button class="ev ts" data-open="redeem"><span class="evo"><span data-ic="gift"></span></span><span class="el">Redeem</span></button>
+        </div>
+      </div>
+    </nav>
   </div>
-  <button class="hm ticker ts" id="ticker" aria-label="World chat, enter the plaza to talk"><span data-ic="chat"></span><span id="tickerText"></span></button>
-
-  <nav class="hm hm-left" aria-label="Banners and activities">
-    <div id="promo"></div>
-    <div class="ev-grid">
-      <button class="ev ts" data-open="spin"><span class="evo"><span data-ic="wheel"></span></span><span class="el">Daily Spin</span><time>Free</time><span class="dot-n" id="spinDot" hidden></span></button>
-      <button class="ev ts" data-open="events" style="--ec:#ff6f91"><span class="evo"><span data-ic="calendar"></span></span><span class="el">Events</span><span class="dot-n" id="evDot" hidden></span></button>
-    </div>
-  </nav>
-
-  <nav class="hm hm-right" aria-label="Quests, pass and more">
-    <button class="ev ts" data-open="quests" style="--ec:#4fd1a5"><span class="evo"><span data-ic="quests"></span></span><span class="el">Quests</span><time>Daily</time><span class="dot-n" id="qDot" hidden></span></button>
-    <button class="ev ts" data-open="honor" style="--ec:#f5afe8"><span class="evo"><span data-ic="medal"></span></span><span class="el">Honor</span><time>Pass</time><span class="dot-n" id="bpDot" hidden></span></button>
-    <button class="ev ts" data-open="guild" style="--ec:#e6a63c"><span class="evo"><span data-ic="guild"></span></span><span class="el">Guild</span><span class="dot-n" id="guildDot" hidden></span></button>
-    <button class="ev ts hm-more" id="hmMore" style="--ec:#8f86ff" aria-expanded="false" aria-controls="hmDrop"><span class="evo"><span data-ic="grid"></span></span><span class="el">Menu</span><span class="dot-n" id="moreDot" hidden></span></button>
-    <div class="hm-drop" id="hmDrop" hidden>
-      <button class="ev ts" data-open="shop" style="--ec:#ff9f43"><span class="evo"><span data-ic="shop"></span></span><span class="el">Shop</span></button>
-      <button class="ev ts" data-open="bag" style="--ec:#a78bfa"><span class="evo"><span data-ic="bag"></span></span><span class="el">Bag</span></button>
-      <button class="ev ts" data-open="ranking" style="--ec:#ffb84a"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Ranking</span></button>
-      <button class="ev ts" data-open="level" style="--ec:#3fd47e"><span class="evo"><span data-ic="level"></span></span><span class="el">Level</span><span class="dot-n" id="lvDot" hidden></span></button>
-      <button class="ev ts" data-open="ach"><span class="evo"><span data-ic="ach"></span></span><span class="el">Achievements</span><span class="dot-n" id="achDot" hidden></span></button>
-      <button class="ev ts" data-open="fuse" style="--ec:#ff7ccf"><span class="evo"><span data-ic="fuse"></span></span><span class="el">Fusion</span></button>
-      <button class="ev ts" data-open="friends" style="--ec:#5aa9ff"><span class="evo"><span data-ic="friends"></span></span><span class="el">Friends</span><span class="dot-n" id="frDot" hidden></span></button>
-      <button class="ev ts" data-open="redeem"><span class="evo"><span data-ic="gift"></span></span><span class="el">Redeem</span></button>
-    </div>
-  </nav>
 
   <nav class="hm hm-gates" aria-label="Modes">
     <button class="summon2 mode2 m-plaza" id="enterPlaza" aria-label="Enter the plaza"><span class="so"><span data-ic="plaza"></span></span><span class="st"><b>Plaza</b></span></button>

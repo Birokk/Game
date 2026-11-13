@@ -121,13 +121,26 @@ function mysteryBoard() {
       </div>
     </div></div>`;
 }
-INFO.mbox = () => { const st = mboxState(), ch = mboxChance();
-  return { title: 'Mystery Fountain', body: `<p class="desc">The fountain holds ${MB_COST.length} prizes. Each wish takes one out at random and it never comes back, so the outfit gets likelier with every wish and is guaranteed by wish ${MB_COST.length}. It can't come out before wish ${MB_SKIN_FROM}. Finding the outfit gives you everything still left in the fountain.</p>
-    <div class="balance"><span>Wishes made</span><b>${st.got.length} / ${MB_COST.length}</b></div>
-    <div class="balance"><span>Next wish</span><b>${st.got.length >= MB_COST.length ? 'The fountain is empty' : `${curIcon('pearls')}${MB_COST[st.got.length]} pearls`}</b></div>
-    <div class="balance"><span>Outfit chance on your next wish</span><b>${st.got.includes('skin') ? 'Obtained' : ch ? `${Math.round(ch * 1000) / 10}%` : `0% (from wish ${MB_SKIN_FROM})`}</b></div>
-    <table class="cs-table"><thead><tr><th>Wish</th>${MB_COST.map((_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead><tbody><tr><td>Pearls</td>${MB_COST.map(c => `<td>${c}</td>`).join('')}</tr></tbody></table>
-    <span class="lbl-sm">In the fountain · ${MB_COST.length - st.got.length} left</span><div class="mb-list">${mbRows()}</div>` }; };
+/* the Info window, remade in glass (the owner's ask; kind 'mbinfo', styles .mbi at the end of main.css): how it works, three
+   stat tiles (wishes made, next price, the outfit's chance on the next wish), the 10 wish prices as steps, and every prize
+   as a glass card in its rarity colour (still inside / taken on wish n) */
+INFO.mbox = () => { const st = mboxState(), ch = mboxChance(), i = st.got.length, done = i >= MB_COST.length, owned = st.got.includes('skin');
+  const total = MB_COST.reduce((x, y) => x + y, 0), spent = MB_COST.slice(0, i).reduce((x, y) => x + y, 0), pct = owned ? 100 : Math.round(ch * 1000) / 10;
+  const prize = x => { const got = st.got.includes(x.k), n = st.got.indexOf(x.k) + 1;
+    return `<div class="mbi-pz r${x.r} ${got ? 'got' : ''}"><span class="mbi-pic">${x.pic}</span><span class="mbi-pn"><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></span>${ctag(x.r)}<em class="mbi-pst">${got ? `${icon('check')}Wish ${n}` : 'Inside'}</em></div>`; };
+  return { title: 'Mystery Fountain', kind: 'mbinfo', body: `<div class="mbi">
+    <div class="mbi-card mbi-how"><span class="mbi-ftn"><span class="ftn-ic">${icon('fountain')}</span></span><div><b>How the fountain works</b>
+      <p>The fountain holds ${MB_COST.length} prizes. Each wish takes one out at random and it never comes back, so the outfit gets likelier with every wish and is guaranteed by wish ${MB_COST.length}. It can't come out before wish ${MB_SKIN_FROM}. <b>Finding the outfit gives you everything still left in the fountain.</b></p></div></div>
+    <div class="mbi-stats">
+      <div class="mbi-card mbi-st"><small>Wishes made</small><b>${i}<i>/ ${MB_COST.length}</i></b><span class="mbi-pips">${MB_COST.map((_, k) => `<i class="${k < i ? 'on' : ''}"></i>`).join('')}</span></div>
+      <div class="mbi-card mbi-st"><small>Next wish</small><b>${done ? 'Empty' : `${curIcon('pearls')}${MB_COST[i]}`}</b><span class="mbi-tx">${done ? 'Every prize is out' : `${fmt(spent)} of ${fmt(total)} pearls spent`}</span></div>
+      <div class="mbi-card mbi-st ${owned ? 'won' : ''}"><small>Outfit chance next wish</small><b>${owned ? 'Obtained' : ch ? `${pct}%` : '0%'}</b><span class="mbi-bar"><i style="width:${owned ? 100 : pct}%"></i></span><span class="mbi-tx">${owned ? 'The outfit is yours' : ch ? 'Rises with every wish' : `From wish ${MB_SKIN_FROM}`}</span></div>
+    </div>
+    <div class="mbi-card"><span class="mbi-h">${curIcon('pearls')}Wish prices<em>${fmt(total)} pearls for all ${MB_COST.length}</em></span>
+      <div class="mbi-steps">${MB_COST.map((c, k) => `<span class="mbi-step ${k < i ? 'done' : k === i ? 'now' : ''}"><small>${k < i ? icon('check') : `Wish ${k + 1}`}</small><b>${curIcon('pearls')}${c}</b></span>`).join('')}</div></div>
+    <div class="mbi-card"><span class="mbi-h">${icon('gift')}In the fountain<em>${MB_COST.length - i} of ${MB_COST.length} left</em></span>
+      <div class="mbi-prizes">${MB_ITEMS().map(prize).join('')}</div></div>
+  </div>` }; };
 function bindMystery() { const b = $('#mbPull'); if (b) b.onclick = confirmMbox; }
 
 /* the white marble fountain used by the wish animation (water parts take the rarity colour once it opens) */

@@ -38,15 +38,58 @@ function passPerks(p) {
 }
 
 /* daily rewards: one letter per active pass per day, sent the first time the game runs that day */
+/* daily membership rewards: a popup on the home screen (the owner's ask, it replaced the daily letter in Mail and the
+   Event page that used to open after the loading screen). passDaily (every renderMenu) queues each active pass's reward
+   once a day in S.memberPop {list: [{id, day, reward}]} (player save, so a reload can't lose it); passPopMaybe shows the
+   popup once the home screen is really in view and adds the rewards when it opens. */
 function passDaily() {
   const d = dayKey(); S.memberDay = S.memberDay || {};
+  const q = S.memberPop && Array.isArray(S.memberPop.list) ? S.memberPop : (S.memberPop = { list: [] });
   for (const p of PASSES) {
     if (!passOn(p.id) || S.memberDay[p.id] === d) continue;
     S.memberDay[p.id] = d;
-    mailAdd([{ id: `pass-${p.id}-${d}`, from: 'Membership', title: `${p.name}: daily reward`, date: d,
-      body: `Thank you for being a member! Here is today's ${p.name} reward.\n${passDaysLeft(p.id)} day${passDaysLeft(p.id) === 1 ? '' : 's'} left on your membership.`, reward: { ...p.daily } }]);
+    q.list.push({ id: p.id, day: d, reward: { ...p.daily } });
     persist();
   }
+  passPopMaybe();
+}
+const passPopReady = () => !!(S.memberPop && S.memberPop.list && S.memberPop.list.length);
+let passPopT = 0;
+function passPopMaybe(tries = 0) {   // on the next tick, so it never redraws the home screen in the middle of renderMenu
+  if (!passPopReady() || passPopT) return;
+  passPopT = setTimeout(() => { passPopT = 0;
+    if (!passPopReady() || titleOn) return;
+    if (document.querySelector('.loading')) { if (tries < 40) passPopMaybe(tries + 1); return; }   // wait for the loading screen to fade out
+    if (!menuOpen || modalEl || document.querySelector('.pull, .rewpop, .mbp')) return;   // shown on a later home redraw instead
+    const cx = document.elementFromPoint(innerWidth / 2, innerHeight / 2); if (!cx || !cx.closest('#menu')) return;   // another screen covers the home screen
+    showPassPop();
+  }, tries ? 400 : 0);
+}
+function showPassPop() {
+  const list = (S.memberPop && S.memberPop.list || []).filter(x => passDef(x.id)); S.memberPop = { list: [] };
+  if (!list.length) { persist(); return; }
+  const got = {};
+  list.forEach(x => Object.entries(x.reward).forEach(([k, n]) => { if (k === 'stamina') giveStamina(n); else S.wallet[k] = (S.wallet[k] || 0) + n; got[k] = (got[k] || 0) + n; }));
+  persist(); renderMenu();
+  const byPass = PASSES.map(p => ({ p, days: list.filter(x => x.id === p.id) })).filter(x => x.days.length);
+  const cell = (k, n) => `<span class="inv-cell bp-sq mbp-it r${REW_R[k] || 4}" title="${fmt(n)} ${esc((REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1])}"><span class="inv-pic">${curIcon(k)}</span><b>${fmt(n)}</b></span>`;
+  const sum = r => { const o = {}; r.forEach(x => Object.entries(x.reward).forEach(([k, n]) => { o[k] = (o[k] || 0) + n; })); return o; };
+  const el = document.createElement('div'); el.className = 'mbp'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Membership rewards');
+  el.innerHTML = `<div class="mbp-box"><i class="mbp-glow"></i>
+    <span class="mbp-kind">${icon('gift')}Daily membership rewards</span>
+    <h2 class="mbp-t">You received</h2>
+    <p class="mbp-sub">Thank you for being a member! Today's rewards are already in your bag.</p>
+    <div class="mbp-list">${byPass.map(({ p, days }) => `<div class="mbp-card" style="--pc:${p.col}">
+      <span class="mbp-pass">${curIcon(p.icon)}</span>
+      <span class="mbp-pn"><b>${esc(p.name)}</b><small>${passDaysLeft(p.id)} day${passDaysLeft(p.id) === 1 ? '' : 's'} left${days.length > 1 ? ` · ${days.length} days of rewards` : ''}</small></span>
+      <span class="mbp-items">${Object.entries(sum(days)).map(([k, n]) => cell(k, n)).join('')}</span></div>`).join('')}</div>
+    <button class="btn gold mbp-ok" id="mbpOk">${icon('check')}Got it</button></div>`;
+  document.body.appendChild(el);
+  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 220); removeEventListener('keydown', key); };
+  const key = e => { if (e.key === 'Escape' || e.key === 'Enter') close(); };
+  addEventListener('keydown', key);
+  el.addEventListener('click', e => { if (e.target === el) close(); });
+  el.querySelector('#mbpOk').onclick = close; el.querySelector('#mbpOk').focus({ preventScroll: true });
 }
 function passMaxMsg(p) { toast(`${p.name} can be stacked up to ${PASS_MAX_DAYS} days. You have ${passDaysLeft(p.id)} days, so another ${PASS_DAYS} would go past the limit.`); }
 function confirmPass(id) {

@@ -110,7 +110,7 @@ function confirmSignOut() {
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancel</button><button class="btn mint" id="soGo">Sign out</button></div></div>`,
     onMount: () => { $('#soGo').onclick = signOut; modalEl.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal); } });
 }
-function updateAdminAccess() { document.querySelectorAll('.rbtn[data-open=admin]').forEach(b => b.hidden = !canAdmin()); }
+function updateAdminAccess() { document.querySelectorAll('.rbtn[data-open=admin], .hm-adm').forEach(b => b.hidden = !canAdmin()); }
 
 /* sign-in forms (title screen and Settings) */
 async function cloudEmail(mode, email, password) {

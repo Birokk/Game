@@ -125,6 +125,25 @@ function ftApply(id) {
   const f = ftState(), keep = { me: f.me, skin: f.skin, back: f.back, char: f.char, fixed: f.fixed, seed: f.seed, last: f.last };
   ccSave().ft = Object.assign(ftCopy(FT_DEF), keep, ftCopy(p.set), { preset: id }); persist(); renderTraining();
 }
+/* "My preset" (the owner's ask: the first option is a preset you save yourself): the whole setup (decks, brain, heroes,
+   rules, shuffle, look) under a name you choose, kept in S.cc.ftMine {name, cfg, at}; tapping it loads it again */
+const ftMine = () => { const m = ccSave().ftMine; return m && typeof m === 'object' && m.cfg ? m : null; };
+function ftApplyMine() {
+  const m = ftMine(); if (!m) return;
+  const f = ftState(); ccSave().ft = Object.assign(ftCopy(FT_DEF), ftCopy(m.cfg), { preset: 'mine', last: f.last }); ftState(); persist(); renderTraining();
+  toast(`${m.name} loaded`);
+}
+function ftSaveMine() {
+  const f = ftState(), old = ftMine();
+  openModal({ title: old ? 'Update my preset' : 'Save my preset', ic: 'star', small: true, kind: 'ftsave', body: `<form class="ftsv" id="ftSvForm">
+    <p class="desc">${old ? `This replaces <b>${esc(old.name)}</b> with the setup you have now.` : 'Keep the setup you have now as your own preset, the first one in the list.'}</p>
+    <div class="ftsv-ch">${ftChips(f).map(([ic, x]) => `<span>${icon(ic)}${esc(x)}</span>`).join('')}</div>
+    <label class="field ftsv-f"><span>Name</span><input class="input" id="ftSvName" maxlength="20" autocomplete="off" value="${esc(old ? old.name : 'My preset')}"></label>
+    <div class="row ftsv-b"><button type="button" class="btn ghost" id="ftSvNo">Cancel</button><button class="btn gold" type="submit">${icon('star')}${old ? 'Update' : 'Save'}</button></div></form>`,
+    onMount: () => { const n = $('#ftSvName'); n.focus(); n.select(); $('#ftSvNo').onclick = closeModal;
+      $('#ftSvForm').onsubmit = e => { e.preventDefault(); const name = n.value.trim().slice(0, 20) || 'My preset', cfg = ftCopy(ftState()); delete cfg.preset; delete cfg.last;
+        ccSave().ftMine = { name, cfg, at: Date.now() }; ftState().preset = 'mine'; persist(); closeModal(); renderTraining(); toast(`Saved as ${name}`); }; } });
+}
 /* a change made by hand: the setup is now "Custom" */
 const ftSet = fn => { const f = ftState(); fn(f); f.preset = 'custom'; persist(); renderTraining(); };
 function renderTraining() {
@@ -143,6 +162,9 @@ function renderTraining() {
   const preset = p => `<button class="rdx-it ftx-it ${f.preset === p.id ? 'on' : ''}" data-ftp="${p.id}" style="--mc:${p.col}"><span class="rdx-iti">${icon(p.ic)}</span><span class="rdx-itt"><b>${esc(p.name)}</b><small>${esc(p.sub)}</small></span></button>`;
   const brain = b => `<button class="ftx-br ${b.id === f.brain ? 'on' : ''}" data-ftb="${b.id}" style="--dc:${b.col}" aria-pressed="${b.id === f.brain}">
       <span class="ftx-brh"><span class="qmx-pips">${Array.from({ length: 4 }, (_, i) => `<i class="${i < b.pips ? 'on' : ''}"></i>`).join('')}</span><b>${b.name}</b></span><small>${esc(b.desc)}</small></button>`;
+  const mine = ftMine(), mc = mine && mine.cfg;
+  const mineHTML = mine ? `<div class="rdx-it ftx-it ftx-mine ${f.preset === 'mine' ? 'on' : ''}" style="--mc:#f5afe8"><button class="ftx-mgo" data-ftmine title="Load ${esc(mine.name)}"><span class="rdx-iti">${icon('star')}</span><span class="rdx-itt"><b>${esc(mine.name)}</b><small>${esc(ftBrain(mc.brain).name)} · ${mc.hp ? `${mc.hp[0]} vs ${mc.hp[1]} HP` : ''}${mc.ev && mc.ev !== 'none' ? ' · event' : ''}${mc.rounds ? ` · round ${mc.rounds}` : ''}</small></span></button><button class="ftx-msave" id="ftMineSave" title="Save the current setup here" aria-label="Save the current setup as your preset">${icon('upload')}</button></div>`
+    : `<button class="rdx-it ftx-it ftx-mine empty" id="ftMineSave" style="--mc:#f5afe8"><span class="rdx-iti">${icon('plus')}</span><span class="rdx-itt"><b>Save your setup</b><small>Keep these settings as your own preset</small></span></button>`;
   const opAv = ch ? baseThumb(ch) : f.brain === 'dummy' ? icon('target') : '?', opName = ch ? ch.name : f.brain === 'dummy' ? 'Training Dummy' : 'Random character';
   ftEl.innerHTML = `<div class="rdx-bg ftx-bg ${bg ? 'art' : ''}">${bg ? `<span class="ftx-wp">${artImg('ft:bg')}</span>` : `<div class="ftx-scene">${bthArt('training', true)}</div>`}<i class="hgx-glow g1 ftx-g1"></i><i class="hgx-glow g2 ftx-g2"></i><i class="hgx-glow g3 ftx-g3"></i></div><div class="rdx-shade ftx-shade"></div>
     <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('target')}</span><h2 class="ts">Free Training</h2></div>
@@ -150,8 +172,8 @@ function renderTraining() {
       <span class="rdx-ward ftx-free" title="Training costs no stamina and gives no rewards">${icon('check')}Free<em>No stamina · no rewards</em></span>
       <button class="rdx-sec ftx-hb" id="ftReset" title="Back to the standard setup">${icon('refresh')}<span>Reset</span></button>
       <button class="inv-x" id="ftClose" aria-label="Close">${icon('close')}</button></header>
-    <aside class="rdx-rail"><span class="rdx-gh">${icon('sparkle')}Presets</span>${FT_PRESETS.map(preset).join('')}
-      ${f.preset === 'custom' ? `<span class="rdx-gh">${icon('edit')}Your setup</span><div class="rdx-it ftx-it on ftx-cus"><span class="rdx-iti">${icon('edit')}</span><span class="rdx-itt"><b>Custom</b><small>Your own settings</small></span></div>` : ''}</aside>
+    <aside class="rdx-rail"><span class="rdx-gh">${icon('star')}My preset</span>${mineHTML}<span class="rdx-gh">${icon('sparkle')}Presets</span>${FT_PRESETS.map(preset).join('')}
+      ${f.preset === 'custom' ? `<span class="rdx-gh">${icon('edit')}Your setup</span><div class="rdx-it ftx-it on ftx-cus"><span class="rdx-iti">${icon('edit')}</span><span class="rdx-itt"><b>Custom</b><small>Not saved · ${mine ? 'use the save button on My preset' : 'save it as My preset'}</small></span></div>` : ''}</aside>
     <section class="rdx-main"><div class="rdx-scroll">
       <div class="rdx-hero"><span class="rdx-kind">${icon('target')}Card Battle · Practice</span>
         <h1 class="rdx-title ftx-title">Training Ground</h1><p class="rdx-desc">Set the match up exactly how you want it and practise. Nothing is spent and nothing is won, so try anything.</p>
@@ -198,6 +220,8 @@ function renderTraining() {
   $f('#ftDecks').onclick = () => { closeTraining(false); openDeck(); };
   $f('#ftGo').onclick = ftBattle;
   ftEl.querySelectorAll('[data-ftp]').forEach(b => b.onclick = () => ftApply(b.dataset.ftp));
+  const mg = $f('[data-ftmine]'); if (mg) mg.onclick = ftApplyMine;
+  $f('#ftMineSave').onclick = ftSaveMine;
   ftEl.querySelectorAll('[data-ftb]').forEach(b => b.onclick = () => ftSet(f => { f.brain = b.dataset.ftb; }));
   ftEl.querySelectorAll('[data-ftsel]').forEach(s => s.onchange = () => { const k = s.dataset.ftsel, v = s.value; if (k === 'me') { const f0 = ftState(); f0.me = v; persist(); renderTraining(); } else if (k === 'skin' || k === 'back') { const f0 = ftState(); f0[k] = v; persist(); renderTraining(); } else ftSet(f => { f[k] = v; }); });
   ftEl.querySelectorAll('[data-ftseg]').forEach(b => b.onclick = () => { const k = b.dataset.ftseg, v = b.dataset.v;

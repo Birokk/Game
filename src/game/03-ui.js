@@ -65,7 +65,7 @@ function hmZoom() {
 addEventListener('resize', hmZoom);
 function renderMenu() {
   hmZoom();
-  safely(passDaily, 'memberships');   // a membership's daily reward goes to Mail once a day
+  safely(passDaily, 'memberships');   // a membership's daily reward: queued once a day, shown as a popup on the home screen
   $('#pname').textContent = S.player.name;
   $('#hmAvatar').innerHTML = avatarHTML(56) + `<span class="lvb">${playerLv().lv}</span>` + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');
   $('#lvDot').hidden = !lvReady();
@@ -253,7 +253,7 @@ function showTitle() { titleOn = true; closeModal(); closeEvents(); closeInvento
 function enterGame() {
   if (!S.player.mc) return openMCPick();
   titleOn = false; closeModal(); renderMenu();
-  showLoading(() => { if (loginReady()) setTimeout(openLogin, 450); });
+  showLoading(() => setTimeout(passPopMaybe, 450));   // the membership rewards popup (it replaced opening the Event page on the daily login)
   setTimeout(() => { titleEl.hidden = true; }, 400);
 }
 /* first sign-in: pick the main character */

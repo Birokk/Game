@@ -155,3 +155,66 @@
   .hbx-dots{margin-top:4px}.hbx-t b{font-size:13px;-webkit-line-clamp:1}.hbx-t small{font-size:9px}.hbx-kind{font-size:7.5px;top:5px;left:6px;padding:1px 6px 1px 4px}.hbx-kind .ic{width:10px;height:10px}
   .hbx-time{top:5px;right:5px;font-size:8px;padding:1px 6px}.hbx-card:has(.dot-n) .hbx-time{right:18px}.hbx-t{left:8px;bottom:5px;right:8px}.hbx-draw .ic{width:40px;height:40px}
 }
+
+/* ==========================================================================
+   Home layout v2 (the owner's ask): Mail, Settings, Achievements and Level sit in a row under the profile (.hm-ql, plus
+   Admin for admins); the right side is ONE stacked column (.hm-rc: currencies, the world chat, the mini banner, then the
+   round icons Daily Spin, Events, Quests, Honor, Guild, Menu in a 3 × 2 grid), so wrapping currencies can never run into
+   the pieces under them. The Menu dropdown opens to the left of the icons.
+   ========================================================================== */
+.menu .hm-ql{top:calc(94px + var(--st));left:var(--sl);display:flex;align-items:flex-start;gap:4px}
+.menu .hm-ql .ev{width:auto;min-width:62px;padding:0 3px}
+.menu .hm-ql .ev .el{white-space:nowrap;font-size:10.5px;margin-top:2px}
+.menu .hm-ql .ev .evo:not(.ic-up){width:48px;height:48px}
+.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:22px;height:22px}
+.menu .hm-ql .ev .dot-n{top:1px;right:calc(50% - 25px)}
+.menu .hm-ql .badge{top:-4px;right:calc(50% - 32px);left:auto;z-index:2;min-width:19px;height:19px;font-size:10.5px;color:#fff;background:#ff4a6e;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.menu .hm-ql .hm-adm[hidden]{display:none}
+.menu .hm-rc{top:calc(12px + var(--st));right:var(--sr);display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-width:calc(100% - 470px)}
+.menu .hm-rc .hm-tr{position:static;top:auto;right:auto;left:auto;max-width:none;display:flex;justify-content:flex-end}
+.menu .hm-rc .currencies{justify-content:flex-end}
+.menu .hm-rc .ticker{position:static;top:auto;right:auto;flex:none}
+.menu .hm-rc .hm-right{position:relative;top:auto;right:auto;left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.menu .hm-icons{position:relative;display:grid;grid-template-columns:repeat(3,86px);gap:8px 7px;justify-items:center}
+.menu .hm-icons .ev{width:86px}
+.menu .hm-rc .hm-drop{top:0;right:calc(100% + 12px)}
+.menu .hm-rc .hm-drop::before{top:auto;bottom:40px;right:-7px;transform:rotate(135deg)}
+.menu.ui-hidden .hm-ql{transform:translateX(-14px)}.menu.ui-hidden .hm-rc{transform:translateX(14px)}
+/* windows 821–1240 px wide (no zoom): the tools are icons only, the banner 248 px */
+@media (min-width:821px) and (max-width:1240px){
+  .menu .hm-rc{max-width:calc(100% - 380px);gap:8px}
+  .menu .hm-icons{grid-template-columns:repeat(3,78px);gap:6px 7px}.menu .hm-icons .ev{width:78px}
+  .menu .hm-ql{top:calc(86px + var(--st))}
+}
+/* portrait phones: the row under the profile, then one column across the screen: currencies, banner, the six icons in a row */
+@media (max-width:820px) and (orientation:portrait){
+  .menu .hm-ql{top:calc(82px + var(--st));gap:0}
+  .menu .hm-ql .ev{min-width:58px;padding:0 1px}
+  .menu .hm-ql .ev .evo:not(.ic-up){width:42px;height:42px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:20px;height:20px}
+  .menu .hm-ql .ev .el{font-size:9px;margin-top:2px}
+  .menu .hm-rc{top:calc(150px + var(--st));left:var(--sl);right:var(--sr);max-width:none;align-items:stretch;gap:8px}
+  .menu .hm-rc .hm-tr,.menu .hm-rc .currencies{justify-content:flex-start}
+  .menu .hm-rc .hm-right{align-items:center;gap:8px}
+  .menu .hm-icons{width:100%;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  .menu .hm-icons .ev{width:100%;font-size:9.5px}
+  .menu .hm-icons .ev .evo:not(.ic-up){width:46px;height:46px}.menu .hm-icons .ev .evo:not(.ic-up) .ic{width:21px;height:21px}
+  .menu .hm-icons .ev .dot-n{right:calc(50% - 25px)}
+  .menu .hm-rc .hm-drop{top:calc(100% + 8px);right:0;grid-template-columns:repeat(3,72px)}
+  .menu .hm-rc .hm-drop::before{top:-7px;bottom:auto;right:24px;transform:rotate(45deg)}
+}
+@media (max-width:400px) and (orientation:portrait){.menu .hm-ql .ev{min-width:54px}.menu .hm-ql .ev .el{font-size:8.5px}}
+/* phones held sideways: the row under the profile; on the right the currencies, the banner and the icons in 3 × 2 under it */
+@media (max-height:500px) and (orientation:landscape){
+  .menu .hm-ql{top:calc(58px + var(--st));gap:0}
+  .menu .hm-ql .ev{min-width:52px;padding:0 1px}
+  .menu .hm-ql .ev .evo:not(.ic-up){width:36px;height:36px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:17px;height:17px}
+  .menu .hm-ql .ev .el{font-size:8.5px;margin-top:2px}
+  .menu .hm-ql .ev .dot-n{right:calc(50% - 20px)}.menu .hm-ql .badge{right:calc(50% - 26px);min-width:16px;height:16px;font-size:9px}
+  .menu .hm-rc{top:calc(8px + var(--st));max-width:calc(100% - 320px);gap:6px}
+  .menu .hm-rc .hm-right{gap:6px}
+  .menu .hm-icons{grid-template-columns:repeat(3,62px);gap:2px 4px}.menu .hm-icons .ev{width:62px}
+  .menu .hm-icons .ev .evo:not(.ic-up){width:36px;height:36px}.menu .hm-icons .ev .evo:not(.ic-up) .ic{width:17px;height:17px}
+  .menu .hm-icons .ev time{font-size:9px;line-height:1}
+  .menu .hm-rc .hm-drop{top:0;right:calc(100% + 8px)}
+  .menu .hm-rc .hm-drop::before{top:auto;bottom:30px;right:-7px;transform:rotate(135deg)}
+}

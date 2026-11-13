@@ -53,29 +53,46 @@ function claimLevels(list) {
   persist(); renderMenu(); refreshSummon(); renderLevel();
   showRewards('Level rewards', got, `${n} level reward${n === 1 ? '' : 's'} claimed`);
 }
-function openLevel() { openModal({ title: 'Level rewards', ic: 'level', wide: true, kind: 'level', body: '<div id="lvRoot"></div>', onMount: () => { renderLevel(true); } }); }
+/* the Level window, remade in glass (the owner asked for the new UI design and transparency; styles .lvx at the end of
+   main.css): a glass card with the level medallion (a turning crystal ring), the EXP bar and claimed / ready counts, the ways
+   to earn EXP, and the rewards as a timeline of glass rows (a rail lit up to your level, a diamond node per level, the
+   rewards as inventory cards in their rarity colours, Claim / Claimed / Reach Lv n), filtered by All / Ready / Milestones */
+let lvFilter = 'all';
+const LV_WAY_IC = { pull: 'summon', login: 'calendar', spin: 'wheel', ach: 'ach', hatch: 'paw', raid: 'raid' };
+const lvItem = (k, n) => `<span class="inv-cell bp-sq lvx-it r${REW_R[k] || 4}" title="${fmt(n)} ${esc((REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1])}"><span class="inv-pic">${curIcon(k)}</span><b>${fmt(n)}</b></span>`;
+function openLevel() { lvFilter = 'all'; openModal({ title: 'Level rewards', ic: 'level', wide: true, kind: 'level', body: '<div id="lvRoot"></div>', onMount: () => { renderLevel(true); } }); }
 function renderLevel(scrollToNext) {
   const root = $('#lvRoot'); if (!root) return;
   const P = playerLv(), ready = [], keep = $('#lvList') ? $('#lvList').scrollTop : 0;
   for (let i = 1; i <= P.lv; i++) if (!lvClaimed(i)) ready.push(i);
-  const rows = Array.from({ length: LV_MAX }, (_, i) => i + 1).map(lv => { const got = lvClaimed(lv), can = !got && lv <= P.lv;
-    return `<div class="lv-row ${got ? 'got' : ''} ${can ? 'can' : ''} ${lv > P.lv ? 'locked' : ''}" data-lvrow="${lv}">
-      <span class="lv-node">${lv <= P.lv ? icon('check') : ''}</span>
-      <div class="lv-card"><div class="lv-head"><b>Player Lv ${lv}</b>${got ? '<span class="lv-btn done">Claimed</span>' : can ? `<button class="lv-btn go" data-lvclaim="${lv}">Claim</button>` : `<span class="lv-btn">Reach Lv ${lv}</span>`}</div>
-        <div class="lv-items">${lvReward(lv).map(([k, n]) => `<span class="lv-item k-${k}">${curIcon(k)}<em>${fmt(n)}</em></span>`).join('')}</div></div></div>`; }).join('');
-  root.innerHTML = `<div class="lv">
-    <aside class="lv-side">
-      <span class="lv-tagline">Player Level</span>
-      <div class="lv-medal-card"><span class="lv-cur">Current Level</span>
-        <div class="lv-medal"><span class="lv-core">${icon('level')}</span><b>${P.lv}</b></div>
-        ${P.need ? `<div class="lv-bar"><i style="width:${P.xp / P.need * 100}%"></i></div><span class="tiny">${fmt(P.xp)} / ${fmt(P.need)} EXP to level ${P.lv + 1}</span>` : `<span class="tiny">Max level reached · ${fmt(P.xp)} EXP saved for future levels</span>`}
-      </div>
-      <div class="lv-ways"><span class="lbl-sm">How to earn EXP</span>${EXP_WAYS.map(([k, l, per]) => `<div><span>${l}</span>${expTag(EXP[k])}<small>${per}</small></div>`).join('')}<div><span>Farm Inn</span>${expTag(farmDef('inn').day)}<small>per day at Lv 7</small></div></div>
+  const claimedN = Array.from({ length: LV_MAX }, (_, i) => i + 1).filter(lvClaimed).length;
+  const show = lv => lvFilter === 'ready' ? !lvClaimed(lv) && lv <= P.lv : lvFilter === 'ms' ? lv % 5 === 0 : true;
+  const rows = Array.from({ length: LV_MAX }, (_, i) => i + 1).filter(show).map(lv => { const got = lvClaimed(lv), can = !got && lv <= P.lv, ms = lv % 10 === 0 ? 'ms10' : lv % 5 === 0 ? 'ms5' : '';
+    return `<div class="lvx-row ${got ? 'got' : ''} ${can ? 'can' : ''} ${lv > P.lv ? 'locked' : ''} ${lv === P.lv ? 'now' : ''} ${lv < P.lv ? 'past' : ''} ${ms}" data-lvrow="${lv}">
+      <span class="lvx-node"><b>${lv}</b></span>
+      <div class="lvx-rc"><span class="lvx-lv"><small>Player level</small><b>Lv ${lv}</b>${lv === P.lv ? '<em class="now">You are here</em>' : ms ? `<em>${lv % 10 === 0 ? 'Big reward' : 'Milestone'}</em>` : ''}</span>
+        <div class="lvx-items">${lvReward(lv).map(([k, n]) => lvItem(k, n)).join('')}</div>
+        <span class="lvx-st">${got ? `<span class="lvx-done">${icon('check')}Claimed</span>` : can ? `<button class="lvx-go" data-lvclaim="${lv}">${icon('gift')}Claim</button>` : `<span class="lvx-lock">${icon('lock')}Reach Lv ${lv}</span>`}</span></div></div>`; }).join('');
+  const seg = (k, t) => `<button class="lvx-sg ${lvFilter === k ? 'on' : ''}" data-lvf="${k}" aria-pressed="${lvFilter === k}">${t}</button>`;
+  root.innerHTML = `<div class="lvx">
+    <aside class="lvx-side">
+      <div class="lvx-card lvx-me"><span class="lvx-kind">${icon('level')}Player level</span>
+        <div class="lvx-medal"><i class="lvx-ring"></i><i class="lvx-ring r2"></i><span class="lvx-core"><small>Lv</small><b>${P.lv}</b></span></div>
+        <b class="lvx-name">${esc(S.player.name || 'Traveler')}</b>
+        ${P.need ? `<div class="lvx-bar"><i style="width:${Math.min(100, P.xp / P.need * 100)}%"></i></div><span class="lvx-xp"><b>${fmt(P.xp)}</b> / ${fmt(P.need)} EXP <em>to Lv ${P.lv + 1}</em></span>` : `<div class="lvx-bar"><i style="width:100%"></i></div><span class="lvx-xp">Max level reached <em>${fmt(P.xp)} EXP saved for future levels</em></span>`}
+        <div class="lvx-stats"><span><b>${claimedN}</b><small>Claimed</small></span><span class="${ready.length ? 'hot' : ''}"><b>${ready.length}</b><small>Ready</small></span><span><b>${LV_MAX}</b><small>Max level</small></span></div></div>
+      <div class="lvx-card lvx-ways"><span class="lvx-h">${icon('sparkle')}How to earn EXP</span>
+        ${EXP_WAYS.map(([k, l, per]) => `<div class="lvx-way"><span class="lvx-wi">${icon(LV_WAY_IC[k] || 'star')}</span><span class="lvx-wt"><b>${l}</b><small>${per}</small></span>${expTag(EXP[k])}</div>`).join('')}
+        <div class="lvx-way"><span class="lvx-wi">${icon('farm')}</span><span class="lvx-wt"><b>Base · Inn</b><small>per day at Lv 7</small></span>${expTag(farmDef('inn').day)}</div></div>
     </aside>
-    <div class="lv-right"><div class="lv-bar-top"><span class="tiny">${ready.length ? `${ready.length} reward${ready.length === 1 ? '' : 's'} ready` : 'Level up to unlock more rewards'}</span><button class="btn gold" id="lvAll" ${ready.length ? '' : 'disabled'}>${icon('gift')}Claim all${ready.length ? ` (${ready.length})` : ''}</button></div>
-    <div class="lv-list" id="lvList">${rows}</div></div></div>`;
+    <section class="lvx-main">
+      <div class="lvx-top"><span class="lvx-tt"><b>Level rewards</b><small>${ready.length ? `${ready.length} reward${ready.length === 1 ? '' : 's'} ready to claim` : 'Level up to unlock more rewards'}</small></span>
+        <span class="lvx-seg" role="group">${seg('all', 'All')}${seg('ready', `Ready${ready.length ? ` <i>${ready.length}</i>` : ''}`)}${seg('ms', 'Milestones')}</span>
+        <button class="btn gold" id="lvAll" ${ready.length ? '' : 'disabled'}>${icon('gift')}Claim all${ready.length ? ` (${ready.length})` : ''}</button></div>
+      <div class="lvx-list" id="lvList">${rows || '<p class="lvx-empty">Nothing here right now. Level up to unlock the next reward.</p>'}</div></section></div>`;
   root.querySelectorAll('[data-lvclaim]').forEach(b => b.onclick = () => claimLevels(ready));   // any Claim takes every ready level
+  root.querySelectorAll('[data-lvf]').forEach(b => b.onclick = () => { lvFilter = b.dataset.lvf; renderLevel(true); });
   const all = $('#lvAll'); if (all) all.onclick = () => claimLevels(ready);
   $('#lvList').scrollTop = keep;
-  if (scrollToNext) { const t = root.querySelector('.lv-row.can') || root.querySelector(`[data-lvrow="${P.lv}"]`), list = $('#lvList'); if (t && list) list.scrollTop = t.offsetTop - list.offsetTop - 8; }
+  if (scrollToNext) { const t = root.querySelector('.lvx-row.can') || root.querySelector(`[data-lvrow="${P.lv}"]`), list = $('#lvList'); list.scrollTop = t ? Math.max(0, t.offsetTop - 8) : 0; }
 }
