@@ -328,3 +328,102 @@
    The tiles behind the default icons stay (an uploaded icon hides its tile, .ic-up). ---- */
 .menu .hm-tabs{background:none!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 .menu .hm-tabs .tbl,.menu .tabb{text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 10px rgba(0,0,0,.55)}
+
+/* ==========================================================================
+   Home layout v5 (the owner's ask): ONE bottom row .hm-bot = Summon on the LEFT (the world chat and the "Limited ends"
+   chip sit above it, .hm-up) · the dock in the middle (Characters, Pets, Base, Deck: Collection became "Index" in the row
+   under the profile and the House moved into the Base screen) · Plaza as a small round icon and Battle on the RIGHT.
+   One grid with a centred middle column, so every button shares one centre line and nothing can overlap. Summon and
+   Battle are smaller. Portrait phones: Summon | Plaza + Battle on one line, the dock across the bottom under them.
+   ========================================================================== */
+.menu .hm-bot{left:var(--sl);right:var(--sr);top:auto;bottom:calc(12px + var(--sb));display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:14px;z-index:3}
+.menu .hm-bot>.hm-br,.menu .hm-bot>.hm-tabs,.menu .hm-bot>.hm-gates{position:relative;inset:auto;transform:none;margin:0;z-index:auto;max-width:none}
+.menu .hm-bot>.hm-br{justify-self:start;display:block}
+.menu .hm-bot>.hm-tabs{justify-self:center;width:auto;display:flex;align-items:center;gap:4px;padding:0}
+.menu .hm-bot>.hm-gates{justify-self:end;display:flex;align-items:center;gap:12px}
+.menu.ui-hidden .hm-bot{transform:translateY(14px)}
+.menu.ui-hidden .hm-bot>*{transform:none}
+.menu .hm-rc{z-index:4}   /* the Menu dropdown opens over the bottom row if it ever reaches it */
+/* above Summon: the chat ticker, then the Limited chip right on top of the button */
+.menu .hm-up{position:absolute;left:0;bottom:calc(100% + 10px);display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}
+.menu .hm-up>*{pointer-events:auto}
+.menu .hm-up .ticker{position:static;inset:auto;display:flex;width:380px;flex:none}
+.menu .hm-up .lim-time{margin-left:8px}
+.menu .hm-up .lim-time:empty{display:none}
+/* Summon (left) and Battle (right), smaller */
+.menu .hm-bot .summon2:not(.mode2){height:60px;padding:0 26px 0 8px;gap:11px}
+.menu .hm-bot .summon2:not(.mode2) .so{width:46px;height:46px}.menu .hm-bot .summon2:not(.mode2) .so .ic{width:24px;height:24px}
+.menu .hm-bot .summon2:not(.mode2) .st b{font-size:27px}
+.menu .hm-bot .summon2:not(.mode2) .dot-n{top:7px;right:14px}
+.menu .hm-bot .mode2{height:56px;padding:0 24px 0 8px;gap:10px}
+.menu .hm-bot .mode2 .so{width:42px;height:42px}.menu .hm-bot .mode2 .so .ic{width:22px;height:22px}
+.menu .hm-bot .mode2 .st b{font-size:24px}
+.menu .hm-bot .mode2 .dot-n{top:6px;right:12px}
+/* Plaza: a small round icon like the side icons (rose ring, the plaza / fountain picture, a label) */
+.menu .hm-plaza{width:64px;cursor:pointer}
+.menu .hm-plaza .evo,.menu .hm-plaza .evo:not(.ic-up){width:46px;height:46px}
+.menu .hm-plaza .evo:not(.ic-up) .ic{width:22px;height:22px}
+.menu .hm-plaza .el{font-size:10.5px;white-space:nowrap}
+/* the dock tiles: a fixed width so the row keeps its size */
+.menu .hm-bot .tabb{flex:none;width:92px}
+.menu .hm-bot .tabb .tbi{width:44px;height:44px}
+@media (min-width:821px) and (max-width:1240px){
+  .menu .hm-bot .tabb{width:82px}
+  .menu .hm-bot .summon2:not(.mode2){height:56px;padding:0 22px 0 7px}.menu .hm-bot .summon2:not(.mode2) .so{width:42px;height:42px}.menu .hm-bot .summon2:not(.mode2) .st b{font-size:25px}
+  .menu .hm-bot .mode2{height:52px;padding:0 20px 0 7px}.menu .hm-bot .mode2 .so{width:38px;height:38px}.menu .hm-bot .mode2 .st b{font-size:22px}
+  .menu .hm-up .ticker{width:340px}
+}
+@media (min-width:821px) and (max-width:1000px){
+  .menu .hm-bot{gap:10px}
+  .menu .hm-bot .tabb{width:66px}.menu .hm-bot .tabb .tbi{width:36px;height:36px}
+  .menu .hm-up .ticker{width:300px}
+}
+/* portrait phones: Summon | Plaza + Battle on one line, the dock across the bottom under them */
+@media (max-width:820px) and (orientation:portrait){
+  .menu .hm-bot{bottom:calc(8px + var(--sb));grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"s g" "d d";gap:10px 8px;align-items:end}
+  .menu .hm-bot>.hm-br{grid-area:s}.menu .hm-bot>.hm-gates{grid-area:g;gap:8px}
+  .menu .hm-bot>.hm-tabs{grid-area:d;justify-self:stretch;justify-content:space-around}
+  .menu .hm-bot .tabb{flex:1 1 0;width:auto;max-width:96px}
+  .menu .hm-bot .tabb .tbi{width:38px;height:38px}
+  .menu .hm-up{bottom:calc(100% + 8px);gap:6px}
+  .menu .hm-up .ticker{width:min(330px,calc(100vw - 2 * var(--sl)));height:32px;padding:0 14px}
+  .menu .hm-bot .summon2:not(.mode2){height:50px;padding:0 18px 0 6px;gap:8px}.menu .hm-bot .summon2:not(.mode2) .so{width:38px;height:38px}.menu .hm-bot .summon2:not(.mode2) .so .ic{width:20px;height:20px}.menu .hm-bot .summon2:not(.mode2) .st b{font-size:21px}
+  .menu .hm-bot .mode2{height:46px;padding:0 16px 0 6px;gap:8px}.menu .hm-bot .mode2 .so{width:34px;height:34px}.menu .hm-bot .mode2 .so .ic{width:18px;height:18px}.menu .hm-bot .mode2 .st b{font-size:19px}
+  .menu .hm-plaza{width:52px}.menu .hm-plaza .evo,.menu .hm-plaza .evo:not(.ic-up){width:38px;height:38px}.menu .hm-plaza .evo:not(.ic-up) .ic{width:18px;height:18px}.menu .hm-plaza .el{font-size:9px;margin-top:2px}
+}
+@media (max-width:820px) and (orientation:portrait) and (max-height:700px){
+  .menu .hm-bot{gap:6px 8px}
+  .menu .hm-up .ticker{height:28px}.menu .hm-up{gap:4px;bottom:calc(100% + 6px)}
+  .menu .hm-bot .summon2:not(.mode2){height:44px}.menu .hm-bot .summon2:not(.mode2) .so{width:33px;height:33px}.menu .hm-bot .summon2:not(.mode2) .st b{font-size:18px}
+  .menu .hm-bot .mode2{height:42px}.menu .hm-bot .mode2 .so{width:31px;height:31px}.menu .hm-bot .mode2 .st b{font-size:17px}
+  .menu .hm-bot .tabb .tbi{width:32px;height:32px}
+}
+/* phones held sideways: everything on one line, small */
+@media (max-height:500px) and (orientation:landscape){
+  .menu .hm-bot{bottom:calc(6px + var(--sb));gap:8px}
+  .menu .hm-bot .tabb{width:58px}.menu .hm-bot .tabb .tbi{width:30px;height:30px}
+  .menu .hm-up{bottom:calc(100% + 6px);gap:4px}
+  .menu .hm-up .ticker{width:260px;height:28px;padding:0 12px;font-size:12px}
+  .menu .hm-bot .summon2:not(.mode2){height:46px;padding:0 15px 0 5px;gap:7px}.menu .hm-bot .summon2:not(.mode2) .so{width:34px;height:34px}.menu .hm-bot .summon2:not(.mode2) .so .ic{width:18px;height:18px}.menu .hm-bot .summon2:not(.mode2) .st b{font-size:19px}
+  .menu .hm-bot .mode2{height:42px;padding:0 13px 0 5px;gap:7px}.menu .hm-bot .mode2 .so{width:31px;height:31px}.menu .hm-bot .mode2 .so .ic{width:16px;height:16px}.menu .hm-bot .mode2 .st b{font-size:17px}
+  .menu .hm-bot>.hm-gates{gap:6px}
+  .menu .hm-plaza{width:46px}.menu .hm-plaza .evo,.menu .hm-plaza .evo:not(.ic-up){width:32px;height:32px}.menu .hm-plaza .evo:not(.ic-up) .ic{width:16px;height:16px}.menu .hm-plaza .el{font-size:8.5px;margin-top:1px}
+}
+@media (max-height:500px) and (orientation:landscape) and (max-width:700px){.menu .hm-bot .tabb{width:46px}}
+/* one centre line (the owner: "the bar on the bottom should be aligned with all buttons"): outside portrait phones the
+   dock and Plaza labels hang under their icons (out of the flow), so the icon circles / tiles and the Summon and Battle
+   pills are centred on exactly the same line */
+@media (min-width:821px), (orientation:landscape){
+  .menu .hm-bot{bottom:calc(26px + var(--sb))}
+  .menu .hm-bot .tabb,.menu .hm-plaza{position:relative}
+  .menu .hm-bot .tabb .tbl,.menu .hm-plaza .el{position:absolute;left:50%;top:100%;transform:translateX(-50%);width:max-content;max-width:none;margin:0;pointer-events:none}
+  .menu .hm-plaza .el{top:calc(100% + 3px)}
+}
+@media (max-height:500px) and (orientation:landscape){.menu .hm-bot{bottom:calc(18px + var(--sb))}}
+@media (max-height:500px) and (orientation:landscape) and (max-width:700px){.menu .hm-bot{bottom:calc(8px + var(--sb))}.menu .hm-plaza .el{display:none}}
+@media (max-width:380px) and (orientation:portrait){
+  .menu .hm-bot{column-gap:6px}.menu .hm-bot>.hm-gates{gap:6px}
+  .menu .hm-bot .summon2:not(.mode2){padding:0 12px 0 5px;gap:7px}.menu .hm-bot .summon2:not(.mode2) .so{width:34px;height:34px}.menu .hm-bot .summon2:not(.mode2) .st b{font-size:18px}
+  .menu .hm-bot .mode2{padding:0 12px 0 5px;gap:6px}.menu .hm-bot .mode2 .so{width:30px;height:30px}.menu .hm-bot .mode2 .st b{font-size:16.5px}
+  .menu .hm-plaza{width:44px}.menu .hm-plaza .evo,.menu .hm-plaza .evo:not(.ic-up){width:34px;height:34px}
+}

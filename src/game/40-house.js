@@ -106,10 +106,12 @@ function renderHouse() {
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><h2 class="ts">House</h2>${infoBtn('house', 'How houses work')}<span class="fm-rate ts">${residents} living here · ${fmt(residents * HOUSE_BOND)} ${curIcon('bondheart')} / day</span></div>
     <div class="fm-cur">${['coins', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}</div>
     <button class="btn gold fm-all" id="hsAll">${curIcon('bondheart')}Collect all</button>
+    <button class="fm-switch up" id="hsBase" aria-label="Back up to the Base">${icon('back')}<b>Base</b></button>
     ${fmSel && houseOf(fmSel) && !houseOwned(fmSel) ? `<aside class="fm-panel glass-deep" id="fmPanel">${houseBuyPanel(houseOf(fmSel))}</aside>` : ''}`;
   houseSeen = 'map:' + HOME_HOUSES.map(h => houseStored(h.id) >= 1 ? 1 : 0).join('');
   $('#fmBack').onclick = closeFarm;
   $('#hsAll').onclick = () => houseCollectUI(st.own);
+  $('#hsBase').onclick = () => { fmView = 'base'; fmSel = null; renderFarm(); };
   fmEl.querySelectorAll('[data-hs]').forEach(b => b.onclick = e => { e.stopPropagation(); const id = b.dataset.hs; if (houseOwned(id)) return enterHouse(id); fmSel = fmSel === id ? null : id; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };
   const pn = $('#fmPanel'); if (!pn) return;

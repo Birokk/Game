@@ -1,7 +1,7 @@
 /* ---------- collection ---------- */
 let colOwnedOnly = false;
 function openCollection(filter = 'character') {
-  openModal({ title: 'Collection', ic: 'chars', wide: true, kind: 'collection', body: '<div id="colRoot"></div>', onMount: () => renderCollection(filter) });
+  openModal({ title: 'Index', ic: 'book', wide: true, kind: 'collection', body: '<div id="colRoot"></div>', onMount: () => renderCollection(filter) });
 }
 const cardHTML = e => {
   const n = S.owned[e.id] || 0;

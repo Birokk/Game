@@ -149,11 +149,13 @@ function renderFarm() {
     <button class="btn gold fm-all" id="fmAll">${icon('gift')}Collect all</button>
     <button class="fm-switch right" id="fmSwitch" aria-label="Go to Expedition"><b>Expedition</b>${icon('back')}${expReady() ? '<span class="dot-n"></span>' : ''}</button>
     <button class="fm-switch left" id="fmCamp" aria-label="Go to Camp">${icon('back')}<b>Camp</b>${campReady() ? '<span class="dot-n"></span>' : ''}</button>
+    <button class="fm-switch down" id="fmHouse" aria-label="Go down to the House"><b>House</b>${icon('back')}${houseReady() ? '<span class="dot-n"></span>' : ''}</button>
     ${fmSel ? `<aside class="fm-panel glass-deep" id="fmPanel">${fmSel === 'fountain' ? fountainPanel() : farmPanel(farmDef(fmSel))}</aside>` : ''}`;
   fmScrollBack(keepX);
   $('#fmBack').onclick = closeFarm;
   $('#fmSwitch').onclick = () => { fmView = 'exp'; fmSel = null; exPick = null; renderFarm(); };
   $('#fmCamp').onclick = () => { fmView = 'camp'; fmSel = null; campPick = []; renderFarm(); };
+  $('#fmHouse').onclick = () => { fmView = 'house'; fmSel = null; houseIn = null; roomSel = -1; renderFarm(); };   // the House is a tab of the Base now (the owner's ask: off the home dock, a down arrow here)
   $('#fmAll').onclick = () => { const got = FARM_DEFS.map(d => [d.id, farmCollect(d.id)]).filter(([, n]) => n); if (!got.length) { toast('Nothing to collect yet.'); return; } persist(); renderMenu(); renderFarm(); toast(`Collected ${got.map(([id, n]) => `${fmt(n)} ${farmRes(id).name}`).join(', ')}.`); };
   fmEl.querySelectorAll('[data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); fmSel = fmSel === b.dataset.fm ? null : b.dataset.fm; renderFarm(); });
   fmEl.querySelector('.fm-stage').onclick = () => { if (fmSel) { fmSel = null; renderFarm(); } };

@@ -53,21 +53,21 @@
     </div>
   </header>
 
-  <!-- under the profile: Mail, Settings, Achievements, Level (and Admin for admins) -->
-  <nav class="hm hm-ql" aria-label="Mail, settings, achievements and level">
+  <!-- under the profile: Mail, Settings, Achievements, Level, Index (the collection) and Admin for admins -->
+  <nav class="hm hm-ql" aria-label="Mail, settings, achievements, level and index">
     <button class="ev ts" data-open="mail" style="--ec:#5aa9ff"><span class="evo"><span data-ic="mail"></span></span><span class="el">Mail</span><span class="badge" id="mailBadge"></span></button>
     <button class="ev ts" data-open="settings" style="--ec:#c9b8ff"><span class="evo"><span data-ic="gear"></span></span><span class="el">Settings</span></button>
     <button class="ev ts" data-open="ach" style="--ec:#ffb84a"><span class="evo"><span data-ic="ach"></span></span><span class="el">Achievements</span><span class="dot-n" id="achDot" hidden></span></button>
     <button class="ev ts" data-open="level" style="--ec:#3fd47e"><span class="evo"><span data-ic="level"></span></span><span class="el">Level</span><span class="dot-n" id="lvDot" hidden></span></button>
+    <button class="ev ts" data-open="collection" style="--ec:#7cc4ff" aria-label="Index: every character, skin, pet and collectible"><span class="evo"><span data-ic="book"></span></span><span class="el">Index</span></button>
     <button class="ev ts hm-adm" data-open="admin" style="--ec:#ff8f8f" aria-label="Admin panel"><span class="evo"><span data-ic="wrench"></span></span><span class="el">Admin</span></button>
   </nav>
 
-  <!-- the right column, stacked so nothing can overlap: currencies, the world chat, the mini banners, then the round icons -->
+  <!-- the right column, stacked so nothing can overlap: currencies, the mini banners, then the round icons -->
   <div class="hm hm-rc">
     <div class="hm-tr">
       <div class="currencies" id="wallet" style="display:flex;gap:8px;flex-wrap:wrap"></div>
     </div>
-    <button class="ticker ts" id="ticker" aria-label="Open the chat: World, Guild and Friends"><span data-ic="chat"></span><span id="tickerText"></span><span class="dot-n" id="chatDot" hidden></span></button>
     <nav class="hm-right" aria-label="Banners, events, quests, pass and more">
       <div id="promo"></div>
       <div class="hm-icons">
@@ -90,23 +90,26 @@
     </nav>
   </div>
 
-  <nav class="hm hm-gates" aria-label="Modes">
-    <button class="summon2 mode2 m-plaza" id="enterPlaza" aria-label="Enter the plaza"><span class="so"><span data-ic="plaza"></span></span><span class="st"><b>Plaza</b></span></button>
-    <button class="summon2 mode2 m-battle" id="enterBattle" data-open="battle" aria-label="Battle: Campaign, Raids, the Great Tree, Quick Match and the World map"><span class="so"><span data-ic="swords"></span></span><span class="st"><b>Battle</b></span><span class="dot-n" id="battleDot" hidden></span></button>
-  </nav>
-
-  <nav class="hm hm-tabs" aria-label="Collection">
-    <button class="tabb ts" data-open="characters"><span class="tbi"><span data-ic="chars"></span></span><span class="tbl">Characters</span><span class="dot-n" id="charDot" hidden></span></button>
-    <button class="tabb ts" data-open="pets"><span class="tbi"><span data-ic="paw"></span></span><span class="tbl">Pets</span><span class="dot-n" id="petDot" hidden></span></button>
-    <button class="tabb ts" data-open="farm"><span class="tbi"><span data-ic="farm"></span></span><span class="tbl">Base</span><span class="dot-n" id="farmDot" hidden></span></button>
-    <button class="tabb ts" data-open="house"><span class="tbi"><span data-ic="house"></span></span><span class="tbl">House</span><span class="dot-n" id="houseDot" hidden></span></button>
-    <button class="tabb ts" data-open="collection"><span class="tbi"><span data-ic="book"></span></span><span class="tbl">Collection</span></button>
-    <button class="tabb ts" data-open="deck"><span class="tbi"><span data-ic="cards"></span></span><span class="tbl">Deck</span></button>
-  </nav>
-
-  <div class="hm hm-br">
-    <button class="summon2" data-open="summon" data-banner="limited"><span class="so"><span data-ic="summon"></span></span><span class="st"><b>Summon</b></span><span class="dot-n" id="sumDot" hidden></span></button>
-    <span class="lim-time" id="limTime"></span>
+  <!-- the bottom row (home v5, the owner's ask): Summon on the left with the world chat above it, the dock in the middle,
+       Plaza (a small round icon) and Battle on the right. One .hm, so all of it shares one centre line and never overlaps -->
+  <div class="hm hm-bot">
+    <div class="hm-br">
+      <div class="hm-up">
+        <button class="ticker ts" id="ticker" aria-label="Open the chat: World, Guild and Friends"><span data-ic="chat"></span><span id="tickerText"></span><span class="dot-n" id="chatDot" hidden></span></button>
+        <span class="lim-time" id="limTime"></span>
+      </div>
+      <button class="summon2" data-open="summon" data-banner="limited"><span class="so"><span data-ic="summon"></span></span><span class="st"><b>Summon</b></span><span class="dot-n" id="sumDot" hidden></span></button>
+    </div>
+    <nav class="hm-tabs" aria-label="Characters, pets, base and deck">
+      <button class="tabb ts" data-open="characters"><span class="tbi"><span data-ic="chars"></span></span><span class="tbl">Characters</span><span class="dot-n" id="charDot" hidden></span></button>
+      <button class="tabb ts" data-open="pets"><span class="tbi"><span data-ic="paw"></span></span><span class="tbl">Pets</span><span class="dot-n" id="petDot" hidden></span></button>
+      <button class="tabb ts" data-open="farm"><span class="tbi"><span data-ic="farm"></span></span><span class="tbl">Base</span><span class="dot-n" id="farmDot" hidden></span></button>
+      <button class="tabb ts" data-open="deck"><span class="tbi"><span data-ic="cards"></span></span><span class="tbl">Deck</span></button>
+    </nav>
+    <nav class="hm-gates" aria-label="Modes">
+      <button class="ev ts hm-plaza" id="enterPlaza" style="--ec:#ff7aa8" aria-label="Enter the plaza"><span class="evo"><span data-ic="plaza"></span></span><span class="el">Plaza</span></button>
+      <button class="summon2 mode2 m-battle" id="enterBattle" data-open="battle" aria-label="Battle: Campaign, Raids, the Great Tree, Quick Match and the World map"><span class="so"><span data-ic="swords"></span></span><span class="st"><b>Battle</b></span><span class="dot-n" id="battleDot" hidden></span></button>
+    </nav>
   </div>
 
   <button class="unhide glass" id="unhide" aria-label="Show the menu again"><span data-ic="eye"></span></button>

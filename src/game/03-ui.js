@@ -85,8 +85,7 @@ function renderMenu() {
   if (booted) safely(() => { arSimDefense(); arSettle(); }, 'arena');   // Arena: attacks on your defense while you were away, the weekly rank rewards
   $('#achDot').hidden = !ACH.some(a => a.ok() && !S.ach.includes(a.id));
   const PS = S.pets;
-  $('#farmDot').hidden = !farmReady();
-  $('#houseDot').hidden = !houseReady();
+  $('#farmDot').hidden = !(farmReady() || houseReady());   // the House lives in the Base now (its down arrow), so its dot lights the Base tab
   $('#guildDot').hidden = !guildReady();
   { const cd = $('#battleDot'); if (cd) cd.hidden = !(ccCampReady() || ccTowerReady() || (typeof arUnseen === 'function' && arUnseen().length > 0)); }   // Battle gate: a campaign stage or tree floor not cleared yet, or a chapter reward
   $('#frDot').hidden = !frReady();

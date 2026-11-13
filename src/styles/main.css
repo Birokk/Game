@@ -2752,6 +2752,14 @@ img.ico{object-fit:cover!important;object-position:50% 50%!important;transform:n
 .set-wp{width:78px;height:44px;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.2);display:block}
 .set-wp img{width:100%;height:100%;object-fit:cover;display:block}
 @media (max-width:760px){.fm-switch{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:none}.fm-switch b{font-size:13px}}
+/* the House is a tab of the Base (19-farm.js / 40-house.js, the owner's ask): a down arrow at the bottom of the Base, an
+   up arrow at the top of the House map; on phones both sit bottom left (clear of Collect all and the currencies) */
+.fm-switch.down{top:auto;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);flex-direction:column;gap:0;padding:6px 18px 4px;border-radius:18px 18px 999px 999px}
+.fm-switch.down .ic{transform:rotate(-90deg);order:2}
+.fm-switch.up{top:calc(74px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);flex-direction:column;gap:0;padding:4px 18px 6px;border-radius:999px 999px 18px 18px}
+.fm-switch.up .ic{transform:rotate(90deg)}
+.fm-switch.down:hover,.fm-switch.up:hover{background:rgba(10,10,16,.8)}
+@media (max-width:760px){.fm-switch.down,.fm-switch.up{top:auto;left:14px;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:none}}
 @media (max-width:640px){.fm-cur{top:calc(66px + env(safe-area-inset-top,0px));right:10px}.fm-cur .cur{padding:3px 10px}}
 .fm-scroll{position:absolute;inset:0;overflow:hidden}
 @media (max-aspect-ratio:16/9) and (max-width:900px){.fm-scroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.fm-scroll::-webkit-scrollbar{display:none}.fm-scroll .fm-stage{left:0;transform:translateY(-50%)}}
