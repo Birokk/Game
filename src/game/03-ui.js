@@ -67,9 +67,8 @@ function renderMenu() {
   hmZoom();
   safely(passDaily, 'memberships');   // a membership's daily reward: queued once a day, shown as a popup on the home screen
   $('#pname').textContent = S.player.name;
-  $('#hmAvatar').innerHTML = avatarHTML(56) + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');
-  $('#hmLv').textContent = 'Lv.' + playerLv().lv;   // profile pill, line 1: account level + VIP level + name; line 2: the title
-  $('#hmVip').innerHTML = vipBadge(vipLv(), 'sm');
+  $('#hmAvatar').innerHTML = avatarHTML(56) + vipCircle() + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');   // the VIP level in a round badge on the avatar (coloured by VIP grade)
+  $('#hmLv').textContent = 'Lv.' + playerLv().lv;   // profile pill, line 1: account level + name; line 2: the title
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets: 1 pull on the Limited, Weekly or Outfit banner'], ['wishes', 'Standard tickets: 1 pull on the permanent banner']].map(([k, l]) =>
@@ -97,6 +96,7 @@ function renderMenu() {
   renderStamina();
   safely(renderHomeBanners, 'home banners');   // the mini banner carousel (62-home.js)
   { const l = shortLeft(); $('#limTime').innerHTML = `${icon('clock')}${l === 'Ended' ? 'Limited summon ended' : `Limited ends in ${l}`}`; }
+  safely(renderChatDot, 'chat dot');
   $('#moreDot').hidden = ![...document.querySelectorAll('#hmDrop .dot-n')].some(d => !d.hidden);   // the Menu button lights when anything inside it does
   applyWallpaper();
 }
@@ -136,10 +136,10 @@ const loginReady = () => S.login.last !== dayKey();
 /* world chat ticker: the demo bots chat here until multiplayer exists */
 function tickWorld() {
   const el = $('#tickerText'); if (!el) return;
-  el.innerHTML = `<span class="w">[World]</span> <b>${esc(pick(BOT_NAMES))}</b>: ${esc(pick(BOT_LINES))}`;
+  el.innerHTML = (typeof chatTickerLine === 'function' && chatTickerLine()) || `<span class="w">[World]</span> <b>${esc(pick(BOT_NAMES))}</b>: ${esc(pick(BOT_LINES))}`;   // the newest World chat message (64-chat.js)
   el.classList.remove('fresh'); void el.offsetWidth; el.classList.add('fresh');
 }
-$('#ticker').onclick = () => setMenu(false);
+$('#ticker').onclick = () => openChat('world');   // the chat window: World, Guild, Friends (64-chat.js)
 
 /* home Menu: a dropdown with the less-used round icons (Shop, Bag, Ranking, Level, Achievements, Fusion, Friends, Team, Redeem);
    Daily Spin, Events, Quests and Honor stay on screen. Closes on an outside tap, Esc or after picking something. */

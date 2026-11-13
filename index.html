@@ -46,7 +46,7 @@
 <main class="menu is-open" id="menu" aria-label="Main menu">
   <header class="hm hm-tl">
     <button class="hm-me" data-open="profile" aria-label="Open your profile"><span style="position:relative;display:block" id="hmAvatar"></span>
-      <span class="hm-id ts"><span class="hm-l1"><span class="hm-lv" id="hmLv">Lv.1</span><span class="hm-vip" id="hmVip"></span><span class="hm-name" id="pname">Traveler</span></span><span id="hmTitle"></span></span></button>
+      <span class="hm-id ts"><span class="hm-l1"><span class="hm-lv" id="hmLv">Lv.1</span><span class="hm-name" id="pname">Traveler</span></span><span id="hmTitle"></span></span></button>
     <div class="hm-tools">
       <button class="tool ts" data-open="wallpaper"><span class="tc glass"><span data-ic="image"></span></span>Wallpaper</button>
       <button class="tool ts" id="hideUi" aria-label="Hide the menu and show only the wallpaper"><span class="tc glass"><span data-ic="eyeOff"></span></span>Hide UI</button>
@@ -67,7 +67,7 @@
     <div class="hm-tr">
       <div class="currencies" id="wallet" style="display:flex;gap:8px;flex-wrap:wrap"></div>
     </div>
-    <button class="ticker ts" id="ticker" aria-label="World chat, enter the plaza to talk"><span data-ic="chat"></span><span id="tickerText"></span></button>
+    <button class="ticker ts" id="ticker" aria-label="Open the chat: World, Guild and Friends"><span data-ic="chat"></span><span id="tickerText"></span><span class="dot-n" id="chatDot" hidden></span></button>
     <nav class="hm-right" aria-label="Banners, events, quests, pass and more">
       <div id="promo"></div>
       <div class="hm-icons">
@@ -84,6 +84,7 @@
           <button class="ev ts" data-open="fuse" style="--ec:#ff7ccf"><span class="evo"><span data-ic="fuse"></span></span><span class="el">Fusion</span></button>
           <button class="ev ts" data-open="friends" style="--ec:#5aa9ff"><span class="evo"><span data-ic="friends"></span></span><span class="el">Friends</span><span class="dot-n" id="frDot" hidden></span></button>
           <button class="ev ts" data-open="redeem"><span class="evo"><span data-ic="gift"></span></span><span class="el">Redeem</span></button>
+          <button class="ev ts" data-open="chat" style="--ec:#7cff8a"><span class="evo"><span data-ic="chat"></span></span><span class="el">Chat</span><span class="dot-n" id="chatMDot" hidden></span></button>
         </div>
       </div>
     </nav>

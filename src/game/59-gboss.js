@@ -130,7 +130,7 @@ function gbFinish(G) {
   persist(); return out;
 }
 function gbGear(urP) {
-  const d = rpick(RAIDS.filter(x => x.kind === 'gear')), ur = Math.random() < urP, L = dungeonPieces(d, ur ? 5 : 4).length ? dungeonPieces(d, ur ? 5 : 4) : raidPieces(ur ? 5 : 4);
+  const d = rpick(raidGear()), ur = Math.random() < urP, L = dungeonPieces(d, ur ? 5 : 4).length ? dungeonPieces(d, ur ? 5 : 4) : raidPieces(ur ? 5 : 4);
   if (!L.length) return null;
   const x = rpick(L), st = ur && Math.random() < GB_STAR2 ? 2 : hasClothStars(x) ? 1 : 0, isNew = !owns(x.id);
   addCloth(x.id, st === 2 ? 2 : 1); return { x, isNew, st };

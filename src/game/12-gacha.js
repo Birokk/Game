@@ -1234,7 +1234,7 @@ function showSummary() {
   if (st.fx) st.fx.ambient(top);
   $('#pullSkip').hidden = true;
   const one = st.results.length === 1;
-  $('#pullStage').innerHTML = `<div class="sum">
+  $('#pullStage').innerHTML = `<div class="sum" style="--n:${st.results.length}">
     <h2>Summon results${st.maxwin ? ' <span class="sum-mw">MAX WIN</span>' : ''}</h2>${st.maxwin && !st.replay ? `<div class="sum-mwt"><span class="tiny">Title unlocked</span>${titleHTML(TITLES.find(t => t.id === 'maxwinner'))}</div>` : ''}
     <div class="sum-grid ${one ? 'one' : ''}">${st.results.map((r, i) => { const v = resultView(r), e = r.kind === 'entry' && findEntry(r.id), mem = e && e.type === 'memory' && memOf(e.id);
       const pic = mem ? `<span class="scard-mem">${memCellPic(mem, 0)}</span>` : v.card ? `<img src="${v.card}" alt="" class="${e && baseArt(e) ? '' : 'chibi'}" ${e && baseArt(e) ? `style="${cardImgStyle(e, 'base')}"` : ''}>` : `<div class="coinbox">${curIcon(lowIc(r))}</div>`;

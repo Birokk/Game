@@ -12,6 +12,9 @@ const vipLv = (xp = vipState().xp) => { let lv = 0; VIP_XP.forEach((n, i) => { i
 /* VIP 1 = F … VIP 8 = SS, VIP 9–12 = SSS */
 const VIP_GRADES = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 const vipGrade = lv => lv > 0 ? VIP_GRADES[Math.min(lv, VIP_GRADES.length) - 1] : '';
+/* the VIP level as a small round badge (home profile pill, on the avatar's bottom-left like the owner's reference),
+   filled with the level's grade colour: the same colours as the VIP badge border */
+const vipCircle = (lv = vipLv()) => `<span class="vipc ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}" title="VIP ${lv}"><b>${lv}</b></span>`;
 const vipBadge = (lv = vipLv(), cls = '') => `<span class="vipb ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'} ${cls}"><span>VIP <b>${lv}</b></span></span>`;
 const vipCanClaim = () => vipLv() > 0 && vipState().day !== dayKey();
 /* rank names (shown on the VIP card) */

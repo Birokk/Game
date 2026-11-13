@@ -336,9 +336,17 @@
 }
 
 /* pull results: UR cards breathe a soft prism aura (kept light on purpose) */
-.sum .scard.r5{animation:pop .35s both,urAura 3.6s ease-in-out infinite;animation-delay:calc(var(--i) * .05s),calc(var(--i) * .05s + .35s)}
+/* the result cards are dealt one by one, fast (the owner's ask): each lands --sd after the one before with a quick
+   flash in its rarity colour; the "You got" row and the buttons come in after the last card (--n = how many cards) */
+.sum{--sd:.12s}
+.sum .scard{animation:sumDeal .42s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--i) * var(--sd))}
+.sum .scard::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--rc) 55%,#fff),transparent 72%);mix-blend-mode:screen;opacity:0;animation:sumFlash .55s ease-out both;animation-delay:calc(var(--i) * var(--sd))}
+.sum .scard.r5{animation:sumDeal .42s cubic-bezier(.2,.9,.3,1.2) both,urAura 3.6s ease-in-out infinite;animation-delay:calc(var(--i) * var(--sd)),calc(var(--i) * var(--sd) + .42s)}
+@keyframes sumDeal{0%{opacity:0;transform:translateY(28px) scale(.72)}55%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes sumFlash{0%{opacity:0}22%{opacity:.9}100%{opacity:0}}
+.sum>.sum-got,.sum>.row,.sum>.tiny{animation:pop .4s both;animation-delay:calc(var(--n,10) * var(--sd) + .2s)}
 @keyframes urAura{0%,100%{box-shadow:0 0 16px 2px rgba(214,130,255,.62),0 0 40px 8px rgba(255,120,210,.26)}50%{box-shadow:0 0 20px 3px rgba(150,220,255,.6),0 0 46px 10px rgba(190,140,255,.3)}}
-@media (prefers-reduced-motion:reduce){.sum .scard.r5{animation:pop .35s both;box-shadow:0 0 14px 1px rgba(214,130,255,.5),0 0 32px 5px rgba(190,140,255,.18)}}
+@media (prefers-reduced-motion:reduce){.sum .scard::after{display:none}.sum .scard{animation:pop .2s both;animation-delay:calc(var(--i) * .06s)}.sum .scard.r5{animation:pop .2s both;box-shadow:0 0 14px 1px rgba(214,130,255,.5),0 0 32px 5px rgba(190,140,255,.18)}}
 /* the bigger header currency pills, scaled down again where space is short */
 @media (max-width:1100px){.smx .smx-cur .cur{min-width:128px;height:42px;font-size:16px}}
 @media (max-width:760px) and (orientation:portrait){.smx .smx-cur{gap:6px}.smx .smx-cur .cur{min-width:0;height:34px;padding:2px 3px 2px 9px;gap:6px;font-size:14px;border-radius:13px 4px 13px 4px}.smx .smx-cur .cur .cic{width:20px;height:20px}.smx .smx-cur .cur .plus{width:24px;height:24px;border-radius:9px 3px 9px 3px}.smx .smx-cur .cur .plus .ic{width:13px;height:13px}}

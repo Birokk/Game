@@ -31,7 +31,7 @@ function bthInfo(id) {
     const open = CC_CAMP.filter(ccCampChOpen), n = next(ccCampStages()), ch = n ? n.ch : open[open.length - 1] || CC_CAMP[0];
     return { sub: `Chapter ${ch.no}`, line: `${icon('map')}${esc(ch.name)}`, dot: ccCampReady() };
   }
-  if (id === 'raids') return { sub: `${RAIDS.length} dungeons`, line: `${curIcon('stamina')}${stamina()} / ${stamMax()} stamina`, dot: false };
+  if (id === 'raids') return { sub: `${raidShown().length} dungeons`, line: `${curIcon('stamina')}${stamina()} / ${stamMax()} stamina`, dot: false };
   if (id === 'tree') { const L = ccTowerFloors(), f = next(L) || L[L.length - 1];   // the floor you're on (never how many there are)
     return { sub: `Floor ${f.no}`, line: `${icon('tree')}${esc(f.name)}`, dot: ccTowerReady() }; }
   if (id === 'gboss') { if (!inGuild()) return { sub: 'Join a guild', line: `${icon('guild')}Fight it with your guild`, dot: false };

@@ -23,6 +23,7 @@ function startNet() {
     if (ev === 'move') { const e = remoteFor(p); e.tx = netNum(p.x, e.tx); e.ty = netNum(p.y, e.ty); e.netMoving = !!p.m; }
     else if (ev === 'chat') { const e = remotes.get(p.id); if (e && typeof p.text === 'string') say(e, p.text.slice(0, 120)); }
     else if (ev === 'emote') { const e = remotes.get(p.id); if (e && EMOTES.includes(p.e)) emote(e, p.e); }
+    else if (ev === 'wchat') chatRecv(p);   // World chat (64-chat.js)
   });
   net.onPresence(list => {
     const seen = new Set();
@@ -73,11 +74,12 @@ const netEmote = e => { if (net) net.send('emote', { id: NET_ID, e }); };
 function supabaseTransport() {
   let ch = null, me = null, onEv = () => {}, onPres = () => {};
   return {
+    cloud: true,   // real players: World chat leaves the practice players out
     onEvent(f) { onEv = f; }, onPresence(f) { onPres = f; },
     start(state) {
       me = state;
       ch = sb.channel('plaza', { config: { broadcast: { self: false }, presence: { key: NET_ID } } });
-      for (const ev of ['move', 'chat', 'emote']) ch.on('broadcast', { event: ev }, msg => onEv(ev, msg.payload));
+      for (const ev of ['move', 'chat', 'emote', 'wchat']) ch.on('broadcast', { event: ev }, msg => onEv(ev, msg.payload));
       ch.on('presence', { event: 'sync' }, () => onPres(Object.values(ch.presenceState()).map(a => a[a.length - 1])));
       ch.subscribe(status => { if (status === 'SUBSCRIBED') ch.track(me); else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') console.warn('Plaza connection:', status); });
     },

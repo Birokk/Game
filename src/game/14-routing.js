@@ -19,6 +19,7 @@ document.addEventListener('click', e => {
   else if (k === 'guild') openFarm('guild');
   else if (k === 'arena') openArena();
   else if (k === 'friends') openFriends();
+  else if (k === 'chat') openChat('world');
   else if (k === 'offer') openOffer(t.dataset.offer);
   else if (k === 'raids') openRaids();
   else if (k === 'vault') { if (bthEl) { bthEl.remove(); bthEl = null; bthBack = true; } openRaids('vault'); }   // the gold "+": Raids on the Golden Vault

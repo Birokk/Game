@@ -630,6 +630,7 @@ document.addEventListener('keydown', e => {
     else if ((e.key === ' ' || e.key === 'Enter') && pullState && pullState.phase !== 'summary') { e.preventDefault(); tapPull(); }
     return;
   }
+  if (typeof chatEl !== 'undefined' && chatEl) return;   // the chat drawer handles its own keys (64-chat.js)
   if (e.key === 'Escape') {
     if (modalEl) { closeModal(); return; }
     if (smEl) { closeSummon(); return; }

@@ -231,9 +231,7 @@
 /* profile pill */
 .menu .hm-me .hm-l1{display:flex;align-items:center;gap:7px;min-width:0}
 .menu .hm-me .hm-lv{flex:none;font:400 12px/1 var(--display);letter-spacing:.04em;padding:4px 9px 3px;border-radius:999px;color:#fff;background:rgba(21,18,45,.55);border:1px solid rgba(255,255,255,.55);text-shadow:none}
-.menu .hm-me .hm-vip .vipb{transform:skewX(-8deg) scale(.96)}
-.menu .hm-me .hm-vip .vipb>span{font-size:11px;padding:2px 7px 1px}
-.menu .hm-me .hm-name{overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.menu .hm-me .hm-name{overflow:hidden;text-overflow:ellipsis;max-width:240px}
 .menu .hm-me .hm-id{gap:4px}
 /* Plaza / Battle, bigger */
 .menu .hm-gates{gap:12px}
@@ -252,9 +250,8 @@
   .hbx{width:300px}   /* 4 × 72 + 3 × 4 */
   .menu .hm-rc .hm-drop::before{top:-7px;bottom:auto}
   .menu .hm-me .hm-lv{font-size:10.5px;padding:3px 7px 2px}
-  .menu .hm-me .hm-vip .vipb>span{font-size:10px;padding:1px 6px}
   .menu .hm-me .hm-l1{gap:5px}.menu .hm-me .hm-id{gap:3px}
-  .menu .hm-me .hm-name{max-width:140px;font-size:15px}
+  .menu .hm-me .hm-name{max-width:170px;font-size:15px}
   .menu .hm-me .avf{--s:46px!important;margin:2px}
   .menu .hm-tools .tool{font-size:0;gap:0}   /* icons only, so the name, level and VIP fit beside the avatar */
   .menu .hm-gates{gap:9px}
@@ -263,7 +260,7 @@
   .menu .mode2 .st b{font-size:22px}
   .menu .mode2 .dot-n{top:6px;right:10px}
 }
-@media (max-width:380px) and (orientation:portrait){.menu .mode2{height:48px;padding:0 14px 0 6px;gap:8px}.menu .mode2 .so{width:36px;height:36px}.menu .mode2 .st b{font-size:19px}.menu .hm-me .hm-name{max-width:110px;font-size:14px}.menu .hm-me{padding-right:10px}.menu .hm-me .hm-l1{gap:4px}.menu .hm-tools{gap:2px}}
+@media (max-width:380px) and (orientation:portrait){.menu .mode2{height:48px;padding:0 14px 0 6px;gap:8px}.menu .mode2 .so{width:36px;height:36px}.menu .mode2 .st b{font-size:19px}.menu .hm-me .hm-name{max-width:140px;font-size:14px}.menu .hm-me{padding-right:10px}.menu .hm-me .hm-l1{gap:4px}.menu .hm-tools{gap:2px}}
 @media (max-width:820px) and (orientation:portrait) and (max-height:700px){
   .menu .hm-gates{gap:7px}
   .menu .mode2{height:44px;padding:0 14px 0 6px;gap:7px}
@@ -279,9 +276,8 @@
   .hbx{width:260px}   /* 4 × 62 + 3 × 4 */
   .menu .hm-rc .hm-drop::before{top:22px;bottom:auto}
   .menu .hm-me .hm-lv{font-size:9.5px;padding:2px 6px 1px}
-  .menu .hm-me .hm-vip .vipb>span{font-size:9.5px;padding:1px 5px}
   .menu .hm-me .hm-l1{gap:4px}.menu .hm-me .hm-id{gap:2px}
-  .menu .hm-me .hm-name{max-width:120px}
+  .menu .hm-me .hm-name{max-width:150px}
   .menu .hm-gates{gap:7px}
   .menu .mode2{height:46px;padding:0 15px 0 6px;gap:8px}
   .menu .mode2 .so{width:35px;height:35px}.menu .mode2 .so .ic{width:18px;height:18px}
@@ -289,3 +285,39 @@
   .menu .mode2 .dot-n{top:5px;right:9px}
 }
 @media (max-height:500px) and (orientation:landscape) and (max-width:760px){.menu .hm-id .ttl{display:inline-block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;padding:0 7px}}
+
+/* ==========================================================================
+   v4 (the owner's ask): the VIP level is a coloured circle on the avatar (bottom left, like the reference) instead of a
+   badge on the name line; the row under the profile (Mail, Settings, Achievements, Level, Admin) and the Wallpaper /
+   Hide UI tools are smaller.
+   ========================================================================== */
+.menu .hm-me .vipc{left:-3px;bottom:-3px}
+.menu .hm-ql{gap:2px}
+.menu .hm-ql .ev{min-width:54px;padding:0 2px}
+.menu .hm-ql .ev .evo:not(.ic-up){width:40px;height:40px}
+.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:18px;height:18px}
+.menu .hm-ql .ev .el{font-size:9.5px}
+.menu .hm-ql .ev .dot-n{right:calc(50% - 21px)}
+.menu .hm-ql .badge{right:calc(50% - 28px);min-width:17px;height:17px;font-size:9.5px}
+.menu .hm-tools{gap:6px}
+.menu .tool{font-size:10px;gap:2px}
+.menu .tool .tc{width:36px;height:36px}
+.menu .tool .tc .ic{width:17px;height:17px}
+@media (max-width:820px) and (orientation:portrait){
+  .menu .hm-rc .hm-drop{grid-template-columns:repeat(4,66px)}   /* 7 items (Chat joined the Menu): 2 rows so it stays on short phones */
+  .menu .hm-rc .hm-drop .ev{width:66px}
+  .menu .hm-me .vipc{min-width:19px;height:19px;left:-2px;bottom:-2px}.menu .hm-me .vipc b{font-size:10.5px}
+  .menu .hm-ql .ev{min-width:48px;padding:0 1px}
+  .menu .hm-ql .ev .evo:not(.ic-up){width:34px;height:34px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:16px;height:16px}
+  .menu .hm-ql .ev .el{font-size:8.5px}
+  .menu .hm-ql .ev .dot-n{right:calc(50% - 18px)}.menu .hm-ql .badge{right:calc(50% - 24px);min-width:15px;height:15px;font-size:8.5px}
+  .menu .tool .tc{width:32px;height:32px}.menu .tool .tc .ic{width:15px;height:15px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .menu .hm-me .vipc{min-width:17px;height:17px;left:-2px;bottom:-2px;border-width:1.5px}.menu .hm-me .vipc b{font-size:9.5px}
+  .menu .hm-ql .ev{min-width:44px;padding:0 1px}
+  .menu .hm-ql .ev .evo:not(.ic-up){width:30px;height:30px}.menu .hm-ql .ev .evo:not(.ic-up) .ic{width:14px;height:14px}
+  .menu .hm-ql .ev .el{font-size:8px}
+  .menu .hm-ql .ev .dot-n{right:calc(50% - 16px)}.menu .hm-ql .badge{right:calc(50% - 21px);min-width:14px;height:14px;font-size:8px}
+  .menu .tool .tc{width:30px;height:30px}.menu .tool .tc .ic{width:14px;height:14px}
+}

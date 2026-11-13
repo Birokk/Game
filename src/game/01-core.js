@@ -243,7 +243,7 @@ const FILLER_COINS = { 3: COIN_DROP, 4: 1500, 5: 10000 }, FRAG_SSR = .27, FRAG_U
    - the player save: everything else (wallet, owned, bond, settings, ...)
    Locally both go to localStorage; with the cloud on, the save syncs per account and content comes from the server. */
 const KEY = 'prismplaza.v1', CONTENT_KEY = 'prismplaza.content.v1';
-const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts', 'mystery', 'offers', 'artPos', 'gboss', 'honorBg'];
+const CONTENT_KEYS = ['pool', 'featuredId', 'banners', 'clothes', 'memories', 'titleNews', 'loadArts', 'media', 'farmLayout', 'events', 'fakeArts', 'upArts', 'mystery', 'offers', 'artPos', 'gboss', 'honorBg', 'raidDefs'];
 const splitState = st => { const save = {}, content = {}; for (const [k, v] of Object.entries(st)) (CONTENT_KEYS.includes(k) ? content : save)[k] = v; return { save, content }; };
 const CLOUD_CONFIGURED = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 /* the cloud connection; 16-backend.js fills it in when Supabase is configured, otherwise everything stays local */
@@ -374,6 +374,7 @@ function applyContent(c) {
   if (!S.media) S.media = {};
   const fb = sampleState().banners; S.banners = S.banners || {}; for (const k of Object.keys(fb)) S.banners[k] = { ...fb[k], ...(S.banners[k] || {}) }; for (const k of Object.keys(S.banners)) { const o = { 'Beginner Wish': 'Beginner Banner', 'Outfit Wish': 'Outfit Banner', 'Memory Wish': 'Memory Banner', 'Pearl Wish': 'Pearl Banner' }[S.banners[k] && S.banners[k].name]; if (o) S.banners[k].name = o; }   // new banners (Beginner Banner, Step-Up) in older content
   ensureMC();
+  if (typeof raidSync === 'function') raidSync();   // the raid editor's raids (23-raids.js)
   lastContentJSON = JSON.stringify(splitState(S).content);
   localStorage.setItem(CONTENT_KEY, lastContentJSON);
 }
