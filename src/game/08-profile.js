@@ -63,7 +63,7 @@ function openProfile() {
   openModal({ title: 'Profile', ic: 'chars', kind: 'profile', body: '<div id="pfRoot"></div>', onMount: renderProfile });
 }
 /* profile settings pickers open in a see-through popup over the profile (avatar, frame, title, namecard, showcase slot) */
-const PF_PICKS = { avatar: 'Avatar', frame: 'Avatar frame', title: 'Title', card: 'Namecard' };
+const PF_PICKS = { avatar: 'Avatar', frame: 'Avatar frame', title: 'Title', card: 'Namecard', bubble: 'Chat bubble' };
 function pfOptsHTML(kind) {
   const P = S.profile, chars = ownedChars();
   const lockTag = o => unlocked(o) ? '' : `<span class="pf-lock">${icon('lock')}${esc(UNLOCK[o.need][1])}</span>`;
@@ -81,6 +81,8 @@ function pfOptsHTML(kind) {
       ${list.map(o => opt(!!cur && cur.id === o.id, false, avatarHTML(64, wpParse(o.id)), `data-av="${esc(o.id)}"`, esc(wpName(wpParse(o.id))))).join('')}</div>`;
   } else if (kind === 'frame') {
     opts = `<div class="pf-grid">${FRAMES.map(f => opt(frameOf() === f, !unlocked(f), avatarHTML(64, avatarEntry(), f.id) + lockTag(f), `data-fr="${f.id}"`, `${esc(f.name)}${f.premium ? ' <span class="prem">Premium</span>' : ''}`)).join('')}</div>`;
+  } else if (kind === 'bubble') {   // chat bubble skins (64-chat.js, CHAT_BUBBLES): how your messages look in the chat
+    opts = `<p class="tiny">How your messages look in the chat. The two special bubbles are hard to get: they show everyone what you did.</p><div class="pf-grid wide pf-cbs">${CHAT_BUBBLES.map(b => opt(bubbleOf() === b, !unlocked(b), `<span class="pf-cb">${chatBubblePreview(b)}</span>${lockTag(b)}`, `data-cb="${b.id}"`, `${esc(b.name)}${b.rare ? ' <span class="prem">Rare</span>' : ''}`)).join('')}</div>`;
   } else if (kind === 'title') {
     opts = `<div class="pf-grid wide">${TITLES.map(t => opt(titleOf() === t, !unlocked(t), `<span class="pf-tt">${titleHTML(t)}</span>${lockTag(t)}`, `data-tt="${t.id}"`, '')).join('')}</div>`;
   } else {
@@ -118,6 +120,7 @@ function openPfPick(kind, slot) {
     el.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { P.frame = b.dataset.fr; save(); });
     el.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { P.title = b.dataset.tt; save(); });
     el.querySelectorAll('[data-nc]').forEach(b => b.onclick = () => { P.card = b.dataset.nc; save(); });
+    el.querySelectorAll('[data-cb]').forEach(b => b.onclick = () => { P.bubble = b.dataset.cb; save(); if (typeof chatEl !== 'undefined' && chatEl) chatRender(true); });
     el.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => el.remove()));
   };
   render();

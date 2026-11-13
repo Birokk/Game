@@ -114,11 +114,14 @@ const hotPicks = () => { const all = shopSkins(); return [...all.filter(e => !ow
    glows; the sidebar rows carry a line on what is inside (SHOP_SUB). The backdrop node is kept across redraws while its
    picture stays the same, so buying or switching tabs never re-decodes or flashes it. */
 const SHOP_SUB = { hot: 'Memberships · new outfits', skins: 'Every outfit for sale', topup: 'Pearls and bundles', pearl: 'Tickets · rings · name ticket', exchange: 'Corals · Seaweeds · more', points: 'Featured · Permanent shop', board: 'Board skins · card backs', arena: 'Spend arena tokens' };
-function shopBgHTML() {
-  const up = MEDIA.get('shop:bg'), w = !up && wallpaperInfo(), src = up || (w && wpHasArt(w) ? wpSrc(w) : '');
-  const k = up ? 'shop:' + ((S.media || {})['shop:bg'] || 1) + artPosStyle('shop:bg') : src ? 'wp:' + src.slice(-40) : 'none';
-  return `<div class="mallx-bg ${src ? 'art' : ''}" data-k="${esc(k)}">${up ? artImg('shop:bg', 'mallx-bgart') : src ? `<img class="mallx-bgart" src="${src}" alt="">` : ''}<i class="mallx-g g1"></i><i class="mallx-g g2"></i><i class="mallx-g g3"></i></div>`;
+/* the blurred backdrop of a glass page: an admin picture (adminKey, e.g. shop:bg), else the home wallpaper's art, else
+   soft glows; also used by the Bag (20-inventory.js). Pages keep the node across redraws while data-k stays the same. */
+function pageBgHTML(adminKey) {
+  const up = adminKey && MEDIA.get(adminKey), w = !up && wallpaperInfo(), src = up || (w && wpHasArt(w) ? wpSrc(w) : '');
+  const k = up ? adminKey + ':' + ((S.media || {})[adminKey] || 1) + artPosStyle(adminKey) : src ? 'wp:' + src.slice(-40) : 'none';
+  return `<div class="mallx-bg ${src ? 'art' : ''}" data-k="${esc(k)}">${up ? artImg(adminKey, 'mallx-bgart') : src ? `<img class="mallx-bgart" src="${src}" alt="">` : ''}<i class="mallx-g g1"></i><i class="mallx-g g2"></i><i class="mallx-g g3"></i></div>`;
 }
+const shopBgHTML = () => pageBgHTML('shop:bg');
 function renderShop() {
   if (!shopEl) return;
   const m = monthly(), W = S.wallet;

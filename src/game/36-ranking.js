@@ -34,13 +34,19 @@ function rankBots(wkArg, partArg) {   // wkArg / partArg: a past week's hours (t
       total: Math.round(4000 + skill * 380000), char: ch,
       best: 0, bestRoll: .8 + r() * .4,
       ach: Math.round(Math.pow(r(), .7) * ACH.length), hours: Math.round(rw() * 60 * weekPart * 10) / 10,
-      vipXp, vip: vipLv(vipXp), hue: Math.floor(r() * 360), skill
+      vipXp, vip: vipLv(vipXp), hue: Math.floor(r() * 360), skill, ...botTree(name, skill)
     };
   }).map(b => {   // every practice player owns some characters with their own CS; their best one is their Character CS entry
     b.cs = {}; let best = 0, bc = null;
     chars.forEach(c => { const n = botCharCS(b, c); if (n) { b.cs[c.id] = n; if (n > best) { best = n; bc = c; } } });
     return Object.assign(b, { best: Math.min(b.total, best), char: bc });
   });
+}
+/* a practice player's Great Tree progress: highest floor cleared (0–10) and stars there, seeded so it never changes */
+function botTree(name, skill) {
+  const r = seeded('ranktree:' + name), n = (typeof CC_TOWER !== 'undefined' && CC_TOWER.stages.length) || 10;
+  const tree = Math.max(0, Math.min(n, Math.round((.15 + skill * .95) * n * (.55 + r() * .6))));
+  return { tree, treeSt: tree ? Math.min(tree * 3, Math.round(tree * (1.2 + r() * 1.7))) : 0 };
 }
 /* a practice player's CS for one character (0 = they don't own it); seeded so it never changes */
 function botCharCS(b, c) {
@@ -64,42 +70,108 @@ function rankMe() {
   let best = null, bestN = 0; chars.forEach(e => { const n = charScore(e); if (n > bestN) { bestN = n; best = e; } });
   const vx = vipState().xp;
   return { me: true, name: S.player.name, uid: S.profile.uid, lv: playerLv().lv, total: chars.reduce((t, e) => t + charScore(e), 0), best: bestN, char: best,
-    ach: S.ach.length, hours: Math.round(playHours() * 10) / 10, vipXp: vx, vip: vipLv(vx) };
+    ach: S.ach.length, hours: Math.round(playHours() * 10) / 10, vipXp: vx, vip: vipLv(vx),
+    tree: typeof ccTowerTop === 'function' ? ccTowerTop() : 0, treeSt: typeof CC_TOWER !== 'undefined' ? CC_TOWER.stages.reduce((t, st) => t + ccCampN(st.id), 0) : 0 };
 }
 const RANK_TABS = [
-  { id: 'total', label: 'Total CS', ic: 'trophy', val: p => p.total, show: p => fmt(p.total), unit: 'Total CS', note: 'Every owned character\'s CS added up.' },
-  { id: 'char', label: 'Character CS', ic: 'star', val: p => p.best, show: p => fmt(p.best), unit: 'CS', note: 'Each player\'s best character. Pick a character above to see its own leaderboard.' },
-  { id: 'ach', label: 'Achievements', ic: 'trophy', val: p => p.ach, show: p => `${p.ach} / ${ACH.length}`, unit: 'Achievements', note: 'Achievements completed.' },
-  { id: 'hours', label: 'Hours this week', ic: 'clock', val: p => p.hours, show: p => `${p.hours.toFixed(1)} h`, unit: 'Played', note: 'Time with the game open, since Monday 00:00. Resets every week.' },
-  { id: 'vip', label: 'VIP', ic: 'crown', val: p => p.vipXp, show: p => fmt(p.vipXp), unit: 'VIP EXP', note: 'VIP level, then VIP EXP.' }
+  { id: 'total', label: 'Total CS', ic: 'trophy', col: '#c8a2ff', val: p => p.total, show: p => fmt(p.total), unit: 'Total CS', note: 'Every owned character\'s CS added up.', rew: 'Top 3: a title + namecard' },
+  { id: 'char', label: 'Character CS', ic: 'star', col: '#ff9fd8', val: p => p.best, show: p => fmt(p.best), unit: 'CS', note: 'Each player\'s best character, or one character\'s own leaderboard: choose it with the character button.', rew: 'Top 3: a title + namecard' },
+  { id: 'ach', label: 'Achievements', ic: 'medal', col: '#ffd36b', val: p => p.ach, show: p => `${p.ach} / ${ACH.length}`, unit: 'Achievements', note: 'Achievements completed.', rew: 'Top 3: a title + namecard' },
+  { id: 'hours', label: 'Hours this week', ic: 'clock', col: '#8fd3ff', val: p => p.hours, show: p => `${p.hours.toFixed(1)} h`, unit: 'Played', note: 'Time with the game open, since Monday 00:00. Resets every week.', rew: 'Top 10: pearls' },
+  { id: 'vip', label: 'VIP', ic: 'crown', col: '#ffcf6b', val: p => p.vipXp, show: p => fmt(p.vipXp), unit: 'VIP EXP', note: 'VIP level, then VIP EXP.', rew: 'Top 3: a title + namecard' },
+  { id: 'tree', label: 'Great Tree', ic: 'tree', col: '#8ef0a8', val: p => p.tree * 100 + p.treeSt, show: p => p.tree ? `Floor ${p.tree}` : '—', unit: 'Highest floor', note: 'The highest floor of the Great Tree cleared (more stars there break a tie). Just for glory: this board gives no rewards.', rew: 'No rewards', norew: true }
 ];
-let rankTab = 'total', rankChar = 'best';
-function openRanking(tab, cid) { if (tab) rankTab = tab; if (cid) rankChar = cid; openModal({ title: 'Ranking', ic: 'trophy', wide: true, kind: 'ranking', body: '<div id="rkRoot"></div>', onMount: () => renderRanking() }); }
-function renderRanking() {
-  const root = $('#rkRoot'); if (!root) return;
-  const T = RANK_TABS.find(t => t.id === rankTab) || RANK_TABS[0];
+/* ---- the Ranking page (a full glass page since the owner asked for it to be an entire, more organised page; root
+   .rkx on the Raids page's layout .rdx): the boards as a rail of cards on the left (your place and the board's reward on
+   each), the chosen board's hero block (and, on Character CS, a character button that opens a small picker with the round
+   icon of every character in the game), a podium for the top 3, the list from 4th to 50th and your own row pinned under
+   it. Esc closes the picker, then the page. ---- */
+let rankTab = 'total', rankChar = 'best', rkEl = null, rkPick = false, rkPF = 'all', rkPQ = '';
+function openRanking(tab, cid) {
+  if (tab) rankTab = tab; if (cid) rankChar = cid;
+  if (!RANK_TABS.some(t => t.id === rankTab)) rankTab = 'total';
+  closeModal(); rkPick = false; rkPQ = '';
+  if (!rkEl) { rkEl = document.createElement('div'); rkEl.className = 'rkx rdx'; rkEl.setAttribute('role', 'dialog'); rkEl.setAttribute('aria-label', 'Ranking'); document.body.appendChild(rkEl); }
+  renderRanking();
+}
+function closeRanking() { if (rkEl) { rkEl.remove(); rkEl = null; } rkPick = false; }
+addEventListener('keydown', e => { if (!rkEl || e.key !== 'Escape' || document.querySelector('.modal-back,.rewpop')) return; e.stopPropagation(); if (rkPick) { rkPick = false; renderRanking(); } else closeRanking(); }, true);
+const rkAv = (p, n) => p.me ? `<span class="rk-av">${avatarHTML(n)}</span>` : `<span class="rk-av bot" style="--h:${p.hue};--s:${n}px">${esc(p.name[0])}</span>`;
+const rkVipName = p => `<b class="vipn vn-${p.vip ? vipGrade(p.vip).toLowerCase() : '0'}">${esc(p.name)}</b>`;
+function rkBoard(T) {
   const one = T.id === 'char' && rankChar !== 'best' && findEntry(rankChar);
   const list = one ? charBoard(rankChar) : [...rankBots(), rankMe()].sort((a, b) => T.val(b) - T.val(a) || (a.me ? -1 : b.me ? 1 : 0));
+  return { one, list };
+}
+function rkPickHTML() {
+  const L = rankChars().filter(c => (rkPF === 'all' || (rkPF === 'own' ? owns(c.id) : +c.rarity === +rkPF)) && (!rkPQ || c.name.toLowerCase().includes(rkPQ.toLowerCase())))
+    .sort((a, b) => b.rarity - a.rarity || (owns(b.id) - owns(a.id)) || a.name.localeCompare(b.name));
+  const f = (k, l) => `<button class="rkx-pf ${rkPF === k ? 'on' : ''}" data-rkpf="${k}">${l}</button>`;
+  return `<div class="rkx-pickback" id="rkPickBack"><div class="rkx-pickbox" role="dialog" aria-label="Choose a character">
+      <div class="rkx-pickh"><span class="rdx-iti">${icon('star')}</span><div><b>Choose a character</b><small>Every character in the game · its own Character CS leaderboard</small></div><button class="inv-x" id="rkPickX" aria-label="Close">${icon('close')}</button></div>
+      <div class="rkx-pickf">${f('all', 'All')}${f('own', 'Owned')}${f('5', 'UR')}${f('4', 'SSR')}<input class="input sm rkx-pq" id="rkPQ" placeholder="Search a name" value="${esc(rkPQ)}" maxlength="24"></div>
+      <div class="rkx-pgrid">
+        ${!rkPQ && rkPF === 'all' ? `<button class="rkx-pc0 ${rankChar === 'best' ? 'on' : ''}" data-rkc="best"><span class="rkx-pring best">${icon('trophy')}</span><b>Best character</b><small>Everyone's best</small></button>` : ''}
+        ${L.map(c => { const rk = charRank(c.id); return `<button class="rkx-pc0 ${rankChar === c.id ? 'on' : ''} ${owns(c.id) ? 'own' : 'no'}" data-rkc="${esc(c.id)}" title="${esc(c.name)}"><span class="rkx-pring r${c.rarity}">${thumbImg(c, 'rkx-pimg')}${rk && rk <= 10 ? `<i>#${rk}</i>` : ''}</span><b>${esc(c.name)}</b><small>${owns(c.id) ? `${rtag(c.rarity)} Owned` : rtag(c.rarity) + ' Not owned'}</small></button>`; }).join('') || '<p class="tiny">No character matches.</p>'}
+      </div></div></div>`;
+}
+function renderRanking() {
+  if (!rkEl) return;
+  const T = RANK_TABS.find(t => t.id === rankTab) || RANK_TABS[0], { one, list } = rkBoard(T);
   const myRank = list.findIndex(p => p.me) + 1, me = myRank ? list[myRank - 1] : null;
-  // Character CS: pick "Best character" or one character's own leaderboard
-  const sub = T.id === 'char' ? `<div class="rk-sub" id="rkSub"><button class="rk-chip ${!one ? 'on' : ''}" data-rkc="best"><span class="rk-chip-ic">${icon('trophy')}</span><b>Best character</b></button>${rankChars().map(c => `<button class="rk-chip ${one && c.id === rankChar ? 'on' : ''} ${owns(c.id) ? 'own' : ''}" data-rkc="${esc(c.id)}">${thumbImg(c, 'rk-chip-img')}<b>${esc(c.name)}</b>${charRank(c.id) && charRank(c.id) <= 10 ? `<small>#${charRank(c.id)}</small>` : ''}</button>`).join('')}</div>` : '';
-  const av = p => p.me ? `<span class="rk-av">${avatarHTML(44)}</span>` : `<span class="rk-av bot" style="--h:${p.hue}">${esc(p.name[0])}</span>`;
+  const keep = rkEl.querySelector('.rdx-scroll'), top = keep && keep.dataset.k === T.id + rankChar ? keep.scrollTop : 0;
+  const stand = rankStandings(false), myPlace = id => { const i = stand[id].indexOf('@me'); return i >= 0 ? i + 1 : null; };
+  const w = wallpaperInfo(), art = w && wpHasArt(w) ? wpSrc(w) : '';
   const row = (p, i) => `<div class="rk-row ${p.me ? 'me' : ''} ${i < 3 ? 'top top' + (i + 1) : i < 10 ? 'top10' : ''}">
-    <span class="rk-n">${i < 10 ? `<i><b>${i + 1}</b></i>` : i + 1}</span>${av(p)}
-    <span class="rk-who"><span class="rk-nm">${rankGuildTag(p)}<b class="vipn vn-${p.vip ? vipGrade(p.vip).toLowerCase() : '0'}">${esc(p.name)}</b>${p.me ? '<small>(you)</small>' : ''}${rankTitleOf(p)}</span><small>Lv ${p.lv} · UID ${p.uid}</small></span>
-    ${T.id === 'char' ? `<span class="rk-char">${p.char ? `${thumbImg(p.char, 'rk-cimg')}<span><b>${esc(p.char.name)}</b>${gradeTag(csGrade(p.best))}</span>` : '<small>No character yet</small>'}</span>` : '<span></span>'}
+    <span class="rk-n">${i < 10 ? `<i><b>${i + 1}</b></i>` : i + 1}</span>${rkAv(p, 44)}
+    <span class="rk-who"><span class="rk-nm">${rankGuildTag(p)}${rkVipName(p)}${p.me ? '<small>(you)</small>' : ''}${rankTitleOf(p)}</span><small>Lv ${p.lv} · UID ${p.uid}</small></span>
+    ${T.id === 'char' ? `<span class="rk-char">${p.char ? `${thumbImg(p.char, 'rk-cimg')}<span><b>${esc(p.char.name)}</b>${gradeTag(csGrade(p.best))}</span>` : '<small>No character yet</small>'}</span>` : T.id === 'tree' ? `<span class="rk-char rkx-tr">${p.tree ? `${icon('tree')}<span><b>Floor ${p.tree}</b><small>${p.treeSt} ★</small></span>` : '<small>Not climbed yet</small>'}</span>` : '<span></span>'}
     <span class="rk-val">${T.id === 'vip' ? vipBadge(p.vip, 'sm') : ''}<b>${T.show(p)}</b><small>${T.unit}</small></span></div>`;
-  root.innerHTML = `<div class="rk">
-    <div class="dq-tabs rk-tabs" role="tablist">${RANK_TABS.map(t => `<button class="dq-tab ${t.id === T.id ? 'on' : ''}" role="tab" aria-selected="${t.id === T.id}" data-rktab="${t.id}">${t.label}</button>`).join('')}</div>
-    ${sub}
-    <div class="rk-rew">${icon('gift')}<span>${T.id === 'hours' ? 'Weekly rewards: top 10 get pearls (1st 30, 2nd 20, 3rd 15, 4th–10th 10)' : 'Weekly rewards: the top 3 get a title and namecard for 7 days'} · resets Monday in ${rankResetTxt()}</span>${infoBtn('rank')}</div>
-    <p class="tiny rk-note">${one ? `${esc(one.name)}: everyone who owns this character, by its CS.` : T.note} ${Backend.on ? '' : 'Offline: the other players are practice players.'}</p>
-    <div class="rk-list">${list.slice(0, 50).map(row).join('') || '<p class="tiny rk-note">Nobody owns this character yet.</p>'}</div>
-    <div class="rk-mine">${me ? row(me, myRank - 1) : `<p class="tiny rk-note">You don't own ${one ? esc(one.name) : 'this character'} yet.</p>`}</div>
-  </div>`;
-  root.querySelectorAll('[data-rkc]').forEach(b => b.onclick = () => { rankChar = b.dataset.rkc; const x = $('#rkSub') ? $('#rkSub').scrollLeft : 0; renderRanking(); if ($('#rkSub')) $('#rkSub').scrollLeft = x; });
-  const on = root.querySelector('.rk-chip.on'); if (on && $('#rkSub') && !$('#rkSub').dataset.kept) { on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
-  root.querySelectorAll('[data-rktab]').forEach(b => b.onclick = () => { rankTab = b.dataset.rktab; renderRanking(); });
+  const pod = (p, i) => !p ? `<div class="rkx-pod p${i + 1} empty"><span class="rkx-pmed">${i + 1}</span><small>No one yet</small></div>` : `<div class="rkx-pod p${i + 1} ${p.me ? 'me' : ''}">
+      <span class="rkx-pmed"><b>${i + 1}</b></span>
+      <span class="rkx-pav">${rkAv(p, i ? 62 : 78)}</span>
+      <span class="rkx-pnm">${rankGuildTag(p)}${rkVipName(p)}${p.me ? '<small>(you)</small>' : ''}</span>
+      <span class="rkx-pttl">${rankTitleOf(p)}</span>
+      ${T.id === 'char' && p.char ? `<span class="rkx-pch">${thumbImg(p.char, 'rk-cimg')}<b>${esc(p.char.name)}</b>${gradeTag(csGrade(p.best))}</span>` : ''}
+      <span class="rkx-pval">${T.id === 'vip' ? vipBadge(p.vip, 'sm') : ''}<b>${T.show(p)}</b><small>${T.unit}${T.id === 'tree' && p.tree ? ` · ${p.treeSt} ★` : ''}</small></span>
+      <span class="rkx-pstep"></span></div>`;
+  const it = t => { const pl = myPlace(t.id); return `<button class="rdx-it rkx-it ${t.id === T.id ? 'on' : ''}" data-rktab="${t.id}" style="--bc:${t.col}"><span class="rdx-iti">${icon(t.ic)}</span><span class="rdx-itt"><b>${t.label}</b><small>${pl ? `You: #${pl}` : 'Not ranked'} · ${t.rew}</small></span></button>`; };
+  const chosen = one ? `${thumbImg(one, 'rkx-cbi')}<span><small>Character</small><b>${esc(one.name)}</b></span>` : `<span class="rkx-cbt">${icon('trophy')}</span><span><small>Character</small><b>Best character</b></span>`;
+  const rewTxt = T.norew ? 'No rewards · just for glory' : T.id === 'hours' ? 'Top 10 get pearls: 1st 30 · 2nd 20 · 3rd 15 · 4th–10th 10' : 'Top 3 get a title + namecard for 7 days';
+  rkEl.innerHTML = `<div class="rdx-bg ${art ? 'art' : ''}">${art ? `<img class="rkx-bgart" src="${art}" alt="">` : ''}<i class="rkx-g g1"></i><i class="rkx-g g2"></i><i class="rkx-g g3"></i></div><div class="rdx-shade"></div>
+    <header class="rdx-head"><div class="inv-title"><span class="inv-badge">${icon('trophy')}</span><h2 class="ts">Ranking</h2></div>${infoBtn('rank', 'How the weekly rewards work')}
+      <span class="rdx-sp"></span>
+      <span class="rdx-ward rkx-reset" title="The weekly boards are settled on Monday 00:00">${icon('clock')}<small>Weekly rewards in</small><b>${rankResetTxt()}</b></span>
+      <button class="inv-x" id="rkClose" aria-label="Close">${icon('close')}</button></header>
+    <aside class="rdx-rail"><span class="rdx-gh">${icon('trophy')}Weekly boards</span>${RANK_TABS.filter(t => !t.norew).map(it).join('')}
+      <span class="rdx-gh">${icon('tree')}All-time · no rewards</span>${RANK_TABS.filter(t => t.norew).map(it).join('')}</aside>
+    <section class="rdx-main rkx-main" style="--bc:${T.col}">
+      <div class="rdx-scroll" data-k="${esc(T.id + rankChar)}">
+        <div class="rdx-hero rkx-hero"><span class="rdx-kind">${icon(T.ic)}${T.norew ? 'All-time board' : 'Weekly board'}</span>
+          <h1 class="rdx-title">${T.label}${one ? ` <em>${esc(one.name)}</em>` : ''}</h1>
+          <p class="rdx-desc">${one ? `${esc(one.name)}: everyone who owns this character, by its CS.` : T.note} ${Backend.on ? '' : 'Offline: the other players are practice players.'}</p>
+          <div class="rdx-meta"><span class="${T.norew ? 'rkx-norew' : ''}">${icon(T.norew ? 'tree' : 'gift')}${rewTxt}</span><span>${icon('chars')}${list.length} players</span><span>${icon('star')}Your place ${myRank ? '#' + myRank : '—'}</span>
+            ${T.id === 'char' ? `<button class="rkx-cbtn" id="rkPickBtn" aria-haspopup="dialog">${chosen}<span class="rkx-cbc">${icon('grid')}Choose</span></button>` : ''}</div></div>
+        ${list.length ? `<div class="rkx-pods">${[1, 0, 2].map(i => pod(list[i], i)).join('')}</div>` : ''}
+        <div class="rkx-list">${list.slice(3, 50).map((p, k) => row(p, k + 3)).join('') || (list.length ? '' : `<p class="tiny rk-note">Nobody owns ${one ? esc(one.name) : 'this character'} yet.</p>`)}</div>
+      </div>
+      <div class="rkx-mine">${me ? row(me, myRank - 1) : `<p class="tiny rk-note">You don't own ${one ? esc(one.name) : 'this character'} yet${one ? '' : ''}.</p>`}</div>
+    </section>
+    ${rkPick ? rkPickHTML() : ''}`;
+  const sc = rkEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;
+  const rl = rkEl.querySelector('.rdx-rail'), on = rl && rl.querySelector('.rdx-it.on'); if (on && rl.scrollWidth > rl.clientWidth + 2) rl.scrollLeft = Math.max(0, on.offsetLeft - (rl.clientWidth - on.offsetWidth) / 2);
+  rkEl.querySelector('#rkClose').onclick = closeRanking;
+  rkEl.querySelectorAll('[data-rktab]').forEach(b => b.onclick = () => { rankTab = b.dataset.rktab; renderRanking(); });
+  const pb = rkEl.querySelector('#rkPickBtn'); if (pb) pb.onclick = () => { rkPick = true; renderRanking(); const q = rkEl.querySelector('#rkPQ'); if (q && matchMedia('(pointer:fine)').matches) q.focus(); };
+  if (rkPick) {
+    const back = rkEl.querySelector('#rkPickBack');
+    back.onclick = e => { if (e.target === back) { rkPick = false; renderRanking(); } };
+    rkEl.querySelector('#rkPickX').onclick = () => { rkPick = false; renderRanking(); };
+    rkEl.querySelectorAll('[data-rkpf]').forEach(b => b.onclick = () => { rkPF = b.dataset.rkpf; renderRanking(); });
+    const q = rkEl.querySelector('#rkPQ'); q.oninput = () => { rkPQ = q.value; const g = rkEl.querySelector('.rkx-pgrid'); const tmp = document.createElement('div'); tmp.innerHTML = rkPickHTML(); g.replaceWith(tmp.querySelector('.rkx-pgrid')); bindPick(); };
+    const bindPick = () => rkEl.querySelectorAll('[data-rkc]').forEach(b => b.onclick = () => { rankChar = b.dataset.rkc; rkPick = false; renderRanking(); });
+    bindPick();
+  }
 }
 if (!ICONS.clock) ICONS.clock = '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>';
 

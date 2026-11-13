@@ -38,7 +38,7 @@ function invSorted(list) {
 }
 function openInventory(tab) {
   closeModal(); invTab = tab || invTab; invSel = null;
-  if (!invEl) { invEl = document.createElement('div'); invEl.className = 'inv'; invEl.setAttribute('role', 'dialog'); invEl.setAttribute('aria-label', 'Inventory'); document.body.appendChild(invEl); }
+  if (!invEl) { invEl = document.createElement('div'); invEl.className = 'inv invx'; invEl.setAttribute('role', 'dialog'); invEl.setAttribute('aria-label', 'Inventory'); document.body.appendChild(invEl); }
   renderInventory();
 }
 function closeInventory() { if (invEl) { invEl.remove(); invEl = null; } renderMenu(); }
@@ -47,7 +47,8 @@ function renderInventory() {
   const all = invItems(), list = invSorted(invTab === 'all' ? all : all.filter(x => x.cat === invTab));
   if (!list.some(x => x.id === invSel)) invSel = list[0] ? list[0].id : null;
   const it = list.find(x => x.id === invSel), scroll = invEl.querySelector('.inv-grid'), top = scroll ? scroll.scrollTop : 0;
-  invEl.innerHTML = `<div class="inv-top">
+  const oldBg = invEl.querySelector('.mallx-bg');
+  invEl.innerHTML = `${pageBgHTML(null)}<div class="inv-top">
       <div class="inv-title"><span class="inv-badge">${icon('bag')}</span><h2 class="ts">Inventory</h2></div>
       <nav class="inv-tabs">${INV_TABS.map(([k, ic, l]) => `<button class="${invTab === k ? 'on' : ''}" data-invtab="${k}" title="${l}" aria-label="${l}">${icon(ic)}</button>`).join('')}</nav>
       <div class="inv-cur">${['coins', 'pearls'].map(k => `<div class="cur">${curIcon(k)}<b>${fmt(S.wallet[k])}</b></div>`).join('')}<button class="inv-x" id="invClose" aria-label="Close">${icon('close')}</button></div>
@@ -65,6 +66,7 @@ function renderInventory() {
         <div class="inv-body"><span class="inv-tag r${it.r}">${esc(it.tag)}</span><p class="inv-use">${it.use}${it.worn ? ` <b>${it.cat === 'memory' ? 'Equipped by' : it.cat === 'petlist' ? 'With' : 'Worn by'} ${esc(it.worn)}.</b>` : ''}</p>${it.lore ? `<p class="inv-lore">${esc(it.lore)}</p>` : ''}
           <div class="inv-acts">${it.act ? `<button class="btn gold" id="invAct">${esc(it.act[0])}</button>` : ''}${(it.act2 || []).map(([l], k) => `<button class="btn ghost" data-invact2="${k}">${icon(/stars/i.test(l) ? 'sparkle' : 'fuse')}${esc(l)}</button>`).join('')}</div></div>` : '<p class="inv-empty">Pick an item to see what it does.</p>'}</aside>
     </div>`;
+  const nb = invEl.querySelector('.mallx-bg'); if (oldBg && nb && oldBg.dataset.k === nb.dataset.k) nb.replaceWith(oldBg);   // the blurred backdrop stays put across redraws
   const g = invEl.querySelector('.inv-grid'); if (g) g.scrollTop = top;
   $('#invClose').onclick = closeInventory;
   invEl.querySelectorAll('[data-invtab]').forEach(b => b.onclick = () => { invTab = b.dataset.invtab; invSel = null; renderInventory(); });

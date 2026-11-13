@@ -6325,3 +6325,271 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 }
 @media (prefers-reduced-motion:reduce){.mallx-g{animation:none}}
 .mallx .mall-thumb.on{border-color:#f5c4ff;box-shadow:0 0 0 3px rgba(200,162,255,.35),0 0 18px var(--cry-glow)}
+
+/* ---------- Ranking page (36-ranking.js renderRanking, root .rkx on the Raids layout .rdx; the owner asked for an
+   entire, more organised page): the boards as a rail of glass cards, the board's hero block, a podium for the top 3,
+   glass rows 4th–50th, your row pinned under them, and a small glass picker with every character's round icon ---------- */
+.rkx{--bc:#c8a2ff}
+.rkx .rdx-bg.art img.rkx-bgart{position:absolute;left:-50px;top:-50px;width:calc(100% + 100px);height:calc(100% + 100px);object-fit:cover;filter:blur(18px) saturate(1.15) brightness(.55)}
+.rkx-g{position:absolute;width:54vmax;height:54vmax;border-radius:50%;opacity:.55;animation:mallxDrift 26s ease-in-out infinite alternate;pointer-events:none}
+.rkx-g.g1{left:-16vmax;top:-18vmax;background:radial-gradient(circle,rgba(200,162,255,.5),transparent 64%)}
+.rkx-g.g2{right:-18vmax;top:6vmax;background:radial-gradient(circle,rgba(255,206,110,.3),transparent 64%);animation-duration:31s;animation-direction:alternate-reverse}
+.rkx-g.g3{left:30vw;bottom:-26vmax;background:radial-gradient(circle,rgba(148,184,255,.32),transparent 64%);animation-duration:28s}
+.rkx .rdx-bg.art .rkx-g{opacity:.3}
+.rkx-reset small{font:600 11px var(--read);color:rgba(240,232,255,.7)}
+.rkx .rdx-rail{align-self:stretch}
+.rkx-it .rdx-iti{color:var(--bc);border-color:color-mix(in srgb,var(--bc) 45%,transparent)}
+.rkx-it.on{background:linear-gradient(90deg,color-mix(in srgb,var(--bc) 26%,transparent),rgba(255,255,255,.03));border-color:color-mix(in srgb,var(--bc) 65%,#fff)}
+.rkx-it.on .rdx-iti{background:var(--bc);color:#1a1030;border-color:#fff}
+.rkx-main .rdx-title em{font-style:italic;color:var(--bc);text-shadow:0 0 18px color-mix(in srgb,var(--bc) 60%,transparent)}
+.rkx-hero .rdx-kind .ic{color:var(--bc)}
+.rkx-norew{border-color:rgba(142,240,168,.45)!important}.rkx-norew .ic{color:#8ef0a8}
+/* the character button (Character CS) */
+.rkx-cbtn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:5px 6px 5px 5px;border-radius:18px 5px 18px 5px;background:linear-gradient(90deg,color-mix(in srgb,var(--bc) 24%,transparent),rgba(255,255,255,.05));border:1px solid color-mix(in srgb,var(--bc) 60%,#fff);box-shadow:0 0 16px color-mix(in srgb,var(--bc) 30%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:transform .15s,filter .15s}
+.rkx-cbtn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.rkx-cbtn .rkx-cbi,.rkx-cbt{width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:50% 15%;flex:none;border:2px solid #fff;display:grid;place-items:center;background:rgba(0,0,0,.25)}
+.rkx-cbt .ic{width:17px;height:17px;color:var(--bc)}
+.rkx-cbtn>span:not(.rkx-cbt):not(.rkx-cbc){display:grid;line-height:1.1}
+.rkx-cbtn small{font:600 10px var(--read);letter-spacing:.06em;text-transform:uppercase;color:rgba(240,232,255,.7)}
+.rkx-cbtn b{font:400 15px var(--display)}
+.rkx-cbc{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:6px 12px;border-radius:12px 4px 12px 4px;background:var(--cry-grad);color:var(--cry-ink);font:400 12px var(--display);letter-spacing:.04em}
+.rkx-cbc .ic{width:14px;height:14px}
+/* podium */
+.rkx-pods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:end;max-width:900px;width:100%;margin:6px auto 0}
+.rkx-pod{position:relative;display:grid;justify-items:center;gap:6px;padding:26px 12px 14px;border-radius:24px 6px 24px 6px;text-align:center;min-width:0;--m1:#efe6ff;--m2:#b79cf0;--m3:#5b3fa6;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--m2) 26%,transparent),rgba(255,255,255,.03) 70%);border:1px solid color-mix(in srgb,var(--m1) 55%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 16px 36px rgba(0,0,0,.3),0 0 26px color-mix(in srgb,var(--m2) 22%,transparent);-webkit-backdrop-filter:blur(16px) saturate(1.1);backdrop-filter:blur(16px) saturate(1.1)}
+.rkx-pod.p1{--m1:#fff3c4;--m2:#f2bd45;--m3:#9a6512;padding-top:34px;min-height:100%}
+.rkx-pod.p2{--m1:#ffffff;--m2:#c7d0e6;--m3:#6b7590}
+.rkx-pod.p3{--m1:#ffe2cc;--m2:#d88a55;--m3:#7a4020}
+.rkx-pod.me{outline:2px solid var(--cry-edge);outline-offset:3px}
+.rkx-pod.empty{opacity:.55;min-height:150px;align-content:center}
+.rkx-pmed{position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:42px;height:42px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,var(--m1),var(--m2) 55%,var(--m3));box-shadow:0 0 0 2px var(--m1),0 0 0 4px var(--m3),0 0 18px color-mix(in srgb,var(--m2) 70%,transparent),0 4px 10px rgba(0,0,0,.4)}
+.rkx-pmed b{font:400 20px var(--display);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.rkx-pod.p1 .rkx-pmed{width:50px;height:50px;top:-25px}
+.rkx-pod.p1 .rkx-pmed::after{content:"♛";position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:20px;color:var(--m1);text-shadow:0 0 8px var(--m2)}
+.rkx-pod.p1 .rkx-pmed::before{content:"";position:absolute;inset:-18px;z-index:-1;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--m1) 60%,transparent) 0 6deg,transparent 6deg 24deg);-webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%);animation:spin 16s linear infinite}
+.rkx-pav{display:grid;place-items:center;margin-top:4px}
+.rkx-pav .rk-av{width:auto;height:auto}
+.rkx-pav .rk-av.bot{width:var(--s);height:var(--s);font-size:calc(var(--s) * .42)}
+.rkx-pnm{display:flex;align-items:center;justify-content:center;gap:6px;max-width:100%;min-width:0}
+.rkx-pnm b{font:400 18px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rkx-pnm small{font-size:11px;opacity:.7}
+.rkx-pod.p1 .rkx-pnm b{font-size:21px}
+.rkx-pttl{max-width:100%;overflow:hidden}
+.rkx-pttl .ttl{font-size:11px}
+.rkx-pch{display:flex;align-items:center;gap:7px;max-width:100%}
+.rkx-pch .rk-cimg{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 15%;border:2px solid rgba(255,255,255,.4)}
+.rkx-pch b{font:400 13px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rkx-pval{display:grid;justify-items:center;gap:1px;margin-top:2px}
+.rkx-pval b{font:400 24px var(--display);color:var(--m1);text-shadow:0 0 12px color-mix(in srgb,var(--m2) 60%,transparent)}
+.rkx-pod.p1 .rkx-pval b{font-size:28px}
+.rkx-pval small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(240,232,255,.62)}
+.rkx-pval .vipb{margin-bottom:2px}
+/* the list */
+.rkx-list{display:grid;gap:6px;max-width:1000px;width:100%;margin:0 auto}
+.rkx .rk-row{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid rgba(238,224,255,.2);border-radius:18px 5px 18px 5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.rkx .rk-row.top10{background:linear-gradient(90deg,color-mix(in srgb,var(--bc) 18%,transparent),rgba(255,255,255,.02));border-color:color-mix(in srgb,var(--bc) 40%,transparent)}
+.rkx .rk-row.me{background:linear-gradient(90deg,rgba(245,175,232,.22),rgba(148,184,255,.1)) padding-box,var(--cry-grad-h) border-box;border:1.5px solid transparent}
+.rkx-mine{max-width:1000px;width:100%;margin:0 auto;padding-top:8px;border-top:1px solid rgba(255,255,255,.12)}
+.rkx-tr .ic{width:30px;height:30px;color:#8ef0a8;flex:none}
+.rkx-tr small{font-size:11px;color:rgba(240,232,255,.65)}
+/* the character picker */
+.rkx-pickback{position:absolute;inset:0;z-index:5;display:grid;place-items:center;padding:20px;background:rgba(6,5,16,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fade .18s}
+.rkx-pickbox{width:min(860px,100%);max-height:min(640px,100%);display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:12px;padding:16px 18px 18px;border-radius:26px 7px 26px 7px;
+  background:var(--brk-rk,none),linear-gradient(180deg,rgba(255,255,255,.14),rgba(20,16,40,.38));border:1px solid rgba(238,224,255,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 24px 60px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(20px) saturate(1.15);backdrop-filter:blur(20px) saturate(1.15);animation:pop .2s}
+.rkx-pickh{display:flex;align-items:center;gap:12px}
+.rkx-pickh>div{flex:1;display:grid;gap:2px}
+.rkx-pickh b{font:400 19px var(--display)}
+.rkx-pickh small{font:600 12px var(--read);color:rgba(240,232,255,.68)}
+.rkx-pickh .rdx-iti{background:var(--cry-grad);color:var(--cry-ink);border-color:var(--cry-edge)}
+.rkx-pickf{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rkx-pf{all:unset;cursor:pointer;padding:6px 14px;border-radius:12px 4px 12px 4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);font:400 13px var(--display);letter-spacing:.04em}
+.rkx-pf.on{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.07));border-color:rgba(251,230,255,.6);box-shadow:0 0 14px rgba(200,162,255,.25)}
+.rkx-pq{margin-left:auto;width:200px;max-width:100%}
+.rkx-pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;overflow-y:auto;min-height:0;padding:4px 2px 2px;scrollbar-width:thin}
+.rkx-pc0{all:unset;box-sizing:border-box;cursor:pointer;display:grid;justify-items:center;gap:4px;padding:8px 4px 7px;border-radius:16px 4px 16px 4px;border:1px solid transparent;text-align:center;min-width:0;transition:background .15s,border-color .15s}
+.rkx-pc0:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
+.rkx-pc0.on{background:linear-gradient(180deg,rgba(245,175,232,.24),rgba(200,162,255,.06));border-color:rgba(251,230,255,.65);box-shadow:0 0 16px rgba(200,162,255,.3)}
+.rkx-pc0.no .rkx-pring{filter:grayscale(.75) brightness(.8)}
+.rkx-pring{position:relative;width:62px;height:62px;border-radius:50%;padding:3px;display:grid;place-items:center;background:var(--rk-ring,linear-gradient(135deg,#ffcf9a,#f08a3a))}
+.rkx-pring.r5{background:conic-gradient(from 200deg,#ff6ec7,#a855f7,#5ee7ff,#ff6ec7)}
+.rkx-pring.best{background:var(--cry-grad)}.rkx-pring.best .ic{width:28px;height:28px;color:var(--cry-ink)}
+.rkx-pring .rkx-pimg,.rkx-pring img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 15%;background:#120e24;border:2px solid #120e24;box-sizing:border-box}
+.rkx-pring i{position:absolute;right:-6px;bottom:-2px;font:400 10px var(--display);font-style:normal;padding:1px 6px;border-radius:99px;background:linear-gradient(180deg,#ffe8a8,#f0b545);color:#4a2c00;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.rkx-pc0 b{font:400 12.5px var(--display);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rkx-pc0 small{display:flex;align-items:center;gap:4px;font:600 10px var(--read);color:rgba(240,232,255,.62)}
+.rkx-pc0 small .rtag{font-size:8.5px;padding:0 5px}
+@media (max-width:820px) and (orientation:portrait){
+  .rkx-pods{gap:8px}.rkx-pod{padding:22px 6px 10px;gap:4px}.rkx-pod.p1{padding-top:28px}
+  .rkx-pav .rk-av.bot{--s:46px!important}.rkx-pav .avf{--s:46px!important}
+  .rkx-pnm b{font-size:13px}.rkx-pod.p1 .rkx-pnm b{font-size:14px}.rkx-pttl,.rkx-pch b{display:none}
+  .rkx-pval b,.rkx-pod.p1 .rkx-pval b{font-size:17px}
+  .rkx-reset small{display:none}
+  .rkx-pq{width:100%;margin-left:0}
+  .rkx-pgrid{grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}.rkx-pring{width:52px;height:52px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .rkx-pods{max-width:640px;gap:8px}.rkx-pod{padding:18px 6px 8px;gap:3px}.rkx-pttl,.rkx-pch{display:none}
+  .rkx-pav .rk-av.bot{--s:40px!important}.rkx-pav .avf{--s:40px!important}.rkx-pval b,.rkx-pod.p1 .rkx-pval b{font-size:16px}
+  .rkx-pmed{width:32px;height:32px;top:-14px}.rkx-pod.p1 .rkx-pmed{width:36px;height:36px;top:-16px}
+  .rkx-reset small{display:none}
+  .rkx-pickbox{padding:10px 12px}.rkx-pgrid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:4px}.rkx-pring{width:46px;height:46px}.rkx-pickh small{display:none}
+}
+@media (prefers-reduced-motion:reduce){.rkx-g,.rkx-pod.p1 .rkx-pmed::before{animation:none}}
+.rkx-pring{overflow:visible}
+.rkx-pring .rkx-pimg,.rkx-pring img{position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);max-width:none}
+.rkx-pring i{z-index:1}
+.rkx-pods{margin-top:26px}
+@media (max-height:500px) and (orientation:landscape){
+  .rkx .rdx-desc{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;font-size:12px}
+  .rkx .rdx-meta>span{font-size:11px;padding:3px 9px 3px 7px}
+  .rkx .rk-row{padding:3px 10px;gap:8px}.rkx .rk-row .rk-who>small,.rkx .rk-row .rk-nm .ttl{display:none}
+  .rkx .rk-av,.rkx .rk-row .avf{--s:34px!important;width:34px;height:34px}
+  .rkx-pods{margin-top:18px}
+  .rkx-cbtn{padding:3px 4px 3px 3px}.rkx-cbtn .rkx-cbi,.rkx-cbt{width:26px;height:26px}.rkx-cbtn b{font-size:13px}
+}
+@media (max-width:820px) and (orientation:portrait){.rkx .rk-row .rk-nm .ttl{display:none}.rkx-mine .rk-row .rk-char{display:none}}
+
+/* ---------- Chat bubble skins (64-chat.js CHAT_BUBBLES; .chm.cb-<id> on your messages, .cbp = the picker preview) ----------
+   Celestial Crown (reach Celestial, the Arena's last rank): the Celestial emblem's colours: a deep violet night with gold
+   star dust, an ivory-gold-prism rim that turns, a gold crown on its corner and a twinkling four-point star.
+   Ten Thousand Wishes (summon 10,000 times): the wish sphere's crystal palette as frosted holo glass, a glowing wish orb
+   on the corner, a light sweeping through and shooting-star sparkles. */
+@property --cba{syntax:'<angle>';inherits:false;initial-value:0deg}
+.chm.cb p{position:relative;isolation:isolate}
+.chm.cb-celestial p{color:#fffdf2;border:1.5px solid transparent;text-shadow:0 1px 2px rgba(20,0,40,.7);
+  background:
+    radial-gradient(circle at 14% 28%,#fff 0 .8px,transparent 1.4px) 0 0/38px 26px,
+    radial-gradient(circle at 62% 74%,#ffe7a8 0 .9px,transparent 1.5px) 0 0/46px 30px,
+    radial-gradient(circle at 86% 18%,rgba(255,255,255,.85) 0 .6px,transparent 1.2px) 0 0/29px 21px,
+    radial-gradient(ellipse 80% 120% at 100% 0%,rgba(255,207,106,.28),transparent 60%) padding-box,
+    linear-gradient(140deg,#24104a,#5a2a9a 55%,#341567) padding-box,
+    conic-gradient(from var(--cba),#fffdf2,#ffcf6a,#ff9ee6,#9fd8ff,#c8a2ff,#ffcf6a,#fffdf2) border-box;
+  box-shadow:0 0 0 1px rgba(255,207,106,.25),0 0 16px rgba(255,207,106,.4),0 0 30px rgba(90,42,154,.55),inset 0 1px 0 rgba(255,255,255,.3);
+  animation:cbTurn 7s linear infinite}
+.chm.cb-celestial p::before{content:"♛";position:absolute;top:-13px;left:10px;font-size:15px;line-height:1;color:#ffcf6a;text-shadow:0 0 6px rgba(255,207,106,.9),0 1px 1px rgba(60,20,0,.8);z-index:2}
+.chm.me.cb-celestial p::before{left:auto;right:10px}
+.chm.cb-celestial p::after{content:"";position:absolute;top:-7px;right:-7px;width:16px;height:16px;z-index:2;
+  background:conic-gradient(from 45deg,transparent 0 12%,#fff 12% 13%,transparent 13% 37%,#fff 37% 38%,transparent 38% 62%,#fff 62% 63%,transparent 63% 87%,#fff 87% 88%,transparent 88%);
+  -webkit-mask:radial-gradient(circle,#000 0 2px,transparent 2.5px),linear-gradient(#000,#000);
+  clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);background:radial-gradient(circle,#fff,#ffe7a8 45%,#ffcf6a);filter:drop-shadow(0 0 4px #ffcf6a);animation:cbTwinkle 2.4s ease-in-out infinite}
+.chm.me.cb-celestial p::after{right:auto;left:-7px}
+.chm.cb-wishes p{color:#2a1458;border:1.5px solid transparent;font-weight:700;
+  background:
+    linear-gradient(105deg,transparent 35%,rgba(255,255,255,.75) 47%,transparent 58%) 0 0/300% 100% no-repeat padding-box,
+    radial-gradient(circle at 12% 20%,#fff 0 1px,transparent 1.6px) 0 0/34px 22px padding-box,
+    linear-gradient(135deg,#fff0fa,#f5afe8 30%,#c8a2ff 62%,#a9c8ff) padding-box,
+    linear-gradient(135deg,#fff,#ffc9f0 30%,#c8a2ff 60%,#94e2ff) border-box;
+  box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 16px rgba(245,175,232,.6),0 0 32px rgba(148,184,255,.45),inset 0 1px 0 #fff,inset 0 -6px 14px rgba(120,90,220,.18);
+  animation:cbSheen 4.2s ease-in-out infinite}
+.chm.cb-wishes p::before{content:"";position:absolute;bottom:-9px;right:-9px;width:22px;height:22px;border-radius:50%;z-index:2;
+  background:radial-gradient(circle at 35% 30%,#fff,#ffd4f2 30%,#b08cff 62%,#5b6bff);box-shadow:0 0 0 2px rgba(255,255,255,.8),0 0 12px #c8a2ff,0 0 22px rgba(148,184,255,.8);animation:cbOrb 2.6s ease-in-out infinite}
+.chm.me.cb-wishes p::before{right:auto;left:-9px}
+.chm.cb-wishes p::after{content:"";position:absolute;top:-6px;left:18%;width:46px;height:2px;border-radius:2px;z-index:2;transform:rotate(-14deg);
+  background:linear-gradient(90deg,transparent,#fff 70%,#fff);box-shadow:0 0 6px #fff,0 0 10px #c8a2ff;animation:cbShoot 3.4s ease-in-out infinite}
+.chm.cb-wishes .chm-at{color:#5a2a8a}
+@keyframes cbTurn{to{--cba:360deg}}
+@keyframes cbTwinkle{0%,100%{transform:scale(.7) rotate(0);opacity:.6}50%{transform:scale(1.15) rotate(45deg);opacity:1}}
+@keyframes cbSheen{0%,35%{background-position:130% 0,0 0,0 0,0 0}75%,100%{background-position:-60% 0,0 0,0 0,0 0}}
+@keyframes cbOrb{0%,100%{transform:scale(1)}50%{transform:scale(1.12);filter:brightness(1.15)}}
+@keyframes cbShoot{0%,55%{opacity:0;transform:translateX(-10px) rotate(-14deg)}65%{opacity:1}90%,100%{opacity:0;transform:translateX(60px) rotate(-14deg)}}
+@media (prefers-reduced-motion:reduce){.chm.cb p,.chm.cb p::before,.chm.cb p::after{animation:none}}
+/* picker previews (Profile settings → Chat bubble) */
+.pf-cb{display:grid;place-items:center;min-height:86px;width:100%;padding:16px 10px 8px}
+.pf-cb .chm{max-width:100%;align-self:center;animation:none}
+.pf-cb .chm p{font-size:13px;white-space:nowrap}
+.pf-cbs .pf-opt{min-height:120px}
+/* the bubble button in the chat bar */
+.chx-cbb{width:44px;height:44px;flex:none;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#fff;transition:transform .15s,background .15s}
+.chx-cbb:hover{transform:scale(1.06);background:rgba(255,255,255,.16)}.chx-cbb .ic{width:19px;height:19px}
+.chx-cbb.cb-celestial{background:linear-gradient(140deg,#24104a,#5a2a9a) padding-box,conic-gradient(#fffdf2,#ffcf6a,#ff9ee6,#9fd8ff,#ffcf6a,#fffdf2) border-box;border:1.5px solid transparent;color:#ffcf6a}
+.chx-cbb.cb-wishes{background:linear-gradient(135deg,#ffe4f6,#c8a2ff 60%,#94b8ff);color:#2a1458;border-color:#fff}
+.chm.cb .chm-h{margin-bottom:5px}
+.chm.cb-celestial p{padding:9px 14px;box-shadow:0 0 0 1px rgba(255,207,106,.25),0 0 16px rgba(255,207,106,.4),0 0 30px rgba(90,42,154,.55),inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 3px rgba(36,16,74,.55),inset 0 0 0 4px rgba(255,207,106,.35)}
+.chm.cb-celestial p::before{top:-11px;font-size:14px}
+.chm.cb-wishes p{padding:9px 14px}
+/* bubble skins, refined: irregular star dust (sizes that never line up), a nebula glow, a bigger gold crown */
+.chm.cb-celestial p{background:
+    radial-gradient(circle at 20% 30%,#fff 0 .9px,transparent 1.5px) 0 0/37px 23px,
+    radial-gradient(circle at 70% 65%,#ffe7a8 0 1px,transparent 1.7px) 11px 7px/53px 31px,
+    radial-gradient(circle at 40% 80%,rgba(255,255,255,.7) 0 .6px,transparent 1.1px) 5px 3px/71px 43px,
+    radial-gradient(circle at 85% 15%,#fff 0 1.3px,rgba(255,231,168,.5) 1.6px,transparent 3px) 0 0/97px 59px,
+    radial-gradient(ellipse 60% 90% at 0% 100%,rgba(255,110,199,.3),transparent 65%) padding-box,
+    radial-gradient(ellipse 80% 120% at 100% 0%,rgba(255,207,106,.3),transparent 60%) padding-box,
+    linear-gradient(140deg,#1f0c42,#5a2a9a 55%,#2e1260) padding-box,
+    conic-gradient(from var(--cba),#fffdf2,#ffcf6a,#ff9ee6,#9fd8ff,#c8a2ff,#ffcf6a,#fffdf2) border-box}
+.chm.cb-celestial p::before{content:"♛";top:-15px;font-size:19px;color:#ffd77a;text-shadow:0 0 8px rgba(255,207,106,1),0 0 2px #fff,0 1px 1px rgba(60,20,0,.9)}
+.chm.cb-celestial p::after{width:18px;height:18px;background:radial-gradient(circle,#fff 0 25%,#fff3c4 45%,#ffcf6a 75%);filter:drop-shadow(0 0 5px #ffcf6a) drop-shadow(0 0 2px #fff)}
+.chm.cb-wishes p{background:
+    linear-gradient(105deg,transparent 35%,rgba(255,255,255,.75) 47%,transparent 58%) 0 0/300% 100% no-repeat padding-box,
+    radial-gradient(circle at 25% 35%,#fff 0 1px,transparent 1.7px) 0 0/41px 27px padding-box,
+    radial-gradient(circle at 75% 70%,rgba(255,255,255,.85) 0 .8px,transparent 1.4px) 9px 5px/59px 37px padding-box,
+    radial-gradient(circle at 60% 20%,#fff 0 1.4px,rgba(255,255,255,.4) 1.8px,transparent 3px) 0 0/89px 47px padding-box,
+    conic-gradient(from 200deg at 72% 40%,rgba(255,255,255,0),rgba(255,255,255,.28),rgba(148,226,255,.18),rgba(255,255,255,0) 35%) padding-box,
+    linear-gradient(135deg,#fff0fa,#f5afe8 30%,#c8a2ff 62%,#a9c8ff) padding-box,
+    linear-gradient(135deg,#fff,#ffc9f0 30%,#c8a2ff 60%,#94e2ff) border-box}
+@keyframes cbSheen{0%,35%{background-position:130% 0,0 0,9px 5px,0 0,0 0,0 0,0 0}75%,100%{background-position:-60% 0,0 0,9px 5px,0 0,0 0,0 0,0 0}}
+.chm.cb-wishes p::after{height:2.5px;width:54px}
+.chm.cb-celestial .chm-h{margin-bottom:12px}
+.chm.cb-celestial p::after{content:"✦";width:auto;height:auto;background:none;clip-path:none;-webkit-mask:none;mask:none;filter:none;top:-10px;right:-8px;font-size:17px;line-height:1;color:#fff6d8;text-shadow:0 0 6px #ffcf6a,0 0 12px rgba(255,207,106,.8)}
+.chm.me.cb-celestial p::after{right:auto;left:-8px}
+
+/* ---------- glass pass over the older screens (the owner asked to find every outdated screen and give it the newer
+   transparent look): the Bag (.inv.invx, a blurred backdrop like the shop), every medium / small window
+   (.modal.glass-deep: stamina, buy pulls, buy gifts, change name, confirmations…; windows with their own look such as
+   the profile, VIP, spin or redeem keep it, their rules are more specific), the Base screen's side panels and the guild
+   list, and the mail rows. Only looks. ---------- */
+.invx,.fm,.modal.glass-deep{--gl:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.03));--gl-rim:rgba(238,224,255,.28);--gl-hi:inset 0 1px 0 rgba(255,255,255,.18);--mrad:22px 6px 22px 6px;--glc:linear-gradient(180deg,rgba(255,255,255,.13),rgba(16,12,34,.34));
+  --bkc:rgba(255,236,255,.75);--bk:linear-gradient(var(--bkc),var(--bkc));
+  --brk:var(--bk) right 8px top 8px/16px 2px no-repeat,var(--bk) right 8px top 8px/2px 16px no-repeat,var(--bk) left 8px bottom 8px/16px 2px no-repeat,var(--bk) left 8px bottom 8px/2px 16px no-repeat}
+/* the Bag */
+.invx{background:#0b0a18}
+.invx>*:not(.mallx-bg){position:relative;z-index:1}
+.invx .inv-tabs{background:var(--gl);border:1px solid var(--gl-rim);border-radius:18px 5px 18px 5px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.invx .inv-tabs button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(240,232,255,.7)}
+.invx .inv-tabs button.on{background:var(--cry-grad);color:var(--cry-ink);border-color:var(--cry-edge);box-shadow:0 0 14px var(--cry-glow)}
+.invx .inv-top .cur{background:rgba(21,18,45,.38);border:1px solid rgba(255,255,255,.24);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.invx .inv-left{padding:14px;border-radius:var(--mrad);background:var(--brk),var(--gl);border:1px solid var(--gl-rim);box-shadow:var(--gl-hi),0 16px 40px rgba(0,0,0,.28);-webkit-backdrop-filter:blur(16px) saturate(1.1);backdrop-filter:blur(16px) saturate(1.1)}
+.invx .inv-count{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:12px 4px 12px 4px}
+.invx .inv-cell>b{background:rgba(21,18,45,.45);border:1px solid rgba(255,255,255,.12);border-radius:10px 3px 10px 3px}
+.invx .inv-cell .inv-pic{border-radius:16px 4px 16px 4px}
+.invx .inv-cell.on .inv-pic{border-color:#f5c4ff;box-shadow:0 0 0 3px rgba(200,162,255,.35),0 0 16px var(--cry-glow)}
+.invx .inv-sort select{background:rgba(255,255,255,.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='white' stroke-width='2.5'/%3E%3C/svg%3E") no-repeat right 16px center/16px;color:#fff;border:1px solid rgba(255,255,255,.24);border-radius:16px 5px 16px 5px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.invx .inv-sort select option{color:#22222c}
+.invx .inv-dir{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.24)}
+.invx .inv-detail{background:var(--brk),linear-gradient(180deg,rgba(255,255,255,.12),rgba(16,12,34,.42));color:#fff;border:1px solid var(--gl-rim);border-radius:var(--mrad);box-shadow:var(--gl-hi),0 18px 46px rgba(0,0,0,.32);-webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}
+.invx .inv-dh{background:none;border-bottom:1px solid rgba(255,255,255,.1)}
+.invx .inv-hero{background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--rc) 30%,transparent))}
+.invx .inv-hero.r5{background:linear-gradient(160deg,transparent 20%,rgba(168,85,247,.32) 65%,rgba(255,110,199,.3))}
+.invx .inv-use,.invx .inv-lore{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px 4px 14px 4px;color:#f4eeff}
+.invx .inv-lore{color:rgba(240,232,255,.68)}
+/* medium and small windows */
+.modal.glass-deep{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 45%,rgba(16,12,34,.2)),rgba(20,16,44,.36);border:1px solid rgba(238,224,255,.3);border-radius:28px 8px 28px 8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 26px 64px rgba(0,0,0,.42);-webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2)}
+.modal.glass-deep::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:var(--brk)}
+.modal.glass-deep .m-head{border-bottom-color:rgba(255,255,255,.1)}
+/* the Base screen's side panels and the guild list */
+.fm .fm-panel.glass-deep,.fm .gd-browse.glass-deep{background:var(--brk),linear-gradient(180deg,rgba(255,255,255,.12),rgba(16,12,34,.4));border:1px solid var(--gl-rim);border-radius:var(--mrad);box-shadow:var(--gl-hi),0 18px 46px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15)}
+.fm .gd-row{background:var(--glc);border:1px solid rgba(238,224,255,.2);border-radius:18px 5px 18px 5px;box-shadow:var(--gl-hi)}
+.fm .gd-row:hover{border-color:rgba(251,230,255,.45)}
+/* mail */
+.modal-back[data-kind=mail] .ml-row{background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.03));border:1px solid rgba(238,224,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.modal-back[data-kind=mail] .ml-row.on{background:linear-gradient(90deg,rgba(245,175,232,.24),rgba(200,162,255,.07));border-color:rgba(251,230,255,.65)}
+.modal-back[data-kind=mail] .ml-env{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+.modal-back[data-kind=mail] .ml-right{padding:16px 18px;border-radius:24px 7px 24px 7px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(16,12,34,.3));border:1px solid rgba(238,224,255,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.16);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.modal-back[data-kind=mail] .ml-att-h{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:14px 4px 14px 4px}
+.modal.glass-deep::after{background:var(--bk) right 6px top 6px/12px 2px no-repeat,var(--bk) right 6px top 6px/2px 12px no-repeat,var(--bk) left 6px bottom 6px/12px 2px no-repeat,var(--bk) left 6px bottom 6px/2px 12px no-repeat}
+.fm .fm-panel.glass-deep,.fm .gd-browse.glass-deep{background:var(--brk),linear-gradient(180deg,rgba(255,255,255,.1),rgba(16,12,34,.25)),rgba(18,14,40,.6)}
+/* the Pets window's side tabs (and other in-window tab rails) as glass rows, the picked one lit (no mint pill) */
+#petRoot>.stack>.pt-side .tab{border-radius:16px 5px 16px 5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#fff;box-shadow:none}
+#petRoot>.stack>.pt-side .tab:hover{background:rgba(255,255,255,.1)}
+#petRoot>.stack>.pt-side .tab.on{background:linear-gradient(90deg,rgba(245,175,232,.24),rgba(200,162,255,.07));border-color:rgba(251,230,255,.6);color:#fff;box-shadow:0 0 18px rgba(200,162,255,.25),inset 0 1px 0 rgba(255,255,255,.2)}
+#petRoot>.stack>.pt-side .tab.on .ic{color:#f5afe8}
+/* the shared in-window tabs (.tabs .tab: Index, Pets, pickers, admin…) as glass with the picked one lit, instead of the
+   old mint pill (the character screen keeps its own: :not(.cs *)) */
+.tab:not(.cs *){border-radius:14px 4px 14px 4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:rgba(244,238,255,.85);transition:background .15s,border-color .15s}
+.tab:not(.cs *):hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.26)}
+.tab.on:not(.cs *){position:relative;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.07));color:#fff;border-color:rgba(251,230,255,.6);box-shadow:0 0 16px rgba(200,162,255,.25),inset 0 1px 0 rgba(255,255,255,.25)}
+.tab.on:not(.cs *)::after{content:"";position:absolute;left:18%;right:18%;bottom:-1px;height:2px;border-radius:2px;background:var(--cry-grad);box-shadow:0 0 8px var(--cry-glow)}
+.tab.on:not(.cs *) span{color:#ffe4f6}
+.fm .fm-panel .tiny,.fm .fm-panel p{color:rgba(240,232,255,.78)}

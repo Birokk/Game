@@ -84,7 +84,7 @@ function chatSend(text) {
   if (Date.now() - chatLastSend < CHAT_GAP) { toast('Slow down a little.'); return false; }
   chatLastSend = Date.now();
   const c = chatState(), m = { t: Date.now(), me: 1, x };
-  if (chatTab === 'world') { c.world.push(m); chatTrim(c.world); if (typeof net !== 'undefined' && net) net.send('wchat', { id: NET_ID, name: S.player.name, uid: S.profile.uid, lv: playerLv().lv, vip: vipLv(), av: S.profile.avatar || null, fr: frameOf().id, x }); if (chatBots() && Math.random() < .45) chatReplyLater('world', x); }
+  if (chatTab === 'world') { c.world.push(m); chatTrim(c.world); if (typeof net !== 'undefined' && net) net.send('wchat', { id: NET_ID, name: S.player.name, uid: S.profile.uid, lv: playerLv().lv, vip: vipLv(), av: S.profile.avatar || null, fr: frameOf().id, bub: bubbleOf().id, x }); if (chatBots() && Math.random() < .45) chatReplyLater('world', x); }
   else if (chatTab === 'guild') { const g = myGuild(); if (!g) return false; (c.guild[g.id] = c.guild[g.id] || []).push(m); chatTrim(c.guild[g.id]); if (Math.random() < .7) chatReplyLater('guild', x, g.id); }
   else if (chatTab === 'friends' && chatPeer) { (c.dm[chatPeer] = c.dm[chatPeer] || []).push(m); chatTrim(c.dm[chatPeer]); chatReplyLater('dm', x, chatPeer); }
   persist(); return true;
@@ -108,7 +108,7 @@ function chatReplyLater(ch, said, key) {
 function chatRecv(p) {
   if (!p || typeof p.x !== 'string') return;
   const c = chatState();
-  c.world.push({ t: Date.now(), real: 1, uid: +p.uid || 0, name: String(p.name || 'Traveler').slice(0, 16), lv: +p.lv || 1, vip: clamp(+p.vip || 0, 0, 12), av: typeof p.av === 'string' ? p.av.slice(0, 80) : null, fr: typeof p.fr === 'string' ? p.fr.slice(0, 30) : null, x: chatClean(p.x) });
+  c.world.push({ t: Date.now(), real: 1, uid: +p.uid || 0, name: String(p.name || 'Traveler').slice(0, 16), lv: +p.lv || 1, vip: clamp(+p.vip || 0, 0, 12), av: typeof p.av === 'string' ? p.av.slice(0, 80) : null, fr: typeof p.fr === 'string' ? p.fr.slice(0, 30) : null, bub: typeof p.bub === 'string' ? p.bub.slice(0, 20) : null, x: chatClean(p.x) });
   chatTrim(c.world);
   if (chatEl && chatTab === 'world') chatRender(); else safely(tickWorld, 'ticker');
 }
@@ -153,7 +153,7 @@ function chatMsgHTML(m) {
   if (m.sys) return `<div class="chm sys"><span>${icon('sparkle')}${esc(m.x)}</span><time>${chatAgo(m.t)}</time></div>`;
   const w = chatWho(m), vn = w.vip ? vipGrade(w.vip).toLowerCase() : '0';
   const txt = esc(m.x).replace(/(^|\s)@([^\s@]{1,16})/g, (a, s, n) => `${s}<b class="chm-at ${n === S.player.name ? 'me' : ''}">@${n}</b>`);
-  return `<div class="chm ${m.me ? 'me' : ''}">
+  return `<div class="chm ${m.me ? 'me' : ''} ${m.me ? cbClass(bubbleOf().id) : cbClass(m.bub)}">
     <button class="chm-av" ${w.uid ? `data-chp="${w.uid}"` : 'tabindex="-1"'} aria-label="${esc(w.name)}">${w.av}</button>
     <div class="chm-b"><span class="chm-h"><b class="vipn vn-${vn}">${esc(w.name)}</b><i>Lv ${w.lv}</i>${w.vip ? `<em class="chm-vip v-${vn}">VIP ${w.vip}</em>` : ''}<time>${chatAgo(m.t)}</time></span><p>${txt}</p></div></div>`;
 }
@@ -192,7 +192,7 @@ function chatRender(force) {
   panel.innerHTML = `<header class="chx-head"><span class="chx-ic">${icon('chat')}</span><h2 class="ts">Chat</h2><button class="inv-x" id="chxClose" aria-label="Close">${icon('close')}</button></header>
     <nav class="chx-tabs">${tabs}</nav>${sub}${body}
     ${bar ? `<div class="chx-quick">${CHAT_QUICK.map(q => `<button class="chx-q" data-chq="${esc(q)}">${esc(q)}</button>`).join('')}</div>
-    <form class="chx-bar" id="chxForm"><input class="input" id="chxIn" maxlength="${CHAT_MAX}" autocomplete="off" placeholder="${esc(ph)}" aria-label="Message"><button class="chx-send" type="submit" aria-label="Send">${icon('send')}</button></form>` : ''}`;
+    <form class="chx-bar" id="chxForm"><button type="button" class="chx-cbb ${cbClass(bubbleOf().id)}" id="chxCb" aria-label="Chat bubble skin" title="Chat bubble skin · ${esc(bubbleOf().name)}">${icon('chat')}</button><input class="input" id="chxIn" maxlength="${CHAT_MAX}" autocomplete="off" placeholder="${esc(ph)}" aria-label="Message"><button class="chx-send" type="submit" aria-label="Send">${icon('send')}</button></form>` : ''}`;
   const nl = panel.querySelector('.chx-list'); if (nl) nl.scrollTop = force || atEnd ? nl.scrollHeight : keep;
   const inp = panel.querySelector('#chxIn'); if (inp) { inp.value = draft; if (focused || (force && matchMedia('(pointer: fine)').matches)) inp.focus({ preventScroll: true }); }   // no keyboard popping up on phones
   // wire up
@@ -204,11 +204,38 @@ function chatRender(force) {
   const bk = panel.querySelector('#chxBack'); if (bk) bk.onclick = () => { chatSeen(); chatPeer = null; chatRender(true); };
   const gb = panel.querySelector('#chxGuild'); if (gb) gb.onclick = () => { closeChat(); openFarm('guild'); };
   const fb = panel.querySelector('#chxFind'); if (fb) fb.onclick = () => { closeChat(); openFriends('find'); };
+  const cbb = panel.querySelector('#chxCb'); if (cbb) cbb.onclick = () => openPfPick('bubble');   // the chat bubble skins (Profile settings → Chat bubble)
   const fm = panel.querySelector('#chxForm'); if (fm) fm.onsubmit = e => { e.preventDefault(); const i = panel.querySelector('#chxIn'); if (chatSend(i.value)) { i.value = ''; chatRender(true); } };
   safely(renderChatDot, 'chat dot');
 }
 /* the home ticker: the newest World message, and a red dot while a friend's reply is unread */
-function renderChatDot() { const d = document.getElementById('chatDot'); if (d) d.hidden = !chatAnyUnread(); const m = document.getElementById('chatMDot'); if (m) m.hidden = !chatAnyUnread(); }
+/* ---------- chat bubble skins (the owner asked for 2 to start, really nice and hard to get) ----------
+   Equipped in Profile settings → Chat bubble (or the bubble button in the chat bar): S.profile.bubble. Your messages wear it
+   (.chm.cb-<id>, styles in main.css "Chat bubble skins"); online the World payload carries it (bub) so others see it too.
+   Celestial Crown: reach Celestial, the last rank of the Arena (its emblem's colours: ivory, gold, deep violet and a prism
+   rim); Ten Thousand Wishes: summon 10,000 times. Once reached they stay yours (S.unlocks 'cb-celestial' / 'cb-wishes'). */
+const CHAT_BUBBLES = [
+  { id: 'default', name: 'Classic', need: 'always' },
+  { id: 'celestial', name: 'Celestial Crown', need: 'cbcel', rare: true },
+  { id: 'wishes', name: 'Ten Thousand Wishes', need: 'cb10k', rare: true }
+];
+const cbHasCel = () => (S.unlocks || []).includes('cb-celestial') || ((S.arena && S.arena.best) || 0) >= 5500;
+const cbHas10k = () => (S.unlocks || []).includes('cb-wishes') || totalPulls() >= 10000;
+UNLOCK.cbcel = [cbHasCel, ''];
+UNLOCK.cb10k = [cbHas10k, ''];
+Object.defineProperty(UNLOCK.cbcel, 1, { get: () => `Reach Celestial, the last rank of the Arena (best so far: ${S.arena && S.arena.joined ? arRankOf((S.arena && S.arena.best) || 0).label : 'not joined'})` });
+Object.defineProperty(UNLOCK.cb10k, 1, { get: () => `Summon 10,000 times (${fmt(Math.min(10000, totalPulls()))} / 10,000)` });
+const bubbleOf = () => CHAT_BUBBLES.find(b => b.id === S.profile.bubble && unlocked(b)) || CHAT_BUBBLES[0];
+const cbClass = id => id && id !== 'default' && CHAT_BUBBLES.some(b => b.id === id) ? 'cb cb-' + id : '';
+const chatBubblePreview = b => `<div class="chm me cbp ${cbClass(b.id)}"><div class="chm-b"><p>${b.id === 'celestial' ? 'Bow before the stars ✦' : b.id === 'wishes' ? 'Ten thousand wishes later…' : 'Hello, Plaza!'}</p></div></div>`;
+/* once reached, a special bubble stays yours (even if the Arena VP drop later) and a toast says it is new */
+function chatBubbleCheck() {
+  S.unlocks = S.unlocks || [];
+  [['cb-celestial', cbHasCel, 'Celestial Crown'], ['cb-wishes', cbHas10k, 'Ten Thousand Wishes']].forEach(([k, f, n]) => {
+    if (!S.unlocks.includes(k) && f()) { S.unlocks.push(k); persist(); toast(`New chat bubble: ${n}! Equip it in Profile settings → Chat bubble.`); }
+  });
+}
+function renderChatDot() { safely(chatBubbleCheck, 'chat bubbles'); const d = document.getElementById('chatDot'); if (d) d.hidden = !chatAnyUnread(); const m = document.getElementById('chatMDot'); if (m) m.hidden = !chatAnyUnread(); }
 function chatTickerLine() {
   const L = chatMessages('world'), m = L[L.length - 1];
   if (!m) return null;
