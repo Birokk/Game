@@ -48,7 +48,8 @@ function frProfile(p) {
     ...p, owned, show, avatar: fav ? wpParse(fav.id) : null, frame: ['simple', 'gold', 'prism', 'crown'][Math.floor(Math.pow(r(), 1.5) * 4)],
     title: titles[Math.floor(r() * titles.length)], card: artCard ? { cls: 'nc-char', img: baseSplash(fav), art: true } : { cls: (k => k.cls || 'nc-' + k.id)(cards[Math.floor(r() * cards.length)]) },
     status: FR_STATUS[Math.floor(r() * FR_STATUS.length)], mins, pets: Math.floor(r() * 6), ach: p.ach ?? Math.floor(r() * ACH.length),
-    urs: owned.filter(x => +x.e.rarity === 5).length + Math.floor(r() * 4), guild, vip: p.vip ?? 0
+    urs: owned.filter(x => +x.e.rarity === 5).length + Math.floor(r() * 4), guild, vip: p.vip ?? 0,
+    days: p.days ?? Math.max(3, Math.round((p.lv || 10) * (2.5 + r() * 4)))   // drawn last so the values above stay the same
   };
 }
 const frSeen = m => m < 5 ? 'Online' : m < 60 ? `${m}min ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`;
@@ -138,7 +139,7 @@ function openFrProfile(uid) {
       <div class="frp-status"><span class="fr-on ${fp.mins < 5 ? 'on' : ''}"><i></i>${frSeen(fp.mins)}</span><span>${icon('chat')}${esc(fp.status)}</span></div>
       <div class="pf-stats frp-stats">
         <div><b>${fp.owned.length}</b><span>Characters</span></div><div><b>${fp.pets}</b><span>Pets</span></div><div><b>${fp.ach}/${ACH.length}</b><span>Achievements</span></div>
-        <div><b>${fp.urs}</b><span data-norw>URs owned</span></div><div class="tcs"><b>${fmt(fp.total)}</b><span>Total CS</span></div></div>
+        <div><b>${fp.urs}</b><span data-norw>URs owned</span></div><div><b>${fmt(fp.days)}</b><span>Days logged in</span></div><div class="tcs"><b>${fmt(fp.total)}</b><span>Total CS</span></div></div>
       <div class="frp-sh"><b>Showcase</b><span class="tiny">Their best characters</span></div>
       <div class="pf-show frp-show">${slots}</div>
       <div class="row" style="justify-content:center;gap:10px">${friend ? `<button class="btn danger sm" data-frrm>Remove friend</button>` : frSent(uid) ? '<span class="fr-tag">Request sent</span>' : `<button class="btn gold" data-fradd2>${icon('plus')}Add friend</button>`}<button class="btn ghost" data-frx>Close</button></div>

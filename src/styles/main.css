@@ -3076,11 +3076,11 @@ button.pt-slot:hover{border-color:#fff}
 .modal-back[data-kind=profile] .pf-mem.none{border-color:rgba(43,24,85,.35);color:rgba(43,24,85,.6);background:rgba(255,255,255,.25)}
 .modal-back[data-kind=profile] .pf-card{color:#fff;justify-content:flex-start;gap:16px;min-height:150px;border-color:rgba(255,255,255,.7)}
 .modal-back[data-kind=profile] .pf-card::after{background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.15) 60%,transparent)}
-.modal-back[data-kind=profile] .pf-stats{grid-template-columns:repeat(5,minmax(0,1fr));width:100%}
+.modal-back[data-kind=profile] .pf-stats{grid-template-columns:repeat(6,minmax(0,1fr));width:100%}
 .modal-back[data-kind=profile] .pf-stats div{background:rgba(255,255,255,.45);border-color:rgba(255,255,255,.8);box-shadow:0 4px 14px rgba(80,50,160,.12)}
 .modal-back[data-kind=profile] .pf-stats b{color:var(--cry-ink)}.modal-back[data-kind=profile] .pf-stats span{color:rgba(43,24,85,.7)}
 .modal-back[data-kind=profile] .pf-stats div.tcs{background:var(--cry-grad-h);border-color:var(--cry-edge)}.modal-back[data-kind=profile] .pf-stats div.tcs b,.modal-back[data-kind=profile] .pf-stats div.tcs span{color:var(--cry-ink)}
-@media (max-width:640px){.modal-back[data-kind=profile] .pf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.modal-back[data-kind=profile] .pf-stats .tcs{grid-column:1/-1}}
+@media (max-width:640px){.modal-back[data-kind=profile] .pf-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.modal-back[data-kind=profile] .pf-stats span{white-space:normal;text-align:center;line-height:1.15}}
 .cs-grades>div.cs-urplus.ssr{border-color:rgba(255,170,80,.5);background:linear-gradient(160deg,rgba(255,150,60,.18),rgba(255,200,120,.06))}
 .rtag.r4.plus{box-shadow:0 0 12px rgba(255,160,80,.75)}
 .rtag.r4.plus i,.cs-badge.r4.plus i{text-shadow:0 0 6px #fff,0 0 12px #ff9a3c}
@@ -4154,7 +4154,7 @@ button.pt-slot:hover{border-color:#fff}
 }
 .frp-box{display:flex;flex-direction:column;align-items:stretch}
 .frp-box .pf-card{width:100%;align-self:stretch}
-.frp-box .pf-stats{grid-template-columns:repeat(5,minmax(0,1fr))}
+.frp-box .pf-stats{grid-template-columns:repeat(6,minmax(0,1fr))}
 .frp-box .pf-stats>div{display:grid;justify-items:center;padding:8px 6px;border-radius:12px;background:rgba(255,255,255,.08)}
 .frp-box .pf-stats b{font-family:var(--display);font-size:18px}
 .frp-box .pf-stats span{font-size:10px;opacity:.8}
@@ -6593,3 +6593,48 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .tab.on:not(.cs *)::after{content:"";position:absolute;left:18%;right:18%;bottom:-1px;height:2px;border-radius:2px;background:var(--cry-grad);box-shadow:0 0 8px var(--cry-glow)}
 .tab.on:not(.cs *) span{color:#ffe4f6}
 .fm .fm-panel .tiny,.fm .fm-panel p{color:rgba(240,232,255,.78)}
+
+/* ---------- Monthly Sign-in: the cumulative sign-in bonus (5 / 10 / 15 / 25 days) under the calendar ---------- */
+.msb{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:12px 18px 12px 12px;border-radius:18px 5px 18px 5px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.msb.ready{border-color:rgba(255,200,236,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 22px rgba(236,170,255,.22)}
+.msb-hd{flex:none;display:flex;align-items:center;gap:10px;width:244px}
+.msb-ic{flex:none;width:42px;height:42px;display:grid;place-items:center;border-radius:14px 4px 14px 4px;background:var(--cry-grad);color:var(--cry-ink);box-shadow:0 0 14px var(--cry-glow)}
+.msb-ic .ic{width:22px;height:22px}
+.msb-t{display:grid;line-height:1.15;min-width:0}
+.msb-t small{font:400 10.5px var(--display);letter-spacing:.22em;text-transform:uppercase;color:#e2d2ff}
+.msb-t b{font:400 18px var(--display);font-style:italic;white-space:nowrap}
+.msb-t em{font-style:normal;font-family:var(--read);font-size:11.5px;color:rgba(255,255,255,.72)}
+.msb-track{position:relative;flex:1;min-width:0;height:82px}
+.msb-bar{position:absolute;left:0;right:0;top:25px;height:8px;border-radius:999px;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 2px rgba(0,0,0,.4);overflow:hidden}
+.msb-bar i{display:block;height:100%;border-radius:inherit;background:var(--cry-grad);box-shadow:0 0 10px var(--cry-glow)}
+.msb-node{all:unset;box-sizing:border-box;position:absolute;left:var(--at);top:0;transform:translateX(-50%);display:grid;justify-items:center;gap:5px;cursor:default}
+.msb-node .msb-it{width:58px;cursor:inherit}
+.msb-node .inv-pic{border-radius:14px 4px 14px 4px}
+.msb-n{position:absolute;left:0;right:0;bottom:2px;font:900 11.5px var(--body);text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.msb-chk{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,6,24,.5);color:#ffd6ec}
+.msb-chk .ic{width:26px;height:26px}
+.msb-day{font:400 11.5px var(--display);letter-spacing:.06em;white-space:nowrap;padding:1px 8px;border-radius:999px;background:rgba(10,8,24,.5);border:1px solid rgba(255,255,255,.14)}
+.msb-node.lock .msb-it{filter:saturate(.55) brightness(.8)}
+.msb-node.lock .msb-day{color:rgba(255,255,255,.62)}
+.msb-node.got .msb-it{opacity:.7}
+.msb-node.got .msb-day{color:#ffd6ec;border-color:rgba(255,190,230,.4)}
+.msb-node.ok{cursor:pointer}
+.msb-node.ok .inv-pic{border-color:transparent;box-shadow:0 0 0 2px #ffd6ec,0 0 18px var(--cry-glow);animation:mileGlow 1.3s ease-in-out infinite alternate}
+.msb-node.ok .msb-day{background:var(--cry-grad);color:var(--cry-ink);border:0}
+.msb-node.ok:hover .msb-it{transform:translateY(-2px)}
+.msb-go{flex:none}
+@media (max-width:820px){
+  .msb{flex-wrap:wrap;gap:10px;padding:10px}
+  .msb-hd{width:auto;flex:1 1 100%}
+  .msb-track{flex:1 1 100%;height:76px}
+  .msb-node .msb-it{width:50px}.msb-bar{top:21px}
+  .msb-go{flex:1 1 100%}
+}
+@media (max-height:500px) and (orientation:landscape){.msb{padding:8px 12px 8px 8px;gap:10px}.msb-hd{width:170px}.msb-ic{width:34px;height:34px}.msb-t b{font-size:15px}.msb-t em{display:none}.msb-track{height:66px}.msb-node .msb-it{width:44px}.msb-bar{top:18px}.msb-day{font-size:10px}}
+@media (prefers-reduced-motion:reduce){.msb-node.ok .inv-pic{animation:none}}
+/* the calendar's own width rule came after the phone rule, so on portrait phones it was squeezed to ~200 px */
+@media (max-width:760px){.evp-main.cal{width:auto}}
+/* profile stats: six boxes now (Days logged in); the friend profile's column used to squeeze its namecard to 170 px on
+   phones (flex items in a scrolling column shrink), so the Arena plaque covered the title */
+.frp-box>*{flex-shrink:0}
+@media (max-width:640px){.modal-back[data-kind=profile] .pf-stats span,.frp-box .pf-stats span{letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.15}}

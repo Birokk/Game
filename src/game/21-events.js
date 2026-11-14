@@ -37,7 +37,7 @@ function msignRewards(N = monthDays()) {
   let t = 0; rest.filter(d => !gold.includes(d)).forEach(d => { out[d] = t++ % 2 ? { tickets: 1 } : { wishes: 1 }; });
   return out;
 }
-function msignState() { if (!S.msign || S.msign.key !== monthKey() || !Array.isArray(S.msign.got)) S.msign = { key: monthKey(), got: [], made: 0 }; return S.msign; }
+function msignState() { if (!S.msign || S.msign.key !== monthKey() || !Array.isArray(S.msign.got)) S.msign = { key: monthKey(), got: [], made: 0, bon: [] }; return S.msign; }
 const msignMakeups = () => { const m = +(eventOf('msign') || {}).makeups; return Number.isFinite(m) && m >= 0 ? Math.floor(m) : MSIGN_MAKEUPS; };
 const msignToday = () => new Date().getDate();
 const msignReady = () => !msignState().got.includes(msignToday());
@@ -50,6 +50,33 @@ function claimMsign(day = msignToday()) {
   showRewards(`Monthly Sign-in · ${monthName()} ${day}`, r, `${m.got.length} / ${monthDays()} days this month`);
 }
 const monthName = (d = new Date()) => d.toLocaleDateString('en-GB', { month: 'long' });
+/* the cumulative sign-in bonus (the owner's ask): the days signed in this month (make-ups count too) unlock 4 extra
+   rewards at 5, 10, 15 and 25 days: 30 SSR character fragments twice, then 30 UR character fragments twice. Claimed
+   ones in S.msign.bon = [day counts], reset with the month; one tap claims every reached one. */
+const MSIGN_BONUS = [{ n: 5, r: { cfssr: 30 } }, { n: 10, r: { cfssr: 30 } }, { n: 15, r: { cfur: 30 } }, { n: 25, r: { cfur: 30 } }];
+function msignBonus() { const m = msignState(); if (!Array.isArray(m.bon)) m.bon = []; return MSIGN_BONUS.map(b => ({ ...b, got: m.bon.includes(b.n), ok: m.got.length >= b.n })); }
+const msignBonusReady = () => msignBonus().some(b => b.ok && !b.got);
+const msignDot = () => msignReady() || msignBonusReady();
+function claimMsignBonus() {
+  const m = msignState(), L = msignBonus().filter(b => b.ok && !b.got); if (!L.length) return;
+  const got = {}; L.forEach(b => { m.bon.push(b.n); Object.entries(b.r).forEach(([k, n]) => { got[k] = (got[k] || 0) + n; }); });
+  msignGive(got); persist(); renderMenu(); renderEvents();
+  showRewards('Sign-in bonus', got, `${m.got.length} day${m.got.length === 1 ? '' : 's'} signed in this month`);
+}
+function msignBonusHTML() {
+  const m = msignState(), d = m.got.length, L = msignBonus(), ready = L.some(b => b.ok && !b.got), next = L.find(b => !b.ok);
+  // the nodes sit evenly spaced (so they never crowd on phones); the bar fills piece by piece between them
+  const nB = L.length, pos = i => (2 * i + 1) / (2 * nB) * 100;
+  let fill = 100; for (let i = 0; i < nB; i++) if (d < L[i].n) { const t0 = i ? L[i - 1].n : 0, p0 = i ? pos(i - 1) : 0; fill = p0 + (d - t0) / (L[i].n - t0) * (pos(i) - p0); break; }
+  return `<div class="msb ${ready ? 'ready' : ''}">
+    <div class="msb-hd"><span class="msb-ic">${icon('gift')}</span><span class="msb-t"><small>Sign-in bonus</small><b>${d} day${d === 1 ? '' : 's'} this month</b><em>${ready ? 'A bonus is ready · tap it to claim' : next ? `${next.n - d} more day${next.n - d === 1 ? '' : 's'} to the next bonus` : 'Every bonus claimed this month'}</em></span></div>
+    <div class="msb-track"><div class="msb-bar"><i style="width:${fill.toFixed(1)}%"></i></div>
+      ${L.map((b, i) => { const [k, n] = Object.entries(b.r)[0], st = b.got ? 'got' : b.ok ? 'ok' : 'lock';
+        return `<button type="button" class="msb-node ${st}" style="--at:${pos(i).toFixed(1)}%" ${st === 'ok' ? 'data-msbon' : 'tabindex="-1"'} title="Day ${b.n}: ${fmt(n)} ${REW_NAMES[k][n === 1 ? 0 : 1]}${b.got ? ' · claimed' : b.ok ? ' · tap to claim' : ''}">
+          <span class="inv-cell msb-it r${REW_R[k] || 4}"><span class="inv-pic">${curIcon(k)}<b class="msb-n">×${fmt(n)}</b>${b.got ? `<span class="msb-chk">${icon('check')}</span>` : ''}</span></span>
+          <span class="msb-day">Day ${b.n}</span></button>`; }).join('')}</div>
+    ${ready ? '<button class="btn gold msb-go" data-msbon>Claim</button>' : ''}</div>`;
+}
 function makeupMsign(day) {
   const m = msignState(); if (!(day < msignToday()) || m.got.includes(day)) return;
   if (!msignMakeLeft()) { toast(`You've used all ${msignMakeups()} make-ups this month.`); return; }
@@ -79,6 +106,7 @@ function msignBoard() {
     <div class="mcal-main"><div class="mcal-wd">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => `<span>${w}</span>`).join('')}</div>
       <div class="mcal-grid">${'<i></i>'.repeat(first)}${Array.from({ length: N }, (_, i) => cell(i + 1)).join('')}</div>
       <div class="mcal-foot"><span>Signed in <b>${m.got.length} / ${N}</b></span><span>Make-ups left <b>${left} / ${msignMakeups()}</b> · tap a missed day to sign in for ${MSIGN_PEARL} pearl</span></div></div>
+    ${msignBonusHTML()}
   </div>`;
 }
 const loginDays = () => { const d = (eventOf('login') || {}).days; return LOGIN_DAYS.map((v, i) => Math.max(0, Math.floor(+(d || [])[i] || 0)) || v); };
@@ -115,7 +143,7 @@ function eventTimer(e) {
 /* the status line under each event in the list (the glass list of the remade Event page) */
 function evSubOf(x) {
   if (x.id === 'login') return loginReady() ? 'Today’s reward is waiting' : 'Claimed today';
-  if (x.id === 'msign') return msignReady() ? 'Sign in for today' : 'Signed in today';
+  if (x.id === 'msign') return msignReady() ? 'Sign in for today' : msignBonusReady() ? 'A sign-in bonus is ready' : 'Signed in today';
   if (x.id === 'scratch') { const left = SCRATCH_DAILY - ((S.scratch && S.scratch.day === dayKey() && S.scratch.n) || 0); return left > 0 ? `${left} card${left === 1 ? '' : 's'} left today` : 'All cards used today'; }
   if (x.id === 'mystery') { const n = mboxState().got.length; return n >= MB_COST.length ? 'The fountain is empty' : `${n} / ${MB_COST.length} wishes made`; }
   const t = eventTimer(x); return t === 'Ongoing' ? 'Ongoing' : `Ends in ${t}`;
@@ -135,7 +163,7 @@ function renderEvents() {
     ${e.id === 'mystery' || e.id === 'scratch' ? `<div class="evp-cur"><span class="cur" title="Pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b><button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button></span></div>` : ''}
     <button class="inv-x evp-x" id="evClose" aria-label="Close">${icon('close')}</button>
     <aside class="evp-side"><span class="evp-pill evx-gh">${icon('clock')}Limited-time events<em>${list.length}</em></span>
-      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' || x.id === 'msign' ? 'calendar' : 'gift')}</span><span class="evx-it"><b>${esc(x.name || 'Event')}</b><small>${esc(evSubOf(x))}</small></span>${(x.id === 'login' && loginReady()) || (x.id === 'msign' && msignReady()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
+      <div class="evp-list">${list.map(x => `<button class="evp-item ${x.id === e.id ? 'on' : ''}" data-ev="${esc(x.id)}"><span class="evp-ic">${x.id === 'scratch' ? scrIcon('star') : x.id === 'mystery' ? `<span class="ftn-ic sm">${icon('fountain')}</span>` : icon(x.id === 'login' || x.id === 'msign' ? 'calendar' : 'gift')}</span><span class="evx-it"><b>${esc(x.name || 'Event')}</b><small>${esc(evSubOf(x))}</small></span>${(x.id === 'login' && loginReady()) || (x.id === 'msign' && msignDot()) || (x.id === 'scratch' && scratchOpen()) || (x.id === 'mystery' && !mboxState().got.length) ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</div></aside>
     ${e.id === 'login' ? loginCharHTML(e) : ''}
     <section class="evp-main ${e.id === 'msign' ? 'cal' : ''} ${e.id === 'login' ? 'tlm' + (loginCharHTML(e) ? '' : ' nochar') : ''}">
       <h1 class="evp-title">${esc(e.name || 'Event')}</h1>
@@ -147,6 +175,7 @@ function renderEvents() {
   evEl.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { evSel = b.dataset.ev; renderEvents(); });
   evEl.querySelectorAll('[data-lgclaim]').forEach(b => b.onclick = claimLogin);
   evEl.querySelectorAll('[data-msday]').forEach(b => b.onclick = () => { const d = +b.dataset.msday; if (d === msignToday()) claimMsign(d); else makeupMsign(d); });
+  evEl.querySelectorAll('[data-msbon]').forEach(b => b.onclick = claimMsignBonus);
   const ts = $('#tlStrip'); if (ts) { const c = ts.querySelector('.tl-day.can') || ts.querySelectorAll('.tl-day.got')[ts.querySelectorAll('.tl-day.got').length - 1]; if (c) ts.scrollLeft = Math.max(0, c.offsetLeft - ts.clientWidth / 2 + c.clientWidth / 2); ts.addEventListener('wheel', ev => { if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) { ts.scrollLeft += ev.deltaY; ev.preventDefault(); } }, { passive: false }); }
   if (e.id === 'scratch') bindScratch();
   if (e.id === 'mystery') bindMystery();

@@ -27,7 +27,7 @@ function hmBanners() {
     const go = () => openEvents(e.id);
     if (e.id === 'mystery') { const sk = mboxSkin(); L.push({ id: 'e:mystery', kind: 'Event', col: '#9ad8ff', ic: 'fountain', title: e.name, sub: sk ? `Premium outfit · ${sk.name}` : 'Make a wish', ends: eventEnd(e), art: (sk && baseArt(sk)) || MEDIA.get('ev:mystery'), go }); return; }
     if (e.id === 'login') { if (loginReady()) L.push({ id: 'e:login', kind: 'Daily', col: '#ffd36b', ic: 'calendar', title: 'Daily Login', sub: 'Today’s reward is waiting', art: MEDIA.get('ev:login'), dot: true, go }); return; }
-    if (e.id === 'msign') { if (msignReady()) L.push({ id: 'e:msign', kind: 'Daily', col: '#c8a2ff', ic: 'calendar', title: 'Monthly Sign-in', sub: 'Sign in for today', art: MEDIA.get('ev:msign') || MEDIA.get('msign:art'), dot: true, go }); return; }
+    if (e.id === 'msign') { if (msignDot()) L.push({ id: 'e:msign', kind: 'Daily', col: '#c8a2ff', ic: 'calendar', title: 'Monthly Sign-in', sub: msignReady() ? 'Sign in for today' : 'A sign-in bonus is ready', art: MEDIA.get('ev:msign') || MEDIA.get('msign:art'), dot: true, go }); return; }
     if (e.id === 'scratch') { const left = SCRATCH_DAILY - ((S.scratch && S.scratch.day === dayKey() && S.scratch.n) || 0); if (left > 0) L.push({ id: 'e:scratch', kind: 'Daily', col: '#ffcf6a', ic: 'star', title: 'Scratch Cards', sub: `${left} cards left today`, art: MEDIA.get('ev:scratch'), go }); return; }
     L.push({ id: 'e:' + e.id, kind: 'Event', col: '#ff8fc8', ic: 'calendar', title: e.name, sub: e.sub || '', ends: eventEnd(e), art: MEDIA.get('ev:' + e.id), go });
   });

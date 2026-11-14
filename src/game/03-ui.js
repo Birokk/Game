@@ -77,7 +77,7 @@ function renderMenu() {
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#sumDot').hidden = !bannerKeys().some(k => canPull(10, k) || freeReady(k));
   if (booted) { const st = statState(); if (st.lastDay !== dayKey()) { st.lastDay = dayKey(); st.days = (st.days || 0) + 1; persist(); } }   // login days (achievements)
-  $('#evDot').hidden = !loginReady() && !msignReady();
+  $('#evDot').hidden = !loginReady() && !msignDot();
   $('#qDot').hidden = !questReady();
   $('#bpDot').hidden = !bpReady();
   if (booted) safely(() => rankSettle(), 'ranking rewards');

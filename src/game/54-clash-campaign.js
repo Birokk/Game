@@ -398,6 +398,31 @@ function ccCampChapters() {
       <div class="cmpl-list">${L.map(card).join('')}${soon}</div></div>`,
     onMount: b => b.querySelectorAll('[data-cpch]').forEach(x => x.onclick = () => { const c = CC_CAMP.find(y => y.id === x.dataset.cpch); if (!c) return; closeModal(); if (c.id !== curCh.id) { cmpSel = cmpPickIn(c); renderCampaign(); } }) });
 }
+/* the stage medallion (the owner found the plain circles too basic): a faceted crystal crest, a hexagon with a bevelled
+   metal rim, six lit facets round a darker table, studs on the sides, a turning rune ring and a twinkle; boss stages add
+   two blades. Every colour is a CSS variable set per state and per chapter theme (.cmp-map[data-cht]), so one drawing
+   serves new / cleared / perfect / locked stages in every chapter. */
+const CMP_MED = (() => {
+  const hex = (w, h, y = 0) => [[0, -h + y], [w, -h / 2 + y], [w, h / 2 + y], [0, h + y], [-w, h / 2 + y], [-w, -h / 2 + y]];
+  const pts = a => a.map(p => p.map(v => +v.toFixed(2)).join(',')).join(' ');
+  const O = hex(40, 46), I = hex(32.5, 37.5), T = hex(21, 24.5, 1), C = [0, -3];
+  const rim = [1, .78, .42, .22, .42, .78], fac = [.95, .62, .32, .16, .32, .62];
+  const bevel = O.map((p, i) => `<polygon points="${pts([p, O[(i + 1) % 6], I[(i + 1) % 6], I[i]])}" style="fill:var(--m1);fill-opacity:${rim[i]}"/>`).join('');
+  const facets = I.map((p, i) => `<polygon points="${pts([p, I[(i + 1) % 6], C])}" style="fill:var(--f1);fill-opacity:${fac[i]}"/>`).join('');
+  const blades = `<g class="mg-blade"><polygon points="-36,-16 -60,-34 -52,-4 -62,24 -36,14" style="fill:var(--b2)"/><polygon points="-36,-16 -60,-34 -50,-8 -40,-4" style="fill:var(--b1)"/>
+    <polygon points="36,-16 60,-34 52,-4 62,24 36,14" style="fill:var(--b2)"/><polygon points="36,-16 60,-34 50,-8 40,-4" style="fill:var(--b1)"/></g>`;
+  const draw = boss => `<svg class="cmp-mg" viewBox="-50 -50 100 100" aria-hidden="true">
+    <circle class="mg-aura" r="44" style="fill:var(--gl)"/>${boss ? blades : ''}
+    <g class="mg-ring"><circle r="48" style="stroke:var(--m1)" stroke-width="1.2" stroke-dasharray="1.5 4.5" fill="none"/><path d="M0,-52 3,-48 0,-44 -3,-48Z M0,52 3,48 0,44 -3,48Z" style="fill:var(--m1)"/></g>
+    <polygon points="${pts(O)}" style="fill:var(--m2)"/>${bevel}
+    <polygon points="${pts(I)}" style="fill:var(--f2)"/>${facets}
+    <polygon points="${pts(T)}" style="fill:var(--f2);fill-opacity:.78;stroke:var(--m1);stroke-opacity:.45" stroke-width=".8"/>
+    <polygon points="${pts([I[5], I[0], [0, -24], [-15, -14]])}" fill="#fff" fill-opacity=".22"/>
+    <polygon points="${pts(O)}" fill="none" style="stroke:var(--m1)" stroke-width="1.2" stroke-opacity=".9"/>
+    <path d="M-44,0 -40,-4 -36,0 -40,4Z M44,0 40,-4 36,0 40,4Z" style="fill:var(--m1)"/>
+    <path class="mg-spark" d="M24,-34 26,-28 32,-26 26,-24 24,-18 22,-24 16,-26 22,-28Z" fill="#fff"/></svg>`;
+  const a = draw(false), b = draw(true); return boss => boss ? b : a;
+})();
 function cmpPickIn(ch) { const L = ch.stages.map(s => ({ ...s, ch })), op = L.filter(ccCampOpen); return (op.find(s => !ccCampHave(s.id)[0]) || op[op.length - 1] || L[0]).id; }
 function renderCampaign() {
   if (!cmpEl) return;
@@ -407,7 +432,7 @@ function renderCampaign() {
   const nS = ch.stages.length, PH = cmpLayout(nS, 'h', ch.path), PV = cmpLayout(nS, 'v', ch.path), PQ = cmpLayout(nS, 'q', ch.path), wp = MEDIA.get('camp:bg:' + ch.id);
   const node = (s, i) => { const S2 = { ...s, ch }, op = ccCampOpen(S2), have = ccCampHave(s.id), k = have.filter(Boolean).length, [x, y] = PH[i], [px, py] = PV[i], [qx, qy] = PQ[i];
     return `<button class="cmp-node ${op ? k === 3 ? 'perfect' : k ? 'clear' : 'new' : 'locked'} ${s.id === st.id ? 'sel' : ''} ${s.boss ? 'boss' : ''}" data-stage="${s.id}" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--px:${px.toFixed(1)}%;--py:${py.toFixed(1)}%;--qx:${qx.toFixed(1)}%;--qy:${qy.toFixed(1)}%" ${op ? '' : 'aria-disabled="true"'}>
-      <span class="cmp-med">${op ? `<b>${s.id}</b>` : icon('lock')}${s.boss ? `<i class="cmp-crown">${icon('crown')}</i>` : ''}${op && !k ? '<i class="cmp-newtag">New</i>' : ''}</span>
+      <span class="cmp-med">${CMP_MED(s.boss)}${op ? `<b>${s.id}</b>` : `<i class="cmp-lk">${icon('lock')}</i>`}${s.boss ? `<i class="cmp-crown">${icon('crown')}</i>` : ''}${op && !k ? '<i class="cmp-newtag">New</i>' : ''}</span>
       ${ccStars(have)}<span class="cmp-nm">${esc(s.name)}</span></button>`; };
   const otherDot = ccCampList().some(c => c.id !== ch.id && ccCampChDot(c));
   const back = MEDIA.get('camp:bg:' + ch.id) || MEDIA.get('battle:campaign');   // the whole screen sits on a blurred copy, so the glass panels show it
@@ -417,7 +442,7 @@ function renderCampaign() {
       <span class="cmp-sp"></span>
       <button class="btn ghost cmp-towerb" id="cmpTower">${icon('compass')}World map${ccTowerReady() ? '<i class="cmp-dot"></i>' : ''}</button><button class="btn ghost" id="cmpDeck">${CC_IC}Deck</button>
       <button class="inv-x" id="cmpClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" style="--cmpn:${nS}">${wp ? `${artImg('camp:bg:' + ch.id, 'cmp-wp')}<i class="cmp-wpshade"></i>` : ''}
+    <section class="cmp-map ${wp ? 'has-wp' : ''} ${nS > 6 ? 'many' : ''} path-${ch.path || 'wave'}" data-cht="${ch.id}" style="--cmpn:${nS}">${wp ? `${artImg('camp:bg:' + ch.id, 'cmp-wp')}<i class="cmp-wpshade"></i>` : ''}
       <div class="cmp-banner"><small>Chapter ${ch.no} · ${esc(ch.sub)}</small><b>${esc(ch.name)}</b><span class="cmp-total">${CC_STAR_SVG}<b>${n}</b> / ${max}</span></div>
       <div class="cmp-field">
         <svg class="cmp-path h" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="cmp-p0" d="${cmpPathD(PH, false)}"/>${done ? `<path class="cmp-p1" d="${cmpPathD(PH, false, done)}"/>` : ''}</svg>
