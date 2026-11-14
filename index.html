@@ -45,8 +45,11 @@
 
 <main class="menu is-open" id="menu" aria-label="Main menu">
   <header class="hm hm-tl">
-    <button class="hm-me" data-open="profile" aria-label="Open your profile"><span style="position:relative;display:block" id="hmAvatar"></span>
-      <span class="hm-id ts"><span class="hm-l1"><span class="hm-lv" id="hmLv">Lv.1</span><span class="hm-name" id="pname">Traveler</span></span><span id="hmTitle"></span></span></button>
+    <!-- the player plate: the avatar (with its frame and the VIP circle) over a glass nameplate with the name, guild
+         emblem and level chip, the title, and the level's EXP bar along its bottom edge -->
+    <button class="hm-me hmp" data-open="profile" aria-label="Open your profile"><span class="hmp-av" id="hmAvatar"></span>
+      <span class="hm-id ts hmp-id"><span class="hm-l1"><span class="hm-name" id="pname">Traveler</span><span class="hmp-gd" id="hmGuild"></span><span class="hm-lv" id="hmLv">Lv 1</span></span><span id="hmTitle"></span>
+        <span class="hmp-bar"><i id="hmXp"></i></span></span></button>
     <div class="hm-tools">
       <button class="tool ts" data-open="wallpaper"><span class="tc glass"><span data-ic="image"></span></span>Wallpaper</button>
       <button class="tool ts" id="hideUi" aria-label="Hide the menu and show only the wallpaper"><span class="tc glass"><span data-ic="eyeOff"></span></span>Hide UI</button>
@@ -79,7 +82,6 @@
         <button class="ev ts hi-g" data-open="guild" style="--ec:#e6a63c"><span class="evo"><span data-ic="guild"></span></span><span class="el">Guild</span><span class="dot-n" id="guildDot" hidden></span></button>
         <div class="hm-drop" id="hmDrop" hidden>
           <button class="ev ts" data-open="shop" style="--ec:#ff9f43"><span class="evo"><span data-ic="shop"></span></span><span class="el">Shop</span></button>
-          <button class="ev ts" data-open="bag" style="--ec:#a78bfa"><span class="evo"><span data-ic="bag"></span></span><span class="el">Bag</span></button>
           <button class="ev ts" data-open="ranking" style="--ec:#ffb84a"><span class="evo"><span data-ic="trophy"></span></span><span class="el">Ranking</span></button>
           <button class="ev ts" data-open="fuse" style="--ec:#ff7ccf"><span class="evo"><span data-ic="fuse"></span></span><span class="el">Fusion</span></button>
           <button class="ev ts" data-open="friends" style="--ec:#5aa9ff"><span class="evo"><span data-ic="friends"></span></span><span class="el">Friends</span><span class="dot-n" id="frDot" hidden></span></button>
@@ -100,8 +102,9 @@
       <button class="summon2" data-open="summon" data-banner="limited"><span class="so"><span data-ic="summon"></span></span><span class="st"><b>Summon</b></span><span class="dot-n" id="sumDot" hidden></span></button>
       <span class="lim-time" id="limTime"></span>
     </div>
-    <nav class="hm-tabs" aria-label="Characters, pets, base and deck">
+    <nav class="hm-tabs" aria-label="Characters, bag, pets, base and deck">
       <button class="tabb ts" data-open="characters"><span class="tbi"><span data-ic="chars"></span></span><span class="tbl">Characters</span><span class="dot-n" id="charDot" hidden></span></button>
+      <button class="tabb ts" data-open="bag"><span class="tbi"><span data-ic="bag"></span></span><span class="tbl">Bag</span></button>
       <button class="tabb ts" data-open="pets"><span class="tbi"><span data-ic="paw"></span></span><span class="tbl">Pets</span><span class="dot-n" id="petDot" hidden></span></button>
       <button class="tabb ts" data-open="farm"><span class="tbi"><span data-ic="farm"></span></span><span class="tbl">Base</span><span class="dot-n" id="farmDot" hidden></span></button>
       <button class="tabb ts" data-open="deck"><span class="tbi"><span data-ic="cards"></span></span><span class="tbl">Deck</span></button>

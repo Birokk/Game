@@ -67,8 +67,11 @@ function renderMenu() {
   hmZoom();
   safely(passDaily, 'memberships');   // a membership's daily reward: queued once a day, shown as a popup on the home screen
   $('#pname').textContent = S.player.name;
-  $('#hmAvatar').innerHTML = avatarHTML(56) + vipCircle() + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');   // the VIP level in a round badge on the avatar (coloured by VIP grade)
-  $('#hmLv').textContent = 'Lv.' + playerLv().lv;   // profile pill, line 1: account level + name; line 2: the title
+  $('#hmAvatar').innerHTML = avatarHTML(64) + vipCircle() + (vipReady() ? '<span class="dot-n vipdot" title="VIP reward ready"></span>' : '');   // the VIP level in a round badge on the avatar (coloured by VIP grade)
+  { const L = playerLv(), max = L.lv >= LV_MAX, pct = max ? 100 : Math.min(100, L.xp / L.need * 100);   // the player plate: account level + its EXP bar
+    $('#hmLv').innerHTML = `<small>Lv</small>${L.lv}`; $('#hmXp').style.width = pct.toFixed(1) + '%';
+    $('#hmLv').title = max ? `Level ${L.lv} · max level` : `Level ${L.lv} · ${fmt(L.xp)} / ${fmt(L.need)} EXP`;
+    const g = typeof myGuild === 'function' && myGuild(); $('#hmGuild').innerHTML = g ? guildIcon(g.icon, 18) : ''; $('#hmGuild').title = g ? g.name : ''; }
   $('#lvDot').hidden = !lvReady();
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls']].map(([k, l]) =>
