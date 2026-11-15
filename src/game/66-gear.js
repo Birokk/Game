@@ -1,9 +1,10 @@
 /* ---------- Gear levels (the owner's plan): every clothing copy has its own level ----------
    Cap by rarity: R 10, SSR 20, UR 30 / 35 / 40 at 1★ / 2★ / 3★. Upgrading works like pet grades but far cheaper: each try
    costs only gold and succeeds with a chance that drops with the level (a failed try keeps the level), with Auto upgrade
-   at ×1 / ×2 / ×4. Thread is only needed for the breakthroughs at levels 10, 20 and 30 (always succeed). Tailor mastery:
-   the game remembers the highest level reached in each slot; levels up to it cost a quarter and always succeed, so the
-   first set is the climb and the next ones are quick.
+   at ×1 / ×2 / ×4. Every try can fail, the very first one too (the owner's rule: 90% at Lv 0 down to 35%), and the gold
+   price is 25% higher than the first version. Thread is only needed for the breakthroughs at levels 10, 20 and 30 (they
+   always succeed). Tailor mastery: the game remembers the highest level reached in each slot; levels up to it cost half
+   (never a sure success), so later sets are cheaper but still a climb.
    Copies are only told apart by their star, so the levels are kept like this (S.gear): a worn copy's level sits on the
    character's slot (wl[charId][slot]); spare leveled copies sit in a pool per piece and star (pool[id][star] = [levels]);
    gearSync (run before every save) moves a level between the pool and a slot whenever what a slot wears changes, so every
@@ -14,8 +15,9 @@
 const GEAR_UR_CAP = [30, 30, 35, 40];
 const gearCap = (x, st) => !x ? 0 : +x.rarity >= 5 ? GEAR_UR_CAP[Math.max(1, Math.min(3, st || 1))] : +x.rarity === 4 ? 20 : 10;
 const GEAR_BT = { 10: 20, 20: 50, 30: 100 };                       // breakthroughs: Thread to go past level 10 / 20 / 30
-const GEAR_TRY = { 3: 60, 4: 100, 5: 150 };                         // gold per try × (level + 1)
-const gearChance = n => Math.max(.4, 1 - .015 * n);                 // 100% at level 0 down to 40%
+const GEAR_TRY = { 3: 75, 4: 125, 5: 190 };                         // gold per try × (level + 1) (was 60 / 100 / 150: +25%, the owner's ask)
+const GEAR_MAST = .5;                                               // Tailor mastery: half price on levels reached before in the slot
+const gearChance = n => Math.max(.35, .9 - .015 * n);               // every try can fail: 90% at level 0, 75% at 10, 60% at 20, 45% at 30, 35% from 37
 const gearSpent = L => Object.entries(GEAR_BT).reduce((t, [lv, th]) => t + (L > +lv ? th : 0), 0);   // the Thread inside a level (refunds)
 const GEAR_DIS = { 3: 3, 4: 8, 5: 20 };   // Thread for dismantling (× the star for UR)
 const GEAR_TOK = 30;                     // set tokens for one chosen piece
@@ -61,12 +63,12 @@ function gearCopies(id) {
   const x = clothOf(id); if (!x) return [];
   const seen = {}; return clothCopies(id).map(cp => { const k = cp.star || 1; if (cp.who) return { ...cp, x, k, lv: gearWornLv(cp.who, cp.slot) }; const i = seen[k] = (seen[k] || 0) + 1; return { ...cp, x, k, lv: gearSpareLv(id, k, i - 1), si: i - 1 }; });
 }
-/* the next step: a breakthrough (Thread, always succeeds) at 10 / 20 / 30, else a try (gold, a chance); mastery (a level
-   reached before in this slot) costs a quarter and always succeeds */
+/* the next step: a breakthrough (Thread, always succeeds) at 10 / 20 / 30, else a try (gold, a chance that can always
+   fail); mastery (a level reached before in this slot) costs half, with the same chance */
 function gearCost(x, lv) {
-  const mast = lv < (gS().mast[x.slot] || 0), f = mast ? .25 : 1;
+  const mast = lv < (gS().mast[x.slot] || 0), f = mast ? GEAR_MAST : 1;
   if (GEAR_BT[lv]) return { bt: true, gold: 0, thread: Math.ceil(GEAR_BT[lv] * f), chance: 1, mast };
-  return { bt: false, gold: Math.ceil(GEAR_TRY[Math.max(3, Math.min(5, +x.rarity))] * (lv + 1) * f), thread: 0, chance: mast ? 1 : gearChance(lv), mast };
+  return { bt: false, gold: Math.ceil(GEAR_TRY[Math.max(3, Math.min(5, +x.rarity))] * (lv + 1) * f), thread: 0, chance: gearChance(lv), mast };
 }
 function gearRef(ref) {   // the copy behind a ref: {x, k, cap, lv, set(lv)}
   const g = gS(), worn = !!ref.who, x = clothOf(worn ? (S.wear[ref.who] || {})[ref.slot] : ref.id); if (!x) return null;
@@ -206,7 +208,7 @@ function renderTailor() {
       <h3>${esc(cur.x.name)}</h3><small>${esc(WARD_NAME[cur.x.slot])}${cur.who ? ` · worn by ${esc((findEntry(cur.who) || {}).name || '')}` : ' · spare'}${hasClothStars(cur.x) ? ` · ${cur.k}★` : ''}</small>
       <div class="gt-lv"><b>Lv ${cur.lv}</b><span>/ ${cap}</span><i style="--p:${(cur.lv / cap * 100).toFixed(1)}%"></i></div>
       <p class="gt-bon"><b>${esc(WARD_NAME[cur.x.slot])} bonus:</b> ${GEAR_SLOT_TXT[cur.x.slot]} every 10 levels. Now: ${m} milestone${m === 1 ? '' : 's'}.${cur.lv < cap ? ` Next at Lv ${next}.` : ''}${+cur.x.rarity >= 5 && cur.k < 3 ? ' More stars raise the cap.' : +cur.x.rarity < 5 && cur.lv >= cap ? ' A higher rarity goes further: fusion keeps this level.' : ''}</p>
-      ${c ? `<div class="gt-cost">${c.bt ? `<b class="gt-btk">Breakthrough</b><span>${curIcon('thread')}${c.thread} Thread</span><small>always succeeds</small>` : `<span>${curIcon('coins')}${fmt(c.gold)} a try</span><span class="gt-ch">${Math.round(c.chance * 100)}% chance</span>`}${c.mast ? '<em>Tailor mastery: ¼ price, always succeeds</em>' : ''}</div>
+      ${c ? `<div class="gt-cost">${c.bt ? `<b class="gt-btk">Breakthrough</b><span>${curIcon('thread')}${c.thread} Thread</span><small>always succeeds</small>` : `<span>${curIcon('coins')}${fmt(c.gold)} a try</span><span class="gt-ch">${Math.round(c.chance * 100)}% chance</span>`}${c.mast ? '<em>Tailor mastery: half price</em>' : ''}</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">${gearAuto.on ? `<button class="btn ghost" data-gstop>Stop</button>` : `<button class="btn gold" data-gtry>${c.bt ? 'Break through' : 'Upgrade'}</button><button class="btn ghost" data-gauto>Auto upgrade</button>`}</div>
       <div class="gt-auto"><label>Target<select class="input sm" id="gtTarget" ${gearAuto.on ? 'disabled' : ''}>${Array.from({ length: cap - cur.lv }, (_, i) => cur.lv + 1 + i).map(n => `<option value="${n}" ${n === gearAuto.target ? 'selected' : ''}>Lv ${n}</option>`).join('')}</select></label>
         <span class="gt-spd">${GEAR_SPEEDS.map(v => `<button class="chip ${gearAuto.speed === v ? 'on' : ''}" data-gspd="${v}">×${v}</button>`).join('')}</span></div>
@@ -216,7 +218,7 @@ function renderTailor() {
   root.innerHTML = `<div class="gt"><div class="gt-top"><div class="gt-tabs">${[['worn', 'Worn'], ['spare', 'Spare'], ['tok', 'Set tokens']].map(([k, n]) => `<button class="tab ${gearTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
       <div class="gt-mats"><span title="Thread: for breakthroughs; from every gear raid clear and dismantling">${curIcon('thread')}<b>${fmt(W.thread || 0)}</b></span><span>${curIcon('coins')}<b>${fmt(W.coins || 0)}</b></span></div></div>
     <div class="gt-body">${gearTab === 'tok' ? '' : `<div class="gt-grid">${gearTab === 'worn' ? list.map((c, i) => (i === 0 || list[i - 1].who !== c.who ? `<span class="gt-gh ${c.who === gearFocus ? 'me' : ''}">${baseThumb(findEntry(c.who))}<b>${esc(findEntry(c.who).name)}</b>${c.who === gearFocus ? '<em>This character</em>' : ''}</span>` : '') + cell(c)).join('') : list.map(cell).join('')}</div>`}<div class="gt-side">${detail}</div></div>
-    <p class="tiny">Caps: R 10 · SSR 20 · UR 30 / 35 / 40 at 1★ / 2★ / 3★. Each try costs gold and may fail (the level stays); Thread is only for the breakthroughs at Lv 10, 20 and 30. Levels you reached before in a slot cost ¼ and always succeed (Tailor mastery). Fusion and star merges keep the best level.</p></div>`;
+    <p class="tiny">Caps: R 10 · SSR 20 · UR 30 / 35 / 40 at 1★ / 2★ / 3★. Each try costs gold and may fail (the level stays); Thread is only for the breakthroughs at Lv 10, 20 and 30. Every try can fail, even the first. Levels you reached before in a slot cost half (Tailor mastery). Fusion and star merges keep the best level.</p></div>`;
   root.querySelectorAll('[data-gtab]').forEach(b => b.onclick = () => { gearAutoStop(); gearTab = b.dataset.gtab; gearSel = null; gearAuto.log = []; renderTailor(); });
   root.querySelectorAll('[data-gt]').forEach(b => b.onclick = () => { gearAutoStop(); const p = b.dataset.gt.split('|'); gearSel = p[0] === 'w' ? { who: p[1], slot: p[2] } : { id: p[1], k: +p[2], si: +p[3] }; gearAuto.log = []; gearAuto.target = 0; renderTailor(); });
   const tr = root.querySelector('[data-gtry]'); if (tr) tr.onclick = () => { const t = gearTry(gearSel); if (t.err) toast(t.err); else { gearAuto.log.unshift(t.r === 'fail' ? `Lv ${t.lv}: failed` : t.r === 'bt' ? `Breakthrough! Lv ${t.lv}` : `Lv ${t.lv}`); gearAuto.log = gearAuto.log.slice(0, 8); persist(); } renderTailor(); };
