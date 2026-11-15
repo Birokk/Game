@@ -111,7 +111,7 @@ function ccLeaderOf(deckId) {
 function ccSetLeader(deckId, id) { const sv = ccSave(); sv.leaders = { ...(sv.leaders || {}), [deckId]: id }; persist(); }
 function ccPickLeader(deckId, after) {
   const cur = ccLeaderOf(deckId);
-  openCharPicker({ title: 'Choose a leader', ic: 'crown', note: `The leader stands beside your hero for the whole match (no skill yet). ${cur ? `Now: <b>${esc(cur.name)}</b>.` : ''}`, list: ccLeaderPool(), btn: 'Make leader',
+  openCharPicker({ title: 'Choose a leader', ic: 'crown', note: `The leader stands beside your hero and brings its leader skill (stronger with awakened stars). ${cur ? `Now: <b>${esc(cur.name)}</b> · ${esc(lsName(lsOf(cur)))}.` : ''}`, list: ccLeaderPool(), btn: 'Make leader',
     onPick: e => { ccSetLeader(deckId, e.id); toast(`${e.name} now leads this deck`); if (after) after(); } });
 }
 /* the leader's card: your own leaders use the profile showcase card (badges, grade, rarity, stars); the bot's leader gets
@@ -127,7 +127,7 @@ function ccLeaderCard(e, bot, seed = 0) {
 function ccLeaderBox(deckId) {
   const e = ccLeaderOf(deckId);
   return `<div class="ccd-lead"><span class="ccd-lbl">Leader</span><div class="ccd-lead-row"><div class="ccd-lead-card">${e ? ccLeaderCard(e) : '<span class="tiny">Own a character to pick a leader.</span>'}</div>
-    <div class="ccd-lead-info">${e ? `<b>${esc(e.name)}</b><span class="tiny">Stands beside your hero all match. No skill yet.</span>` : ''}<button class="btn ghost sm" id="ccdLead" ${ccLeaderPool().length ? '' : 'disabled'}>${icon('crown')}Change leader</button></div></div></div>`;
+    <div class="ccd-lead-info">${e ? `<b>${esc(e.name)}</b><span class="tiny">Brings its leader skill to every match.</span>` : ''}<button class="btn ghost sm" id="ccdLead" ${ccLeaderPool().length ? '' : 'disabled'}>${icon('crown')}Change leader</button></div></div>${e ? `<div class="ccd-lead-sk">${lsInfoHTML(e)}${lsBondLine(e, (ccDeckById(deckId) || {}).cards)}</div>` : ''}</div>`;
 }
 
 /* ---- rewards ---- */

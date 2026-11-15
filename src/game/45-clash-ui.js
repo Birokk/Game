@@ -26,6 +26,7 @@ function ccCardHTML(id, o = {}) {
 /* ---- saved decks (player save S.cc) ---- */
 function ccSave() { if (!S.cc) S.cc = { decks: [], sel: 'p-balanced', stats: { w: 0, l: 0, d: 0 } }; if (!S.cc.stats) S.cc.stats = { w: 0, l: 0, d: 0 }; return S.cc; }
 function ccAllDecks() { return [...CC_PRESETS.map(d => ({ ...d, preset: true })), ...ccSave().decks]; }
+const ccDeckById = id => ccAllDecks().find(d => d.id === id) || null;
 function ccDeck(id) { return ccAllDecks().find(d => d.id === id) || ccAllDecks()[0]; }
 const ccCount = (cards, id) => cards.filter(x => x === id).length;
 const CC_DECK_MAX = 12;
@@ -296,9 +297,12 @@ function startClash(deck, seed, camp, boss, raid, qm, arena, train) {   // boss 
   const foe = boss || camp && camp.dummy ? null : train ? ftFoeChar(train, seed) : arena ? (arena.f.lead && findEntry(arena.f.lead)) || null : ccQmFoe(seed);   // the same challenger the Quick match lobby showed for this seed
   const names = [S.player.name || 'You', boss ? gbName() : arena ? arena.f.name : camp && camp.dummy ? camp.foeName : foe ? foe.name : train && train.brain === 'dummy' ? 'Dummy' : 'Bot'];
   const qd = !boss && !raid && !camp && !arena && !train ? { mode: qmMode(qm && qm.mode).id, diff: qmDiff(qm && qm.diff).id } : null, qs = qd ? qmSetup(seed, qd.mode, qd.diff, deck) : null;
-  const G = boss ? gbMatch(deck, seed, names, boss) : raid ? raidMatch(deck, seed, names, raid) : train ? ftMatch(deck, seed, names, train) : arena ? arMatch(deck, seed, names, arena) : camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), qs.foeDeck, names, qs.opts);
+  // leader skills for both sides (65-leader.js): none in the Chapter 0 tutorial; the Arena plays everyone at tier 1; the guild boss and the Dummy have none
+  const tut = camp && camp.ch && camp.ch.id === 'c0', myLe = ccLeaderOf(deck.id), botLe = boss || (camp && camp.dummy) || (train && train.brain === 'dummy') ? null : foe;
+  ccLeadPass.v = tut ? null : [lsLead(myLe, { pvp: !!arena }), botLe ? lsLead(botLe, { pvp: !!arena, tier: lsBotTier(qd || (train && { diff: train.brain }), camp, arena) }) : null];
+  let G; try { G = boss ? gbMatch(deck, seed, names, boss) : raid ? raidMatch(deck, seed, names, raid) : train ? ftMatch(deck, seed, names, train) : arena ? arMatch(deck, seed, names, arena) : camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), qs.foeDeck, names, qs.opts); } finally { ccLeadPass.v = null; }
   ccSkReset();
-  const m = ccM = { G, foe, leader: ccLeaderOf(deck.id), skins: [ccMySkin(), boss ? 'inferno' : raid ? raidFoe(raid.id).skin : train ? train.skin : arena ? arena.f.skin : camp ? 'default' : ccBotSkin(seed)], backs: [ccMyBack(), boss ? 'inferno' : raid ? raidFoe(raid.id).back : train ? train.back : arena ? arena.f.back : camp ? 'default' : ccBotBack(seed)], boss: boss || null, raid: raid || null, arena: arena || null, train: train || null, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false,
+  const m = ccM = { G, foe, leader: myLe, skins: [ccMySkin(), boss ? 'inferno' : raid ? raidFoe(raid.id).skin : train ? train.skin : arena ? arena.f.skin : camp ? 'default' : ccBotSkin(seed)], backs: [ccMyBack(), boss ? 'inferno' : raid ? raidFoe(raid.id).back : train ? train.back : arena ? arena.f.back : camp ? 'default' : ccBotBack(seed)], boss: boss || null, raid: raid || null, arena: arena || null, train: train || null, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false,
     camp: camp ? { st: camp, cs: ccCampStats(), shown: new Set(), tip: null } : null, qm: qd ? { ...qd, brain: qmDiff(qd.diff).brain, deckName: qs.deckName } : null };
   showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => ccCoinFlip(() => ccEventReveal(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }))); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
@@ -349,6 +353,16 @@ function ccTargets() {
     }
   } else if (sel.kind === 'unit') {
     for (const a of L.filter(a => a.u === sel.iid)) { if (a.k === 'move') out.set(`s0${a.lane}${a.row}`, a); if (a.k === 'attack') out.set('attack', a); }
+  } else if (sel.kind === 'skill') {   // the leader skill: targets like a spell's
+    const T = G.lead && G.lead[0] && LS[G.lead[0].id].tg;
+    for (const a of L.filter(a => a.k === 'skill')) {
+      const t = a.t;
+      if (T === 'two') { if (!sel.first) { out.set(`u${t.u}`, { pick: t.u }); out.set(`u${t.u2}`, { pick: t.u2 }); } else if (t.u === sel.first || t.u2 === sel.first) { const o = t.u === sel.first ? t.u2 : t.u; out.set(`u${o}`, a); } }
+      else if (T === 'side') { if (!sel.first) out.set(`u${t.u}`, { pick: t.u }); else if (t.u === sel.first) out.set(`s0${t.lane}${t.row}`, a); }
+      else if (t.hero != null) out.set(`h${t.hero}`, a);
+      else if (t.u) out.set(`u${t.u}`, a);
+      else out.set('cast', a);
+    }
   }
   return out;
 }
@@ -362,6 +376,7 @@ function ccClick(e) {
     if (id === 'ccEnd') { if (ccMyTurn() && G.phase === 'main') ccDo({ k: 'end' }); return; }
     if (id === 'ccAuto' || id === 'ccAutoOff') { const sv = ccSave(); sv.auto = id === 'ccAuto' ? !sv.auto : false; persist(); ccM.autoPlan = null; ccM.sel = null; ccRender(); ccAutoSchedule(); if (sv.auto) toast('Auto play on: it plays your turns until you stop it'); return; }
     if (id === 'ccLogB') { ccM.log = !ccM.log; ccRender(); return; }
+    if (id === 'ccSkill') { const L = G.lead && G.lead[0]; if (!L) return; if (!ccMyTurn() || G.phase !== 'main') { toast('Wait for your turn'); return; } if (L.cd > 0) { toast(`${lsName(L.id)} is ready in ${L.cd} turn${L.cd > 1 ? 's' : ''}`); return; } if (G.players[0].ap < lsCost(L)) { toast(`Not enough AP (needs ${lsCost(L)})`); return; } if (!ccLegal(G).some(a => a.k === 'skill')) { toast('No target for the skill right now'); return; } ccM.sel = ccM.sel && ccM.sel.kind === 'skill' ? null : { kind: 'skill' }; ccRender(); return; }
     if (id === 'ccLeave') return ccLeave();
     if (id === 'ccRules') return ccRules();
     if (id === 'ccCancel') { ccM.sel = null; ccRender(); return; }
@@ -402,8 +417,10 @@ function ccClick(e) {
 function ccDo(a, fromAuto) {
   const G = ccM.G, snap = ccSnap(a), note = ccM.camp && ccCampPre(G, a);
   if (!fromAuto) ccM.autoPlan = null;
+  const sk = a.k === 'skill' && G.lead && G.lead[G.active] ? G.lead[G.active].id : null;
   const err = ccApply(G, a);
   if (err) { toast(err); return false; }
+  if (sk) lsCastFx(0, sk);
   if (ccM.camp) { if (a.k !== 'end') ccCampNote(ccM.camp.cs, G, note); ccCoachHide(false); }
   ccM.sel = null;
   const hit = G.fx.filter(f => f.id === 'hero1' && f.type === 'dmg').reduce((t, f) => t + f.n, 0);
@@ -469,7 +486,9 @@ function ccBotStep(G) {
     if (G.active === 0 && G.phase !== 'over') ccM.busy = false;
     ccRender(snap); ccAfter(true);
   };
-  if (a && (a.k === 'summon' || a.k === 'spell' || a.k === 'equip' || a.k === 'trap')) ccReveal(a, go); else go(null);
+  if (a && (a.k === 'summon' || a.k === 'spell' || a.k === 'equip' || a.k === 'trap')) ccReveal(a, go);
+  else if (a && a.k === 'skill' && G.lead && G.lead[1]) { lsCastFx(1, G.lead[1].id); setTimeout(() => go(null), 700); }
+  else go(null);
 }
 
 /* big hit: when one of your actions deals more than 2 damage to the enemy hero, a diagonal slice slashes in from your side
@@ -539,7 +558,8 @@ function ccRender(snap) {
     ${hero(1)}${hero(0)}
     ${ccM.boss ? `<div class="ccm-lead op" title="${esc(gbName())}: the guild boss">${gbCardHTML()}<span class="ccl-tag">Boss</span></div>` : ''}
     ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
-    ${ccM.leader ? `<div class="ccm-lead me" title="${esc(ccM.leader.name + ': your leader (no skill yet)')}">${ccLeaderCard(ccM.leader)}<span class="ccl-tag">Leader</span></div>` : ''}
+    ${ccM.leader ? `<div class="ccm-lead me" title="${esc(ccM.leader.name + ': your leader')}">${ccLeaderCard(ccM.leader)}<span class="ccl-tag">Leader</span></div>` : ''}
+    ${lsMedalHTML(G, 1)}${lsMedalHTML(G, 0)}
     ${ccEventChip(G)}
     <div class="ccb ${G.active === 1 ? 'turn-op' : ''}">
       <i class="ccb-rim"><i class="ccb-stud t"></i><i class="ccb-stud b"></i><i class="ccb-stud l"></i><i class="ccb-stud r"></i></i>
@@ -599,6 +619,10 @@ function ccActRender(keyset, selCard) {
       : d.type === 'unit' ? `Pick an empty ${d.range === 'ranged' ? 'Front or Back' : 'Front'} slot.` : d.type === 'trap' ? 'Pick one of your lane trap slots.' : d.type === 'equipment' ? `Pick one of your units${selCard.id === 'CON-E01' ? ' (Ranged)' : ''} without equipment.`
       : keyset.has('cast') ? 'Ready to cast.' : T === 'two' ? (sel.first ? 'Pick the second unit to swap with.' : 'Pick the first of two units to swap.') : T === 'side' ? (sel.first ? 'Pick where it moves.' : 'Pick one of your units to move.') : T === 'healAny' ? 'Pick a damaged unit of yours, or your hero.' : T === 'hero' ? 'Tap your hero.' : 'Pick a highlighted target.';
     html = `<p><b>${esc(d.name)}</b> · ${d.ap} AP<br>${hint}</p><div>${keyset.has('cast') ? `<button class="btn gold" id="ccCast">Cast ${esc(d.name)}</button>` : ''}<button class="btn ghost" id="ccCancel">Cancel</button></div>`;
+  } else if (sel.kind === 'skill') {
+    const L = G.lead[0], S = LS[L.id], T = S.tg;
+    const hint = !keyset.size ? 'No legal target right now.' : keyset.has('cast') ? 'Ready to use.' : T === 'two' ? (sel.first ? 'Pick the second unit to swap with.' : 'Pick the first of two units.') : T === 'side' ? (sel.first ? 'Pick where it moves.' : 'Pick one of your units to move.') : T === 'healAnyS' ? 'Pick a damaged unit of yours, or your hero.' : 'Pick a highlighted target.';
+    html = `<p><b>${esc(S.name)}</b> · ${lsCost(L)} AP · leader skill<br><span class="tiny">${esc(lsDesc(L.id, lsTier(L)))}</span><br>${hint}</p><div>${keyset.has('cast') ? `<button class="btn gold" id="ccCast">Use ${esc(S.name)}</button>` : ''}<button class="btn ghost" id="ccCancel">Cancel</button></div>`;
   } else if (sel.kind === 'unit') {
     const u = ccFind(G, sel.iid), d = ccDef(u.id), atk = keyset.get('attack'), moves = [...keyset.keys()].filter(k => k[0] === 's').length;
     let why = '';

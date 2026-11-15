@@ -189,13 +189,14 @@ function ccAnim(snap) {
   const hitAt = Math.max(impactAt, atkI >= 0 ? impactAt : cursor - (fx.some(f => f.type === 'trap') ? 360 : 0));
   const offs = {};
   fx.forEach(f => {
-    if (f.type === 'attack' || f.type === 'spell' || f.type === 'summon' || f.type === 'set') return;
+    if (f.type === 'attack' || f.type === 'spell' || f.type === 'summon' || f.type === 'set' || f.type === 'skill') return;
     const p = pos(f.id); if (!p) return;
     const o = offs[f.id] = (offs[f.id] || 0) + 1, at = (f.type === 'die' ? hitAt + 220 : hitAt) + (o - 1) * 90, yy = p.y - 6 - (o - 1) * 30;
     const isHero = f.id.startsWith('hero'), elOf = () => isHero ? ccM.el.querySelector(`[data-hero="${f.id.slice(4)}"]`) : unitEl(f.id);
     if (f.type === 'dmg') ccLater(at, () => { ccNum(p.x, yy, `−${f.n}`, 'dmg'); ccHitFx(elOf(), p, f.n, isHero, f.id === 'hero0'); });
     else if (f.type === 'heal') ccLater(at, () => { ccNum(p.x, yy, `+${f.n}`, 'heal'); ccGlow(p.x, p.y, 'rgba(120,255,170,.9)', 90, 26); ccBurst(p.x, p.y + 30, { n: 22, c: ['#b8ffd0', '#6dffa8', '#fff'], sp: 2.2, g: -.06, up: true, spread: 1.4, k: 'ember', life: 46, w: 60 }); });
     else if (f.type === 'buff') ccLater(at, () => { ccNum(p.x, yy, 'Buff', 'buff'); ccGlow(p.x, p.y, 'rgba(255,220,130,.9)', 100, 24); ccBurst(p.x, p.y + 40, { n: 26, c: ['#fff3c8', '#ffd36b'], sp: 3, g: -.08, up: true, spread: .9, k: 'ember', life: 40, w: 80 }); ccPulseEl(elOf(), 'buff'); });
+    else if (f.type === 'shield') ccLater(at, () => { ccNum(p.x, yy, `Ward −${f.n}`, 'buff'); ccRing(p.x, p.y, '#bfe2ff', { r0: 30, r1: 90, w: 4, life: 22 }); });
     else if (f.type === 'debuff') ccLater(at, () => { ccNum(p.x, yy, 'Weakened', 'debuff'); ccBurst(p.x, p.y - 40, { n: 20, c: ['#d8b6ff', '#8a5cff'], sp: 2.4, g: .1, life: 40, w: 80 }); ccPulseEl(elOf(), 'debuff'); });
     else if (f.type === 'stun') ccLater(at, () => { ccNum(p.x, yy, 'Stunned', 'stun'); ccRing(p.x, p.y - 50, '#9fd8ff', { r0: 16, r1: 44, sq: .35, w: 3, life: 34 }); ccBurst(p.x, p.y - 50, { n: 18, c: ['#d6efff', '#6ab8ff'], sp: 3, g: 0, life: 30 }); ccPulseEl(elOf(), 'stun'); });
     else if (f.type === 'poison') ccLater(at, () => { ccNum(p.x, yy, 'Poisoned', 'poison'); ccBurst(p.x, p.y + 20, { n: 22, c: ['#c8ff9a', '#5cd65c'], sp: 1.6, g: -.05, up: true, k: 'ember', life: 50, w: 70 }); ccPulseEl(elOf(), 'poison'); });

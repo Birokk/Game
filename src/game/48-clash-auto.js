@@ -40,7 +40,7 @@ function ccAutoThreat(G, p) {
 function ccAutoEval(G, me) {
   if (G.phase === 'over') return G.winner === me ? 1e7 - G.turnNo * 100 : G.winner === 'draw' ? -6e6 : -1e7;
   const P = G.players[me], O = G.players[1 - me];
-  let s = P.hp * 2.6 + Math.min(P.hp, 10) * 1.8 - O.hp * (4.2 + Math.max(0, G.round - 12) * .35 + Math.max(0, G.round - 30) * 2.5);
+  let s = P.hp * 2.6 + Math.min(P.hp, 10) * 1.8 + (P.shield || 0) * 2.2 - (O.shield || 0) * 3 - O.hp * (4.2 + Math.max(0, G.round - 12) * .35 + Math.max(0, G.round - 30) * 2.5);   // a leader skill's ward counts like HP
   if (O.hp <= 8) s += (8 - O.hp) * 3.5;
   for (const u of ccUnits(G, me)) s += ccAutoUnit(G, u);
   for (const u of ccUnits(G, 1 - me)) s -= ccAutoUnit(G, u) * 1.08;
@@ -64,7 +64,7 @@ function ccAutoEval(G, me) {
   s += (P.hand.length - O.hand.length) * .55 + P.traps.filter(Boolean).length * 1.2 - O.traps.filter(Boolean).length * 1.4;
   return s;
 }
-const ccAutoKey = g => g.players.map(P => [P.hp, P.ap, P.hand.length, P.traps.map(t => t ? 1 : 0).join(''), P.board.flat().map(u => u ? `${u.iid}${u.lane}${u.row}.${u.hp}.${u.up}${u.attacked ? 'a' : ''}${u.moveUsed ? 'm' : ''}${u.eq ? 'e' : ''}` : '-').join(',')].join('|')).join('/') + g.phase;
+const ccAutoKey = g => g.players.map(P => [P.hp, P.ap, P.hand.length, P.traps.map(t => t ? 1 : 0).join(''), P.board.flat().map(u => u ? `${u.iid}${u.lane}${u.row}.${u.hp}.${u.up}.${u.tmp || 0}${u.armor ? 'r' : ''}${u.attacked ? 'a' : ''}${u.moveUsed ? 'm' : ''}${u.eq ? 'e' : ''}` : '-').join(','), P.shield].join('|')).join('/') + g.phase + (g.lead ? g.lead.map(l => l ? l.cd : '').join(':') : '');   // leader skill cooldowns, temp ATK and wards are part of the position
 /* the bot's answer to an ending (simulated with the bot's own policy on auto play's copy of the match) */
 function ccAutoReply(g, me) {
   let n = 0; while (g.phase !== 'over' && g.active !== me && n++ < 40) { const a = ccBotPick(g); if (ccApply(g, a)) ccApply(g, { k: 'end' }); }

@@ -162,7 +162,9 @@ function ccShuffle(G, a) { for (let i = a.length - 1; i > 0; i--) { const j = Ma
    (Quick match Blitz) instead of a draw */
 function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
   const G = { ev: 'ev' in opts ? opts.ev : ccPickEvent(seed), seed: seed >>> 0, rng: seed >>> 0, round: 1, turnNo: 0, active: 0, first: 0, phase: 'main', winner: null, reason: '', log: [], fx: [], seq: 0, iid: 0, sid: 0, pending: null, names: names || ['You', 'Bot'], started: Date.now(), maxRound: opts.rounds || 0, limitText: opts.limitText || '', apB: opts.apB || null, hitX: opts.hitX || null, hpWin: !!opts.hpWin };
-  G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, p }));
+  G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, shield: 0, p }));
+  G.players.forEach(P => P.max = Math.max(CC_CFG.hp, P.hp));   // leader skills heal the hero up to this
+  G.lead = ccLeadInit(opts.lead || (typeof ccLeadPass !== 'undefined' ? ccLeadPass.v : null), [deckA, deckB]);
   G.players.forEach(P => opts.order ? P.deck.reverse() : ccShuffle(G, P.deck));   // cards are drawn from the end of the array
   G.first = G.active = opts.first === 0 || opts.first === 1 ? opts.first : ccRand(G) < 0.5 ? 0 : 1;
   G.players.forEach((P, p) => ccDraw(G, p, CC_CFG.hand0, true));
@@ -181,7 +183,7 @@ function ccMaxHp(u) { return ccDef(u.id).hp + Math.min(3, u.hpUp); }
 /* permanent ATK: buffs cap at +2, debuffs at −2, never below 1 */
 function ccPermAtk(u) { return Math.max(1, ccDef(u.id).atk + Math.min(2, u.up) - Math.min(2, u.down)); }
 function ccAtk(G, u) {
-  let a = ccPermAtk(u);
+  let a = ccPermAtk(u) + (u.tmp || 0);
   const o = G.players[u.owner].board[u.lane][1 - u.row];
   if (o && CC_BANNER.has(o.id)) a++;
   if (o && o.eq && o.eq.id === 'SUP-E02') a++;
@@ -199,7 +201,7 @@ function ccDamage(G, u, n) {
 }
 function ccEnrage(G, u) { if (u.hp > 0 && u.id === 'AGG-U03' && !u.enraged) { u.enraged = true; u.up++; ccLog(G, `Berserker survives and gains +1 ATK`, 'buff', u.owner); } }
 function ccHeal(G, u, n) { const h = Math.min(n, ccMaxHp(u) - u.hp); if (h > 0) { u.hp += h; ccFx(G, u.iid, 'heal', h); } return Math.max(0, h); }
-function ccHit(G, p, n) { if (n <= 0) return; if (G.hitX) n *= G.hitX[p]; G.players[p].hp -= n; ccFx(G, 'hero' + p, 'dmg', n); }   // hitX: the guild boss takes triple damage
+function ccHit(G, p, n) { if (n <= 0) return; if (G.hitX) n *= G.hitX[p]; const P = G.players[p]; if (P.shield > 0) { const s = Math.min(P.shield, n); P.shield -= s; n -= s; ccFx(G, 'hero' + p, 'shield', s); if (n <= 0) return; } P.hp -= n; ccFx(G, 'hero' + p, 'dmg', n); }   // hitX: the guild boss takes triple damage; shield: a leader skill's ward takes hits first   // hitX: the guild boss takes triple damage
 function ccHealHero(G, p, n) { const P = G.players[p], h = Math.max(0, Math.min(n, 1 - P.healed, CC_CFG.hp - P.hp)); if (h > 0) { P.hp += h; P.healed += h; ccFx(G, 'hero' + p, 'heal', h); } return h; }
 function ccStun(G, u) { if (u.owner === G.active) u.stunNow = true; else u.stunNext = true; ccFx(G, u.iid, 'stun', 0); }
 function ccPoison(G, u, n) { u.poison = Math.max(u.poison, n); ccFx(G, u.iid, 'poison', n); }
@@ -230,8 +232,9 @@ function ccDraw(G, p, n, quiet) {
 function ccBeginTurn(G) {
   const p = G.active, P = G.players[p]; G.turnNo++;
   P.ap = ccApBase(G, p);
+  const Ld = G.lead && G.lead[p]; if (Ld) { if (Ld.cd > 0) Ld.cd--; Ld.b = 0; }   // leader skill cooldown and the attribute bond's once-a-turn bonuses
   ccLog(G, `Round ${G.round} · ${G.names[p]}’s turn`, 'turn', p);
-  for (const u of ccUnits(G, p)) { u.attacked = false; u.moveUsed = false; u.moved = false; u.rc = false; u.dagger = false; u.stunNow = u.stunNext; u.stunNext = false; }
+  for (const u of ccUnits(G, p)) { u.attacked = false; u.moveUsed = false; u.moved = false; u.rc = false; u.dagger = false; u.tmp = 0; u.stunNow = u.stunNext; u.stunNext = false; }
   for (const u of ccUnits(G, p)) if (u.poison > 0) { u.hp -= 2; u.poison--; ccFx(G, u.iid, 'dmg', 2); ccLog(G, `Poison deals 2 to ${ccDef(u.id).name}`, 'dmg', p); ccEnrage(G, u); }
   ccDeaths(G);
   for (const u of ccUnits(G, p)) {
@@ -240,6 +243,7 @@ function ccBeginTurn(G) {
     if (u.id === 'SUP-U01' || u.id === 'SUP-U02') { const t = ccMostDamaged([P.board[u.lane][1 - u.row]].filter(Boolean)); if (t) ccHeal(G, t, 1); }
     if (u.id === 'SUP-U04') { const t = ccMostDamaged(ccUnits(G, p)); if (t) ccHeal(G, t, 1); }
   }
+  if (Ld && Ld.bond === 'support') { const t = ccMostDamaged(ccUnits(G, p)); if (t) ccHeal(G, t, 1); }   // Support bond: heal the most damaged unit 1
   if (G.round >= ccOT(G)) { const us = ccUnits(G, p); for (const u of us) { u.hp -= 1; ccFx(G, u.iid, 'dmg', 1); ccEnrage(G, u); } if (us.length) ccLog(G, `Overtime: each of ${G.names[p]}’s units loses 1 HP`, 'dmg', p); }
   ccDeaths(G);
   ccDraw(G, p, (G.round === 1 && p === G.first ? 1 : 2) + (G.ev === 'starfall' ? 1 : 0));
@@ -247,7 +251,7 @@ function ccBeginTurn(G) {
 }
 function ccEndTurn(G) {
   const p = G.active;
-  for (const u of ccUnits(G, p)) { u.stunNow = false; u.rc = false; u.dagger = false; }
+  for (const u of ccUnits(G, p)) { u.stunNow = false; u.rc = false; u.dagger = false; u.tmp = 0; }
   G.players[p].ap = 0;
   G.active = 1 - p;
   if (G.active === G.first) {
@@ -265,7 +269,8 @@ function ccCanAttack(G, u) {
   return true;
 }
 function ccMoveDests(G, u) { const B = G.players[u.owner].board, out = []; for (const [l, r] of [[u.lane - 1, u.row], [u.lane + 1, u.row], [u.lane, 1 - u.row]]) if (l >= 0 && l < 3 && !B[l][r]) out.push([l, r]); return out; }
-function ccMoveCost(u, G) { return G && G.ev === 'wind' || CC_FREEMOVE.has(u.id) || (u.eq && u.eq.id === 'MOB-E01') || u.dagger ? 0 : 1; }
+function ccMoveCost0(u, G) { return G && G.ev === 'wind' || CC_FREEMOVE.has(u.id) || (u.eq && u.eq.id === 'MOB-E01') || u.dagger ? 0 : 1; }
+function ccMoveCost(u, G) { return ccMoveCost0(u, G) && !(G && ccBondCan(G, u.owner, 'mobility', 8)) ? 1 : 0; }   // Mobility bond: the first move each turn is free
 function ccPlace(G, u, l, r) { const B = G.players[u.owner].board; if (B[u.lane] && B[u.lane][u.row] === u) B[u.lane][u.row] = null; u.lane = l; u.row = r; B[l][r] = u; }
 /* entry traps: the enemy's face-down trap in the lane the unit just entered */
 function ccEnter(G, u) {
@@ -279,9 +284,13 @@ function ccEnter(G, u) {
 }
 const ccTakeHand = (P, iid) => { const i = P.hand.findIndex(c => c.iid === iid); return i < 0 ? null : P.hand.splice(i, 1)[0]; };
 
-function ccSpellTargets(G, p, id) {
+function ccSpellTargets(G, p, id) { return ccTgtKind(G, p, CC_SPELL_T[id]); }
+function ccTgtKind(G, p, kind) {
   const mine = ccUnits(G, p), theirs = ccUnits(G, 1 - p), P = G.players[p], dmg = u => u.hp < ccMaxHp(u);
-  switch (CC_SPELL_T[id]) {
+  switch (kind) {
+    case 'enemyDamaged': return theirs.filter(dmg).map(u => ({ u: u.iid }));
+    case 'friendMoved': return mine.filter(u => u.moveUsed).map(u => ({ u: u.iid }));
+    case 'healAnyS': return [...mine.filter(dmg).map(u => ({ u: u.iid })), ...(P.hp < P.max ? [{ hero: p }] : [])];
     case 'enemy': return theirs.map(u => ({ u: u.iid }));
     case 'enemyBack': return theirs.filter(u => u.row === 1).map(u => ({ u: u.iid }));
     case 'friend': return mine.map(u => ({ u: u.iid }));
@@ -310,6 +319,7 @@ function ccApply(G, a) {
   else if (a.k === 'spell') err = ccSpell(G, P, a);
   else if (a.k === 'trap') err = ccSetTrap(G, P, a);
   else if (a.k === 'equip') err = ccEquip(G, P, a);
+  else if (a.k === 'skill') err = ccSkill(G, P, a);
   else err = 'Unknown action';
   if (!err) { ccDeaths(G); ccCheck(G); }
   return err;
@@ -322,7 +332,8 @@ function ccSummon(G, P, a) {
   if (a.row === 1 && d.range !== 'ranged') return 'Melee units go in the front row';
   if (P.ap < d.ap) return 'Not enough AP';
   P.ap -= d.ap; ccTakeHand(P, c.iid);
-  const u = { iid: c.iid, id: c.id, card: c, owner: P.p, lane: a.lane, row: a.row, hp: d.hp, hpUp: 0, up: 0, down: 0, armor: CC_ARMORED.has(c.id) || G.ev === 'sanctuary' ? 1 : 0, poison: 0, stunNow: false, stunNext: false, summoned: G.turnNo, attacked: false, moveUsed: false, moved: false, eq: null, enraged: false, rc: false, dagger: false, sid: ++G.sid };
+  const bondArm = ccBondCan(G, P.p, 'defense', 2) && ccBondUse(G, P.p, 2);   // Defense bond: the first unit each turn enters with Armor 1
+  const u = { iid: c.iid, id: c.id, card: c, owner: P.p, lane: a.lane, row: a.row, hp: d.hp, hpUp: 0, up: 0, down: 0, armor: CC_ARMORED.has(c.id) || G.ev === 'sanctuary' || bondArm ? 1 : 0, tmp: 0, poison: 0, stunNow: false, stunNext: false, summoned: G.turnNo, attacked: false, moveUsed: false, moved: false, eq: null, enraged: false, rc: false, dagger: false, sid: ++G.sid };
   P.board[a.lane][a.row] = u; ccFx(G, u.iid, 'summon', 0);
   ccLog(G, `${G.names[P.p]} summons ${d.name} (${d.ap} AP)`, 'play', P.p);
   ccEnter(G, u);
@@ -368,14 +379,16 @@ function ccAttack(G, P, a) {
   }
   const L = E.board[u.lane], tgt = CC_FLANK.has(u.id) ? (L[1] || L[0]) : (L[0] || L[1]);
   ccFx(G, u.iid, 'attack', 0);
-  if (!tgt) { const dmg = ccAtk(G, u) + (u.id === 'AGG-U02' ? 1 : 0); ccHit(G, e, dmg); ccLog(G, `${nm} hits ${G.names[e]} for ${dmg}`, 'dmg', P.p); return null; }
+  const bz = ccBondCan(G, P.p, 'aggression', 1) && ccBondUse(G, P.p, 1) ? 1 : 0;   // Aggression bond: the first attack each turn deals +1
+  if (!tgt) { const dmg = ccAtk(G, u) + bz + (u.id === 'AGG-U02' ? 1 : 0); ccHit(G, e, dmg); ccLog(G, `${nm} hits ${G.names[e]} for ${dmg}`, 'dmg', P.p); return null; }
   const ign = (u.id === 'AGG-U05' ? 1 : 0) + (u.eq && u.eq.id === 'CON-E01' ? 1 : 0);
-  let dmg = Math.max(0, ccAtk(G, u) + (u.id === 'AGG-U01' ? 1 : 0) - Math.max(0, ccArm(tgt) - ign));
+  let dmg = Math.max(0, ccAtk(G, u) + bz + (u.id === 'AGG-U01' ? 1 : 0) - Math.max(0, ccArm(tgt) - ign));
   if (angel) { const pr = Math.min(angel, dmg); dmg -= pr; if (pr) ccLog(G, `Guardian Angel prevents ${pr} damage`, 'heal', e); }
   let ret = ccAtk(G, tgt);
   if (d.range === 'ranged' && u.row === 1 && ccDef(tgt.id).range === 'melee') ret = 0;
   if (u.id === 'AGG-U04') ret = Math.max(0, ret - 1);
   ret = Math.max(0, ret - ccArm(u));
+  if (tgt.thorn) { ret += tgt.thorn; tgt.thorn = 0; }   // Iron Thorns (a leader skill): the next attacker takes extra damage
   const before = tgt.hp;
   tgt.hp -= dmg; if (dmg > 0) ccFx(G, tgt.iid, 'dmg', dmg);
   u.hp -= ret; if (ret > 0) ccFx(G, u.iid, 'dmg', ret);
@@ -397,6 +410,7 @@ function ccMove(G, P, a) {
   if (!ccMoveDests(G, u).some(([l, r]) => l === a.lane && r === a.row)) return 'Units move one slot left, right, or between front and back';
   const cost = ccMoveCost(u, G);
   if (P.ap < cost) return 'Not enough AP';
+  if (!cost && ccMoveCost0(u, G)) ccBondUse(G, P.p, 8);
   P.ap -= cost; u.moveUsed = true; u.moved = true; u.dagger = false;
   const lc = u.lane !== a.lane;
   ccPlace(G, u, a.lane, a.row); ccFx(G, u.iid, 'move', 0);
@@ -441,7 +455,8 @@ function ccSpell(G, P, a) {
   if (tu && tu.owner === e) { const tr = E.traps[tu.lane]; if (tr && (tr.id === 'DEF-T01' || tr.id === 'CON-T01')) cancel = tu.lane; }
   if (c.id === 'CON-S04') for (let l = 0; l < 3; l++) { const tr = E.traps[l]; if (tr && tr.id === 'CON-T01' && E.board[l][0]) { cancel = l; break; } }
   if (cancel >= 0) { const tr = E.traps[cancel]; E.traps[cancel] = null; E.disc.push(tr); P.disc.push(c); ccFx(G, 'trap' + e + cancel, 'trap', 0); ccLog(G, `Trap! ${G.names[e]}’s ${ccDef(tr.id).name} cancels ${d.name}`, 'trap', e); return null; }
-  const sdmg = (u, n) => { let x = n + ccSpellBonus(G, p) + (G.ev === 'surge' ? 1 : 0) - ccArm(u); if (u.id === 'DEF-U07') x -= 1; return ccDamage(G, u, Math.max(0, x)); };
+  let cb = null;   // Control bond: the first damaging spell each turn deals +1 (to every target it hits)
+  const sdmg = (u, n) => { if (cb === null) cb = ccBondCan(G, p, 'control', 4) && ccBondUse(G, p, 4) ? 1 : 0; let x = n + cb + ccSpellBonus(G, p) + (G.ev === 'surge' ? 1 : 0) - ccArm(u); if (u.id === 'DEF-U07') x -= 1; return ccDamage(G, u, Math.max(0, x)); };
   switch (c.id) {
     case 'AGG-S01': tu.up += 2; ccFx(G, tu.iid, 'buff', 0); break;
     case 'AGG-S02': sdmg(tu, 4); break;
@@ -486,6 +501,8 @@ function ccLegal(G) {
     if (P.ap >= 1 && ccCanAttack(G, u)) out.push({ k: 'attack', u: u.iid });
     if (!u.moveUsed && P.ap >= ccMoveCost(u, G)) for (const [l, r] of ccMoveDests(G, u)) out.push({ k: 'move', u: u.iid, lane: l, row: r });
   }
+  const Ld = G.lead && G.lead[p];
+  if (Ld && Ld.cd === 0 && P.ap >= lsCost(Ld)) for (const t of ccTgtKind(G, p, LS[Ld.id].tg)) out.push({ k: 'skill', t });
   out.push({ k: 'end' });
   return out;
 }
@@ -495,7 +512,7 @@ function ccLegal(G) {
 /* a copy of the match for simulations (bot lookahead, previews, auto play). Card objects ({iid, id}) are never
    changed by the engine, so they are shared; units, boards, hands and piles get their own copies. */
 function ccClone(G) {
-  const c = { ...G, log: [], fx: [], pending: G.pending ? { ...G.pending, opts: G.pending.opts.slice() } : null };
+  const c = { ...G, log: [], fx: [], pending: G.pending ? { ...G.pending, opts: G.pending.opts.slice() } : null, lead: G.lead ? G.lead.map(l => l && { ...l }) : null };
   c.players = G.players.map(P => ({ ...P, hand: P.hand.slice(), deck: P.deck.slice(), disc: P.disc.slice(), traps: P.traps.slice(), board: P.board.map(l => [l[0] ? { ...l[0] } : null, l[1] ? { ...l[1] } : null]) }));
   return c;
 }
@@ -514,7 +531,7 @@ function ccEval(G, me) {
   if (G.phase === 'over') return G.winner === me ? 1e6 : G.winner === 'draw' ? 0 : -1e6;
   const P = G.players[me], O = G.players[1 - me];
   const side = p => { let s = 0; for (const u of ccUnits(G, p)) { s += ccUnitVal(G, u); const d = ccDef(u.id); if ((u.row === 0 || d.range === 'ranged') && !G.players[1 - p].board[u.lane].some(Boolean)) s += ccPermAtk(u) * 1.1; } return s; };
-  let s = (P.hp * 2.4 - O.hp * 3.4) + side(me) - side(1 - me) + (P.hand.length - O.hand.length) * 0.8;
+  let s = (P.hp * 2.4 - O.hp * 3.4) + (P.shield - O.shield) * 2 + side(me) - side(1 - me) + (P.hand.length - O.hand.length) * 0.8;
   if (O.hp <= 10) s += (10 - O.hp) * 2;
   if (P.hp <= 8) s -= (8 - P.hp) * 1.5;
   return s;
@@ -526,17 +543,116 @@ function ccBotPick(G) {
   const me = G.active, acts = ccLegal(G);
   if (G.phase === 'choice') { const P = G.players[me]; return acts.map(a => ({ a, v: ccDef(P.deck.find(c => c.iid === a.pick).id).ap })).sort((x, y) => y.v - x.v)[0].a; }
   const base = ccRedact(G, me), b0 = ccEval(base, me), O = G.players[1 - me];
-  let best = { k: 'end' }, bestS = 0.35;
+  let best = { k: 'end' }, bestS = 0.35, raw1 = 0;
+  const sk = acts.filter(a => a.k === 'skill');
+  if (sk.length) for (const a of acts) { if (a.k === 'end' || a.k === 'skill') continue; const g = ccClone(base); if (!ccApply(g, a)) raw1 = Math.max(raw1, ccEval(g, me) - b0); }
   for (const a of acts) {
     if (a.k === 'end') continue;
     const g = ccClone(base); if (ccApply(g, a)) continue;
     let s = ccEval(g, me) - b0;
+    if (a.k === 'skill') {   // a leader skill is judged with its best follow-up (+ATK then attack…), minus what the best plain action gives anyway
+      let b2 = s;
+      if (g.phase === 'main' && g.active === me) for (const f of ccLegal(g)) { if (f.k === 'end' || f.k === 'skill') continue; const g2 = ccClone(g); if (!ccApply(g2, f)) b2 = Math.max(b2, ccEval(g2, me) - b0); }
+      s = b2 - raw1;
+    }
     if (g.phase === 'over' && g.winner === me) return a;
     if ((a.k === 'summon' || a.k === 'move') && O.traps[a.lane]) { const u = a.k === 'move' && ccFind(G, a.u); if (!u || u.lane !== a.lane) s -= 1.2; }
     if (a.k === 'attack') { const u = ccFind(G, a.u), hurt = g.fx.some(f => f.type === 'dmg' && (f.id === 'hero' + (1 - me) || (ccFind(base, f.id) || {}).owner === 1 - me)); s += hurt ? 1.1 : -1; if (O.traps[u.lane]) s -= 0.8; }
     if (a.k === 'trap') s += 1.6 + (G.players[1 - me].board[a.lane].some(Boolean) ? 0.4 : 0);
+    if (a.k === 'skill') s += 0.15;
     s += (ccNoise(G, me * 977 + acts.indexOf(a)) - 0.5) * 0.7;
     if (s > bestS) { bestS = s; best = a; }
   }
   return best;
+}
+
+/* ---- leader skills: every deck's leader brings one skill (chosen per character in admin → Game pool, entry.ccSkill;
+   without one the default of its card attribute, LS_DEF in 65-leader.js). A skill costs AP like a card and then waits a
+   cooldown (counted in its owner's turns; it starts 2 turns away, so the first use is on your 2nd turn). Tiers 1–3 come
+   from the leader's awakened stars (65-leader.js); tier 3 adds a twist. Skills can't be countered by traps. G.lead[p] =
+   {id, t: tier, cd: turns left, cdm: cooldown reduction, bond: attribute or null, used, b: once-a-turn bond flags}.
+   Attribute bond: when 12+ of the 30 cards share the leader's attribute: Aggression first attack each turn +1,
+   Defense first unit each turn enters with Armor 1, Control first damaging spell each turn +1, Mobility first move each
+   turn free, Support heal your most damaged unit 1 at the start of your turn. */
+const CC_BOND_N = 12;
+const LS = {
+  // Aggression
+  battlecry: { name: 'Battle Cry', style: 'aggression', ic: 'AGG-S01', ap: [1, 1, 1], cd: 3, tg: 'friend', d: ['A unit gets +1 ATK this turn.', 'A unit gets +2 ATK this turn.', 'A unit gets +2 ATK this turn and can attack even if it was just summoned.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.tmp = (u.tmp || 0) + (k > 1 ? 2 : 1); if (k > 2) u.rc = true; ccFx(G, u.iid, 'buff', 0); } },
+  execute: { name: 'Execute', style: 'aggression', ic: 'AGG-S04', ap: [2, 2, 2], cd: 4, tg: 'enemyDamaged', d: ['Deal 3 damage to a damaged enemy unit.', 'Deal 4 damage to a damaged enemy unit.', 'Deal 4 damage to a damaged enemy unit. If it is destroyed, get 1 AP back.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); ccDamage(G, u, Math.max(0, (k > 1 ? 4 : 3) - ccArm(u))); if (k > 2 && u.hp <= 0) G.players[p].ap++; } },
+  warpath: { name: 'Warpath', style: 'aggression', ic: 'AGG-U02', ap: [2, 2, 2], cd: 5, tg: 'none', d: ['Deal 2 damage to the enemy hero.', 'Deal 3 damage to the enemy hero.', 'Deal 3 damage to the enemy hero, 4 if one of its lanes has no units.'],
+    run(G, p, t, k) { const open = G.players[1 - p].board.some(l => !l[0] && !l[1]); ccHit(G, 1 - p, k > 2 && open ? 4 : k > 1 ? 3 : 2); } },
+  charge: { name: 'Charge', style: 'aggression', ic: 'AGG-S03', ap: [2, 2, 2], cd: 4, tg: 'none', d: ['Your Front units get +1 ATK this turn.', 'All your units get +1 ATK this turn.', 'All your units get +2 ATK this turn.'],
+    run(G, p, t, k) { for (const u of ccUnits(G, p)) if (k > 1 || u.row === 0) { u.tmp = (u.tmp || 0) + (k > 2 ? 2 : 1); ccFx(G, u.iid, 'buff', 0); } } },
+  // Defense
+  bulwark: { name: 'Bulwark', style: 'defense', ic: 'DEF-S03', ap: [1, 1, 1], cd: 4, tg: 'friend', d: ['A unit gains Armor 1.', 'A unit gains Armor 1 and heals 2.', 'A unit gains Armor 1, +2 max HP and heals 2.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.armor = 1; if (k > 2) ccAddMax(u, 2); if (k > 1) ccHeal(G, u, 2); ccFx(G, u.iid, 'buff', 0); } },
+  holdline: { name: 'Hold the Line', style: 'defense', ic: 'DEF-S01', ap: [2, 2, 2], cd: 4, tg: 'none', d: ['Your Front units get +1 max HP.', 'Your Front units get +2 max HP.', 'Your Front units get +2 max HP and your hero heals 2.'],
+    run(G, p, t, k) { for (const u of ccUnits(G, p)) if (u.row === 0) { ccAddMax(u, k > 1 ? 2 : 1); ccFx(G, u.iid, 'buff', 0); } if (k > 2) lsHealHero(G, p, 2); } },
+  rampart: { name: 'Rampart', style: 'defense', ic: 'DEF-U02', ap: [1, 1, 1], cd: 4, tg: 'none', d: ['Your hero gets a ward that blocks the next 2 damage.', 'Your hero gets a ward that blocks the next 3 damage.', 'Your hero gets a ward that blocks the next 4 damage.'],
+    run(G, p, t, k) { const P = G.players[p]; P.shield = Math.min(6, P.shield + 1 + k); ccFx(G, 'hero' + p, 'buff', 0); } },
+  thorns: { name: 'Iron Thorns', style: 'defense', ic: 'DEF-T02', ap: [1, 1, 1], cd: 3, tg: 'friend', d: ['The next unit that attacks this one takes 2 extra damage.', 'The next unit that attacks this one takes 3 extra damage.', 'The unit gains Armor 1, and the next unit that attacks it takes 3 extra damage.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.thorn = k > 1 ? 3 : 2; if (k > 2) u.armor = 1; ccFx(G, u.iid, 'buff', 0); } },
+  // Control
+  hex: { name: 'Hex', style: 'control', ic: 'CON-S02', ap: [1, 1, 1], cd: 4, tg: 'enemy', d: ['Stun an enemy unit; it loses 1 ATK.', 'Stun an enemy unit; it loses 1 ATK and takes 1 damage.', 'Stun an enemy unit; it loses 1 ATK and takes 2 damage.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); ccStun(G, u); u.down++; ccFx(G, u.iid, 'debuff', 0); if (k > 1) ccDamage(G, u, Math.max(0, (k > 2 ? 2 : 1) - ccArm(u))); } },
+  venom: { name: 'Venom', style: 'control', ic: 'CON-S01', ap: [1, 1, 1], cd: 3, tg: 'enemy', d: ['Poison an enemy unit for 2 turns (2 damage each).', 'Poison an enemy unit for 2 turns; it loses 1 ATK.', 'Poison an enemy unit for 3 turns; it loses 1 ATK.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); ccPoison(G, u, k > 2 ? 3 : 2); if (k > 1) { u.down++; ccFx(G, u.iid, 'debuff', 0); } } },
+  weaken: { name: 'Weaken', style: 'control', ic: 'CON-S03', ap: [1, 1, 1], cd: 3, tg: 'enemy', d: ['An enemy unit loses 1 ATK.', 'An enemy unit loses 2 ATK.', 'An enemy unit loses 2 ATK and takes 1 damage.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.down += k > 1 ? 2 : 1; ccFx(G, u.iid, 'debuff', 0); if (k > 2) ccDamage(G, u, Math.max(0, 1 - ccArm(u))); } },
+  spark: { name: 'Mind Spark', style: 'control', ic: 'CON-S04', ap: [2, 2, 2], cd: 3, tg: 'enemy', d: ['Deal 2 damage to an enemy unit.', 'Deal 3 damage to an enemy unit.', 'Deal 3 damage to an enemy unit and draw a card.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); ccDamage(G, u, Math.max(0, (k > 1 ? 3 : 2) - ccArm(u))); if (k > 2) ccDraw(G, p, 1); } },
+  // Mobility
+  shadowstep: { name: 'Shadowstep', style: 'mobility', ic: 'MOB-S02', ap: [0, 0, 0], cd: 3, tg: 'friendMoved', d: ['A unit that already moved can move again.', 'A unit that already moved can move again, for free.', 'A unit that already moved can move again, for free, and gets +1 ATK this turn.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.moveUsed = false; if (k > 1) u.dagger = true; if (k > 2) u.tmp = (u.tmp || 0) + 1; ccFx(G, u.iid, 'buff', 0); } },
+  blink: { name: 'Blink', style: 'mobility', ic: 'MOB-E01', ap: [1, 0, 0], cd: 3, tg: 'side', d: ['Move a unit one slot; it can attack this turn even if just summoned.', 'The same, for 0 AP.', 'The same, for 0 AP, and it gets +1 ATK this turn.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u), lc = u.lane !== t.lane; ccPlace(G, u, t.lane, t.row); u.moved = true; u.rc = true; if (k > 2) u.tmp = (u.tmp || 0) + 1; ccFx(G, u.iid, 'move', 0); if (lc) ccEnter(G, u); } },
+  switch: { name: 'Switch', style: 'mobility', ic: 'MOB-S01', ap: [1, 0, 0], cd: 3, tg: 'two', d: ['Two of your units swap places.', 'Two of your units swap places, for 0 AP.', 'Two of your units swap places for 0 AP; both get +1 ATK this turn.'],
+    run(G, p, t, k) { const a = ccFind(G, t.u), b = ccFind(G, t.u2), A = [a.lane, a.row], Bp = [b.lane, b.row], B = G.players[p].board;
+      B[A[0]][A[1]] = b; B[Bp[0]][Bp[1]] = a; a.lane = Bp[0]; a.row = Bp[1]; b.lane = A[0]; b.row = A[1]; a.moved = b.moved = true;
+      if (k > 2) { a.tmp = (a.tmp || 0) + 1; b.tmp = (b.tmp || 0) + 1; }
+      ccFx(G, a.iid, 'move', 0); ccFx(G, b.iid, 'move', 0); if (A[0] !== Bp[0]) { ccEnter(G, a); ccEnter(G, b); } } },
+  quickstep: { name: 'Quickstep', style: 'mobility', ic: 'MOB-U02', ap: [0, 0, 0], cd: 3, tg: 'friendNew', d: ['A unit summoned this turn can attack right away.', 'The same, and it gets +1 ATK this turn.', 'The same, and it gets +2 ATK this turn.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.rc = true; if (k > 1) u.tmp = (u.tmp || 0) + (k > 2 ? 2 : 1); ccFx(G, u.iid, 'buff', 0); } },
+  // Support
+  mend: { name: 'Mend', style: 'support', ic: 'DEF-S02', ap: [1, 1, 1], cd: 3, tg: 'healAnyS', d: ['Heal a unit 3, or your hero 1.', 'Heal a unit 4, or your hero 2.', 'Heal a unit 4 and cure its Poison and Stun, or your hero 2.'],
+    run(G, p, t, k) { if (t.hero != null) return lsHealHero(G, p, k > 1 ? 2 : 1); const u = ccFind(G, t.u); ccHeal(G, u, k > 1 ? 4 : 3); if (k > 2) { u.poison = 0; u.stunNext = false; u.stunNow = false; } } },
+  rally: { name: 'Rally', style: 'support', ic: 'SUP-S04', ap: [0, 0, 0], cd: 4, tg: 'none', d: ['Draw a card.', 'Draw 2 cards.', 'Draw 2 cards and gain 1 AP.'],
+    run(G, p, t, k) { ccDraw(G, p, k > 1 ? 2 : 1); if (k > 2) G.players[p].ap++; } },
+  inspire: { name: 'Inspire', style: 'support', ic: 'SUP-S03', ap: [2, 2, 2], cd: 4, tg: 'friend', d: ['A unit gets +1 ATK for good.', 'A unit gets +1 ATK and +1 max HP for good.', 'A unit gets +1 ATK and +2 max HP for good.'],
+    run(G, p, t, k) { const u = ccFind(G, t.u); u.up++; if (k > 1) ccAddMax(u, k > 2 ? 2 : 1); ccFx(G, u.iid, 'buff', 0); } },
+  renewal: { name: 'Renewal', style: 'support', ic: 'DEF-S04', ap: [1, 1, 1], cd: 4, tg: 'none', d: ['Heal all your units 1.', 'Heal all your units 2.', 'Heal all your units 2 and your hero 1.'],
+    run(G, p, t, k) { for (const u of ccUnits(G, p)) ccHeal(G, u, k > 1 ? 2 : 1); if (k > 2) lsHealHero(G, p, 1); } },
+  // no attribute
+  focus: { name: 'Focus', style: null, ic: 'crystal', ap: [0, 0, 0], cd: 9, tg: 'none', d: ['Gain 1 AP this turn.', 'Gain 2 AP this turn.', 'Gain 2 AP this turn and draw a card.'],
+    run(G, p, t, k) { G.players[p].ap += k > 1 ? 2 : 1; if (k > 2) ccDraw(G, p, 1); } }
+};
+const LS_IDS = Object.keys(LS);
+const lsTier = L => Math.max(1, Math.min(3, L.t || 1));
+const lsCost = L => LS[L.id].ap[lsTier(L) - 1];
+const lsCd = L => Math.max(1, LS[L.id].cd - (L.cdm || 0));
+function lsHealHero(G, p, n) { const P = G.players[p], h = Math.max(0, Math.min(n, P.max - P.hp)); if (h > 0) { P.hp += h; ccFx(G, 'hero' + p, 'heal', h); } return h; }   // a skill's heal ignores the 1-a-round limit
+/* lead = [{id, tier, cd0, cdMod, style}, …] per side (null = no leader); the bond turns on with CC_BOND_N cards of the leader's attribute */
+function ccLeadInit(lead, decks) {
+  if (!lead) return null;
+  return [0, 1].map(p => { const l = lead[p]; if (!l || !LS[l.id]) return null;
+    const st = l.style || null, n = st ? decks[p].filter(id => (ccDef(id) || {}).style === st).length : 0;
+    return { id: l.id, t: l.tier || 1, cd: l.cd0 == null ? 2 : l.cd0, cdm: l.cdMod || 0, bond: st && n >= (l.bondN || CC_BOND_N) ? st : null, used: 0, b: 0 }; });
+}
+const ccBondCan = (G, p, st, bit) => { const L = G.lead && G.lead[p]; return !!(L && L.bond === st && !(L.b & bit)); };
+const ccBondUse = (G, p, bit) => { const L = G.lead[p]; L.b |= bit; return true; };
+function ccSkill(G, P, a) {
+  const L = G.lead && G.lead[P.p], S = L && LS[L.id];
+  if (!S) return 'No leader skill';
+  if (L.cd > 0) return `${S.name} is ready in ${L.cd} turn${L.cd > 1 ? 's' : ''}`;
+  const cost = lsCost(L), t = a.t || {};
+  if (P.ap < cost) return 'Not enough AP';
+  if (!ccTgtKind(G, P.p, S.tg).some(x => ccSameT(x, t))) return 'Not a legal target';
+  P.ap -= cost; L.cd = lsCd(L); L.used++;
+  const tu = t.u ? ccFind(G, t.u) : null;
+  ccLog(G, `${G.names[P.p]}’s leader uses ${S.name}${tu ? ` on ${ccDef(tu.id).name}` : ''}`, 'skill', P.p);
+  ccFx(G, 'hero' + P.p, 'skill', 0);
+  S.run(G, P.p, t, lsTier(L));
+  return null;
 }
