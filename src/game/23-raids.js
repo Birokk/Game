@@ -141,6 +141,12 @@ function wardFullMsg(times) {
 /* instant clears: RAID_INSTANT a day, shared by every raid (gear and gold), reset at local midnight */
 function raidInst() { const d = dayKey(); if (!S.raidInst || S.raidInst.day !== d) S.raidInst = { day: d, n: 0 }; return S.raidInst; }
 const raidInstLeft = () => Math.max(0, RAID_INSTANT - raidInst().n);
+/* instant clear tickets (wallet ictk, 69-tickets.js): once the day's free clears are used, each extra instant clear uses one;
+   they work on any stage you got 3 stars on (the 3-star rule still applies, 68-raidstars.js) */
+const raidTkN = () => S.wallet.ictk || 0;
+const raidClearsAvail = () => raidInstLeft() + raidTkN();
+function raidUseClears(times) { const free = Math.min(times, raidInstLeft()); raidInst().n += free; const tk = times - free; if (tk) S.wallet.ictk = Math.max(0, raidTkN() - tk); return { free, tk }; }
+const raidNoClears = () => toast(`No instant clears left: the ${RAID_INSTANT} free ones are used today and you have no instant clear tickets (Shop → Pearl Shop, the Arena and Guild shops).`);
 /* the pieces `times` gear clears give (added to the wardrobe) */
 function rollGearDrops(d, times, si = raidStage(d)) {
   const drops = [], g = raidStg(d, si);
@@ -153,14 +159,14 @@ function rollGearDrops(d, times, si = raidStage(d)) {
 }
 function clearRaid(times) {
   const d = raidOf(raidSel);
-  times = Math.min(times, raidInstLeft());
-  if (times < 1) { toast(`No instant clears left today (${RAID_INSTANT} a day). Win a battle to clear, or come back tomorrow.`); return; }
+  times = Math.min(times, raidClearsAvail());
+  if (times < 1) { raidNoClears(); return; }
   if (d.kind === 'gold') return clearGold(times);
   const si = raidStage(d); if (!stageOpen(si, d)) { toast(`Stage ${ROMAN[si]} opens at player level ${raidStg(d, si).lv}.`); return; }
   if (wardFree() < 2 * times) { wardFullMsg(times); return; }
   const cost = raidStam(d) * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
-  spendStamina(cost); questAdd('raid', times); raidInst().n += times;
+  spendStamina(cost); questAdd('raid', times); raidUseClears(times);
   const drops = rollGearDrops(d, times, si), mats = gearRaidMats(si, times, drops);
   gainExp(EXP.raid * times); persist(); renderMenu(); renderRaids();
   showRaidDrops(drops, times); toast(gearMatsTxt(mats));
@@ -169,8 +175,8 @@ function clearRaid(times) {
    glass window with the cost, the clears left and what you get; Yes runs clearRaid */
 function confirmRaidClear(times) {
   const d = raidOf(raidSel), gold = d.kind === 'gold', gi = raidStage(d), g = raidStages(d)[gi];
-  times = Math.min(times, raidInstLeft());
-  if (times < 1) { toast(`No instant clears left today (${RAID_INSTANT} a day). Win a battle to clear, or come back tomorrow.`); return; }
+  times = Math.min(times, raidClearsAvail());
+  if (times < 1) { raidNoClears(); return; }
   if (!stageOpen(gi, d)) { toast(`Stage ${ROMAN[gi]} opens at player level ${g.lv}.`); return; }
   if (!gold && wardFree() < 2 * times) { wardFullMsg(times); return; }
   const cost = (gold ? g.st : raidStam(d)) * times, have = stamina(), left = raidInstLeft();
@@ -181,7 +187,7 @@ function confirmRaidClear(times) {
     <p class="desc">Clear <b>${esc(name)}</b> ${times > 1 ? `<b>${times} times</b>` : 'once'} without a battle?</p>
     <div class="rcf-rows">
       <span><small>Stamina</small><b>${curIcon('stamina')}${fmt(have)} → ${fmt(have - cost)}</b><em>−${cost}</em></span>
-      <span><small>Instant clears today</small><b>${left} → ${left - times} left</b><em>of ${RAID_INSTANT}</em></span>
+      ${(() => { const free = Math.min(times, left), tk = times - free; return `${free ? `<span><small>Free instant clears today</small><b>${left} → ${left - free} left</b><em>of ${RAID_INSTANT}</em></span>` : ''}${tk ? `<span><small>Instant clear tickets</small><b>${curIcon('ictk')}${fmt(raidTkN())} → ${fmt(raidTkN() - tk)}</b><em>−${tk}</em></span>` : ''}`; })()}
       <span><small>You get</small><b>${get}</b></span></div>
     <div class="row rcf-btns"><button class="btn ghost" id="rcfNo">Cancel</button><button class="btn gold" id="rcfYes">Clear ×${times} ${curIcon('stamina')}${cost}</button></div></div>`,
     onMount: () => { $('#rcfNo').onclick = closeModal; $('#rcfYes').onclick = () => { closeModal(); clearRaid(times); }; } });
@@ -199,7 +205,7 @@ function clearGold(times) {
   if (!stageOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${g.lv}.`); return; }
   const cost = g.st * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
-  spendStamina(cost); questAdd('raid', times); raidInst().n += times;
+  spendStamina(cost); questAdd('raid', times); raidUseClears(times);
   const coins = rollGold(g, times);
   S.wallet.coins += coins; gainExp(g.exp * times); persist(); renderMenu(); renderRaids();
   showRewards(`${d.name} ${ROMAN[i]}${times > 1 ? ` ×${times}` : ''}`, { coins, exp: g.exp * times }, `${cost} stamina spent · ${stamina()} left`);
@@ -241,13 +247,13 @@ INFO.vault = () => { const d = raidOf(raidSel).kind === 'gold' ? raidOf(raidSel)
   <table class="cs-table"><thead><tr><th>Stage</th><th>Stamina</th><th>Gold per clear</th><th>EXP</th><th>Opens at</th></tr></thead><tbody>${STV.map((g, i) => `<tr><td>${ROMAN[i]}</td><td>${g.st}</td><td>~${fmt(g.gold)}</td><td>${g.exp}</td><td>Lv ${g.lv}</td></tr>`).join('')}</tbody></table>` }); };
 /* results: a see-through window over the raid screen with every piece on a soft glow, rarity badge, NEW tag */
 function showRaidDrops(drops, times) {
-  const st = raidStam(raidOf(raidSel)), again = Math.min(times, raidInstLeft());
+  const st = raidStam(raidOf(raidSel)), again = Math.min(times, raidClearsAvail());
   const old = document.querySelector('.rdrop'); if (old) old.remove();
   const el = document.createElement('div'); el.className = 'rdrop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Raid rewards');
   el.innerHTML = `<div class="rdrop-box"><h2 class="ts">Clear rewards${times > 1 ? ` ×${times}` : ''}</h2>
       <div class="rdrop-grid">${drops.map((d, i) => `<div class="rdrop-it r${d.x.rarity}" style="--i:${i}"><span class="rdrop-glow"></span><img src="${clothImg(d.x)}" alt="">${d.isNew ? '<span class="rdrop-new">NEW</span>' : ''}${d.st ? clothStarRow(d.st, 'drop') : ''}<span class="rdrop-r">${ctag(d.x.rarity, 'lg')}</span><b>${esc(d.x.name)}</b></div>`).join('') || '<p class="tiny">Nothing dropped.</p>'}</div>
       <div class="row" style="justify-content:center;gap:12px">${again ? `<button class="btn gold" id="rdAgain">Instant clear ×${again} ${curIcon('stamina')}${st * again}</button>` : ''}<button class="btn ${again ? 'ghost' : 'gold'}" id="rdDone">Done</button></div>
-      <p class="tiny">Wear the pieces from any character's Wardrobe tab. Stamina left: ${stamina()} · instant clears left today: ${raidInstLeft()} / ${RAID_INSTANT}</p></div>`;
+      <p class="tiny">Wear the pieces from any character's Wardrobe tab. Stamina left: ${stamina()} · instant clears left today: ${raidInstLeft()} / ${RAID_INSTANT}${raidTkN() ? ` · ${raidTkN()} instant clear ticket${raidTkN() > 1 ? 's' : ''}` : ''}</p></div>`;
   document.body.appendChild(el);
   const close = () => el.remove();
   el.addEventListener('click', e => { if (e.target === el) close(); });
@@ -265,17 +271,18 @@ function raidSubOf(x) {
   return ur ? `UR set · ${ur}` : 'Gear raid';
 }
 function raidBar(open, cost) {
-  const left = raidInstLeft(), dk = ccCampMyDeck(), ok = ccValidateDeck(dk.cards).ok, d = raidOf(raidSel), f = d.foe, n5 = Math.min(5, left);
+  const left = raidInstLeft(), tkn = raidTkN(), avail = left + tkn, dk = ccCampMyDeck(), ok = ccValidateDeck(dk.cards).ok, d = raidOf(raidSel), f = d.foe, n5 = Math.min(5, avail);
+  const tkIc = n => n > left ? `<i class="rdx-tk" title="Uses ${n - left} instant clear ticket${n - left > 1 ? 's' : ''}">${curIcon('ictk')}</i>` : '';
   const si = raidStage(d), lock = !raidInstOk(d.id, si);
-  const inst = lock ? `<span class="rdx-iu">${icon('lock')}Get 3★ on this stage (${raidStarN(d.id, si)} / 3)</span>` : !left ? '<span class="rdx-iu">All used · back at midnight</span>'
-    : `<button class="rdx-ib" data-clear="1" ${open ? '' : 'disabled'}><b>×1</b><span>${curIcon('stamina')}${cost}</span></button>${left > 1 ? `<button class="rdx-ib" data-clear="${n5}" ${open ? '' : 'disabled'}><b>×${n5}</b><span>${curIcon('stamina')}${cost * n5}</span></button>` : ''}`;
+  const inst = lock ? `<span class="rdx-iu">${icon('lock')}Get 3★ on this stage (${raidStarN(d.id, si)} / 3)</span>` : !avail ? '<span class="rdx-iu">All used · back at midnight (or use instant clear tickets)</span>'
+    : `<button class="rdx-ib" data-clear="1" ${open ? '' : 'disabled'}>${tkIc(1)}<b>×1</b><span>${curIcon('stamina')}${cost}</span></button>${avail > 1 ? `<button class="rdx-ib" data-clear="${n5}" ${open ? '' : 'disabled'}>${tkIc(n5)}<b>×${n5}</b><span>${curIcon('stamina')}${cost * n5}</span></button>` : ''}`;
   return `<div class="rdx-bar">
       <div class="rdx-vs">
         <button class="rdx-side me" id="raidDeck" title="Change the deck you play with"><span class="rdx-si">${icon('cards')}</span><span class="rdx-st"><small>Your deck</small><b>${ok ? esc(dk.name) : 'No ready deck'}</b><em>${ok ? 'Change' : 'Build a 30-card deck'}</em></span></button>
         <span class="rdx-vsx">VS</span>
         <div class="rdx-side op"><span class="rdx-si">${icon(raidIc(d))}</span><span class="rdx-st"><small>Guardian</small><b>${esc(raidDeckName(f.deck))}</b><em>${icon('heart')}${raidHp(d.id, raidStage(d))} HP</em></span></div>
       </div>
-      <div class="rdx-inst"><span class="rdx-il">${icon('bolt')}Instant clears <b>${left} / ${RAID_INSTANT}</b></span><div class="rdx-ibs">${inst}</div></div>
+      <div class="rdx-inst"><span class="rdx-il">${icon('bolt')}Instant clears <b>${left} / ${RAID_INSTANT}</b>${tkn ? `<em class="rdx-tkn" title="Instant clear tickets: used after the day's free clears">${curIcon('ictk')}${fmt(tkn)}</em>` : ''}</span><div class="rdx-ibs">${inst}</div></div>
       <button class="rdx-go" id="raidBattle" ${open ? '' : 'disabled'}><span class="rdx-goi">${icon('swords')}</span><span class="rdx-got"><b>Battle</b><small>${curIcon('stamina')}${cost} on a win</small></span></button>
     </div>`;
 }

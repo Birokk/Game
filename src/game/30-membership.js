@@ -8,7 +8,7 @@ const PASS_DAYS = 30, PASS_MS = PASS_DAYS * 864e5;
 const PASS_MAX_DAYS = 180;   // a membership can be stacked up to 180 days; a purchase that would go past that is refused
 const passCanBuy = id => passLeft(id) + PASS_MS <= PASS_MAX_DAYS * 864e5 + 6e4;
 const PASSES = [
-  { id: 'p1', icon: 'pass1', name: 'Lantern Membership', price: 30, col: '#ffb35a',
+  { id: 'p1', icon: 'pass1', name: 'Lantern Membership', price: 30, col: '#8fd0ff',   // light blue (the owner's ask; it was orange)
     daily: { tickets: 1, pearls: 3 }, once: { pearls: 5, eggur: 1 }, spins: 2 },
   { id: 'p2', icon: 'pass2', name: 'Prism Membership', price: 60, col: '#d58bff',
     daily: { tickets: 2, pearls: 6 }, once: { pearls: 10, eggur: 2, memtk: 1 }, spins: 2 }
@@ -17,7 +17,7 @@ const passDef = id => PASSES.find(p => p.id === id);
 const passLeft = id => Math.max(0, ((S.member || {})[id] || 0) - Date.now());
 const passDaysLeft = id => Math.ceil(passLeft(id) / 864e5);
 /* default card art: a glowing membership card in the pass colour (replaceable in Settings → Admin) */
-const passCardSVG = (p) => `<svg class="cic pass-svg" viewBox="0 0 64 40" aria-hidden="true"><defs><linearGradient id="pg-${p.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.id === 'p2' ? '#c58bff' : '#ffd36b'}"/><stop offset=".55" stop-color="${p.id === 'p2' ? '#ff6ec7' : '#ff9a4a'}"/><stop offset="1" stop-color="${p.id === 'p2' ? '#3ee6d0' : '#c9631c'}"/></linearGradient></defs>
+const passCardSVG = (p) => `<svg class="cic pass-svg" viewBox="0 0 64 40" aria-hidden="true"><defs><linearGradient id="pg-${p.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.id === 'p2' ? '#c58bff' : '#d6f0ff'}"/><stop offset=".55" stop-color="${p.id === 'p2' ? '#ff6ec7' : '#8fd0ff'}"/><stop offset="1" stop-color="${p.id === 'p2' ? '#3ee6d0' : '#4a9be0'}"/></linearGradient></defs>
   <rect x="1.5" y="1.5" width="61" height="37" rx="6" fill="url(#pg-${p.id})" stroke="rgba(255,255,255,.85)" stroke-width="1.4"/><rect x="7" y="9" width="11" height="8" rx="2" fill="rgba(255,255,255,.75)"/>
   <path d="M44 8l2.4 5 5.4.6-4 3.7 1.1 5.4L44 20l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z" fill="#fff" opacity=".95"/><rect x="7" y="27" width="30" height="3" rx="1.5" fill="rgba(255,255,255,.7)"/><rect x="7" y="32" width="18" height="2.4" rx="1.2" fill="rgba(255,255,255,.5)"/></svg>`;
 CUR_SVG.pass1 = passCardSVG(PASSES[0]); CUR_SVG.pass2 = passCardSVG(PASSES[1]);

@@ -14,8 +14,11 @@ const VIP_GRADES = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 const vipGrade = lv => lv > 0 ? VIP_GRADES[Math.min(lv, VIP_GRADES.length) - 1] : '';
 /* the VIP level as a small round badge (home profile pill, on the avatar's bottom-left like the owner's reference),
    filled with the level's grade colour: the same colours as the VIP badge border */
-const vipCircle = (lv = vipLv()) => `<span class="vipc ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}" title="VIP ${lv}"><b>${lv}</b></span>`;
-const vipBadge = (lv = vipLv(), cls = '') => `<span class="vipb ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'} ${cls}"><span>VIP <b>${lv}</b></span></span>`;
+/* the admin's own picture for a VIP level (admin → Item icons → VIP level icons, icon slots vip-1 … vip-12) replaces the
+   drawn circle / badge / emblem wherever that level shows */
+const vipIcon = lv => lv > 0 ? customIcon('vip-' + lv) : null;
+const vipCircle = (lv = vipLv()) => { const u = vipIcon(lv); return u ? `<span class="vipc up" title="VIP ${lv}"><img src="${u}" alt="VIP ${lv}"></span>` : `<span class="vipc ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}" title="VIP ${lv}"><b>${lv}</b></span>`; };
+const vipBadge = (lv = vipLv(), cls = '') => { const u = vipIcon(lv); return u ? `<span class="vipb up ${cls}" title="VIP ${lv}"><img src="${u}" alt="VIP ${lv}"></span>` : `<span class="vipb ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'} ${cls}"><span>VIP <b>${lv}</b></span></span>`; };
 const vipCanClaim = () => vipLv() > 0 && vipState().day !== dayKey();
 /* rank names (shown on the VIP card) */
 const VIP_RANKS = ['Guest', 'Squire', 'Knight', 'Baronet', 'Baron', 'Viscount', 'Count', 'Marquis', 'Duke', 'Archduke', 'Prince', 'Sovereign', 'Emperor'];
@@ -68,7 +71,7 @@ function claimVipLevel(lv) {
 let vipView = null;   // the level shown in the VIP window (arrows browse 1–12)
 function openVip() { vipView = Math.max(1, vipLv()); openModal({ title: 'VIP', ic: 'crown', kind: 'vip', body: '<div id="vipRoot"></div>', onMount: () => renderVip() }); }
 /* the VIP emblem: the level number in a circle whose ring uses that level's grade colour (same colours as the VIP badge border) */
-const vipEmblem = lv => `<span class="vip-num ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}" aria-label="VIP ${lv}"><b>${lv}</b></span>`;
+const vipEmblem = lv => { const u = vipIcon(lv); return u ? `<span class="vip-num up" aria-label="VIP ${lv}"><img src="${u}" alt=""></span>` : `<span class="vip-num ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}" aria-label="VIP ${lv}"><b>${lv}</b></span>`; };
 function renderVip() {
   const root = $('#vipRoot'); if (!root) return;
   const xp = vipState().xp, my = vipLv(xp), v = Math.min(VIP_MAX, Math.max(1, vipView || 1)), need = VIP_XP[v - 1];
@@ -111,3 +114,7 @@ if (!ICONS.crown) ICONS.crown = '<path d="M3 8l4.5 3.5L12 4l4.5 7.5L21 8l-2 11H5
 TITLES.push({ id: 'vip-tide', name: 'Tidecaller', cls: 't-vtide', need: 'vip3', vip: true }, { id: 'vip-monarch', name: 'Ocean Monarch', cls: 't-vmonarch', need: 'vip10', vip: true });
 FRAMES.push({ id: 'vregalia', name: 'Pearl Regalia', need: 'vip6', premium: true, vip: true }, { id: 'vemperor', name: 'Tide Emperor', need: 'vip12', premium: true, vip: true });
 CARDS.push({ id: 'vabyss', name: 'Abyssal Pearl', need: 'vip8', premium: true, vip: true }, { id: 'vempire', name: 'Emperor\'s Tide', need: 'vip11', premium: true, vip: true });
+
+/* admin → Item icons: one upload per VIP level */
+ADMIN_ART.vip = () => `<div class="sx-row sx-block"><span class="sx-l">VIP level icons<small>Your own picture for each VIP level: it replaces the drawn badge on the profile card, the circle on the home avatar and the big number in the VIP window (square PNG, transparent background best; it is centred for you)</small></span><div class="sx-c"><div class="vip-ad">${Array.from({ length: VIP_MAX }, (_, i) => i + 1).map(n => `<div class="vip-ads"><span class="vip-adp">${vipEmblem(n)}</span><small>VIP ${n}</small><label class="sx-btn sm">${icon('upload')}${vipIcon(n) ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-iconup="vip-${n}"></label>${vipIcon(n) ? `<button type="button" class="sx-btn sm" data-iconreset="vip-${n}">Default</button>` : ''}</div>`).join('')}</div></div></div>`;
+ADMIN_ART_SECS.icons.push('vip');
