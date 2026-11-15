@@ -126,7 +126,7 @@ function renderCharacters() {
     const items = S.clothes.filter(x => x.slot === wdSlot && clothFits(x, c)).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
     body = `<div class="lbl-sm">Wardrobe · ${on}/${WARD_SLOTS.length} equipped</div>
       <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
-        return `<button class="wd-slot ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span>${hasClothStars(x) ? clothStarRow(wornStarOf(c.id, k), 'slot') : ''}</button>`; }).join('')}</div>
+        return `<button class="wd-slot ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span>${hasClothStars(x) ? clothStarRow(wornStarOf(c.id, k), 'slot') : ''}${x ? gearLvTag(gearWornLv(c.id, k), gearCap(x, gearStarOf(x, c.id, k)), 'wd') : ''}</button>`; }).join('')}</div>
       <p class="tiny">Tap a slot to see every piece you own for it.</p>
       <div class="row" style="gap:8px"><button class="btn mint sm" id="wdAuto">${icon('sparkle')}Auto-equip best</button><button class="btn ghost sm" id="wdNone" ${on ? '' : 'disabled'}>${icon('close')}Unequip all</button><button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button></div>
       <p class="tiny">Fusion turns 3 spare clothes of one rarity into 1 random piece of the next (R → SSR, SSR → UR).</p>`;

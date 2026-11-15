@@ -304,8 +304,8 @@ function renderRaids() {
         <b>${ROMAN[i]}</b>${raidStarRow(d.id, i)}${gold ? `<span class="gv-gold">${curIcon('coins')}~${fmt(st.gold)}</span><small>${open ? `${curIcon('stamina')}${st.st} · +${st.exp} EXP` : `${icon('lock')}Lv ${st.lv}`}</small>`
           : `<span class="gv-ur ${st.ur ? '' : 'no'}">${st.ur ? `${ctag(5)}${st.ur}%` : 'No UR'}</span><small>${open ? `${icon('hanger')}${st.dbl >= 100 ? 'Always 2' : raidPcs(st)} · SSR ${st.ssr}%` : `${icon('lock')}Lv ${st.lv}`}</small>`}</button>`; };
   const stages = `<div class="gv-stages ${gold ? '' : 'gear'}" style="--n:${GS.length}">${GS.map(stCard).join('')}</div>`;
-  const panel = gold ? `<div class="rdx-panel gold"><div class="rdx-ph"><b>Stages</b><small>Deeper stages cost more stamina and hold more gold</small></div>${stages}</div>`
-    : `<div class="rdx-panel"><div class="rdx-ph"><b>Stages</b><small>The same ${raidStam(d)} stamina on every stage · deeper stages drop better gear</small></div>${stages}
+  const panel = gold ? `<div class="rdx-panel gold"><div class="rdx-ph"><b>Stages</b><small>Deeper stages cost more stamina and hold more gold</small></div>${stages}${raidStageInfoHTML(d, gi)}</div>`
+    : `<div class="rdx-panel"><div class="rdx-ph"><b>Stages</b><small>The same ${raidStam(d)} stamina on every stage · deeper stages drop better gear</small></div>${stages}${raidStageInfoHTML(d, gi)}
       <div class="rdx-ph sub"><b>Possible drops · stage ${ROMAN[gi]}</b><small>${g.ur ? `UR ${g.ur}% · ` : ''}SSR ${g.ssr}% · R ${raidRpct(g)}% · tap ${infoBtn('raid', 'Drop chances')} for every stage</small><button class="rdx-sec" id="raidFuse">${icon('fuse')}Fuse clothes</button></div>
       ${[5, 4, 3].map(r => { const G = setsOf(dungeonPieces(d, r)); return (G.length ? G : [[]]).map(L => dropRow(r, L)).join(''); }).join('')}</div>`;
   raidEl.innerHTML = `<div class="rdx-bg ${bg ? 'art' : gold ? 'gold' : ''}">${bg ? artImg(bgk) : ''}</div><div class="rdx-shade"></div>
@@ -327,7 +327,7 @@ function renderRaids() {
   raidEl.querySelector('#raidPlus').onclick = openStamina;
   raidEl.querySelectorAll('[data-raid]').forEach(b => b.onclick = () => { raidSel = b.dataset.raid; renderRaids(); });
   raidEl.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => confirmRaidClear(+b.dataset.clear));
-  const bt = raidEl.querySelector('#raidBattle'); if (bt) bt.onclick = () => raidBattle(raidSel, raidStage(d));
+  const bt = raidEl.querySelector('#raidBattle'); if (bt) bt.onclick = () => raidPreBattle(raidSel, raidStage(d));
   const dkb = raidEl.querySelector('#raidDeck'); if (dkb) dkb.onclick = () => { if (ccValidateDeck(ccCampMyDeck().cards).ok || ccAllDecks().some(x => ccValidateDeck(x.cards).ok)) ccDeckPicker(renderRaids); else { closeRaids(); openDeck(); } };
   raidEl.querySelectorAll('[data-gstage]').forEach(b => b.onclick = () => { const i = +b.dataset.gstage; if (!stageOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${GS[i].lv}.`); return; } setRaidStage(d, i); persist(); renderRaids(); });
   const fu = raidEl.querySelector('#raidFuse'); if (fu) fu.onclick = () => openFuse(3);

@@ -6693,3 +6693,59 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .gt-auto{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.gt-auto label{display:flex;align-items:center;gap:6px;font:700 12px var(--read)}.gt-auto select{height:32px;padding:0 8px}
 .gt-spd{display:flex;gap:4px}
 .gt-log{margin:0;padding:6px 10px 6px 26px;max-height:140px;overflow:auto;border-radius:10px;background:rgba(0,0,0,.22);font:600 11.5px/1.5 var(--read)}.gt-log li:first-child{color:#ffd1f1}
+/* gear level chips on every clothing copy */
+.glv{position:absolute;left:5px;top:5px;z-index:3;padding:1px 6px;border-radius:99px;font:800 10px/1.45 var(--display);letter-spacing:.02em;color:#fff;background:rgba(10,8,28,.8);border:1px solid rgba(255,255,255,.35);box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:none;white-space:nowrap}
+.glv.z{opacity:.6}
+.glv.mx{color:#ffe9a8;border-color:#ffd36b;box-shadow:0 0 8px rgba(255,211,107,.45)}
+.wd-slot{position:relative}
+.glv.wd{left:6px;top:6px}
+.glv.wdp-lv{left:6px;right:auto;top:28px;padding:1px 6px;font-size:10px}
+.fu-add .glv{top:28px}
+.fu-add{position:relative}
+.inv-glv{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 6px;margin:8px 0 4px;padding:8px 10px;border-radius:12px 3px 12px 3px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+.inv-glv b{font:400 14px var(--display)}.inv-glv span{font-size:12px;opacity:.75}
+.inv-glv i{grid-column:1/-1;height:6px;border-radius:99px;background:linear-gradient(90deg,#ffd9f4,#c9a6ff,#8fb8ff) 0 0/var(--p) 100% no-repeat,rgba(255,255,255,.12)}
+.inv-glv small{grid-column:1/-1;font:400 11px var(--read);opacity:.7}
+/* raid stage info: star goals, what they unlock, one clear's rewards (stage strip + the window before a battle) */
+.rsi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.rsi-col{display:grid;align-content:start;gap:6px;padding:10px 12px;border-radius:16px 4px 16px 4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);min-width:0}
+.rsi-h{display:flex;align-items:center;gap:6px;font:400 12px var(--display);letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.rsi-h .ic,.rsi-h svg{width:15px;height:15px}.rsi-h b{margin-left:auto;font-size:13px;color:#ffe29a}
+.rsi ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.rsi li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;font:400 12.5px var(--read);min-width:0}
+.rsi li>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rsi li i{font-style:normal;color:rgba(255,255,255,.3);font-size:14px;letter-spacing:-1px;text-shadow:none}
+.rsi li.ok i{color:#ffd36b;text-shadow:0 0 8px rgba(255,211,107,.6)}
+.rsi li em{font:400 10.5px var(--display);font-style:normal;letter-spacing:.04em;padding:1px 7px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);white-space:nowrap}
+.rsi li.ok em{background:linear-gradient(135deg,#ffd9f4,#c9a6ff 55%,#a9cdff);color:var(--cry-ink,#2a1f5c);border-color:transparent}
+.rsi-rw li{grid-template-columns:20px auto minmax(0,1fr)}
+.rsi-rw li .ic,.rsi-rw li img,.rsi-rw li svg{width:18px;height:18px}
+.rsi-rw li b{font:400 13px var(--display)}.rsi-rw li span{opacity:.8;white-space:nowrap}
+.rsi.pop{margin:0;grid-template-columns:1fr}
+@media (max-width:980px){.rsi:not(.pop){grid-template-columns:1fr 1fr}.rsi:not(.pop) .rsi-col:last-child{grid-column:1/-1}}
+@media (max-width:560px){.rsi:not(.pop){grid-template-columns:1fr}}
+@media (max-height:500px) and (orientation:landscape){.rsi:not(.pop){grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.rsi-col{padding:7px 9px}.rsi li{font-size:11px}.rsi-rw li span{display:none}}
+.modal-back[data-kind=raidpre]{background:rgba(8,8,24,.28)}
+.modal-back[data-kind=raidpre] .modal{width:min(560px,calc(100vw - 24px));background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.03) 60%,rgba(200,162,255,.06));border:1px solid rgba(238,224,255,.3);border-radius:26px 6px 26px 6px;-webkit-backdrop-filter:blur(18px) saturate(1.25);backdrop-filter:blur(18px) saturate(1.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 20px 50px rgba(0,0,0,.35)}
+.rpb{display:grid;gap:12px;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.rpb-vs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
+.rpb-side{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:16px 4px 16px 4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);color:inherit;text-align:left;min-width:0;font:inherit}
+.rpb-side.op{flex-direction:row-reverse;text-align:right;border-color:rgba(255,140,170,.35);background:rgba(255,90,130,.08)}
+button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,255,.4)}
+.rpb-side>span:last-child{display:grid;min-width:0}
+.rpb-side small{font:400 10px var(--display);letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.rpb-side b{font:400 15px var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rpb-side em{font:400 11px var(--read);font-style:normal;opacity:.8;display:inline-flex;align-items:center;gap:4px;justify-content:inherit}
+.rpb-side.op em{justify-content:flex-end}
+.rpb-side em .ic,.rpb-side em svg{width:12px;height:12px}
+.rpb-ava{flex:none;width:44px;height:44px;border-radius:50%;overflow:hidden;display:grid;place-items:center;border:2px solid rgba(255,255,255,.4);background:rgba(10,8,28,.6)}
+.rpb-ava img{width:100%;height:100%;object-fit:cover}.rpb-ava.ic svg,.rpb-ava.ic .ic{width:22px;height:22px}
+.rpb-x{font:italic 400 20px var(--display);color:#ffd9f4;text-shadow:0 0 12px rgba(255,170,220,.6)}
+.rpb .lsa{margin:0;justify-content:center}
+.rpb-note{margin:0;text-align:center}
+.rpb .rcf-rows>span:last-child b{grid-column:auto}
+@media (max-width:520px){.rpb-vs{grid-template-columns:1fr;justify-items:stretch}.rpb-x{justify-self:center;font-size:16px}.rpb-side.op{flex-direction:row;text-align:left}.rpb-side.op em{justify-content:flex-start}}
+@media (max-height:500px) and (orientation:landscape){.modal-back[data-kind=raidpre] .modal{width:min(760px,calc(100vw - 24px))}.rpb{gap:8px}.rpb .rsi.pop{grid-template-columns:repeat(3,minmax(0,1fr))}.rpb .rsi-rw li span{display:none}}
+.rpb .lsa{text-align:center}.rpb .lsa-me{flex-basis:100%;text-align:center}
+@media (max-height:500px) and (orientation:landscape){.rpb .lsa-me,.rpb-note{display:none}.rpb-side{padding:6px 9px}.rpb-ava{width:34px;height:34px}.rpb .rcf-rows>span{padding:6px 12px}}
+@media (max-height:500px) and (orientation:landscape){.rpb{gap:6px}.rpb .rcf-rows{display:none}.rpb .rsi-col{padding:6px 9px;gap:3px}.rpb .rsi ul{gap:2px}.rpb .lsa{margin:0}}

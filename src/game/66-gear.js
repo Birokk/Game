@@ -54,6 +54,8 @@ function gearSync() {
 { const p0 = persist; persist = function () { try { gearSync(); } catch (e) { noteError && noteError(e, 'gearSync'); } return p0.apply(this, arguments); }; }
 /* the level of the i-th spare copy (highest first), for lists */
 const gearSpareLv = (id, k, i) => (gPool(id, k).slice().sort((a, b) => b - a))[i] || 0;
+/* the small "Lv n" chip drawn on every clothing copy (dimmed at Lv 0, gold at its cap) */
+const gearLvTag = (lv, cap, cls = '') => `<span class="glv ${cls} ${lv ? '' : 'z'} ${cap && lv >= cap ? 'mx' : ''}" title="Gear level ${lv}${cap ? ` / ${cap}` : ''}">Lv ${lv}</span>`;
 /* every copy with its level: worn ones from the slots, spare ones from the pool (highest first) */
 function gearCopies(id) {
   const x = clothOf(id); if (!x) return [];

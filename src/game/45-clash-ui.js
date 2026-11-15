@@ -330,7 +330,7 @@ function startClash(deck, seed, camp, boss, raid, qm, arena, train) {   // boss 
   } });
 }
 function ccStop() { if (!ccM) return; clearTimeout(ccM.timer); clearTimeout(ccM.autoT); ccFxStop(); removeEventListener('resize', ccM.onResize); removeEventListener('keydown', ccM.onKey); if (ccM.el) ccM.el.remove(); ccM = null; }
-function ccFit() { if (!ccM) return; const s = Math.min(innerWidth / 1600, innerHeight / 900); ccM.el.style.setProperty('--s', s); }
+function ccFit() { if (!ccM) return; const s = Math.min(innerWidth / 1600, innerHeight / 900), lbx = Math.max(0, (innerWidth / s - 1600) / 2), lby = Math.max(0, (innerHeight / s - 900) / 2); ccM.el.style.setProperty('--s', s); ccM.el.style.setProperty('--lbx', lbx.toFixed(1) + 'px'); ccM.el.style.setProperty('--lby', lby.toFixed(1) + 'px'); ccM.el.style.setProperty('--cih', (900 + 2 * lby).toFixed(1) + 'px'); ccM.el.style.setProperty('--envk', Math.max(1, (802 + lbx) / 860, (402 + lby) / 460, (502 + lby) / 560).toFixed(4)); }   // --lbx / --lby: the letterbox beside the 1600×900 stage, in stage pixels (full-screen overlays reach into it)
 const ccFx0 = () => { if (ccM) ccM.G.fx = []; };
 const ccMyTurn = () => ccM && ccM.G.phase !== 'over' && ccM.G.active === 0 && !ccM.busy;
 
