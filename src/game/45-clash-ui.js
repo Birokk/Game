@@ -150,7 +150,7 @@ const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Tra
 const qmMode = id => QM_MODES.find(m => m.id === id) || QM_MODES[0];
 const qmDiff = id => QM_DIFF.find(d => d.id === id) || QM_DIFF[1];
 function qmState() { const sv = ccSave(); if (!sv.qm || typeof sv.qm !== 'object') sv.qm = { mode: 'mirror', diff: 'normal' }; if (!sv.qmWins || typeof sv.qmWins !== 'object') sv.qmWins = {}; return sv.qm; }
-const qmOpen = d => !d.need || canAdmin() || Object.entries(d.need).every(([k, n]) => (ccSave().qmWins[k] || 0) >= n);
+const qmOpen = d => !d.need || canAdmin() || ((ccSave().qmWins[d.id] || 0) > 0 || brLv() >= 10) && Object.entries(d.need).every(([k, n]) => (ccSave().qmWins[k] || 0) >= n);   // Expert: 3 Hard wins and Battle Rank 10 (anyone who already won on it keeps it)
 const qmNeedTxt = d => d.need ? Object.entries(d.need).map(([k, n]) => `Win ${n} on ${qmDiff(k).name}`).join(' · ') : '';
 const qmGold = (k, d) => Math.round(CC_GOLD[k] * d.gold / 100) * 100;
 /* what a seed brings in a mode: the challenger's deck (its own in Rival Deck), the event, both heroes' HP and the time limit */
@@ -652,7 +652,7 @@ function ccPreview(G, iid) {
 function ccEndScreen() {
   if (!ccM) return;
   const G = ccM.G, sv = ccSave();
-  if (!ccM.done) { ccM.done = true; ccCoachHide(false); if (ccM.boss) ccM.bossRes = gbFinish(G); else if (ccM.raid) ccM.raidRes = raidFinish(G, ccM.raid); else if (ccM.arena) ccM.arenaRes = arFinish(G, ccM.arena); else if (ccM.camp) ccM.campRes = ccCampFinish(); else if (ccM.train) { /* Free Training: nothing is counted or given */ } else { if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; if (G.winner === 0 && ccM.qm) { qmState(); sv.qmWins[ccM.qm.diff] = (sv.qmWins[ccM.qm.diff] || 0) + 1; } ccM.rewards = ccGrantRewards(G.winner); } persist(); renderMenu(); }
+  if (!ccM.done) { ccM.done = true; ccCoachHide(false); if (!ccM.train) safely(() => { ccM.brRes = brGain(G.winner); }, 'battle rank'); if (ccM.boss) ccM.bossRes = gbFinish(G); else if (ccM.raid) ccM.raidRes = raidFinish(G, ccM.raid); else if (ccM.arena) ccM.arenaRes = arFinish(G, ccM.arena); else if (ccM.camp) ccM.campRes = ccCampFinish(); else if (ccM.train) { /* Free Training: nothing is counted or given */ } else { if (G.winner === 0) sv.stats.w++; else if (G.winner === 1) sv.stats.l++; else sv.stats.d++; if (G.winner === 0 && ccM.qm) { qmState(); sv.qmWins[ccM.qm.diff] = (sv.qmWins[ccM.qm.diff] || 0) + 1; } ccM.rewards = ccGrantRewards(G.winner); } persist(); renderMenu(); }
   const res = G.winner === 0 ? ['Victory', 'win'] : G.winner === 1 ? ['Defeat', 'lose'] : [ccM.boss ? 'Time up' : 'Draw', 'draw'];
   const ms = Date.now() - G.started, mm = Math.floor(ms / 60000), ss = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
   const crack = res[1] === 'lose' ? `<svg class="ccf-crack" viewBox="0 0 1600 900" preserveAspectRatio="none">${Array.from({ length: 9 }, (_, i) => { const a = i / 9 * 6.283 + .3; let x = 800, y = 450, d = `M${x} ${y}`; for (let k = 0; k < 7; k++) { x += Math.cos(a + Math.sin(k * 2.1 + i) * .5) * (60 + k * 22); y += Math.sin(a + Math.cos(k * 1.7 + i) * .5) * (40 + k * 14); d += ` L${x.toFixed(0)} ${y.toFixed(0)}`; } return `<path d="${d}" style="--d:${i * .05}s"/>`; }).join('')}</svg>` : '';

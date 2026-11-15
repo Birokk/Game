@@ -62,7 +62,7 @@ function petGradeHTML() {
         <div><span class="lbl-sm">Success chance</span><b>${max ? '—' : Math.round(ch * 100) + '%'}</b></div>
         <div><span class="lbl-sm">Cost per try</span><b>${max ? '—' : `${curIcon('coins')}${fmt(cost)}`}</b></div>
         <div><span class="lbl-sm">CS on its character</span><b>+${PG_CS[g]}${max ? '' : ` → +${PG_CS[g + 1]}`}</b></div>
-        <div><span class="lbl-sm">Buff</span><b class="pg-buff">None yet · strength ${PG_NAMES[g]}</b></div>
+        <div><span class="lbl-sm">Buff</span><b class="pg-buff">${c.who ? esc(petBonusTxt(c.who) || 'None') : `${esc(PB_TYPES[pbTypeOf(p)][0])}: ${esc(PB_TYPES[pbTypeOf(p)][1])} · give it to a character`} · strength ${PG_NAMES[g]}</b></div>
       </div>
       ${max ? '<div class="pg-done">Grade SSS reached: this pet is fully upgraded.</div>' : `
       <div class="pg-acts">

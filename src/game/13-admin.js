@@ -156,7 +156,7 @@ function renderPoolTab() {
           <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5, 6].map(r => `<label class="r${r}" ${r === 6 ? 'id="adMR"' : ''}><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
           <label class="field"><span>Description</span><textarea class="input" id="adDesc" maxlength="240" placeholder="One or two lines of lore"></textarea></label>
           <fieldset class="looks"><legend class="lbl-sm" id="lkLegend">Plaza look</legend>
-            <label id="lkKindWrap" hidden>Pet<select class="input" id="lkKind">${Object.entries(PET_KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+            <label id="lkKindWrap" hidden>Pet<select class="input" id="lkKind">${Object.entries(PET_KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label><label id="adPbWrap" hidden>Pet bonus<select class="input" id="adPb"><option value="">By its kind</option>${Object.entries(PB_TYPES).map(([k, v]) => `<option value="${k}">${v[0]} · ${v[2]}% ${v[1]}</option>`).join('')}</select></label>
             <label><span id="lkHairL">Hair</span><input type="color" id="lkHair"></label>
             <label id="lkStyleWrap">Style<select class="input" id="lkStyle">${HAIR_STYLES.map((s, i) => `<option value="${i}">${s}</option>`).join('')}</select></label>
             <label><span id="lkSkinL">Skin</span><input type="color" id="lkSkin"></label>
@@ -224,6 +224,7 @@ function fillAdminForm(entry) {
   $('#adSig').innerHTML = '<option value="">None</option>' + Object.values(sets).sort((a, b) => b.rarity - a.rarity).map(x => `<option value="${esc(x.set)}">${esc(clothSetName(x))} (${CRN[x.rarity] || ''})</option>`).join('');
   $('#adSig').value = entry && entry.sigSet && sets[entry.sigSet] ? entry.sigSet : '';
   $('#adAttr').value = entry && entry.ccStyle && CC_STYLES[entry.ccStyle] ? entry.ccStyle : '';
+  $('#adPb').value = entry && PB_TYPES[entry.petBonus] ? entry.petBonus : '';
   $('#adSkill').innerHTML = lsAdminOptions(entry && LS[entry.ccSkill] ? entry.ccSkill : '');
   const skTx = () => { const id = $('#adSkill').value || LS_DEF[$('#adAttr').value] || 'focus', S = LS[id]; $('#adSkillTx').innerHTML = `<b>${esc(S.name)}</b>${$('#adSkill').value ? '' : ' (default)'} · ${esc(lsMeta(id))}<br>Tier 1: ${esc(S.d[0])}<br>Tier 2 (2 awakened stars): ${esc(S.d[1])}<br>Tier 3 (4 awakened stars): ${esc(S.d[2])}<br>6 awakened stars: cooldown −1.`; };
   $('#adSkill').onchange = skTx; $('#adAttr').addEventListener('change', skTx); skTx();
@@ -291,7 +292,7 @@ function adminPreview() {
   }
   const pet = $('#adType').value === 'pet';
   document.querySelector('fieldset.looks').hidden = !pet;
-  $('#lkLegend').textContent = pet ? 'Pet look' : 'Plaza look'; $('#lkKindWrap').hidden = !pet; $('#lkStyleWrap').hidden = $('#lkPantsWrap').hidden = pet;
+  $('#lkLegend').textContent = pet ? 'Pet look' : 'Plaza look'; $('#lkKindWrap').hidden = $('#adPbWrap').hidden = !pet; $('#lkStyleWrap').hidden = $('#lkPantsWrap').hidden = pet;
   $('#lkHairL').textContent = pet ? 'Body' : 'Hair'; $('#lkSkinL').textContent = pet ? 'Belly' : 'Skin'; $('#lkShirtL').textContent = pet ? 'Accent' : 'Top';
   const isMC = !!(adminEditId && (findEntry(adminEditId) || {}).mc);
   $('#adStdWrap').hidden = $('#adFeatWrap').hidden = r !== 5 || isMC;
@@ -307,7 +308,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null, ccStyle: type === 'character' ? ($('#adAttr').value || null) : null, ccSkill: type === 'character' && LS[$('#adSkill').value] ? $('#adSkill').value : null };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null, ccStyle: type === 'character' ? ($('#adAttr').value || null) : null, ccSkill: type === 'character' && LS[$('#adSkill').value] ? $('#adSkill').value : null, petBonus: type === 'pet' && PB_TYPES[$('#adPb').value] ? $('#adPb').value : null };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;

@@ -456,7 +456,7 @@ function arBind() {
   arEl.querySelectorAll('[data-arpick]').forEach(b => b.onclick = () => { arPick = b.dataset.arpick; renderArena(); });
   arEl.querySelectorAll('[data-arfoe]').forEach(b => b.onclick = () => { arSel = b.dataset.arfoe; renderArena(); });
   arEl.querySelectorAll('[data-ardef]').forEach(b => b.onclick = () => { if (arSetDefense(b.dataset.ardef)) renderArena(); });
-  const j = $a('#arJoin'); if (j) j.onclick = () => { if (arPick && arSetDefense(arPick)) { arTab = 'battle'; renderArena(); } };
+  const j = $a('#arJoin'); if (j) j.onclick = () => { if (!brOk(5)) { toast(`The Arena opens at Battle Rank 5 (you are rank ${brLv()}). Every Card Battle match gives Battle Rank EXP.`); return; } if (arPick && arSetDefense(arPick)) { arTab = 'battle'; renderArena(); } };
   const bd = $a('#arBuild'); if (bd) bd.onclick = () => { closeArena(false); openDeck(); };
   const rf = $a('#arRef'); if (rf) rf.onclick = arRefresh;
   const dk = $a('#arDeck'); if (dk) dk.onclick = () => { if (ccAllDecks().some(x => ccValidateDeck(x.cards).ok)) ccDeckPicker(renderArena); else { closeArena(false); openDeck(); } };
