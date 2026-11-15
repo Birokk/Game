@@ -298,9 +298,11 @@ function startClash(deck, seed, camp, boss, raid, qm, arena, train) {   // boss 
   const foe = boss || camp && camp.dummy ? null : train ? ftFoeChar(train, seed) : arena ? (arena.f.lead && findEntry(arena.f.lead)) || null : ccQmFoe(seed);   // the same challenger the Quick match lobby showed for this seed
   const names = [S.player.name || 'You', boss ? gbName() : arena ? arena.f.name : camp && camp.dummy ? camp.foeName : foe ? foe.name : train && train.brain === 'dummy' ? 'Dummy' : 'Bot'];
   const qd = !boss && !raid && !camp && !arena && !train ? { mode: qmMode(qm && qm.mode).id, diff: qmDiff(qm && qm.diff).id } : null, qs = qd ? qmSetup(seed, qd.mode, qd.diff, deck) : null;
-  // leader skills for both sides (65-leader.js): none in the Chapter 0 tutorial; the Arena plays everyone at tier 1; the guild boss and the Dummy have none
+  // leader skills for both sides (65-leader.js): none in the Chapter 0 tutorial; the guild boss and the Dummy have none. The Arena uses your full build (the owner's rule);
+  // only a future ranked mode (arena.ranked) will play everyone at tier 1 with no build bonuses
   const tut = camp && camp.ch && camp.ch.id === 'c0', myLe = ccLeaderOf(deck.id), botLe = boss || (camp && camp.dummy) || (train && train.brain === 'dummy') ? null : foe;
-  ccLeadPass.v = tut ? null : [lsLead(myLe, { pvp: !!arena }), botLe ? lsLead(botLe, { pvp: !!arena, tier: lsBotTier(qd || (train && { diff: train.brain }), camp, arena) }) : null];
+  const ranked = !!(arena && arena.ranked);
+  ccLeadPass.v = tut ? null : [lsLead(myLe, { pvp: ranked }), botLe ? lsLead(botLe, { pvp: ranked, tier: lsBotTier(qd || (train && { diff: train.brain }), camp, arena) }) : null];
   let G; try { G = boss ? gbMatch(deck, seed, names, boss) : raid ? raidMatch(deck, seed, names, raid) : train ? ftMatch(deck, seed, names, train) : arena ? arMatch(deck, seed, names, arena) : camp ? ccCampMatch(camp, names) : ccCreateMatch(seed, deck.cards.slice(), qs.foeDeck, names, qs.opts); } finally { ccLeadPass.v = null; }
   ccSkReset();
   const m = ccM = { G, foe, leader: myLe, skins: [ccMySkin(), boss ? 'inferno' : raid ? raidFoe(raid.id).skin : train ? train.skin : arena ? arena.f.skin : camp ? 'default' : ccBotSkin(seed)], backs: [ccMyBack(), boss ? 'inferno' : raid ? raidFoe(raid.id).back : train ? train.back : arena ? arena.f.back : camp ? 'default' : ccBotBack(seed)], boss: boss || null, raid: raid || null, arena: arena || null, train: train || null, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false,
@@ -507,7 +509,7 @@ function ccSlash(n) {
   const src = lart || (w ? wpSrc(w) : portrait(S.player.look, 4)), name = le ? le.name : w ? w.e.name : (S.player.name || 'You');
   const el = document.createElement('div'); el.className = 'ccsl';
   el.innerHTML = `<i class="ccsl-flash"></i><div class="ccsl-move"><div class="ccsl-panel"><img src="${src}" alt="" class="${art ? '' : 'chibi'}"><i class="ccsl-lines"></i><i class="ccsl-shade"></i></div>
-    <div class="ccsl-edgew"><i class="ccsl-edge"></i></div><div class="ccsl-txt"><small>${esc(name)}</small><b>\u2212${n}</b><em>${n >= 5 ? 'Crushing blow' : 'Direct hit'}</em></div></div>`;
+    <div class="ccsl-edgew"><i class="ccsl-edge l"></i><i class="ccsl-edge"></i></div><div class="ccsl-txt"><small>${esc(name)}</small><b>\u2212${n}</b><em>${n >= 5 ? 'Crushing blow' : 'Direct hit'}</em></div></div>`;
   stage.appendChild(el);
   const ui = ccM.el.querySelector('.ccm-ui'); ui.classList.remove('ccsl-shake'); void ui.offsetWidth; ui.classList.add('ccsl-shake');
   setTimeout(() => { el.remove(); ui.classList.remove('ccsl-shake'); }, 1900);

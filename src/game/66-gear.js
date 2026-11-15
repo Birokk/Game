@@ -178,15 +178,17 @@ function gearBattle(e) {
 }
 
 /* ---- the Tailor window: level up, dismantle, craft with set tokens ---- */
-let gearSel = null, gearTab = 'worn';
+let gearSel = null, gearTab = 'worn', gearFocus = null;   // gearFocus = the character the Tailor was opened from: their pieces come first
 function openTailor(focus) {
+  gearFocus = focus && focus.who || null;
   if (focus) { gearSel = focus; gearTab = focus.who ? 'worn' : 'spare'; }
   openModal({ title: 'Tailor', ic: 'wardrobe', wide: true, kind: 'tailor', body: '<div id="gearRoot"></div>', onMount: () => renderTailor() });
 }
 function renderTailor() {
   const root = document.getElementById('gearRoot'); if (!root) return;
   const g = gS(), W = S.wallet;
-  const worn = Object.keys(S.wear || {}).filter(cid => owns(cid) && findEntry(cid)).flatMap(cid => WARD_SLOTS.map(([slot]) => { const x = clothOf((S.wear[cid] || {})[slot]); return x ? { who: cid, slot, x, k: gearStarOf(x, cid, slot), lv: gearWornLv(cid, slot) } : null; }).filter(Boolean));
+  const wornOrder = Object.keys(S.wear || {}).filter(cid => owns(cid) && findEntry(cid)).sort((a, b) => (b === gearFocus) - (a === gearFocus) || findEntry(a).name.localeCompare(findEntry(b).name));
+  const worn = wornOrder.flatMap(cid => WARD_SLOTS.map(([slot]) => { const x = clothOf((S.wear[cid] || {})[slot]); return x ? { who: cid, slot, x, k: gearStarOf(x, cid, slot), lv: gearWornLv(cid, slot) } : null; }).filter(Boolean));
   const spare = S.clothes.filter(x => owns(x.id)).flatMap(x => gearCopies(x.id).filter(cp => !cp.who).map(cp => ({ id: x.id, x, k: cp.k, si: cp.si, lv: cp.lv }))).sort((a, b) => b.lv - a.lv || b.x.rarity - a.x.rarity || a.x.name.localeCompare(b.x.name));
   const list = gearTab === 'worn' ? worn : gearTab === 'spare' ? spare : [];
   const key = c => c.who ? `w|${c.who}|${c.slot}` : `s|${c.id}|${c.k}|${c.si}`;
@@ -213,7 +215,7 @@ function renderTailor() {
   } else detail = `<p class="tiny">${gearTab === 'worn' ? 'Nobody wears any clothes yet. Equip pieces from a character\'s Wardrobe tab.' : 'No spare pieces.'}</p>`;
   root.innerHTML = `<div class="gt"><div class="gt-top"><div class="gt-tabs">${[['worn', 'Worn'], ['spare', 'Spare'], ['tok', 'Set tokens']].map(([k, n]) => `<button class="tab ${gearTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
       <div class="gt-mats"><span title="Thread: for breakthroughs; from every gear raid clear and dismantling">${curIcon('thread')}<b>${fmt(W.thread || 0)}</b></span><span>${curIcon('coins')}<b>${fmt(W.coins || 0)}</b></span></div></div>
-    <div class="gt-body">${gearTab === 'tok' ? '' : `<div class="gt-grid">${list.map(cell).join('') || ''}</div>`}<div class="gt-side">${detail}</div></div>
+    <div class="gt-body">${gearTab === 'tok' ? '' : `<div class="gt-grid">${gearTab === 'worn' ? list.map((c, i) => (i === 0 || list[i - 1].who !== c.who ? `<span class="gt-gh ${c.who === gearFocus ? 'me' : ''}">${baseThumb(findEntry(c.who))}<b>${esc(findEntry(c.who).name)}</b>${c.who === gearFocus ? '<em>This character</em>' : ''}</span>` : '') + cell(c)).join('') : list.map(cell).join('')}</div>`}<div class="gt-side">${detail}</div></div>
     <p class="tiny">Caps: R 10 · SSR 20 · UR 30 / 35 / 40 at 1★ / 2★ / 3★. Each try costs gold and may fail (the level stays); Thread is only for the breakthroughs at Lv 10, 20 and 30. Levels you reached before in a slot cost ¼ and always succeed (Tailor mastery). Fusion and star merges keep the best level.</p></div>`;
   root.querySelectorAll('[data-gtab]').forEach(b => b.onclick = () => { gearAutoStop(); gearTab = b.dataset.gtab; gearSel = null; gearAuto.log = []; renderTailor(); });
   root.querySelectorAll('[data-gt]').forEach(b => b.onclick = () => { gearAutoStop(); const p = b.dataset.gt.split('|'); gearSel = p[0] === 'w' ? { who: p[1], slot: p[2] } : { id: p[1], k: +p[2], si: +p[3] }; gearAuto.log = []; gearAuto.target = 0; renderTailor(); });

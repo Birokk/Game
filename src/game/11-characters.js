@@ -128,7 +128,7 @@ function renderCharacters() {
       <div class="wd-grid">${WARD_SLOTS.map(([k, l]) => { const x = W[k] && clothOf(W[k]);
         return `<button class="wd-slot ${x ? 'r' + x.rarity + ' full' : ''}" data-wdslot="${k}">${x && clothImg(x) ? `<img src="${clothImg(x)}" alt="">` : `<span class="wd-ph">${icon('wardrobe')}</span>`}<b>${l}</b><span class="tiny">${x ? esc(x.name) : 'Empty'}</span>${hasClothStars(x) ? clothStarRow(wornStarOf(c.id, k), 'slot') : ''}${x ? gearLvTag(gearWornLv(c.id, k), gearCap(x, gearStarOf(x, c.id, k)), 'wd') : ''}</button>`; }).join('')}</div>
       <p class="tiny">Tap a slot to see every piece you own for it.</p>
-      <div class="row" style="gap:8px"><button class="btn mint sm" id="wdAuto">${icon('sparkle')}Auto-equip best</button><button class="btn ghost sm" id="wdNone" ${on ? '' : 'disabled'}>${icon('close')}Unequip all</button><button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button></div>
+      <div class="row" style="gap:8px"><button class="btn mint sm" id="wdAuto">${icon('sparkle')}Auto-equip best</button><button class="btn ghost sm" id="wdNone" ${on ? '' : 'disabled'}>${icon('close')}Unequip all</button><button class="btn ghost sm" id="wdFuse">${icon('fuse')}Fuse clothes</button><button class="btn ghost sm" id="wdTailor">${icon('wardrobe')}Tailor</button></div>
       <p class="tiny">Fusion turns 3 spare clothes of one rarity into 1 random piece of the next (R → SSR, SSR → UR).</p>`;
   } else if (csTab === 'memory') {
     const E = memEqOf(c.id), list = S.memories.filter(x => !x.char || x.char === c.id).sort((a, b) => owns(b.id) - owns(a.id) || b.rarity - a.rarity || a.name.localeCompare(b.name));
@@ -221,6 +221,7 @@ function renderCharacters() {
   if (csTab === 'pet') bindPetTab(c);
   if (csTab === 'pot') bindPotTab(c);
   csEl.querySelectorAll('[data-wdslot]').forEach(b => b.onclick = () => { wdSlot = b.dataset.wdslot; openWardPick(c, wdSlot); });
+  const wdT = csEl.querySelector('#wdTailor'); if (wdT) wdT.onclick = () => { const W = wearOf(c.id), k = (WARD_SLOTS.find(([s]) => W[s] && clothOf(W[s])) || [])[0]; persist(); openTailor(k ? { who: c.id, slot: k } : null); };
   csEl.querySelectorAll('[data-wdi]').forEach(b => b.onclick = () => {
     const x = clothOf(b.dataset.wdi); if (!x || !owns(x.id)) return;
     const W = { ...wearOf(c.id) };

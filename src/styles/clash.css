@@ -2342,3 +2342,17 @@ b.ccd-dname{border:0}
 
 /* the hall grows (never stretches) to cover the letterbox on screens that aren't 16:9, scaled around the battle line's centre so the seam stays on it */
 .ccm-env{transform:scale(var(--envk,1));transform-origin:860px 460px}
+/* big-hit slice v2 (the owner: the picture wasn't centred on the screen): one slanted band through the middle of the whole
+   screen (letterbox included), the art centred in it, a glowing cut line on both edges, the numbers centred under it */
+.ccsl{inset:calc(var(--lby,0px) * -1) calc(var(--lbx,0px) * -1)}
+.ccsl-flash{background:radial-gradient(ellipse 50% 60% at 50% 55%,rgba(255,255,255,.75),rgba(255,180,230,.3) 45%,transparent 75%)}
+.ccsl-move{left:0;top:0;width:100%;height:100%;animation:ccslMove2 1.85s cubic-bezier(.2,.9,.25,1) forwards}
+@keyframes ccslMove2{0%{transform:translateX(-100%)}15%{transform:translateX(0)}76%{transform:translateX(1.5%);opacity:1}100%{transform:translateX(100%);opacity:.5}}
+.ccsl-panel{clip-path:polygon(34% 0,84% 0,66% 100%,16% 100%)}
+.ccsl-panel img{object-position:50% 30%}
+.ccsl-panel img.chibi{padding:8% 30%}
+.ccsl-shade{background:linear-gradient(0deg,rgba(10,4,24,.78),rgba(10,4,24,.2) 42%,transparent 60%),linear-gradient(90deg,rgba(255,154,213,.22),transparent 30%,transparent 70%,rgba(143,210,255,.22))}
+.ccsl-edge{clip-path:polygon(calc(84% - 2px) 0,calc(84% + 12px) 0,calc(66% + 12px) 100%,calc(66% - 2px) 100%)}
+.ccsl-edge.l{clip-path:polygon(calc(34% - 12px) 0,calc(34% + 2px) 0,calc(16% + 2px) 100%,calc(16% - 12px) 100%);background:linear-gradient(180deg,#9fdcff,#ffb3e0 55%,#fff)}
+.ccsl-txt{left:50%;top:auto;bottom:calc(var(--lby,0px) + 80px);align-items:center;text-align:center;transform:translateX(-50%) skewX(-8deg);animation-name:ccslTxt2}
+@keyframes ccslTxt2{0%,12%{opacity:0;transform:translateX(-50%) skewX(-8deg) translateX(-60px)}24%{opacity:1;transform:translateX(-50%) skewX(-8deg)}80%{opacity:1}100%{opacity:0}}

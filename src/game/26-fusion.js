@@ -45,7 +45,7 @@ function fuseBody(root) {
     </div>
     <span class="lbl-sm">Spare ${CRN[fuseR]} clothes · tap to add one, − to take one out (worn pieces don't count; Lv = the best spare level, the new piece keeps the best level of its three)</span>
     ${list.length ? `<div class="fu-list">${list.map(x => { const sp = spareOf(x.id), k = inPot(x.id);
-      return `<div class="fu-it r${x.rarity} ${k ? 'on' : ''}" style="--i:${Math.min(20, list.indexOf(x))}"><button class="fu-add" data-fua="${esc(x.id)}" ${k >= sp ? 'disabled' : ''} aria-label="Add ${esc(x.name)}"><img src="${clothImg(x)}" alt="">${ctag(x.rarity)}${(() => { const L = Math.max(0, ...gPool(x.id, 1)); return L ? gearLvTag(L, gearCap(x, 1), 'inv') : ''; })()}<span class="fu-nm">${esc(x.name)}</span><span class="fu-n">${k}/${sp}</span></button>${k ? `<button class="fu-rm" data-fur-rm="${esc(x.id)}" aria-label="Take one out">−</button>` : ''}</div>`; }).join('')}</div>`
+      return `<div class="fu-it r${x.rarity} ${k ? 'on' : ''}" style="--i:${Math.min(20, list.indexOf(x))}"><button class="fu-add" data-fua="${esc(x.id)}" ${k >= sp ? 'disabled' : ''} aria-label="Add ${esc(x.name)}"><img src="${clothImg(x)}" alt="">${ctag(x.rarity)}${(() => { const L = Math.max(0, ...gPool(x.id, 1)); return L ? gearLvTag(L, gearCap(x, 1), 'gi') : ''; })()}<span class="fu-nm">${esc(x.name)}</span><span class="fu-n">${k}/${sp}</span></button>${k ? `<button class="fu-rm" data-fur-rm="${esc(x.id)}" aria-label="Take one out">−</button>` : ''}</div>`; }).join('')}</div>`
       : `<div class="cs-pill">No spare ${CRN[fuseR]} clothes. Clear raids to find more.</div>`}
   </div>`;
   bindFuseTabs(root);
@@ -341,7 +341,7 @@ function clothCopies(id) {
 }
 /* every copy of every owned piece for one slot, best first */
 const slotCopies = (c, slot) => S.clothes.filter(x => x.slot === slot && clothFits(x, c) && owns(x.id)).flatMap(x => clothCopies(x.id).map(cp => ({ ...cp, x })))
-  .sort((a, b) => b.x.rarity - a.x.rarity || b.star - a.star || a.x.name.localeCompare(b.x.name) || (a.who === c.id ? -1 : b.who === c.id ? 1 : 0) || (!!a.who - !!b.who));
+  .sort((a, b) => (b.who === c.id) - (a.who === c.id) || b.x.rarity - a.x.rarity || b.star - a.star || a.x.name.localeCompare(b.x.name) || (!!a.who - !!b.who));   // what this character wears first
 /* the see-through picker that opens when a wardrobe slot is tapped */
 function openWardPick(c, slot) {
   const old = document.querySelector('.wdpick'); if (old) old.remove();
@@ -350,7 +350,7 @@ function openWardPick(c, slot) {
     const list = slotCopies(c, slot), cur = wearOf(c.id)[slot];
     el.innerHTML = `<div class="rdrop-box wdp-box"><div class="wdp-head"><h2 class="ts">${esc(WARD_NAME[slot])}</h2><span class="tiny">${list.length} piece${list.length === 1 ? '' : 's'} in your inventory · tap one to wear it</span><button class="inv-x" data-wdpx aria-label="Close">${icon('close')}</button></div>
       ${list.length ? `<div class="wdp-grid">${(() => { const seen = {}; return list.map(cp => { const k = cp.star || 1, key = cp.x.id + '|' + k; if (cp.who) return gearWornLv(cp.who, cp.slot); const n = seen[key] = (seen[key] || 0) + 1; return gearSpareLv(cp.x.id, k, n - 1); }); })().map((lv, i) => { const cp = list[i], mine = cp.who === c.id, busy = cp.who && !mine, who = busy ? (findEntry(cp.who) || {}).name || '' : '';
-        return `<button class="wdp-it r${cp.x.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdp="${i}" ${busy ? 'disabled' : ''}><span class="rdrop-glow"></span><img src="${clothImg(cp.x)}" alt="">${ctag(cp.x.rarity)}${gearLvTag(lv, gearCap(cp.x, cp.star || 1), 'wdp-lv')}${cp.star ? clothStarRow(cp.star, 'item') : ''}<b>${esc(cp.x.name)}</b>${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">Worn by ${esc(who)}</span>` : ''}</button>`; }).join('')}</div>`
+        return `<button class="wdp-it r${cp.x.rarity} ${mine ? 'on' : ''} ${busy ? 'busy' : ''}" data-wdp="${i}" ${busy ? 'disabled' : ''}><span class="rdrop-glow"></span><img src="${clothImg(cp.x)}" alt="">${ctag(cp.x.rarity)}<span class="wdp-meta">${cp.star ? clothStarRow(cp.star, 'item') : ''}<span class="wdp-lvt ${lv ? '' : 'z'}">Lv ${lv}</span></span><b>${esc(cp.x.name)}</b>${mine ? '<span class="wdp-cur">Wearing</span>' : ''}${mine ? `<span class="skc-on">${icon('check')}</span>` : ''}${busy ? `<span class="wd-worn">Worn by ${esc(who)}</span>` : ''}</button>`; }).join('')}</div>`
         : `<div class="cs-pill">You don't have any ${esc(WARD_NAME[slot].toLowerCase())} pieces yet. Clear raids or fuse clothes to find some.</div>`}
       <div class="row" style="justify-content:center;gap:10px">${cur ? `<button class="btn ghost" data-wdpoff>Take off</button><button class="btn ghost" data-wdptail>${icon('wardrobe')}Tailor</button>` : ''}<button class="btn gold" data-wdpx>Done</button></div></div>`;
     el.querySelectorAll('[data-wdpx]').forEach(b => b.onclick = () => el.remove());

@@ -2,6 +2,7 @@
    Every raid stage has 3 stars, earned by winning its battle: ★ win · ★ win with 10+ HP left · ★ win by round 12. Stars are
    kept once earned (S.raidStars[raidId][stage] = [0|1 ×3]). Any star on a stage unlocks auto play in that stage's battles;
    all 3 stars unlock its instant clears. */
+const RAID_STAR_PEARLS = 1;
 const RAID_STAR_GOALS = [['win', 'Win the battle'], ['hp', 'Win with 10+ HP left', 10], ['round', 'Win by round 12', 12]];
 const raidStarsOf = (id, si) => { const a = ((S.raidStars || {})[id] || {})[si] || []; return [0, 1, 2].map(i => a[i] ? 1 : 0); };
 const raidStarN = (id, si) => raidStarsOf(id, si).reduce((t, v) => t + v, 0);
@@ -13,7 +14,9 @@ function raidScoreStars(G, r) {
   const win = G.winner === 0, got = [win, win && G.players[0].hp >= RAID_STAR_GOALS[1][2], win && G.round <= RAID_STAR_GOALS[2][2]].map(Boolean);
   const si = r.stage || 0, old = raidStarsOf(r.id, si), now = old.map((v, i) => v || got[i] ? 1 : 0);
   S.raidStars = S.raidStars || {}; S.raidStars[r.id] = { ...(S.raidStars[r.id] || {}), [si]: now };
-  return { got, old, now, fresh: now.map((v, i) => v && !old[i]) };
+  const fresh = now.map((v, i) => !!(v && !old[i])), pearls = fresh.filter(Boolean).length * RAID_STAR_PEARLS;   // every new star: 1 pearl (the owner's rule, like the campaign)
+  if (pearls) S.wallet.pearls += pearls;
+  return { got, old, now, fresh, pearls };
 }
 { const f0 = raidFinish;
   raidFinish = function (G, r) { const res = f0.apply(this, arguments); if (res) res.stars = raidScoreStars(G, r); return res; }; }
@@ -22,8 +25,8 @@ function raidScoreStars(G, r) {
     const base = e0.apply(this, arguments), st = res && res.stars; if (!st) return base;
     const n = st.now.reduce((t, v) => t + v, 0);
     return base + `<div class="rs-end"><div class="rs-big">${st.now.map((v, i) => `<i class="${v ? 'on' : ''} ${st.fresh[i] ? 'new' : ''}">★</i>`).join('')}</div>
-      <ul>${RAID_STAR_GOALS.map(([, t], i) => `<li class="${st.got[i] ? 'ok' : ''}">${st.got[i] ? icon('check') : icon('close')}<span>${esc(t)}</span><em>${st.fresh[i] ? 'New' : st.old[i] ? 'Earned before' : st.got[i] ? 'Done' : 'Not yet'}</em></li>`).join('')}</ul>
-      <p class="tiny">${n >= 3 ? 'All 3 stars: instant clears are open on this stage.' : n ? `Auto play is open on this stage. Get all 3 stars to unlock its instant clears.` : 'Win to earn a star and unlock auto play on this stage.'}</p></div>`;
+      <ul>${RAID_STAR_GOALS.map(([, t], i) => `<li class="${st.got[i] ? 'ok' : ''}">${st.got[i] ? icon('check') : icon('close')}<span>${esc(t)}</span><em>${st.fresh[i] ? `New · +${RAID_STAR_PEARLS} ${curIcon('pearls')}` : st.old[i] ? 'Earned before' : st.got[i] ? 'Done' : 'Not yet'}</em></li>`).join('')}</ul>
+      ${st.pearls ? `<p class="rs-pearls">${curIcon('pearls')}<b>+${st.pearls}</b> pearl${st.pearls > 1 ? 's' : ''} for ${st.pearls / RAID_STAR_PEARLS > 1 ? 'the new stars' : 'the new star'}</p>` : ''}<p class="tiny">${n >= 3 ? 'All 3 stars: instant clears are open on this stage.' : n ? `Auto play is open on this stage. Get all 3 stars to unlock its instant clears.` : 'Win to earn a star and unlock auto play on this stage.'}</p></div>`;
   }; }
 /* instant clears need 3 stars on the stage */
 { const c0 = confirmRaidClear;
@@ -41,8 +44,8 @@ function raidStageRewards(d, si) {
 function raidStageInfoHTML(d, si, cls = '') {
   const st = raidStarsOf(d.id, si), n = raidStarN(d.id, si), auto = n >= 1, inst = n >= 3, adm = canAdmin();   // admins skip the locks: say so instead of "Open"
   return `<div class="rsi ${cls}">
-    <div class="rsi-col"><span class="rsi-h">${icon('star')}Stage ${ROMAN[si]} stars <b>${n} / 3</b></span>
-      <ul class="rsi-goals">${RAID_STAR_GOALS.map(([, t], i) => `<li class="${st[i] ? 'ok' : ''}"><i>★</i><span>${esc(t)}</span><em>${st[i] ? 'Earned' : 'Not yet'}</em></li>`).join('')}</ul></div>
+    <div class="rsi-col"><span class="rsi-h">${icon('star')}Stage ${ROMAN[si]} stars <b>${n} / 3</b></span><small class="rsi-sub">Each new star gives ${RAID_STAR_PEARLS} pearl</small>
+      <ul class="rsi-goals">${RAID_STAR_GOALS.map(([, t], i) => `<li class="${st[i] ? 'ok' : ''}"><i>★</i><span>${esc(t)}</span><em>${st[i] ? 'Earned' : `+${RAID_STAR_PEARLS} ${curIcon('pearls')}`}</em></li>`).join('')}</ul></div>
     <div class="rsi-col"><span class="rsi-h">${icon('lock')}Stars unlock</span>
       <ul class="rsi-un"><li class="${auto ? 'ok' : ''}"><i>★</i><span>Auto play in this stage's battles</span><em>${auto ? 'Open' : adm ? 'Admin: open' : 'Any star'}</em></li>
         <li class="${inst ? 'ok' : ''}"><i>★★★</i><span>Instant clears on this stage</span><em>${inst ? 'Open' : adm ? 'Admin: open' : `${n} / 3`}</em></li></ul></div>

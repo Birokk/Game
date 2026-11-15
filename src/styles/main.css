@@ -6749,3 +6749,24 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .rpb .lsa{text-align:center}.rpb .lsa-me{flex-basis:100%;text-align:center}
 @media (max-height:500px) and (orientation:landscape){.rpb .lsa-me,.rpb-note{display:none}.rpb-side{padding:6px 9px}.rpb-ava{width:34px;height:34px}.rpb .rcf-rows>span{padding:6px 12px}}
 @media (max-height:500px) and (orientation:landscape){.rpb{gap:6px}.rpb .rcf-rows{display:none}.rpb .rsi-col{padding:6px 9px;gap:3px}.rpb .rsi ul{gap:2px}.rpb .lsa{margin:0}}
+.rsi-sub{font:400 11px var(--read);opacity:.7;margin-top:-3px}
+.rsi li em img,.rsi li em svg,.rsi li em .ic{width:12px;height:12px;vertical-align:-2px}
+.rs-pearls{display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0 0;font:400 13px var(--display)}
+.rs-pearls img,.rs-pearls svg,.rs-pearls .ic{width:18px;height:18px}.rs-pearls b{color:#ffe29a}
+.rs-end li em img,.rs-end li em svg{width:12px;height:12px;vertical-align:-2px}
+/* wardrobe picker: rows never squeeze (they overlapped on phones), the level sits beside the stars, "Wearing" on this character's piece */
+.wdp-grid{grid-auto-rows:max-content;align-content:start}
+.wdp-meta{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:14px}
+.wdp-lvt{font:800 10.5px var(--display);letter-spacing:.03em;padding:0 6px;border-radius:99px;background:rgba(10,8,28,.6);border:1px solid rgba(255,255,255,.28)}
+.wdp-lvt.z{opacity:.6}
+.wdp-cur{position:relative;z-index:1;font:400 9.5px var(--display);letter-spacing:.08em;text-transform:uppercase;color:#bfe3ff}
+/* Tailor: worn pieces grouped by character, the one it was opened from first */
+.gt-gh{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:4px;font:400 13px var(--display)}
+.gt-gh img{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,.4)}
+.gt-gh em{font:400 10px var(--display);font-style:normal;letter-spacing:.06em;text-transform:uppercase;padding:1px 8px;border-radius:99px;background:linear-gradient(135deg,#ffd9f4,#c9a6ff 55%,#a9cdff);color:var(--cry-ink,#2a1f5c)}
+.gt-gh:first-child{margin-top:0}
+.gt-grid{grid-auto-rows:max-content;align-content:start}
+/* the level in the Bag / fusion lists: plain text in the bottom left of the picture (the rarity tag keeps the bottom right) */
+.glv.gi{left:6px;top:auto;bottom:5px;padding:0;border:0;background:none;box-shadow:none;font:800 11px/1 var(--display);text-shadow:0 1px 3px #000,0 0 6px rgba(0,0,0,.8)}
+.glv.gi.mx{color:#ffe29a}
+.fu-add .glv.gi{top:30px;bottom:auto}

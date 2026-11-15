@@ -96,7 +96,7 @@ function renderStarUp(root, tabs) {
   const all = S.clothes.filter(x => hasClothStars(x) && owns(x.id)).sort((a, b) => a.name.localeCompare(b.name)).flatMap(x => gearCopies(x.id).map((cp, i) => ({ ...cp, i, x })));
   root.innerHTML = `<div class="fu">${tabs}
     <p class="tiny">UR clothes have up to ${CLOTH_MAXST} stars (1★ base). Tap the copy you want to upgrade, then choose another spare copy of the <b>same piece at the same stars</b>: two 1★ make a 2★, two 2★ make a 3★. Worn copies can be upgraded but are never used up.</p>
-    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: 5, pic: `<img src="${clothImg(cp.x)}" alt="">${gearLvTag(cp.lv, gearCap(cp.x, cp.k), 'inv')}`, under: `${clothStarRow(cp.star, 'sm')}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.star >= CLOTH_MAXST ? 'maxed' : '', attrs: `data-clup="${esc(cp.x.id)}|${cp.i}" title="${esc(cp.x.name)}"` })).join('')}</div>
+    ${all.length ? `<div class="up-list">${all.map(cp => invCell({ r: 5, pic: `<img src="${clothImg(cp.x)}" alt="">${gearLvTag(cp.lv, gearCap(cp.x, cp.k), 'gi')}`, under: `${clothStarRow(cp.star, 'sm')}${cp.who ? `<span class="up-who">${whoName(cp.who)}</span>` : ''}`, cls: cp.star >= CLOTH_MAXST ? 'maxed' : '', attrs: `data-clup="${esc(cp.x.id)}|${cp.i}" title="${esc(cp.x.name)}"` })).join('')}</div>
       <div class="row" style="justify-content:center"><button class="btn ghost" id="mstAll" ${S.clothes.some(x => hasClothStars(x) && (spareAt(x.id, 1) >= 2 || spareAt(x.id, 2) >= 2)) ? '' : 'disabled'}>Merge everything possible</button></div>`
       : '<div class="cs-pill">You don\'t own any UR clothes yet.</div>'}</div>`;
   bindFuseTabs(root);
@@ -106,7 +106,7 @@ function renderStarUp(root, tabs) {
 function upClothCopy(id, i) {
   const x = clothOf(id), cps = gearCopies(id), tgt = cps[i]; if (!x || !tgt) return;
   if (tgt.star >= CLOTH_MAXST) { toast(`This ${x.name} is already at ${CLOTH_MAXST}★.`); return; }
-  const cands = cps.map((c, j) => ({ ...c, j })).filter(c => c.j !== i && !c.who && c.star === tgt.star).map(c => ({ key: String(c.j), r: 5, pic: `<img src="${clothImg(x)}" alt="">${gearLvTag(c.lv, gearCap(x, c.k), 'inv')}`, under: clothStarRow(c.star, 'sm') }));
+  const cands = cps.map((c, j) => ({ ...c, j })).filter(c => c.j !== i && !c.who && c.star === tgt.star).map(c => ({ key: String(c.j), r: 5, pic: `<img src="${clothImg(x)}" alt="">${gearLvTag(c.lv, gearCap(x, c.k), 'gi')}`, under: clothStarRow(c.star, 'sm') }));
   openUpgradePop({ title: 'Clothing stars', target: { r: 5, pic: `<img src="${clothImg(x)}" alt="">`, name: x.name + ` · Lv ${tgt.lv}` + (tgt.who ? ` · worn by ${(findEntry(tgt.who) || {}).name}` : '') }, from: tgt.star, to: tgt.star + 1, need: 1, cands,
     stars: st => clothStarRow(st, 'slot'), note: `Needs another spare ${x.name} at ${tgt.star}★. The new piece keeps the higher of the two levels.`,
     onFuse: () => { const t = clothCopies(id)[i]; if (!t || !mergeClothCopy(id, tgt.star, t)) { toast('That merge is no longer possible.'); return; }

@@ -3,7 +3,8 @@
    skill (entry.ccSkill, picked in admin → Game pool; without one the default of its card attribute, LS_DEF), its tier
    from the awakened (Breakthrough) stars (2 → tier 2, 4 → tier 3, 6 → cooldown −1), the lead info handed to the match
    (ccLeadPass, read by ccCreateMatch), the skill medallion beside each leader card in a match, the cast banner, and the
-   texts for the Deck screen / admin. The Arena treats everyone the same: tier 1, no cooldown bonus. */
+   texts for the Deck screen / admin. The Arena uses your full build too (the owner's rule); only a future ranked mode
+   (o.pvp) will play everyone at tier 1 with no bonuses. Arena opponents get a tier by their rank (LS_AR_TIER). */
 const ccLeadPass = { v: null };
 const LS_DEF = { aggression: 'battlecry', defense: 'bulwark', control: 'hex', mobility: 'shadowstep', support: 'mend' };
 const CC_BOND_TXT = { aggression: 'Your first attack each turn deals +1 damage.', defense: 'The first unit you summon each turn enters with Armor 1.', control: 'Your first damaging spell each turn deals +1 damage.', mobility: 'Your first move each turn is free.', support: 'At the start of your turn, heal your most damaged unit 1.' };
@@ -11,13 +12,13 @@ const lsOf = e => !e ? null : LS[e.ccSkill] ? e.ccSkill : LS_DEF[e.ccStyle] || '
 const lsAwake = e => e && owns(e.id) ? btOf(e.id).length : 0;   // awakened (switched-on) Breakthrough stars
 const lsTierOf = e => { const n = lsAwake(e); return Math.min(3, (n >= 4 ? 3 : n >= 2 ? 2 : 1) + (e && owns(e.id) && sigWorn(e) ? 1 : 0)); };   // the signature set adds +1 tier
 const lsCdmOf = e => lsAwake(e) >= 6 ? 1 : 0;
-/* the lead info for one side; o.pvp = the Arena (tier 1 for everyone), o.tier = a fixed tier (bots) */
+/* the lead info for one side; o.pvp = a future ranked mode (tier 1 for everyone, no bonuses), o.tier = a fixed tier (bots) */
 function lsLead(e, o = {}) {
   if (!e) return null;
   const mine = !o.pvp && !o.tier, b = mine ? lsBonus(e) : null;
   return { id: lsOf(e), tier: o.pvp ? 1 : o.tier || lsTierOf(e), cd0: Math.max(0, 2 - (b && b.cd0 || 0)), cdMod: mine ? lsCdmOf(e) : 0, style: e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null, bondN: b && b.bondN || 0, bonus: b };
 }
-/* ---- PvE build bonuses (never in the Arena): every build system has its own job, with shared caps ----
+/* ---- build bonuses (everything but a future ranked mode, the Arena included): every build system has its own job, with shared caps ----
    Bond: hero +1 HP per 2 bond levels · Potential: each
    completed plan's Core unlocks one perk (LS_POT) · Memory: the skill resets once per match (from round 8 at 0★ down to 4
    at 3★; a signature memory 2 rounds sooner; a UR memory +1 AP that turn) · SSS awakening: the Ultimate (kept for good) ·
@@ -77,11 +78,12 @@ function lsDetails(e) {
   openModal({ title: 'Battle bonuses', ic: 'crown', kind: 'lsdet', body: `<div class="lsd">${lsInfoHTML(e)}
     <div class="lsd-sum">${B.map(([k, n]) => `<span class="${b[k] ? 'on' : ''}"><b>${b[k] ? '+' + b[k] : '—'}</b><small>${n}</small><i>max +${LS_CAP[k]}</i></span>`).join('')}</div>
     <div class="lsd-list">${b.src.length ? b.src.map(([sys, what, t]) => `<div class="lsd-row"><b>${esc(sys)}</b><small>${what}</small><span>${t}</span></div>`).join('') : '<p class="tiny">No bonuses yet. Bond, Potential plans, a memory, awakened stars, the signature set and the SSS awakening all make this leader stronger against the game\'s own opponents.</p>'}</div>
-    <p class="tiny">These bonuses count against the game's own opponents (campaign, Great Tree, raids, guild boss, Quick Match, training), never in the Arena, where everyone plays at tier I with no bonuses.</p></div>` });
+    <p class="tiny">These bonuses count in every battle: the campaign, the Great Tree, raids, the guild boss, Quick Match, training and the Arena. Only a ranked mode (coming later) will play everyone at tier I with no bonuses.</p></div>` });
 }
 
 /* the bot's tier: 1, 2 for the harder brains and boss stages */
-const lsBotTier = (qm, camp, arena) => arena ? 1 : qm && (qm.diff === 'expert' || qm.diff === 'hard') ? 2 : camp && camp.boss ? 2 : 1;
+const LS_AR_TIER = [1, 1, 2, 2, 2, 3, 3, 3];   // Arena opponents' skill tier by their rank (Bronze → Celestial): they stand for built players
+const lsBotTier = (qm, camp, arena) => arena ? LS_AR_TIER[typeof arRankOf === 'function' && arena.f ? arRankOf(arena.f.vp).i : 0] || 1 : qm && (qm.diff === 'expert' || qm.diff === 'hard') ? 2 : camp && camp.boss ? 2 : 1;
 const lsName = id => (LS[id] || {}).name || '';
 const lsDesc = (id, t) => { const S = LS[id]; return S ? S.d[Math.max(1, Math.min(3, t || 1)) - 1] : ''; };
 const lsIc = (id, cls = '') => ccIco((LS[id] || {}).ic || 'crystal', cls);
