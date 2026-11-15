@@ -1,8 +1,9 @@
 /* ---------- Gear levels (the owner's plan): every clothing copy has its own level ----------
-   Cap by rarity: R 10, SSR 20, UR 30 / 35 / 40 at 1★ / 2★ / 3★. Each level costs gold + Thread (GEAR_*); the step past
-   10 / 20 / 30 also needs a refine material from deeper raid stages (Silk from stage II, Starlit Silk from stage III and up).
-   Tailor mastery: the game remembers the highest level reached in each slot; reaching a level up to it again costs a
-   quarter of the gold and Thread and no refine material, so the first set is the climb and the next ones are quick.
+   Cap by rarity: R 10, SSR 20, UR 30 / 35 / 40 at 1★ / 2★ / 3★. Upgrading works like pet grades but far cheaper: each try
+   costs only gold and succeeds with a chance that drops with the level (a failed try keeps the level), with Auto upgrade
+   at ×1 / ×2 / ×4. Thread is only needed for the breakthroughs at levels 10, 20 and 30 (always succeed). Tailor mastery:
+   the game remembers the highest level reached in each slot; levels up to it cost a quarter and always succeed, so the
+   first set is the climb and the next ones are quick.
    Copies are only told apart by their star, so the levels are kept like this (S.gear): a worn copy's level sits on the
    character's slot (wl[charId][slot]); spare leveled copies sit in a pool per piece and star (pool[id][star] = [levels]);
    gearSync (run before every save) moves a level between the pool and a slot whenever what a slot wears changes, so every
@@ -12,13 +13,13 @@
    3 / 6 pieces of a set give half / all of its trait. */
 const GEAR_UR_CAP = [30, 30, 35, 40];
 const gearCap = (x, st) => !x ? 0 : +x.rarity >= 5 ? GEAR_UR_CAP[Math.max(1, Math.min(3, st || 1))] : +x.rarity === 4 ? 20 : 10;
-const gearThread = n => Math.ceil((n + 1) / 2);   // level n → n + 1
-const gearGold = n => 400 * (n + 1);
-const gearRefine = n => n === 10 ? ['silk', 1] : n === 20 ? ['ssilk', 1] : n === 30 ? ['ssilk', 5] : null;
-const gearSpent = L => { let t = 0; for (let n = 0; n < L; n++) t += gearThread(n); return t; };
+const GEAR_BT = { 10: 20, 20: 50, 30: 100 };                       // breakthroughs: Thread to go past level 10 / 20 / 30
+const GEAR_TRY = { 3: 60, 4: 100, 5: 150 };                         // gold per try × (level + 1)
+const gearChance = n => Math.max(.4, 1 - .015 * n);                 // 100% at level 0 down to 40%
+const gearSpent = L => Object.entries(GEAR_BT).reduce((t, [lv, th]) => t + (L > +lv ? th : 0), 0);   // the Thread inside a level (refunds)
 const GEAR_DIS = { 3: 3, 4: 8, 5: 20 };   // Thread for dismantling (× the star for UR)
 const GEAR_TOK = 30;                     // set tokens for one chosen piece
-const GEAR_MATS = [[2, 0, 0], [4, .3, 0], [6, .4, .1], [9, .5, .2], [12, .6, .35]];   // per gear raid clear by stage: [Thread, Silk chance, Starlit Silk chance]
+const GEAR_MATS = [2, 4, 6, 9, 12];   // Thread per gear raid clear by stage
 const GEAR_SLOT_TXT = { top: 'Hero +1 HP', pants: 'Hero heals 1 a turn (every 2 milestones)', shoes: '+1 opening card (every 2 milestones)', hat: 'Skill ready 1 turn sooner (every 2 milestones)', acc: 'Weak spot: enemy −5% more HP', hand: 'Resisted: the enemy’s extra HP −5%' };
 /* set traits: 3 pieces = the first half, 6 = all of it (bonus fields as in lsBonus) */
 const GEAR_SETS = { r: [{ hp: 1 }, { hp: 2 }], ssr: [{ fu: 1 }, { fu: 2 }], ur: [{ cheap: 1 }, { cheap: 1, ap1: 1 }], ur2: [{ heal: 1 }, { heal: 1, hp: 2 }], ur3: [{ cards: 1 }, { cards: 1, hp: 2 }] };
@@ -58,30 +59,43 @@ function gearCopies(id) {
   const x = clothOf(id); if (!x) return [];
   const seen = {}; return clothCopies(id).map(cp => { const k = cp.star || 1; if (cp.who) return { ...cp, x, k, lv: gearWornLv(cp.who, cp.slot) }; const i = seen[k] = (seen[k] || 0) + 1; return { ...cp, x, k, lv: gearSpareLv(id, k, i - 1), si: i - 1 }; });
 }
-/* the cost of the next level: mastery (a level reached before in this slot) is cheap */
+/* the next step: a breakthrough (Thread, always succeeds) at 10 / 20 / 30, else a try (gold, a chance); mastery (a level
+   reached before in this slot) costs a quarter and always succeeds */
 function gearCost(x, lv) {
-  const mast = lv < (gS().mast[x.slot] || 0), f = mast ? .25 : 1, r = mast ? null : gearRefine(lv);
-  return { gold: Math.ceil(gearGold(lv) * f), thread: Math.ceil(gearThread(lv) * f), refine: r, mast };
+  const mast = lv < (gS().mast[x.slot] || 0), f = mast ? .25 : 1;
+  if (GEAR_BT[lv]) return { bt: true, gold: 0, thread: Math.ceil(GEAR_BT[lv] * f), chance: 1, mast };
+  return { bt: false, gold: Math.ceil(GEAR_TRY[Math.max(3, Math.min(5, +x.rarity))] * (lv + 1) * f), thread: 0, chance: mast ? 1 : gearChance(lv), mast };
 }
-/* level up a copy: ref = {who, slot} (worn) or {id, k, si} (the si-th spare) */
-function gearUp(ref, times = 1) {
-  const g = gS(), worn = !!ref.who, x = clothOf(worn ? (S.wear[ref.who] || {})[ref.slot] : ref.id); if (!x) return 0;
-  const k = worn ? gearStarOf(x, ref.who, ref.slot) : ref.k, cap = gearCap(x, k), pool = worn ? null : gPool(x.id, k);
-  if (!worn) pool.sort((a, b) => b - a);
-  let lv = worn ? gearWornLv(ref.who, ref.slot) : pool[ref.si] || 0, done = 0, why = '';
-  if (!worn && ref.si >= pool.length && spareAt(x.id, k) <= pool.length) return 0;
-  while (done < times && lv < cap) {
-    const c = gearCost(x, lv), W = S.wallet;
-    if ((W.coins || 0) < c.gold) { why = 'gold'; break; }
-    if ((W.thread || 0) < c.thread) { why = 'Thread'; break; }
-    if (c.refine && (W[c.refine[0]] || 0) < c.refine[1]) { why = c.refine[0] === 'silk' ? 'Silk' : 'Starlit Silk'; break; }
-    W.coins -= c.gold; W.thread -= c.thread; if (c.refine) W[c.refine[0]] -= c.refine[1];
-    lv++; done++; g.mast[x.slot] = Math.max(g.mast[x.slot] || 0, lv);
-  }
-  if (done) { if (worn) g.wl[ref.who] = { ...(g.wl[ref.who] || {}), [ref.slot]: lv }; else if (ref.si < pool.length) pool[ref.si] = lv; else pool.push(lv); persist(); }
-  else if (why) toast(`Not enough ${why} for the next level.`);
-  else if (lv >= cap) toast(`${x.name} is at its cap (Lv ${cap}).`);
-  return done;
+function gearRef(ref) {   // the copy behind a ref: {x, k, cap, lv, set(lv)}
+  const g = gS(), worn = !!ref.who, x = clothOf(worn ? (S.wear[ref.who] || {})[ref.slot] : ref.id); if (!x) return null;
+  const k = worn ? gearStarOf(x, ref.who, ref.slot) : ref.k, pool = worn ? null : gPool(x.id, k).sort((a, b) => b - a);
+  if (!worn && ref.si >= pool.length && spareAt(x.id, k) <= pool.length) return null;
+  const lv = worn ? gearWornLv(ref.who, ref.slot) : pool[ref.si] || 0;
+  return { x, k, cap: gearCap(x, k), lv, set: n => { if (worn) g.wl[ref.who] = { ...(g.wl[ref.who] || {}), [ref.slot]: n }; else if (ref.si < pool.length) pool[ref.si] = n; else { pool.push(n); ref.si = pool.length - 1; } g.mast[x.slot] = Math.max(g.mast[x.slot] || 0, n); } };
+}
+/* one try: {r: 'up' | 'bt' | 'fail', lv} or {err} */
+function gearTry(ref) {
+  const R = gearRef(ref); if (!R) return { err: 'That piece is gone.' };
+  if (R.lv >= R.cap) return { err: `${R.x.name} is at its cap (Lv ${R.cap}).` };
+  const c = gearCost(R.x, R.lv), W = S.wallet;
+  if ((W.coins || 0) < c.gold) return { err: 'Not enough gold.' };
+  if ((W.thread || 0) < c.thread) return { err: `A breakthrough needs ${c.thread} Thread (you have ${W.thread || 0}).` };
+  W.coins -= c.gold; W.thread = (W.thread || 0) - c.thread;
+  const ok = Math.random() < c.chance; if (ok) R.set(R.lv + 1);
+  return { r: !ok ? 'fail' : c.bt ? 'bt' : 'up', lv: ok ? R.lv + 1 : R.lv, gold: c.gold, thread: c.thread };
+}
+/* auto upgrade, like the pet grades: tries again and again until the target, the cap, a lack of gold / Thread or Stop */
+const GEAR_SPEEDS = [1, 2, 4], gearAuto = { on: false, target: 0, speed: 1, timer: 0, log: [] };
+function gearAutoStop() { gearAuto.on = false; clearTimeout(gearAuto.timer); persist(); }
+function gearAutoStep() {
+  if (!gearAuto.on || !document.getElementById('gearRoot') || !gearSel) return gearAutoStop();
+  const R = gearRef(gearSel); if (!R || R.lv >= Math.min(gearAuto.target, R.cap)) { gearAutoStop(); return renderTailor(); }
+  const t = gearTry(gearSel);
+  if (t.err) { gearAuto.log.unshift(t.err); gearAutoStop(); toast(t.err); return renderTailor(); }
+  gearAuto.log.unshift(t.r === 'fail' ? `Lv ${t.lv}: failed (−${fmt(t.gold)} gold)` : t.r === 'bt' ? `Breakthrough! Lv ${t.lv} (−${t.thread} Thread)` : `Lv ${t.lv} (−${fmt(t.gold)} gold)`);
+  gearAuto.log = gearAuto.log.slice(0, 8);
+  renderTailor();
+  gearAuto.timer = setTimeout(gearAutoStep, 600 / gearAuto.speed);
 }
 /* dismantle a spare copy: Thread (+ its levels' Thread back), UR pieces also give set tokens */
 function gearDismantle(id, k, si) {
@@ -100,13 +114,12 @@ function gearCraft(id) {
 }
 /* raid materials for gear raid clears (Thread, and Silk / Starlit Silk on deeper stages); UR drops add set tokens */
 function gearRaidMats(si, times, drops) {
-  const m = GEAR_MATS[Math.max(0, Math.min(4, si || 0))], W = S.wallet, out = { thread: m[0] * times, silk: 0, ssilk: 0 };
-  for (let i = 0; i < times; i++) { if (Math.random() < m[1]) out.silk++; if (Math.random() < m[2]) out.ssilk++; }
-  W.thread = (W.thread || 0) + out.thread; W.silk = (W.silk || 0) + out.silk; W.ssilk = (W.ssilk || 0) + out.ssilk;
+  const out = { thread: GEAR_MATS[Math.max(0, Math.min(4, si || 0))] * times };
+  S.wallet.thread = (S.wallet.thread || 0) + out.thread;
   (drops || []).forEach(d => { if (+d.x.rarity >= 5 && d.x.set) gS().tok[d.x.set] = (gS().tok[d.x.set] || 0) + 1; });
   return out;
 }
-const gearMatsTxt = m => [`+${m.thread} Thread`, m.silk ? `+${m.silk} Silk` : '', m.ssilk ? `+${m.ssilk} Starlit Silk` : ''].filter(Boolean).join(' · ');
+const gearMatsTxt = m => `+${m.thread} Thread`;
 
 /* ---- combining keeps the best level: fusion (3 → 1) and star merges ---- */
 { const f0 = doFuse;
@@ -184,21 +197,29 @@ function renderTailor() {
   if (gearTab === 'tok') detail = `<div class="gt-tok">${sets.map(set => { const ps = S.clothes.filter(x => x.set === set), n = g.tok[set] || 0; return `<div class="gt-set"><div class="gt-seth"><b>${esc(typeof clothSetName === 'function' ? clothSetName(set) : set)}</b><span>${n} / ${GEAR_TOK} tokens</span></div><div class="gt-setp">${ps.map(x => `<button class="gt-cr" data-gcraft="${x.id}" ${n >= GEAR_TOK ? '' : 'disabled'}><img src="${clothImg(x)}" alt=""><small>${esc(x.name)}</small></button>`).join('')}</div></div>`; }).join('') || '<p class="tiny">No UR sets yet.</p>'}<p class="tiny">Every UR piece from a raid gives 1 token of its set, dismantling a spare UR piece 5 per star. ${GEAR_TOK} tokens craft the exact piece you want.</p></div>`;
   else if (cur) {
     const cap = gearCap(cur.x, cur.k), c = cur.lv < cap ? gearCost(cur.x, cur.lv) : null, m = Math.floor(cur.lv / 10), next = Math.min(cap, (m + 1) * 10);
+    if (!gearAuto.target || gearAuto.target <= cur.lv || gearAuto.target > cap) gearAuto.target = cap;
     detail = `<div class="gt-det r${cur.x.rarity}"><div class="gt-pic"><img src="${clothImg(cur.x)}" alt="">${ctag(cur.x.rarity)}</div>
       <h3>${esc(cur.x.name)}</h3><small>${esc(WARD_NAME[cur.x.slot])}${cur.who ? ` · worn by ${esc((findEntry(cur.who) || {}).name || '')}` : ' · spare'}${hasClothStars(cur.x) ? ` · ${cur.k}★` : ''}</small>
       <div class="gt-lv"><b>Lv ${cur.lv}</b><span>/ ${cap}</span><i style="--p:${(cur.lv / cap * 100).toFixed(1)}%"></i></div>
       <p class="gt-bon"><b>${esc(WARD_NAME[cur.x.slot])} bonus:</b> ${GEAR_SLOT_TXT[cur.x.slot]} every 10 levels. Now: ${m} milestone${m === 1 ? '' : 's'}.${cur.lv < cap ? ` Next at Lv ${next}.` : ''}${+cur.x.rarity >= 5 && cur.k < 3 ? ' More stars raise the cap.' : +cur.x.rarity < 5 && cur.lv >= cap ? ' A higher rarity goes further: fusion keeps this level.' : ''}</p>
-      ${c ? `<div class="gt-cost"><span>${curIcon('coins')}${fmt(c.gold)}</span><span>${curIcon('thread')}${c.thread}</span>${c.refine ? `<span>${curIcon(c.refine[0])}${c.refine[1]} ${c.refine[0] === 'silk' ? 'Silk' : 'Starlit Silk'}</span>` : ''}${c.mast ? '<em>Tailor mastery: ¼ price</em>' : ''}</div>
-      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" data-gup="1">Level up</button><button class="btn ghost" data-gup="5">×5</button><button class="btn ghost" data-gup="99">To cap</button></div>` : '<div class="cs-pill">At its cap</div>'}
+      ${c ? `<div class="gt-cost">${c.bt ? `<b class="gt-btk">Breakthrough</b><span>${curIcon('thread')}${c.thread} Thread</span><small>always succeeds</small>` : `<span>${curIcon('coins')}${fmt(c.gold)} a try</span><span class="gt-ch">${Math.round(c.chance * 100)}% chance</span>`}${c.mast ? '<em>Tailor mastery: ¼ price, always succeeds</em>' : ''}</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap">${gearAuto.on ? `<button class="btn ghost" data-gstop>Stop</button>` : `<button class="btn gold" data-gtry>${c.bt ? 'Break through' : 'Upgrade'}</button><button class="btn ghost" data-gauto>Auto upgrade</button>`}</div>
+      <div class="gt-auto"><label>Target<select class="input sm" id="gtTarget" ${gearAuto.on ? 'disabled' : ''}>${Array.from({ length: cap - cur.lv }, (_, i) => cur.lv + 1 + i).map(n => `<option value="${n}" ${n === gearAuto.target ? 'selected' : ''}>Lv ${n}</option>`).join('')}</select></label>
+        <span class="gt-spd">${GEAR_SPEEDS.map(v => `<button class="chip ${gearAuto.speed === v ? 'on' : ''}" data-gspd="${v}">×${v}</button>`).join('')}</span></div>
+      ${gearAuto.log.length ? `<ol class="gt-log">${gearAuto.log.map(l => `<li>${esc(l)}</li>`).join('')}</ol>` : ''}` : '<div class="cs-pill">At its cap</div>'}
       ${cur.who ? '' : `<button class="btn ghost sm gt-dis" data-gdis>${icon('trash')}Dismantle · +${GEAR_DIS[+cur.x.rarity] * (+cur.x.rarity >= 5 ? cur.k : 1) + gearSpent(cur.lv)} Thread${+cur.x.rarity >= 5 && cur.x.set ? ` · +${5 * cur.k} tokens` : ''}</button>`}</div>`;
   } else detail = `<p class="tiny">${gearTab === 'worn' ? 'Nobody wears any clothes yet. Equip pieces from a character\'s Wardrobe tab.' : 'No spare pieces.'}</p>`;
   root.innerHTML = `<div class="gt"><div class="gt-top"><div class="gt-tabs">${[['worn', 'Worn'], ['spare', 'Spare'], ['tok', 'Set tokens']].map(([k, n]) => `<button class="tab ${gearTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
-      <div class="gt-mats"><span title="Thread: from every gear raid clear and dismantling">${curIcon('thread')}<b>${fmt(W.thread || 0)}</b></span><span title="Silk: raid stage II and deeper">${curIcon('silk')}<b>${W.silk || 0}</b></span><span title="Starlit Silk: raid stage III and deeper">${curIcon('ssilk')}<b>${W.ssilk || 0}</b></span><span>${curIcon('coins')}<b>${fmt(W.coins || 0)}</b></span></div></div>
+      <div class="gt-mats"><span title="Thread: for breakthroughs; from every gear raid clear and dismantling">${curIcon('thread')}<b>${fmt(W.thread || 0)}</b></span><span>${curIcon('coins')}<b>${fmt(W.coins || 0)}</b></span></div></div>
     <div class="gt-body">${gearTab === 'tok' ? '' : `<div class="gt-grid">${list.map(cell).join('') || ''}</div>`}<div class="gt-side">${detail}</div></div>
-    <p class="tiny">Caps: R 10 · SSR 20 · UR 30 / 35 / 40 at 1★ / 2★ / 3★. Levels you reached before in a slot cost ¼ (Tailor mastery). Fusion and star merges keep the best level and give back the rest as Thread.</p></div>`;
-  root.querySelectorAll('[data-gtab]').forEach(b => b.onclick = () => { gearTab = b.dataset.gtab; gearSel = null; renderTailor(); });
-  root.querySelectorAll('[data-gt]').forEach(b => b.onclick = () => { const p = b.dataset.gt.split('|'); gearSel = p[0] === 'w' ? { who: p[1], slot: p[2] } : { id: p[1], k: +p[2], si: +p[3] }; renderTailor(); });
-  root.querySelectorAll('[data-gup]').forEach(b => b.onclick = () => { const n = gearUp(gearSel, +b.dataset.gup); if (n) { toast(`+${n} level${n > 1 ? 's' : ''}`); if (typeof refreshCharacters === 'function') refreshCharacters(); } renderTailor(); });
+    <p class="tiny">Caps: R 10 · SSR 20 · UR 30 / 35 / 40 at 1★ / 2★ / 3★. Each try costs gold and may fail (the level stays); Thread is only for the breakthroughs at Lv 10, 20 and 30. Levels you reached before in a slot cost ¼ and always succeed (Tailor mastery). Fusion and star merges keep the best level.</p></div>`;
+  root.querySelectorAll('[data-gtab]').forEach(b => b.onclick = () => { gearAutoStop(); gearTab = b.dataset.gtab; gearSel = null; gearAuto.log = []; renderTailor(); });
+  root.querySelectorAll('[data-gt]').forEach(b => b.onclick = () => { gearAutoStop(); const p = b.dataset.gt.split('|'); gearSel = p[0] === 'w' ? { who: p[1], slot: p[2] } : { id: p[1], k: +p[2], si: +p[3] }; gearAuto.log = []; gearAuto.target = 0; renderTailor(); });
+  const tr = root.querySelector('[data-gtry]'); if (tr) tr.onclick = () => { const t = gearTry(gearSel); if (t.err) toast(t.err); else { gearAuto.log.unshift(t.r === 'fail' ? `Lv ${t.lv}: failed` : t.r === 'bt' ? `Breakthrough! Lv ${t.lv}` : `Lv ${t.lv}`); gearAuto.log = gearAuto.log.slice(0, 8); persist(); } renderTailor(); };
+  const au = root.querySelector('[data-gauto]'); if (au) au.onclick = () => { gearAuto.on = true; gearAutoStep(); };
+  const sp = root.querySelector('[data-gstop]'); if (sp) sp.onclick = () => { gearAutoStop(); renderTailor(); };
+  const tg = root.querySelector('#gtTarget'); if (tg) tg.onchange = () => { gearAuto.target = +tg.value; };
+  root.querySelectorAll('[data-gspd]').forEach(b => b.onclick = () => { gearAuto.speed = +b.dataset.gspd; renderTailor(); });
   const dis = root.querySelector('[data-gdis]'); if (dis) dis.onclick = () => { if (dis.dataset.sure !== '1') { dis.dataset.sure = '1'; dis.innerHTML = `${icon('trash')}Tap again to dismantle`; return; } const r = gearDismantle(gearSel.id, gearSel.k, gearSel.si); if (r) toast(`Dismantled ${r.x.name}: +${r.th} Thread${r.tok ? `, +${r.tok} set tokens` : ''}`); gearSel = null; renderTailor(); };
   root.querySelectorAll('[data-gcraft]').forEach(b => b.onclick = () => { const x = clothOf(b.dataset.gcraft); if (x && gearCraft(x.id)) { toast(`Crafted ${x.name}`); renderTailor(); } });
 }

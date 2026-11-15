@@ -18,9 +18,9 @@ function lsLead(e, o = {}) {
   return { id: lsOf(e), tier: o.pvp ? 1 : o.tier || lsTierOf(e), cd0: Math.max(0, 2 - (b && b.cd0 || 0)), cdMod: mine ? lsCdmOf(e) : 0, style: e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null, bondN: b && b.bondN || 0, bonus: b };
 }
 /* ---- PvE build bonuses (never in the Arena): every build system has its own job, with shared caps ----
-   Bond: hero +1 HP per 2 bond levels · Marriage: last stand (once per match the hero survives on 1 HP) · Potential: each
+   Bond: hero +1 HP per 2 bond levels · Potential: each
    completed plan's Core unlocks one perk (LS_POT) · Memory: the skill resets once per match (from round 8 at 0★ down to 4
-   at 3★; a signature memory 2 rounds sooner; a UR memory +1 AP that turn) · SSS awakening at grade SSS: the Ultimate ·
+   at 3★; a signature memory 2 rounds sooner; a UR memory +1 AP that turn) · SSS awakening: the Ultimate (kept for good) ·
    Signature set: skill tier +1. Caps: hero HP +8, heal +2 a turn, opening cards +2, first-turn AP +1. */
 const LS_CAP = { hp: 8, heal: 2, cards: 2, ap1: 1 };
 const LS_POT = [
@@ -33,11 +33,10 @@ function lsBonus(e) {
   const b = { hp: 0, heal: 0, cards: 0, ap1: 0, last: false, cheap: false, fu: 0, rs: 0, rsAp: 0, ult: false, bondN: 0, src: [] };
   const bl = bondLv(e.id), bh = Math.min(5, Math.floor(bl / 2));
   if (bh) { b.hp += bh; b.src.push(['Bond', `Lv ${bl}`, `Hero +${bh} HP`]); }
-  if (bondOf(e.id).married) { b.last = true; b.src.push(['Marriage', 'Eternal Vow', 'Last stand: once per match the hero survives a killing blow on 1 HP']); }
   LS_POT.forEach(([k, v, t], i) => { if (!potDone(e.id, i)) return; if (k === 'cheap') b.cheap = true; else if (k === 'bondN') b.bondN = v; else b[k] += v; b.src.push(['Potential', `Plan #${i + 1}`, t]); });
   const m = memEqOf(e.id)[0], M = m && memOf(m);
   if (M) { const st = memEqStar(e.id), sig = (e.sigMems || []).includes(m); b.rs = Math.max(3, LS_MEM_ROUND[Math.min(3, st)] - (sig ? 2 : 0)); b.rsAp = +M.rarity === 5 ? 1 : 0; b.src.push(['Memory', `${esc(M.name)} · ${st}★`, `From round ${b.rs} the skill is ready again once${b.rsAp ? ', +1 AP that turn' : ''}${sig ? ' (signature memory)' : ''}`]); }
-  if (sssAwakened(e.id) && csGrade(gradeScore(e)) === 'SSS') { b.ult = true; b.src.push(['SSS awakening', 'Grade SSS', `Ultimate: once per match from round ${CC_ULT_ROUND}, the skill at tier III for 0 AP`]); }
+  if (sssAwakened(e.id)) { b.ult = true; b.src.push(['SSS awakening', 'Awakened', `Ultimate: once per match from round ${CC_ULT_ROUND}, the skill at tier III for 0 AP`]); }   // it stays even if the grade drops
   if (sigWorn(e)) b.src.push(['Signature set', 'All 6 worn', 'Leader skill +1 tier']);
   const n = lsAwake(e); if (n >= 2) b.src.push(['Breakthrough', `${n} stars awakened`, `Skill tier ${n >= 4 ? 'III' : 'II'}${n >= 6 ? ', cooldown −1' : ''}`]);
   const gb = typeof gearBattle === 'function' ? gearBattle(e) : null;

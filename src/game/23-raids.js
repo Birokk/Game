@@ -266,7 +266,8 @@ function raidSubOf(x) {
 }
 function raidBar(open, cost) {
   const left = raidInstLeft(), dk = ccCampMyDeck(), ok = ccValidateDeck(dk.cards).ok, d = raidOf(raidSel), f = d.foe, n5 = Math.min(5, left);
-  const inst = !left ? '<span class="rdx-iu">All used · back at midnight</span>'
+  const si = raidStage(d), lock = !raidInstOk(d.id, si);
+  const inst = lock ? `<span class="rdx-iu">${icon('lock')}Get 3★ on this stage (${raidStarN(d.id, si)} / 3)</span>` : !left ? '<span class="rdx-iu">All used · back at midnight</span>'
     : `<button class="rdx-ib" data-clear="1" ${open ? '' : 'disabled'}><b>×1</b><span>${curIcon('stamina')}${cost}</span></button>${left > 1 ? `<button class="rdx-ib" data-clear="${n5}" ${open ? '' : 'disabled'}><b>×${n5}</b><span>${curIcon('stamina')}${cost * n5}</span></button>` : ''}`;
   return `<div class="rdx-bar">
       <div class="rdx-vs">
@@ -300,7 +301,7 @@ function renderRaids() {
   const dropRow = (r, L) => `<div class="rdx-row r${r} ${r === 5 && noUr ? 'off' : ''}"><span class="rdx-rl">${ctag(r)}<small>${esc(L.length ? clothSetName(L[0]) : '—')}${r === 4 || r === 3 ? '<i>every gear raid</i>' : r === 5 && noUr ? `<i>${uf < 0 ? 'drops on no stage' : `from stage ${ROMAN[uf]}`}</i>` : ''}</small></span>
           <div class="raid-pieces">${L.map(x => `<span class="raid-pc r${r} ${owns(x.id) ? '' : 'bw'}" title="${esc(x.name)}${owns(x.id) ? ` · owned ×${S.owned[x.id]}` : ''}"><img src="${clothImg(x)}" alt="">${owns(x.id) ? `<i>${S.owned[x.id]}</i>` : ''}</span>`).join('') || '<span class="tiny">No pieces yet</span>'}</div>${L.length ? `<span class="rdx-own ${L.every(x => owns(x.id)) ? 'all' : ''}"><small>Owned</small><b>${L.filter(x => owns(x.id)).length} / ${L.length}</b></span>` : ''}</div>`;
   const stCard = (st, i) => { const open = stageOpen(i, d); return `<button class="gv-st ${i === gi ? 'on' : ''} ${open ? '' : 'locked'}" data-gstage="${i}" ${open ? '' : `title="Opens at player level ${st.lv}"`}>
-        <b>${ROMAN[i]}</b>${gold ? `<span class="gv-gold">${curIcon('coins')}~${fmt(st.gold)}</span><small>${open ? `${curIcon('stamina')}${st.st} · +${st.exp} EXP` : `${icon('lock')}Lv ${st.lv}`}</small>`
+        <b>${ROMAN[i]}</b>${raidStarRow(d.id, i)}${gold ? `<span class="gv-gold">${curIcon('coins')}~${fmt(st.gold)}</span><small>${open ? `${curIcon('stamina')}${st.st} · +${st.exp} EXP` : `${icon('lock')}Lv ${st.lv}`}</small>`
           : `<span class="gv-ur ${st.ur ? '' : 'no'}">${st.ur ? `${ctag(5)}${st.ur}%` : 'No UR'}</span><small>${open ? `${icon('hanger')}${st.dbl >= 100 ? 'Always 2' : raidPcs(st)} · SSR ${st.ssr}%` : `${icon('lock')}Lv ${st.lv}`}</small>`}</button>`; };
   const stages = `<div class="gv-stages ${gold ? '' : 'gear'}" style="--n:${GS.length}">${GS.map(stCard).join('')}</div>`;
   const panel = gold ? `<div class="rdx-panel gold"><div class="rdx-ph"><b>Stages</b><small>Deeper stages cost more stamina and hold more gold</small></div>${stages}</div>`

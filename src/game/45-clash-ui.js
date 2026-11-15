@@ -378,6 +378,7 @@ function ccClick(e) {
   if (btn) {
     const id = btn.id;
     if (id === 'ccEnd') { if (ccMyTurn() && G.phase === 'main') ccDo({ k: 'end' }); return; }
+    if (id === 'ccAuto' && ccM.raid && !raidAutoOk(ccM.raid.id, ccM.raid.stage || 0)) { toast('Win this raid stage once (any star) to unlock auto play here'); return; }
     if (id === 'ccAuto' || id === 'ccAutoOff') { const sv = ccSave(); sv.auto = id === 'ccAuto' ? !sv.auto : false; persist(); ccM.autoPlan = null; ccM.sel = null; ccRender(); ccAutoSchedule(); if (sv.auto) toast('Auto play on: it plays your turns until you stop it'); return; }
     if (id === 'ccLogB') { ccM.log = !ccM.log; ccRender(); return; }
     if (id === 'ccUlt') { if (!ccMyTurn() || G.phase !== 'main' || !ccLegal(G).some(a => a.k === 'skill' && a.ult)) { toast('No target for the Ultimate right now'); return; } ccM.sel = ccM.sel && ccM.sel.kind === 'skill' && ccM.sel.ult ? null : { kind: 'skill', ult: true }; ccRender(); return; }
@@ -455,7 +456,7 @@ function ccAfter(rendered) {
   ccAutoSchedule();
 }
 /* auto play (48-clash-auto.js plans the turn): one action at a time, waiting for each animation */
-const ccAutoOn = () => !!ccSave().auto && !(ccM && (ccM.camp || ccM.boss));   // no auto play in campaign stages or guild boss battles
+const ccAutoOn = () => !!ccSave().auto && !(ccM && (ccM.camp || ccM.boss)) && !(ccM && ccM.raid && !raidAutoOk(ccM.raid.id, ccM.raid.stage || 0));   // raids: auto play opens with a star on that stage   // no auto play in campaign stages or guild boss battles
 function ccAutoSchedule() {
   if (!ccM || !ccAutoOn() || ccM.loading || ccM.intro) return;
   const G = ccM.G; if (G.phase === 'over' || G.active !== 0 || ccM.busy) return;

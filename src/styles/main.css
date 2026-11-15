@@ -6678,3 +6678,18 @@ button.pf-arena:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .br-lock{display:flex;gap:9px;align-items:flex-start;margin:8px 0;padding:9px 11px;border-radius:14px 4px 14px 4px;background:rgba(255,90,120,.12);border:1px solid rgba(255,120,150,.45)}
 .br-lock .ic{width:18px;height:18px;flex:none;color:#ff9fb4}.br-lock span{display:grid;gap:2px}.br-lock b{font-size:14px}.br-lock small{font:500 11.5px/1.35 var(--read);opacity:.85}
 @media (max-width:820px){.br-chip span{display:none}.br-chip{padding:3px;margin-left:6px}}
+
+/* ---------- Raid stage stars (68-raidstars.js) ---------- */
+.rs-stars{display:inline-flex;gap:1px;font-size:11px;line-height:1;letter-spacing:0}.rs-stars i{font-style:normal;color:rgba(255,255,255,.25)}.rs-stars i.on{color:#ffd36b;text-shadow:0 0 6px rgba(255,200,90,.7)}
+.gv-st .rs-stars{margin:1px 0 2px}
+.rs-end{margin-top:10px;display:grid;gap:6px;justify-items:center}
+.rs-big{display:flex;gap:6px;font-size:34px;line-height:1}.rs-big i{font-style:normal;color:rgba(255,255,255,.2)}.rs-big i.on{color:#ffd36b;text-shadow:0 0 12px rgba(255,200,90,.8)}.rs-big i.new{animation:rsPop .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes rsPop{from{transform:scale(.3);opacity:0}}
+.rs-end ul{list-style:none;margin:0;padding:0;display:grid;gap:3px;min-width:260px}
+.rs-end li{display:flex;align-items:center;gap:7px;font:600 12.5px var(--read);opacity:.75}.rs-end li.ok{opacity:1}.rs-end li .ic{width:15px;height:15px}.rs-end li.ok .ic{color:#7dffc0}.rs-end li em{margin-left:auto;font-style:normal;font-size:11px;opacity:.75}
+@media (prefers-reduced-motion:reduce){.rs-big i.new{animation:none}}
+.gt-btk{color:#ffd1f1}.gt-ch{font:700 12px var(--read);padding:2px 8px;border-radius:99px;background:rgba(125,255,192,.14);color:#9dffcf}
+.gt-cost small{font:600 11px var(--read);opacity:.7}
+.gt-auto{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.gt-auto label{display:flex;align-items:center;gap:6px;font:700 12px var(--read)}.gt-auto select{height:32px;padding:0 8px}
+.gt-spd{display:flex;gap:4px}
+.gt-log{margin:0;padding:6px 10px 6px 26px;max-height:140px;overflow:auto;border-radius:10px;background:rgba(0,0,0,.22);font:600 11.5px/1.5 var(--read)}.gt-log li:first-child{color:#ffd1f1}
