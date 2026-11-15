@@ -82,3 +82,10 @@ function ticketAdminBind(root, rerender) {
   on('wIctk', () => { S.wallet.ictk = (S.wallet.ictk || 0) + 10; toast('+10 instant clear tickets.'); });
   on('wTkReset', () => { S.wallet.sktk = 0; S.wallet.ictk = 0; toast('Skin and instant clear tickets removed.'); });
 }
+
+/* admin → Item icons: the item icons that had no upload row (the owner noticed Thread was missing) */
+ADMIN_ART.thread = () => adIconRow('thread', 'Thread icon', 'Gear material: from gear raid clears and dismantling, spent on gear breakthroughs at Lv 10, 20 and 30');
+ADMIN_ART.honorxp = () => adIconRow('honor', 'Honor EXP icon', 'Pearl Honor EXP: earned from the Pearl Honor missions');
+ADMIN_ART.vipxp = () => adIconRow('vip', 'VIP EXP icon', 'VIP EXP: from top-ups and the daily quests\' 100-point reward');
+ADMIN_ART.qpt = () => adIconRow('qpt', 'Participation points icon', 'The points daily and weekly quests give toward their gift boxes');
+ADMIN_ART_SECS.icons.push('thread', 'honorxp', 'vipxp', 'qpt');
