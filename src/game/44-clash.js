@@ -165,9 +165,11 @@ function ccCreateMatch(seed, deckA, deckB, names, opts = {}) {
   G.players = [deckA, deckB].map((d, p) => ({ hp: opts.hp ? opts.hp[p] : CC_CFG.hp, ap: 0, hand: [], deck: d.map(id => ({ iid: 'c' + (++G.iid), id })), disc: [], board: [[null, null], [null, null], [null, null]], traps: [null, null, null], healed: 0, shield: 0, p }));
   G.players.forEach(P => P.max = Math.max(CC_CFG.hp, P.hp));   // leader skills heal the hero up to this
   G.lead = ccLeadInit(opts.lead || (typeof ccLeadPass !== 'undefined' ? ccLeadPass.v : null), [deckA, deckB]);
+  if (G.lead) G.lead.forEach((L, p) => { if (L && L.hpB) { G.players[p].hp += L.hpB; G.players[p].max += L.hpB; } });   // build bonus: hero HP (bond, Potential, gear)
   G.players.forEach(P => opts.order ? P.deck.reverse() : ccShuffle(G, P.deck));   // cards are drawn from the end of the array
   G.first = G.active = opts.first === 0 || opts.first === 1 ? opts.first : ccRand(G) < 0.5 ? 0 : 1;
   G.players.forEach((P, p) => ccDraw(G, p, CC_CFG.hand0, true));
+  if (G.lead) G.lead.forEach((L, p) => { if (L && L.cards) ccDraw(G, p, L.cards, true); });   // build bonus: extra opening cards
   if (opts.setup) opts.setup(G);
   if (G.ev) ccLog(G, `Battle event: ${CC_EVENTS[G.ev].name} (${CC_EVENTS[G.ev].short})`, 'sys');
   ccLog(G, `${G.names[G.first]} goes first`, 'sys');
@@ -201,7 +203,7 @@ function ccDamage(G, u, n) {
 }
 function ccEnrage(G, u) { if (u.hp > 0 && u.id === 'AGG-U03' && !u.enraged) { u.enraged = true; u.up++; ccLog(G, `Berserker survives and gains +1 ATK`, 'buff', u.owner); } }
 function ccHeal(G, u, n) { const h = Math.min(n, ccMaxHp(u) - u.hp); if (h > 0) { u.hp += h; ccFx(G, u.iid, 'heal', h); } return Math.max(0, h); }
-function ccHit(G, p, n) { if (n <= 0) return; if (G.hitX) n *= G.hitX[p]; const P = G.players[p]; if (P.shield > 0) { const s = Math.min(P.shield, n); P.shield -= s; n -= s; ccFx(G, 'hero' + p, 'shield', s); if (n <= 0) return; } P.hp -= n; ccFx(G, 'hero' + p, 'dmg', n); }   // hitX: the guild boss takes triple damage; shield: a leader skill's ward takes hits first   // hitX: the guild boss takes triple damage
+function ccHit(G, p, n) { if (n <= 0) return; if (G.hitX) n *= G.hitX[p]; const P = G.players[p]; if (P.shield > 0) { const s = Math.min(P.shield, n); P.shield -= s; n -= s; ccFx(G, 'hero' + p, 'shield', s); if (n <= 0) return; } const Ls = G.lead && G.lead[p]; if (Ls && Ls.last && !Ls.lastU && P.hp > 1 && P.hp - n <= 0) { Ls.lastU = true; n = P.hp - 1; ccLog(G, `Last stand: ${G.names[p]}’s hero holds on at 1 HP`, 'heal', p); ccFx(G, 'hero' + p, 'buff', 0); } P.hp -= n; ccFx(G, 'hero' + p, 'dmg', n); }   // hitX: the guild boss takes triple damage; shield: a leader skill's ward takes hits first   // hitX: the guild boss takes triple damage
 function ccHealHero(G, p, n) { const P = G.players[p], h = Math.max(0, Math.min(n, 1 - P.healed, CC_CFG.hp - P.hp)); if (h > 0) { P.hp += h; P.healed += h; ccFx(G, 'hero' + p, 'heal', h); } return h; }
 function ccStun(G, u) { if (u.owner === G.active) u.stunNow = true; else u.stunNext = true; ccFx(G, u.iid, 'stun', 0); }
 function ccPoison(G, u, n) { u.poison = Math.max(u.poison, n); ccFx(G, u.iid, 'poison', n); }
@@ -232,7 +234,7 @@ function ccDraw(G, p, n, quiet) {
 function ccBeginTurn(G) {
   const p = G.active, P = G.players[p]; G.turnNo++;
   P.ap = ccApBase(G, p);
-  const Ld = G.lead && G.lead[p]; if (Ld) { if (Ld.cd > 0) Ld.cd--; Ld.b = 0; }   // leader skill cooldown and the attribute bond's once-a-turn bonuses
+  const Ld = G.lead && G.lead[p]; if (Ld) { if (Ld.cd > 0) Ld.cd--; Ld.b = 0; ccLeadTurn(G, p, Ld); }   // leader skill cooldown, the attribute bond's once-a-turn bonuses, the build bonuses
   ccLog(G, `Round ${G.round} · ${G.names[p]}’s turn`, 'turn', p);
   for (const u of ccUnits(G, p)) { u.attacked = false; u.moveUsed = false; u.moved = false; u.rc = false; u.dagger = false; u.tmp = 0; u.stunNow = u.stunNext; u.stunNext = false; }
   for (const u of ccUnits(G, p)) if (u.poison > 0) { u.hp -= 2; u.poison--; ccFx(G, u.iid, 'dmg', 2); ccLog(G, `Poison deals 2 to ${ccDef(u.id).name}`, 'dmg', p); ccEnrage(G, u); }
@@ -335,6 +337,7 @@ function ccSummon(G, P, a) {
   const bondArm = ccBondCan(G, P.p, 'defense', 2) && ccBondUse(G, P.p, 2);   // Defense bond: the first unit each turn enters with Armor 1
   const u = { iid: c.iid, id: c.id, card: c, owner: P.p, lane: a.lane, row: a.row, hp: d.hp, hpUp: 0, up: 0, down: 0, armor: CC_ARMORED.has(c.id) || G.ev === 'sanctuary' || bondArm ? 1 : 0, tmp: 0, poison: 0, stunNow: false, stunNext: false, summoned: G.turnNo, attacked: false, moveUsed: false, moved: false, eq: null, enraged: false, rc: false, dagger: false, sid: ++G.sid };
   P.board[a.lane][a.row] = u; ccFx(G, u.iid, 'summon', 0);
+  const Lf = G.lead && G.lead[P.p]; if (Lf && Lf.fu && !Lf.fuU) { Lf.fuU = true; ccAddMax(u, Lf.fu); }   // build bonus: the first unit each match gets +max HP
   ccLog(G, `${G.names[P.p]} summons ${d.name} (${d.ap} AP)`, 'play', P.p);
   ccEnter(G, u);
   if (u.hp <= 0) return null;
@@ -503,6 +506,7 @@ function ccLegal(G) {
   }
   const Ld = G.lead && G.lead[p];
   if (Ld && Ld.cd === 0 && P.ap >= lsCost(Ld)) for (const t of ccTgtKind(G, p, LS[Ld.id].tg)) out.push({ k: 'skill', t });
+  if (Ld && ccUltReady(G, Ld)) for (const t of ccTgtKind(G, p, LS[Ld.id].tg)) out.push({ k: 'skill', t, ult: true });
   out.push({ k: 'end' });
   return out;
 }
@@ -630,7 +634,7 @@ const LS = {
 };
 const LS_IDS = Object.keys(LS);
 const lsTier = L => Math.max(1, Math.min(3, L.t || 1));
-const lsCost = L => LS[L.id].ap[lsTier(L) - 1];
+const lsCost = L => Math.max(0, LS[L.id].ap[lsTier(L) - 1] - (L.cheap && !L.used ? 1 : 0));   // build bonus: the first use costs 1 AP less
 const lsCd = L => Math.max(1, LS[L.id].cd - (L.cdm || 0));
 function lsHealHero(G, p, n) { const P = G.players[p], h = Math.max(0, Math.min(n, P.max - P.hp)); if (h > 0) { P.hp += h; ccFx(G, 'hero' + p, 'heal', h); } return h; }   // a skill's heal ignores the 1-a-round limit
 /* lead = [{id, tier, cd0, cdMod, style}, …] per side (null = no leader); the bond turns on with CC_BOND_N cards of the leader's attribute */
@@ -638,13 +642,22 @@ function ccLeadInit(lead, decks) {
   if (!lead) return null;
   return [0, 1].map(p => { const l = lead[p]; if (!l || !LS[l.id]) return null;
     const st = l.style || null, n = st ? decks[p].filter(id => (ccDef(id) || {}).style === st).length : 0;
-    return { id: l.id, t: l.tier || 1, cd: l.cd0 == null ? 2 : l.cd0, cdm: l.cdMod || 0, bond: st && n >= (l.bondN || CC_BOND_N) ? st : null, used: 0, b: 0 }; });
+    const B = l.bonus || {};
+    return { id: l.id, t: l.tier || 1, cd: l.cd0 == null ? 2 : l.cd0, cdm: l.cdMod || 0, bond: st && n >= (l.bondN || CC_BOND_N) ? st : null, used: 0, b: 0,
+      hpB: B.hp || 0, heal: B.heal || 0, cards: B.cards || 0, ap1: B.ap1 || 0, last: !!B.last, cheap: !!B.cheap, fu: B.fu || 0, rs: B.rs || 0, rsAp: B.rsAp || 0, ult: !!B.ult }; });
 }
 const ccBondCan = (G, p, st, bit) => { const L = G.lead && G.lead[p]; return !!(L && L.bond === st && !(L.b & bit)); };
 const ccBondUse = (G, p, bit) => { const L = G.lead[p]; L.b |= bit; return true; };
 function ccSkill(G, P, a) {
   const L = G.lead && G.lead[P.p], S = L && LS[L.id];
   if (!S) return 'No leader skill';
+  if (a.ult) {   // the SSS Ultimate: once per match from round CC_ULT_ROUND, the skill at tier III for 0 AP, cooldown untouched
+    if (!ccUltReady(G, L)) return 'The Ultimate is not ready';
+    const t = a.t || {}; if (!ccTgtKind(G, P.p, S.tg).some(x => ccSameT(x, t))) return 'Not a legal target';
+    L.ultU = true; const tu = t.u ? ccFind(G, t.u) : null;
+    ccLog(G, `${G.names[P.p]}’s leader unleashes the Ultimate: ${S.name}${tu ? ` on ${ccDef(tu.id).name}` : ''}`, 'skill', P.p);
+    ccFx(G, 'hero' + P.p, 'skill', 0); S.run(G, P.p, t, 3); return null;
+  }
   if (L.cd > 0) return `${S.name} is ready in ${L.cd} turn${L.cd > 1 ? 's' : ''}`;
   const cost = lsCost(L), t = a.t || {};
   if (P.ap < cost) return 'Not enough AP';
@@ -655,4 +668,18 @@ function ccSkill(G, P, a) {
   ccFx(G, 'hero' + P.p, 'skill', 0);
   S.run(G, P.p, t, lsTier(L));
   return null;
+}
+
+/* ---- build bonuses on a lead (65-leader.js fills them from the character; never in the Arena):
+   hpB hero HP, heal = hero heal at the start of each turn, cards = extra opening cards, ap1 = extra AP on the first turn,
+   last = once per match the hero survives a killing blow on 1 HP (marriage), cheap = the first skill use costs 1 AP less,
+   fu = the first unit each match +max HP, rs = from round rs the skill's cooldown resets once (memory, rsAp extra AP that
+   turn), ult = the SSS Ultimate (once per match from round 5). */
+const CC_ULT_ROUND = 5;
+const ccUltReady = (G, L) => !!(L && L.ult && !L.ultU && G.round >= CC_ULT_ROUND && G.phase === 'main');
+function ccLeadTurn(G, p, L) {
+  const P = G.players[p];
+  if (L.heal && P.hp < P.max) lsHealHero(G, p, L.heal);
+  if (!L.t1) { L.t1 = true; if (L.ap1) P.ap += L.ap1; }
+  if (L.rs && !L.rsU && G.round >= L.rs && L.cd > 0) { L.rsU = true; L.cd = 0; if (L.rsAp) P.ap += L.rsAp; ccLog(G, `Memory: ${G.names[p]}’s leader skill is ready again`, 'buff', p); }
 }

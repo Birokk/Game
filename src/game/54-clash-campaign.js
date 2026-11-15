@@ -457,6 +457,7 @@ function ccCampPanel(st) {
     <span class="cmp-teach">${icon(st.teach ? 'book' : 'bolt')}${st.teach ? `Teaches: ${esc(st.teach)}` : esc(st.twist || '')}</span>
     <p class="cmp-intro">${esc(st.intro)}</p>
     ${E ? `<div class="cmp-ev" style="--ec:${ccEvCol(st.ev)}"><span class="cmp-ev-ic">${ccEvIco(st.ev)}</span><span><b>${esc(E.name)}</b><small>${esc(E.text)}</small></span></div>` : ''}
+    ${lsAdvHTML(lsCampFoeStyle(st), ccLeaderOf(ccSave().sel))}
     <div class="cmp-foe"><span class="cmp-foe-ic">${foe ? baseThumb(foe) : ccIco('bot')}</span><span><small>Opponent</small><b>${esc(st.dummy ? st.foeName : foe ? foe.name : 'Bot')}</b><em>${st.hp[1]} HP${st.dummy ? ' · never attacks' : ''}</em></span><span><small>Your deck</small><b class="cmp-deckn">${esc(deck)}</b>${own ? `<button class="ccq-help cmp-dpick" id="cmpDeckPick">Change deck</button>` : ''}<em>${st.first === 1 ? 'The bot goes first' : 'You go first'} · ${st.hp[0]} HP</em></span></div>
     <span class="ccd-lbl">Star goals</span>
     <ul class="cmp-goals">${st.stars.map((g, k) => `<li class="${have[k] ? 'ok' : ''}"><i class="cmp-gs">${CC_STAR_SVG}</i><span>${esc(g.t)}</span><em>${have[k] ? `${icon('check')}Earned` : `+${CC_CAMP_STAR_PEARLS} ${curIcon('pearls')}`}</em></li>`).join('')}</ul>

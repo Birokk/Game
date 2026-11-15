@@ -9,13 +9,75 @@ const LS_DEF = { aggression: 'battlecry', defense: 'bulwark', control: 'hex', mo
 const CC_BOND_TXT = { aggression: 'Your first attack each turn deals +1 damage.', defense: 'The first unit you summon each turn enters with Armor 1.', control: 'Your first damaging spell each turn deals +1 damage.', mobility: 'Your first move each turn is free.', support: 'At the start of your turn, heal your most damaged unit 1.' };
 const lsOf = e => !e ? null : LS[e.ccSkill] ? e.ccSkill : LS_DEF[e.ccStyle] || 'focus';
 const lsAwake = e => e && owns(e.id) ? btOf(e.id).length : 0;   // awakened (switched-on) Breakthrough stars
-const lsTierOf = e => { const n = lsAwake(e); return n >= 4 ? 3 : n >= 2 ? 2 : 1; };
+const lsTierOf = e => { const n = lsAwake(e); return Math.min(3, (n >= 4 ? 3 : n >= 2 ? 2 : 1) + (e && owns(e.id) && sigWorn(e) ? 1 : 0)); };   // the signature set adds +1 tier
 const lsCdmOf = e => lsAwake(e) >= 6 ? 1 : 0;
 /* the lead info for one side; o.pvp = the Arena (tier 1 for everyone), o.tier = a fixed tier (bots) */
 function lsLead(e, o = {}) {
   if (!e) return null;
-  return { id: lsOf(e), tier: o.pvp ? 1 : o.tier || lsTierOf(e), cd0: 2, cdMod: o.pvp || o.tier ? 0 : lsCdmOf(e), style: e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null };
+  const mine = !o.pvp && !o.tier, b = mine ? lsBonus(e) : null;
+  return { id: lsOf(e), tier: o.pvp ? 1 : o.tier || lsTierOf(e), cd0: 2, cdMod: mine ? lsCdmOf(e) : 0, style: e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null, bondN: b && b.bondN || 0, bonus: b };
 }
+/* ---- PvE build bonuses (never in the Arena): every build system has its own job, with shared caps ----
+   Bond: hero +1 HP per 2 bond levels · Marriage: last stand (once per match the hero survives on 1 HP) · Potential: each
+   completed plan's Core unlocks one perk (LS_POT) · Memory: the skill resets once per match (from round 8 at 0★ down to 4
+   at 3★; a signature memory 2 rounds sooner; a UR memory +1 AP that turn) · SSS awakening at grade SSS: the Ultimate ·
+   Signature set: skill tier +1. Caps: hero HP +8, heal +2 a turn, opening cards +2, first-turn AP +1. */
+const LS_CAP = { hp: 8, heal: 2, cards: 2, ap1: 1 };
+const LS_POT = [
+  ['hp', 2, 'Hero +2 HP'], ['cards', 1, '+1 opening card'], ['cheap', 1, 'The first skill use costs 1 AP less'], ['heal', 1, 'Hero heals 1 at the start of each turn'],
+  ['bondN', 10, 'The attribute bond needs 10 cards instead of 12'], ['fu', 1, 'Your first unit each match gets +1 max HP'], ['ap1', 1, '+1 AP on your first turn']
+];
+const LS_MEM_ROUND = [8, 7, 6, 4];
+function lsBonus(e) {
+  if (!e || !owns(e.id)) return null;
+  const b = { hp: 0, heal: 0, cards: 0, ap1: 0, last: false, cheap: false, fu: 0, rs: 0, rsAp: 0, ult: false, bondN: 0, src: [] };
+  const bl = bondLv(e.id), bh = Math.min(5, Math.floor(bl / 2));
+  if (bh) { b.hp += bh; b.src.push(['Bond', `Lv ${bl}`, `Hero +${bh} HP`]); }
+  if (bondOf(e.id).married) { b.last = true; b.src.push(['Marriage', 'Eternal Vow', 'Last stand: once per match the hero survives a killing blow on 1 HP']); }
+  LS_POT.forEach(([k, v, t], i) => { if (!potDone(e.id, i)) return; if (k === 'cheap') b.cheap = true; else if (k === 'bondN') b.bondN = v; else b[k] += v; b.src.push(['Potential', `Plan #${i + 1}`, t]); });
+  const m = memEqOf(e.id)[0], M = m && memOf(m);
+  if (M) { const st = memEqStar(e.id), sig = (e.sigMems || []).includes(m); b.rs = Math.max(3, LS_MEM_ROUND[Math.min(3, st)] - (sig ? 2 : 0)); b.rsAp = +M.rarity === 5 ? 1 : 0; b.src.push(['Memory', `${esc(M.name)} · ${st}★`, `From round ${b.rs} the skill is ready again once${b.rsAp ? ', +1 AP that turn' : ''}${sig ? ' (signature memory)' : ''}`]); }
+  if (sssAwakened(e.id) && csGrade(gradeScore(e)) === 'SSS') { b.ult = true; b.src.push(['SSS awakening', 'Grade SSS', `Ultimate: once per match from round ${CC_ULT_ROUND}, the skill at tier III for 0 AP`]); }
+  if (sigWorn(e)) b.src.push(['Signature set', 'All 6 worn', 'Leader skill +1 tier']);
+  const n = lsAwake(e); if (n >= 2) b.src.push(['Breakthrough', `${n} stars awakened`, `Skill tier ${n >= 4 ? 'III' : 'II'}${n >= 6 ? ', cooldown −1' : ''}`]);
+  for (const k of Object.keys(LS_CAP)) b[k] = Math.min(LS_CAP[k], b[k]);
+  return b;
+}
+/* ---- weakness / resistance on PvE content: an enemy whose deck is mostly attribute X is weak to CC_WEAK[X] and resists X.
+   Weak: the enemy hero starts with 25% less HP and your skill starts ready. Resisted: the enemy has 25% more HP and your
+   skill waits 1 turn longer. Campaign (not the tutorial), the Great Tree and raids use the enemy deck; the guild boss
+   changes every 48-hour fight (only the skill part: its HP is the guild's shared bar). */
+const CC_WEAK = { aggression: 'defense', defense: 'control', control: 'mobility', mobility: 'support', support: 'aggression' };
+const LS_ADV = .25;
+function ccDeckStyle(cards) { const n = {}; for (const id of cards || []) { const st = (ccDef(id) || {}).style; if (st) n[st] = (n[st] || 0) + 1; } return Object.keys(n).sort((a, b) => n[b] - n[a])[0] || null; }
+const ccAdvOf = (foe, me) => !foe || !me ? null : CC_WEAK[foe] === me ? 'weak' : foe === me ? 'res' : null;
+const gbFoeStyle = () => Object.keys(CC_STYLES)[((gbKey() % 5) + 5) % 5];
+const lsCampFoeStyle = st => { if (!st || (st.ch && st.ch.id === 'c0')) return null; const pre = id => (CC_PRESETS.find(d => d.id === id) || {}).cards; return ccDeckStyle(st.botDeck ? pre(st.botDeck) : st.deck ? pre(st.deck) : st.bot); };   // the stage bot's deck (the same pick as ccCampMatch)
+/* applied in startClash right after the match is built */
+function lsApplyAdv(G, foeStyle, boss) {
+  const L = G.lead && G.lead[0], me = ccM && ccM.leader && ccM.leader.ccStyle, adv = ccAdvOf(foeStyle, me), P = G.players[1];
+  if (adv && !boss) { const f = adv === 'weak' ? 1 - LS_ADV : 1 + LS_ADV; P.hp = Math.max(1, Math.round(P.hp * f)); P.max = Math.max(P.max, P.hp); }
+  if (L && adv === 'weak') L.cd = 0;
+  if (L && adv === 'res') L.cdm = (L.cdm || 0) - 1;
+  if (adv) ccLog(G, adv === 'weak' ? `Weak spot: your ${CC_STYLES[me][0]} leader has the advantage` : `Resisted: the enemy resists ${CC_STYLES[me][0]}`, 'sys');
+  return { foe: foeStyle, adv };
+}
+/* the chips on stage panels, raids and the guild boss */
+function lsAdvHTML(foeStyle, leader) {
+  if (!foeStyle) return '';
+  const w = CC_WEAK[foeStyle], adv = ccAdvOf(foeStyle, leader && leader.ccStyle), chip = (st, k) => `<span class="lsa-c ${k}" style="--cs:${CC_STYLES[st][1]}">${ccIco(st)}<small>${k === 'w' ? 'Weak to' : 'Resists'}</small><b>${esc(CC_STYLES[st][0])}</b></span>`;
+  return `<div class="lsa">${chip(w, 'w')}${chip(foeStyle, 'r')}<span class="lsa-me ${adv || 'n'}">${adv === 'weak' ? 'Your leader hits its weak spot: enemy −25% HP, skill starts ready' : adv === 'res' ? 'Resisted: enemy +25% HP, your skill waits 1 turn longer' : leader ? `${esc(leader.name)} is neutral here` : ''}</span></div>`;
+}
+/* the battle bonuses window (Deck screen) */
+function lsDetails(e) {
+  if (!e) return;
+  const b = lsBonus(e) || { src: [] }, B = [['hp', 'Hero HP', '+'], ['heal', 'Heal a turn', '+'], ['cards', 'Opening cards', '+'], ['ap1', 'First-turn AP', '+']];
+  openModal({ title: 'Battle bonuses', ic: 'crown', kind: 'lsdet', body: `<div class="lsd">${lsInfoHTML(e)}
+    <div class="lsd-sum">${B.map(([k, n]) => `<span class="${b[k] ? 'on' : ''}"><b>${b[k] ? '+' + b[k] : '—'}</b><small>${n}</small><i>max +${LS_CAP[k]}</i></span>`).join('')}</div>
+    <div class="lsd-list">${b.src.length ? b.src.map(([sys, what, t]) => `<div class="lsd-row"><b>${esc(sys)}</b><small>${what}</small><span>${t}</span></div>`).join('') : '<p class="tiny">No bonuses yet. Bond, Potential plans, a memory, awakened stars, the signature set and the SSS awakening all make this leader stronger against the game\'s own opponents.</p>'}</div>
+    <p class="tiny">These bonuses count against the game's own opponents (campaign, Great Tree, raids, guild boss, Quick Match, training), never in the Arena, where everyone plays at tier I with no bonuses.</p></div>` });
+}
+
 /* the bot's tier: 1, 2 for the harder brains and boss stages */
 const lsBotTier = (qm, camp, arena) => arena ? 1 : qm && (qm.diff === 'expert' || qm.diff === 'hard') ? 2 : camp && camp.boss ? 2 : 1;
 const lsName = id => (LS[id] || {}).name || '';
@@ -63,4 +125,11 @@ const lsBondLine = (e, cards) => {
 function lsAdminOptions(cur) {
   const groups = [...Object.keys(CC_STYLES), null];
   return `<option value="">Default for its card attribute</option>` + groups.map(st => `<optgroup label="${st ? CC_STYLES[st][0] : 'No attribute'}">${LS_IDS.filter(id => LS[id].style === st).map(id => `<option value="${id}" ${cur === id ? 'selected' : ''}>${esc(LS[id].name)} · ${esc(lsMeta(id))} · ${esc(LS[id].d[0])}</option>`).join('')}</optgroup>`).join('');
+}
+
+/* the SSS Ultimate button (your side only, once per match from round CC_ULT_ROUND) */
+function lsUltHTML(G) {
+  const L = G.lead && G.lead[0]; if (!L || !L.ult || L.ultU) return '';
+  const ready = ccUltReady(G, L) && ccMyTurn(), sel = ccM.sel && ccM.sel.kind === 'skill' && ccM.sel.ult;
+  return `<button class="ccm-ult ${ready ? 'ok' : ''} ${sel ? 'sel' : ''}" id="ccUlt" style="--lc:${lsCol(L.id)}" data-tip="${esc(`<b>Ultimate · ${LS[L.id].name}</b><br>${lsDesc(L.id, 3)}<br>Once per match from round ${CC_ULT_ROUND}, 0 AP${G.round < CC_ULT_ROUND ? ` · ready in round ${CC_ULT_ROUND}` : ''}`)}">ULT</button>`;
 }

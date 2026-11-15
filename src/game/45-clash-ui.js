@@ -99,6 +99,7 @@ function renderDeck() {
   one('#ccdHelp').onclick = () => ccRules(0);
   one('#ccdSkin').onclick = () => ccSkinPicker();
   one('#ccdLead').onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
+  const lbon = one('#ccdLeadBon'); if (lbon) lbon.onclick = () => lsDetails(ccLeaderOf(deck.id));
   $$('[data-deck]').forEach(b => b.onclick = () => { sv.sel = b.dataset.deck; persist(); renderDeck(); });
   $$('[data-f]').forEach(b => b.onclick = () => { const k = b.dataset.f; ccdF[k] = k === 'ap' ? +b.dataset.v : b.dataset.v; renderDeck(); });
   const q = one('#ccdQ'); q.oninput = () => { ccdF.q = q.value; clearTimeout(q._t); q._t = setTimeout(() => { renderDeck(); const n = ccdEl && ccdEl.querySelector('#ccdQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
@@ -304,6 +305,9 @@ function startClash(deck, seed, camp, boss, raid, qm, arena, train) {   // boss 
   ccSkReset();
   const m = ccM = { G, foe, leader: myLe, skins: [ccMySkin(), boss ? 'inferno' : raid ? raidFoe(raid.id).skin : train ? train.skin : arena ? arena.f.skin : camp ? 'default' : ccBotSkin(seed)], backs: [ccMyBack(), boss ? 'inferno' : raid ? raidFoe(raid.id).back : train ? train.back : arena ? arena.f.back : camp ? 'default' : ccBotBack(seed)], boss: boss || null, raid: raid || null, arena: arena || null, train: train || null, deck: { id: deck.id, name: deck.name, cards: deck.cards.slice() }, seed, sel: null, peek: null, busy: true, loading: true, timer: 0, log: false, done: false,
     camp: camp ? { st: camp, cs: ccCampStats(), shown: new Set(), tip: null } : null, qm: qd ? { ...qd, brain: qmDiff(qd.diff).brain, deckName: qs.deckName } : null };
+  // weakness / resistance (65-leader.js): campaign stages (not the tutorial), Great Tree floors, raids and the guild boss
+  const foeSt = tut ? null : boss ? gbFoeStyle() : camp ? lsCampFoeStyle(camp) : raid ? ccDeckStyle(raidDeckCards(raidFoe(raid.id).deck)) : null;
+  m.adv = foeSt ? lsApplyAdv(G, foeSt, !!boss) : null;
   showLoading(() => { if (ccM !== m) return; m.loading = false; ccFx0(); m.intro = true; ccRender(); ccIntro(() => ccCoinFlip(() => ccEventReveal(() => { if (ccM !== m) return; m.intro = false; m.busy = false; ccRender(); ccDeal(G.players[0].hand.map(c => c.iid)); m.animEnd = performance.now() + 900 + G.players[0].hand.length * 130; ccAfter(true); }))); }, { tips: CC_TIPS, label: 'Preparing the battlefield', min: 1100, run: async set => {
     const tick = () => new Promise(r => setTimeout(r, 16));
     if (ccM !== m) return;
@@ -355,7 +359,7 @@ function ccTargets() {
     for (const a of L.filter(a => a.u === sel.iid)) { if (a.k === 'move') out.set(`s0${a.lane}${a.row}`, a); if (a.k === 'attack') out.set('attack', a); }
   } else if (sel.kind === 'skill') {   // the leader skill: targets like a spell's
     const T = G.lead && G.lead[0] && LS[G.lead[0].id].tg;
-    for (const a of L.filter(a => a.k === 'skill')) {
+    for (const a of L.filter(a => a.k === 'skill' && !!a.ult === !!sel.ult)) {
       const t = a.t;
       if (T === 'two') { if (!sel.first) { out.set(`u${t.u}`, { pick: t.u }); out.set(`u${t.u2}`, { pick: t.u2 }); } else if (t.u === sel.first || t.u2 === sel.first) { const o = t.u === sel.first ? t.u2 : t.u; out.set(`u${o}`, a); } }
       else if (T === 'side') { if (!sel.first) out.set(`u${t.u}`, { pick: t.u }); else if (t.u === sel.first) out.set(`s0${t.lane}${t.row}`, a); }
@@ -376,6 +380,7 @@ function ccClick(e) {
     if (id === 'ccEnd') { if (ccMyTurn() && G.phase === 'main') ccDo({ k: 'end' }); return; }
     if (id === 'ccAuto' || id === 'ccAutoOff') { const sv = ccSave(); sv.auto = id === 'ccAuto' ? !sv.auto : false; persist(); ccM.autoPlan = null; ccM.sel = null; ccRender(); ccAutoSchedule(); if (sv.auto) toast('Auto play on: it plays your turns until you stop it'); return; }
     if (id === 'ccLogB') { ccM.log = !ccM.log; ccRender(); return; }
+    if (id === 'ccUlt') { if (!ccMyTurn() || G.phase !== 'main' || !ccLegal(G).some(a => a.k === 'skill' && a.ult)) { toast('No target for the Ultimate right now'); return; } ccM.sel = ccM.sel && ccM.sel.kind === 'skill' && ccM.sel.ult ? null : { kind: 'skill', ult: true }; ccRender(); return; }
     if (id === 'ccSkill') { const L = G.lead && G.lead[0]; if (!L) return; if (!ccMyTurn() || G.phase !== 'main') { toast('Wait for your turn'); return; } if (L.cd > 0) { toast(`${lsName(L.id)} is ready in ${L.cd} turn${L.cd > 1 ? 's' : ''}`); return; } if (G.players[0].ap < lsCost(L)) { toast(`Not enough AP (needs ${lsCost(L)})`); return; } if (!ccLegal(G).some(a => a.k === 'skill')) { toast('No target for the skill right now'); return; } ccM.sel = ccM.sel && ccM.sel.kind === 'skill' ? null : { kind: 'skill' }; ccRender(); return; }
     if (id === 'ccLeave') return ccLeave();
     if (id === 'ccRules') return ccRules();
@@ -559,7 +564,7 @@ function ccRender(snap) {
     ${ccM.boss ? `<div class="ccm-lead op" title="${esc(gbName())}: the guild boss">${gbCardHTML()}<span class="ccl-tag">Boss</span></div>` : ''}
     ${ccM.foe ? `<div class="ccm-lead op" title="${esc(ccM.foe.name + ': the bot\'s leader')}">${ccLeaderCard(ccM.foe, true, ccM.seed)}<span class="ccl-tag">Leader</span></div>` : ''}
     ${ccM.leader ? `<div class="ccm-lead me" title="${esc(ccM.leader.name + ': your leader')}">${ccLeaderCard(ccM.leader)}<span class="ccl-tag">Leader</span></div>` : ''}
-    ${lsMedalHTML(G, 1)}${lsMedalHTML(G, 0)}
+    ${lsMedalHTML(G, 1)}${lsMedalHTML(G, 0)}${lsUltHTML(G)}${ccM.adv && ccM.adv.adv ? `<span class="ccm-adv ${ccM.adv.adv}" title="${ccM.adv.adv === 'weak' ? 'Your leader hits the enemy\'s weak spot: the enemy started with 25% less HP and your skill started ready' : 'The enemy resists your leader: it started with 25% more HP and your skill waits 1 turn longer'}">${ccIco(ccM.leader.ccStyle)}${ccM.adv.adv === 'weak' ? 'Weak spot' : 'Resisted'}</span>` : ''}
     ${ccEventChip(G)}
     <div class="ccb ${G.active === 1 ? 'turn-op' : ''}">
       <i class="ccb-rim"><i class="ccb-stud t"></i><i class="ccb-stud b"></i><i class="ccb-stud l"></i><i class="ccb-stud r"></i></i>
@@ -622,7 +627,7 @@ function ccActRender(keyset, selCard) {
   } else if (sel.kind === 'skill') {
     const L = G.lead[0], S = LS[L.id], T = S.tg;
     const hint = !keyset.size ? 'No legal target right now.' : keyset.has('cast') ? 'Ready to use.' : T === 'two' ? (sel.first ? 'Pick the second unit to swap with.' : 'Pick the first of two units.') : T === 'side' ? (sel.first ? 'Pick where it moves.' : 'Pick one of your units to move.') : T === 'healAnyS' ? 'Pick a damaged unit of yours, or your hero.' : 'Pick a highlighted target.';
-    html = `<p><b>${esc(S.name)}</b> · ${lsCost(L)} AP · leader skill<br><span class="tiny">${esc(lsDesc(L.id, lsTier(L)))}</span><br>${hint}</p><div>${keyset.has('cast') ? `<button class="btn gold" id="ccCast">Use ${esc(S.name)}</button>` : ''}<button class="btn ghost" id="ccCancel">Cancel</button></div>`;
+    html = `<p><b>${sel.ult ? 'Ultimate · ' : ''}${esc(S.name)}</b> · ${sel.ult ? '0 AP · once per match' : `${lsCost(L)} AP · leader skill`}<br><span class="tiny">${esc(lsDesc(L.id, sel.ult ? 3 : lsTier(L)))}</span><br>${hint}</p><div>${keyset.has('cast') ? `<button class="btn gold" id="ccCast">${sel.ult ? 'Unleash' : 'Use'} ${esc(S.name)}</button>` : ''}<button class="btn ghost" id="ccCancel">Cancel</button></div>`;
   } else if (sel.kind === 'unit') {
     const u = ccFind(G, sel.iid), d = ccDef(u.id), atk = keyset.get('attack'), moves = [...keyset.keys()].filter(k => k[0] === 's').length;
     let why = '';

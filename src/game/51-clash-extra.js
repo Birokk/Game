@@ -127,7 +127,7 @@ function ccLeaderCard(e, bot, seed = 0) {
 function ccLeaderBox(deckId) {
   const e = ccLeaderOf(deckId);
   return `<div class="ccd-lead"><span class="ccd-lbl">Leader</span><div class="ccd-lead-row"><div class="ccd-lead-card">${e ? ccLeaderCard(e) : '<span class="tiny">Own a character to pick a leader.</span>'}</div>
-    <div class="ccd-lead-info">${e ? `<b>${esc(e.name)}</b><span class="tiny">Brings its leader skill to every match.</span>` : ''}<button class="btn ghost sm" id="ccdLead" ${ccLeaderPool().length ? '' : 'disabled'}>${icon('crown')}Change leader</button></div></div>${e ? `<div class="ccd-lead-sk">${lsInfoHTML(e)}${lsBondLine(e, (ccDeckById(deckId) || {}).cards)}</div>` : ''}</div>`;
+    <div class="ccd-lead-info">${e ? `<b>${esc(e.name)}</b><span class="tiny">Brings its leader skill to every match.</span>` : ''}<button class="btn ghost sm" id="ccdLead" ${ccLeaderPool().length ? '' : 'disabled'}>${icon('crown')}Change leader</button></div></div>${e ? `<div class="ccd-lead-sk">${lsInfoHTML(e)}${lsBondLine(e, (ccDeckById(deckId) || {}).cards)}<button class="btn ghost sm" id="ccdLeadBon">${icon('sparkle')}Battle bonuses</button></div>` : ''}</div>`;
 }
 
 /* ---- rewards ---- */

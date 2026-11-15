@@ -317,7 +317,7 @@ function renderRaids() {
     <section class="rdx-main"><div class="rdx-scroll">
       <div class="rdx-hero"><span class="rdx-kind">${icon(raidIc(d))}${gold ? 'Gold raid' : 'Gear raid'}${d.hidden ? ' · hidden from players' : ''}</span>
         <h1 class="rdx-title">${esc(d.name)} <em>${ROMAN[gi]}</em></h1><p class="rdx-desc">${esc(d.desc)}</p>
-        <div class="rdx-meta">${meta.map(([ic, t]) => `<span>${ic}${t}</span>`).join('')}${gold ? infoBtn('vault', 'How the Golden Vault works') : ''}</div></div>
+        <div class="rdx-meta">${meta.map(([ic, t]) => `<span>${ic}${t}</span>`).join('')}${gold ? infoBtn('vault', 'How the Golden Vault works') : ''}</div>${lsAdvHTML(ccDeckStyle(raidDeckCards(raidFoe(d.id).deck)), ccLeaderOf(ccSave().sel))}</div>
       ${panel}</div>
       ${raidBar(stageOpen(gi, d), gold ? g.st : raidStam(d))}</section>`;
   const sc = raidEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;

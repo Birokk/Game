@@ -212,7 +212,7 @@ function gbPanelHTML(g, B, bd, left, you, myPos, mailedN, deck, ok, rank, mate) 
     <div class="gbp-card gbp-fight">
       <div class="gbs-deck"><span class="gbp-lead">${le ? baseThumb(le) : CC_IC}</span><span class="gbp-dk"><small>Your deck</small><b>${esc(deck.name)}</b></span><small class="gbp-ok ${ok ? '' : 'bad'}">${ok ? 'Ready' : `${deck.cards.length}/30`}</small><button class="btn ghost sm" id="gbDeck">Change</button></div>
       <button class="smx-go ten gbs-go" id="gbFight" ${left && ok ? '' : 'disabled'}><b>${left ? 'Fight!' : 'No battles left'}</b><small>${left ? `Dragon HP ${fmt(bd.hp)} · level ${bd.lv}` : `New fight in ${fmtDur2(gbEnds(B.key) - Date.now())}`}</small></button>
-      <div class="gbp-rules"><span>${icon('clock')}${GB_ROUNDS} rounds</span><span>${icon('swords')}Every hit ×${GB_HITX}</span><span>${icon('user')}You go first</span></div></div>
+      <div class="gbp-rules"><span>${icon('clock')}${GB_ROUNDS} rounds</span><span>${icon('swords')}Every hit ×${GB_HITX}</span><span>${icon('user')}You go first</span></div>${lsAdvHTML(gbFoeStyle(), le).replace('enemy −25% HP, skill starts ready', 'your skill starts ready').replace('enemy +25% HP, your skill waits 1 turn longer', 'your skill waits 1 turn longer')}</div>
     <nav class="gbp-tabs" role="tablist">${tab('rew', 'gift', 'Rewards')}${tab('rank', 'trophy', 'Ranking', rank.length || null)}${tab('log', 'clock', 'Your battles', mine.length || null)}</nav>
     <div class="gbp-card gbp-pane" role="tabpanel">${pane}</div>`;
 }

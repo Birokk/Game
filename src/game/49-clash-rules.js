@@ -131,6 +131,10 @@ const CC_RULES = [
     <div class="ccr-txt"><h3>Every leader has a skill</h3>
       <p>Tap the round <b>skill medallion</b> next to your leader card, then its target. A skill costs <b>AP</b> like a card and then rests for a few turns (the dark wedge and the number show when it is back). It first becomes ready on your <b>2nd turn</b>. The bot's leader has one too: watch its medallion. Traps never cancel a skill.</p>
       <p>Which skill a character brings is set per character; most follow their card attribute. <b>Awakened stars</b> (Breakthrough) make it stronger: 2 stars = tier II, 4 stars = tier III (a twist), all 6 = it comes back one turn sooner. In the Arena every skill plays at tier I, so it stays fair.</p>
+      <h3>Building your leader</h3>
+      <p>Against the game's own opponents (not the Arena) a built leader is stronger: <b>bond</b> gives hero HP, <b>marriage</b> a last stand, completed <b>Potential plans</b> small perks, an equipped <b>memory</b> resets the skill once per match, the <b>signature set</b> adds a skill tier and the <b>SSS awakening</b> unlocks an Ultimate. See <b>Battle bonuses</b> on the Deck screen.</p>
+      <h3>Weak spots</h3>
+      <p>Campaign stages, Great Tree floors, raids and the guild boss show what they are <b>weak to</b> and what they <b>resist</b>. A leader with the right attribute starts with its skill ready and the enemy has 25% less HP; a resisted one faces 25% more HP and a slower skill. So it pays to build a leader of every attribute.</p>
       <h3>Attribute bond</h3>
       <p>When <b>${CC_BOND_N} or more of your 30 cards</b> share your leader's card attribute, the bond turns on: ${Object.keys(CC_STYLES).map(st => `<b>${esc(CC_STYLES[st][0])}</b> ${esc(CC_BOND_TXT[st].replace(/\.$/, '').toLowerCase())}`).join('; ')}.</p></div>` },
   { t: 'Auto play', ic: 'bolt', h: () => `
