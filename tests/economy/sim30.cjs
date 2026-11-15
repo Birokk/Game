@@ -36,8 +36,8 @@ const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1], FARM_GOLD = [0, 0, 25e3, 8e4, 
 const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 10, res: 'pearls' }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 500, res: 'exp' } };
 const FARM_ORDER = ['market', 'pub', 'crops', 'inn'];
 const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]], EXP_UR_MULT = [1, 1, 1];   // 0 or 1 pearl, 5 pearls 5% of the time
-const BP_MILES = { free: { 10: { tickets: 2, sktk: 5 }, 20: { cfssr: 5, sktk: 5 }, 30: { wishes: 3, sktk: 5 }, 40: { fragur: 5, sktk: 5 }, 50: { tickets: 3, sktk: 5 }, 60: { cfur: 3, sktk: 5 }, 70: { wishes: 5, sktk: 5 }, 80: { eggur: 1, sktk: 5 } },
-  paid: { 10: { pearls: 30 }, 20: { memtk: 1 }, 30: { pearls: 40 }, 40: { cfur: 10 }, 50: { eggur: 2 }, 60: { memtk: 1 }, 70: { pearls: 60 }, 80: { ursel: 1 } } };
+const BP_MILES = { free: { 10: { tickets: 2 }, 20: { cfssr: 5 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { wishes: 5 }, 80: { eggur: 1 } },
+  paid: { 10: { pearls: 30, sktk: 5 }, 20: { memtk: 1, sktk: 5 }, 30: { pearls: 40, sktk: 5 }, 40: { cfur: 10, sktk: 5 }, 50: { eggur: 2, sktk: 5 }, 60: { memtk: 1, sktk: 5 }, 70: { pearls: 60, sktk: 5 }, 80: { ursel: 1, sktk: 5 } } };
 const BP_FIVE = { free: { wishes: 1 }, paid: { tickets: 2 } };
 const BP_CYCLE = { free: [{ dust: 30 }, { coins: 4000 }, { bottles: 1 }, { fragssr: 2 }], paid: [{ cfssr: 3 }, { pearls: 5 }, { starlight: 8 }, { cfur: 1 }] };
 const bpReward = (lv, t) => lv % 10 === 0 ? BP_MILES[t][lv] : lv % 5 === 0 ? BP_FIVE[t] : BP_CYCLE[t][lv % 4];
@@ -480,7 +480,7 @@ function exchanges(A) {
   for (let i = 0; i < N_URMEM && A.w.starlight >= 300 + 100; i++) { const c = A.chars[i]; if (c.own && !A.memEx.has(i) && !A.mems.ur[i].length) { A.w.starlight -= 300; A.memEx.add(i); grantMem(A, 5, i); } }
   while (A.w.starlight >= 400 + 10) { A.w.starlight -= 10; gain(A, 'tickets', 1, 'Coral exchange'); }
   if (!A.monthly) { A.monthly = 0; } while (A.monthly < 10 && A.w.dust >= 75) { A.w.dust -= 75; A.monthly++; gain(A, A.monthly <= 5 ? 'tickets' : 'wishes', 1, 'Seaweed monthly pulls'); }
-  // skin tickets (only from Pearl Honor now) → outfits of owned characters (UR outfits 120 tickets, SSR 60)
+  // skin tickets (only from Pearl Honor's paid track now) → outfits of owned characters (UR outfits 120 tickets, SSR 60)
   for (const c of focusList(A)) { if (c.r !== 5 || c.kind === 'mc' || c.idx >= 6) continue;
     for (const [type, tk] of [['ur', 120], ['ssr', 60]]) { if (!A.skins[type][c.idx] && A.w.sktk >= tk) { A.w.sktk -= tk; A.skins[type][c.idx] = true; log(A, `got ${c.name}'s ${type.toUpperCase()} outfit with skin tickets (Pearl Honor)`); } } }
   // summon points: 200 = one copy of the featured UR (Aria) while not maxed
