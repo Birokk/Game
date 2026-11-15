@@ -15,7 +15,7 @@ const lsCdmOf = e => lsAwake(e) >= 6 ? 1 : 0;
 function lsLead(e, o = {}) {
   if (!e) return null;
   const mine = !o.pvp && !o.tier, b = mine ? lsBonus(e) : null;
-  return { id: lsOf(e), tier: o.pvp ? 1 : o.tier || lsTierOf(e), cd0: 2, cdMod: mine ? lsCdmOf(e) : 0, style: e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null, bondN: b && b.bondN || 0, bonus: b };
+  return { id: lsOf(e), tier: o.pvp ? 1 : o.tier || lsTierOf(e), cd0: Math.max(0, 2 - (b && b.cd0 || 0)), cdMod: mine ? lsCdmOf(e) : 0, style: e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null, bondN: b && b.bondN || 0, bonus: b };
 }
 /* ---- PvE build bonuses (never in the Arena): every build system has its own job, with shared caps ----
    Bond: hero +1 HP per 2 bond levels · Marriage: last stand (once per match the hero survives on 1 HP) · Potential: each
@@ -40,6 +40,8 @@ function lsBonus(e) {
   if (sssAwakened(e.id) && csGrade(gradeScore(e)) === 'SSS') { b.ult = true; b.src.push(['SSS awakening', 'Grade SSS', `Ultimate: once per match from round ${CC_ULT_ROUND}, the skill at tier III for 0 AP`]); }
   if (sigWorn(e)) b.src.push(['Signature set', 'All 6 worn', 'Leader skill +1 tier']);
   const n = lsAwake(e); if (n >= 2) b.src.push(['Breakthrough', `${n} stars awakened`, `Skill tier ${n >= 4 ? 'III' : 'II'}${n >= 6 ? ', cooldown −1' : ''}`]);
+  const gb = typeof gearBattle === 'function' ? gearBattle(e) : null;
+  if (gb) { b.hp += gb.hp; b.heal += gb.heal; b.cards += gb.cards; b.fu += gb.fu; b.ap1 += gb.ap1; if (gb.cheap) b.cheap = true; b.cd0 = gb.cd0; b.gw = gb.weak; b.gr = gb.res; b.src.push(...gb.src); }
   for (const k of Object.keys(LS_CAP)) b[k] = Math.min(LS_CAP[k], b[k]);
   return b;
 }
@@ -56,7 +58,8 @@ const lsCampFoeStyle = st => { if (!st || (st.ch && st.ch.id === 'c0')) return n
 /* applied in startClash right after the match is built */
 function lsApplyAdv(G, foeStyle, boss) {
   const L = G.lead && G.lead[0], me = ccM && ccM.leader && ccM.leader.ccStyle, adv = ccAdvOf(foeStyle, me), P = G.players[1];
-  if (adv && !boss) { const f = adv === 'weak' ? 1 - LS_ADV : 1 + LS_ADV; P.hp = Math.max(1, Math.round(P.hp * f)); P.max = Math.max(P.max, P.hp); }
+  const gb = ccM && ccM.leader && !ccM.arena ? lsBonus(ccM.leader) : null;   // gear: Accessory deepens a weak spot, Hand softens a resist (5% a milestone)
+  if (adv && !boss) { const f = adv === 'weak' ? 1 - LS_ADV - .05 * ((gb && gb.gw) || 0) : 1 + Math.max(.05, LS_ADV - .05 * ((gb && gb.gr) || 0)); P.hp = Math.max(1, Math.round(P.hp * f)); P.max = Math.max(P.max, P.hp); }
   if (L && adv === 'weak') L.cd = 0;
   if (L && adv === 'res') L.cdm = (L.cdm || 0) - 1;
   if (adv) ccLog(G, adv === 'weak' ? `Weak spot: your ${CC_STYLES[me][0]} leader has the advantage` : `Resisted: the enemy resists ${CC_STYLES[me][0]}`, 'sys');

@@ -161,9 +161,9 @@ function clearRaid(times) {
   const cost = raidStam(d) * times;
   if (stamina() < cost) { toast(`This needs ${cost} stamina. You have ${stamina()}.`); openStamina(); return; }
   spendStamina(cost); questAdd('raid', times); raidInst().n += times;
-  const drops = rollGearDrops(d, times, si);
+  const drops = rollGearDrops(d, times, si), mats = gearRaidMats(si, times, drops);
   gainExp(EXP.raid * times); persist(); renderMenu(); renderRaids();
-  showRaidDrops(drops, times);
+  showRaidDrops(drops, times); toast(gearMatsTxt(mats));
 }
 /* instant clears ask first (the owner: a misclick used to clear at once): the same checks as clearRaid, then a small
    glass window with the cost, the clears left and what you get; Yes runs clearRaid */
@@ -227,14 +227,14 @@ function raidFinish(G, r) {
   if (!spendStamina(r.cost)) return { win: true, broke: true, cost: r.cost };   // stamina went elsewhere during the battle
   questAdd('raid', 1);
   if (gold) { const g = raidStages(d)[r.stage] || raidStages(d)[0], coins = rollGold(g, 1); S.wallet.coins += coins; gainExp(g.exp); return { win: true, gold: true, coins, exp: g.exp, cost: r.cost }; }
-  const drops = rollGearDrops(d, 1, r.stage || 0); gainExp(EXP.raid); return { win: true, drops, exp: EXP.raid, cost: r.cost };
+  const drops = rollGearDrops(d, 1, r.stage || 0), mats = gearRaidMats(r.stage || 0, 1, drops); gainExp(EXP.raid); return { win: true, drops, mats, exp: EXP.raid, cost: r.cost };
 }
 function raidEndHTML(res) {
   if (!res.win) return `<div class="ccm-rw rb"><span class="lbl-sm">Raid not cleared</span><p class="tiny">No stamina was spent. Try again with another plan, or use an instant clear.</p></div>`;
   if (res.broke) return `<div class="ccm-rw rb"><span class="lbl-sm">Not enough stamina</span><p class="tiny">You won, but there wasn't ${res.cost} stamina left to clear the raid.</p></div>`;
   const items = res.gold ? `<span class="rb-it r3">${curIcon('coins')}<b>${fmt(res.coins)}</b><small>Gold</small></span>`
     : res.drops.map(d => `<span class="rb-it r${d.x.rarity}"><img src="${clothImg(d.x)}" alt="">${d.isNew ? '<i class="rb-new">NEW</i>' : ''}${ctag(d.x.rarity)}<small>${esc(d.x.name)}</small></span>`).join('');
-  return `<div class="ccm-rw rb"><span class="lbl-sm">Raid cleared · ${curIcon('stamina')}${res.cost} spent</span><div class="rb-row">${items}<span class="rb-it xp">${expTag(res.exp)}</span></div></div>`;
+  return `<div class="ccm-rw rb"><span class="lbl-sm">Raid cleared · ${curIcon('stamina')}${res.cost} spent</span><div class="rb-row">${items}<span class="rb-it xp">${expTag(res.exp)}</span>${res.mats ? `<span class="rb-it xp">${curIcon('thread')}<small>${esc(gearMatsTxt(res.mats))}</small></span>` : ''}</div></div>`;
 }
 const raidEndBtns = r => `<div class="ccm-endb"><button class="btn gold" id="rbAgain">${icon('swords')}Battle again ${curIcon('stamina')}${r.cost}</button><button class="btn ghost" id="rbBack">${icon('raid')}Raids</button></div>`;
 INFO.vault = () => { const d = raidOf(raidSel).kind === 'gold' ? raidOf(raidSel) : RAIDS.find(x => x.kind === 'gold') || RAID_BASE[3], STV = raidStages(d); return ({ title: d.name, body: `<p class="desc">Win a card battle against the vault's guardian to clear a stage (deeper stages have a tougher guardian), or use one of your ${RAID_INSTANT} instant clears a day. Each clear gives gold (the stage's amount, give or take 15%) and EXP. No clothes drop, so it needs no wardrobe space. Deeper stages open at higher player levels.</p>
