@@ -485,7 +485,7 @@ function ccBotStep(G) {
   const ai = !ccM.boss && qmAi(ccM.qm || ccM.arena || ccM.train), plans = ccM.boss || ai;   // the guild boss and Hard / Expert Quick match challengers plan their turn (48-clash-auto.js)
   if (plans && !ccM.bossA) { const m = ccM; (ccM.boss ? gbBossPick(G) : ccPlanPick(G, ai)).then(a => { if (ccM !== m || m.G !== G) return; m.bossA = a || { k: 'end' }; ccBotStep(G); }); return; }
   const br = ccM.qm || ccM.arena || ccM.train;
-  let a = ccM.bossA || (ccM.camp && ccM.camp.st.dummy || ccM.train && ccM.train.brain === 'dummy' ? { k: 'end' } : br && br.brain === 'easy' ? ccBotPickEasy(G) : ccBotPick(G));   // the campaign's (and Free Training's) Dummy never acts
+  let a = ccM.bossA || (ccM.camp && ccM.camp.st.dummy || ccM.train && ccM.train.brain === 'dummy' ? { k: 'end' } : (br && br.brain === 'easy') || (ccM.camp && ccM.camp.st.brain === 'easy') ? ccBotPickEasy(G) : ccBotPick(G));   // Chapters 1–2 of the campaign: the Easy brain   // the campaign's (and Free Training's) Dummy never acts
   if (plans) ccM.bossA = null;
   const go = src => {
     if (!ccM || ccM.G !== G) return;

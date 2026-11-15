@@ -35,8 +35,8 @@ const VIP_LVREW = { 1: { pearls: 20, coins: 1e4 }, 2: { pearls: 30, tickets: 2 }
 const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1], FARM_GOLD = [0, 0, 25e3, 8e4, 2e5, 4.5e5, 9e5, 1.8e6], FARM_H = [0, 5 / 60, .5, 2, 6, 12, 24, 48];
 const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 10, res: 'pearls' }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 500, res: 'exp' } };
 const FARM_ORDER = ['market', 'pub', 'crops', 'inn'];
-const EXP_PEARLS = [[0, 0, 30], [1, 5, 40], [6, 10, 18], [11, 20, 9], [21, 29, 2.5], [30, 30, .5]], EXP_UR_MULT = [.6, 1, 1.5, 2, 2.5, 3];
-const BP_MILES = { free: { 10: { tickets: 2 }, 20: { cfssr: 5 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { wishes: 5 }, 80: { eggur: 1 } },
+const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]], EXP_UR_MULT = [1, 1, 1];   // 0 or 1 pearl, 5 pearls 5% of the time
+const BP_MILES = { free: { 10: { tickets: 2, sktk: 5 }, 20: { cfssr: 5, sktk: 5 }, 30: { wishes: 3, sktk: 5 }, 40: { fragur: 5, sktk: 5 }, 50: { tickets: 3, sktk: 5 }, 60: { cfur: 3, sktk: 5 }, 70: { wishes: 5, sktk: 5 }, 80: { eggur: 1, sktk: 5 } },
   paid: { 10: { pearls: 30 }, 20: { memtk: 1 }, 30: { pearls: 40 }, 40: { cfur: 10 }, 50: { eggur: 2 }, 60: { memtk: 1 }, 70: { pearls: 60 }, 80: { ursel: 1 } } };
 const BP_FIVE = { free: { wishes: 1 }, paid: { tickets: 2 } };
 const BP_CYCLE = { free: [{ dust: 30 }, { coins: 4000 }, { bottles: 1 }, { fragssr: 2 }], paid: [{ cfssr: 3 }, { pearls: 5 }, { starlight: 8 }, { cfur: 1 }] };
@@ -68,17 +68,17 @@ const AR_WEEK = [[5, 50], [10, 80], [15, 120], [20, 160], [25, 200], [30, 260], 
 const AR_WIN = [.80, .72, .60, .52, .42, .34, .22, .15];              // assumed win chance against your own rank's brains (easy → expert planner)
 const arRank = vp => AR_RANKS.filter(r => vp >= r[1]).length - 1;
 const AR_SHOP = [['tickets', 1, 100, 2, 1], ['wishes', 1, 80, 2, 1.2], ['bottles', 1, 20, 3, 1.4], ['coins', 1e4, 15, 3, 1.4], ['pearls', 5, 60, 1, .7], ['starlight', 10, 40, 2, .8], ['cfssr', 3, 30, 2, 1],
-  ['cfur', 1, 50, 2, .8], ['fragssr', 3, 25, 2, 1], ['fragur', 1, 40, 1, .7], ['gplush', 1, 25, 2, .9], ['exp', 500, 20, 2, .9], ['nametk', 1, 120, 1, .25], ['eggur', 1, 350, 1, .2], ['memtk', 1, 900, 1, .15], ['sktk', 10, 40, 2, 1], ['ictk', 2, 30, 2, 1]];
+  ['cfur', 1, 50, 2, .8], ['fragssr', 3, 25, 2, 1], ['fragur', 1, 40, 1, .7], ['gplush', 1, 25, 2, .9], ['exp', 500, 20, 2, .9], ['nametk', 1, 120, 1, .25], ['eggur', 1, 350, 1, .2], ['memtk', 1, 900, 1, .15], ['ictk', 2, 30, 2, 1]];
 const G_SHOP = [['tickets', 1, 50, 1, 1], ['wishes', 1, 40, 1, 1.2], ['bottles', 1, 10, 3, 1.4], ['coins', 5000, 8, 3, 1.4], ['cfssr', 3, 15, 2, 1], ['cfur', 1, 25, 2, .8], ['fragssr', 3, 10, 2, 1], ['fragur', 1, 20, 1, .7],
-  ['gplush', 1, 15, 2, .9], ['gbracelet', 2, 10, 2, .9], ['exp', 300, 10, 2, .9], ['nametk', 1, 60, 1, .25], ['memtk', 1, 450, 1, .15], ['sktk', 5, 15, 2, 1], ['ictk', 1, 12, 2, 1]];
+  ['gplush', 1, 15, 2, .9], ['gbracelet', 2, 10, 2, .9], ['exp', 300, 10, 2, .9], ['nametk', 1, 60, 1, .25], ['memtk', 1, 450, 1, .15], ['ictk', 1, 12, 2, 1]];
 const SHOP_PRIO = ['memtk', 'eggur', 'cfur', 'pearls', 'tickets', 'wishes', 'fragur', 'ictk', 'sktk', 'cfssr', 'starlight', 'fragssr', 'gplush', 'bottles', 'coins', 'exp', 'gbracelet'];
 const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [15, 1, .3, 9000, 1], [30, 2, .35, 14000, 2], [45, 2, .45, 20000, 2], [60, 3, .5, 26000, 3], [75, 3, .6, 32000, 3]];
 
 /* campaign stages: [chapter, base win chance for an average player (the owner's Node sims), chance of each extra star on a win] */
 const CAMP = [];
 [.98, .97, .97, .96, .65].forEach(p => CAMP.push({ ch: 0, p, sx: .8 }));
-[.73, .60, .43, .63, .37, .53, .67, .40, .43, .17].forEach(p => CAMP.push({ ch: 1, p, sx: .55 }));
-[.53, .40, .53, .67, .30, .33, .23, .27, .20, .07].forEach(p => CAMP.push({ ch: 2, p, sx: .5 }));
+[.98, .98, .98, .98, .90, .98, .90, .84, .98, .90].forEach(p => CAMP.push({ ch: 1, p, sx: .6 }));
+[.97, .93, .97, .97, .93, .78, .97, .93, .90, .76].forEach(p => CAMP.push({ ch: 2, p, sx: .55 }));
 for (let c = 3; c <= 5; c++) for (let i = 0; i < 10; i++) CAMP.push({ ch: c, p: i === 4 || i === 9 ? .8 : .9, sx: .7 });
 CAMP.forEach((s, i) => { s.i = i; s.first = i === 0 || CAMP[i - 1].ch !== s.ch; s.last = i === CAMP.length - 1 || CAMP[i + 1].ch !== s.ch; });
 const TREE = [.60, .57, .50, .47, .30, .40, .47, .20, .13, .07].map((p, i) => ({ no: i + 1, p, sx: .5 }));
@@ -87,9 +87,9 @@ const RAID_P = { gear: [.87, .84, .8, .78, .75], gold: [.85, .78, .7, .6, .5] };
 /* ---------- profiles ---------- */
 const PROFILES = {
   f2p: { label: 'Free to play', key: 'f2p', memberPearls: true, refills: 2 },
-  f2pnm: { label: 'Free to play (memberships money-only)', key: 'f2pnm', memberPearls: false, refills: 2 },
+  f2pnm: { label: 'Free to play (no membership at all)', key: 'f2pnm', memberPearls: false, refills: 2 },
   f2pnb: { label: 'Free to play (a stronger leader wins no more often)', key: 'f2pnb', memberPearls: true, refills: 2, noBoost: true },
-  f2pcut: { label: 'Free to play (expeditions give a tenth of the pearls)', key: 'f2pcut', memberPearls: true, refills: 2, expCut: .1 },
+  f2pcut: { label: 'Free to play (no expedition pearls)', key: 'f2pcut', memberPearls: true, refills: 2, expCut: 0.001 },
   small: { label: 'Small spender', key: 'small', memberPearls: true, refills: 4, honor: 1, skins: 2 },
   whale: { label: 'Whale', key: 'whale', memberPearls: true, refills: 6, honor: 2, whale: true }
 };
@@ -356,9 +356,9 @@ function raidClear(A, raid, si, n) {
 function buyTopup(A, i, why) { const [p, usd] = TOPUP[i]; A.topFirst = A.topFirst || new Set(); const first = !A.topFirst.has(i); A.topFirst.add(i);
   const bonus = i === 0 ? 0 : first ? p : Math.round(p * .1); pay(A, usd, why || 'Top Up ' + (p) + ' pearls'); gain(A, 'pearls', p + bonus, 'Top Up'); }
 function buyPack(A, kind, j) { const [usd, got] = PACKS[kind].paid[j]; pay(A, usd, `${kind} pack $${usd}`); give(A, got, `${kind} packs`); }
-function buyMember(A, id) { const cost = id === 'p2' ? 60 : 30; if (!spend(A, 'pearls', cost, 'memberships')) return false;
+function buyMember(A, id, usd) { const cost = 30; if (usd) pay(A, usd, `${id === 'p2' ? 'Prism' : 'Lantern'} Membership`); else if (id === 'p2' || !spend(A, 'pearls', cost, 'memberships')) return false;
   A.member[id] = Math.max(A.member[id], A.day - 1) + 30; if (id === 'p1') { gain(A, 'pearls', 5, 'memberships'); gain(A, 'eggur', 1, 'memberships'); } else { gain(A, 'pearls', 10, 'memberships'); gain(A, 'eggur', 2, 'memberships'); gain(A, 'memtk', 1, 'memberships'); }
-  log(A, `bought the ${id === 'p2' ? 'Prism' : 'Lantern'} Membership (${cost} pearls)`); return true; }
+  log(A, `bought the ${id === 'p2' ? 'Prism' : 'Lantern'} Membership (${usd ? '$' + usd : cost + ' pearls'})`); return true; }
 function buyOutfit(A, type, i, why) {  // pearls (60) or skin tickets (60 SSR / 120 UR)
   const arr = A.skins[type]; if (arr[i]) return false; const tk = type === 'ur' ? 120 : 60;
   if (A.w.sktk >= tk) { A.w.sktk -= tk; arr[i] = true; log(A, `bought ${UR_NAMES[i]}'s ${type.toUpperCase()} outfit with skin tickets`); return true; }
@@ -367,7 +367,8 @@ function buyOutfit(A, type, i, why) {  // pearls (60) or skin tickets (60 SSR / 
 }
 function spendings(A) {
   const P = A.P, d = A.day, dow = (d - 1) % 7;
-  if (P.key === 'small' && d === 1) { buyTopup(A, 1, 'Top Up $4.99 (for the Prism Membership)'); buyTopup(A, 1, 'Top Up $4.99 (for the Lantern Membership)'); pay(A, 9.99, 'Pearl Honor: Coral Tide'); A.honor.tier = 1; honorLevels(A); }
+  if ((P.key === 'small' || P.whale) && d === 1) { buyMember(A, 'p2', 9.99); buyMember(A, 'p1', 4.99); }
+  if (P.key === 'small' && d === 1) { pay(A, 9.99, 'Pearl Honor: Coral Tide'); A.honor.tier = 1; honorLevels(A); }
   if (P.key === 'small' && d === 3) buyTopup(A, 2, 'Top Up $14.99 (for outfits)');
   if (P.whale) {
     if (d === 1) { for (let i = 0; i < 6; i++) buyTopup(A, i); pay(A, 4.99, 'First Top-Up offer'); grantChar(A, randStdUR(A), 'First Top-Up offer'); A.urGot++; A.urCharGot++; gain(A, 'stamina', 240); gain(A, 'wishes', 10, 'First Top-Up offer');
@@ -479,9 +480,9 @@ function exchanges(A) {
   for (let i = 0; i < N_URMEM && A.w.starlight >= 300 + 100; i++) { const c = A.chars[i]; if (c.own && !A.memEx.has(i) && !A.mems.ur[i].length) { A.w.starlight -= 300; A.memEx.add(i); grantMem(A, 5, i); } }
   while (A.w.starlight >= 400 + 10) { A.w.starlight -= 10; gain(A, 'tickets', 1, 'Coral exchange'); }
   if (!A.monthly) { A.monthly = 0; } while (A.monthly < 10 && A.w.dust >= 75) { A.w.dust -= 75; A.monthly++; gain(A, A.monthly <= 5 ? 'tickets' : 'wishes', 1, 'Seaweed monthly pulls'); }
-  // Seaweeds → skin tickets (5 each) for outfits of owned characters (UR outfits 120 tickets, SSR 60)
+  // skin tickets (only from Pearl Honor now) → outfits of owned characters (UR outfits 120 tickets, SSR 60)
   for (const c of focusList(A)) { if (c.r !== 5 || c.kind === 'mc' || c.idx >= 6) continue;
-    for (const [type, tk] of [['ur', 120], ['ssr', 60]]) { if (A.skins[type][c.idx]) continue; const need = Math.max(0, tk - A.w.sktk); if (A.w.dust >= need * 5) { A.w.dust -= need * 5; A.w.sktk += need; A.w.sktk -= tk; A.skins[type][c.idx] = true; log(A, `got ${c.name}'s ${type.toUpperCase()} outfit with skin tickets (Seaweeds)`); } } }
+    for (const [type, tk] of [['ur', 120], ['ssr', 60]]) { if (!A.skins[type][c.idx] && A.w.sktk >= tk) { A.w.sktk -= tk; A.skins[type][c.idx] = true; log(A, `got ${c.name}'s ${type.toUpperCase()} outfit with skin tickets (Pearl Honor)`); } } }
   // summon points: 200 = one copy of the featured UR (Aria) while not maxed
   while (A.points.feat >= PT_PRICE && stars(A.chars[LIMITED]) < 6) { A.points.feat -= PT_PRICE; grantChar(A, A.chars[LIMITED], 'frag'); A.urCharGot++; log(A, 'Summon points: +1 Aria'); }
   while (A.w.memtk > 0) { A.w.memtk--; grantMem(A, 5, Math.floor(R() * N_URMEM)); }
@@ -515,7 +516,7 @@ function pulls(A) {
   while (A.w.pearls >= 30 + reservePearls(A)) { spend(A, 'pearls', 30, 'Limited Banner pulls'); PS.pearls += 10; pull10(A, stars(A.chars[LIMITED]) < 6 ? 'limited' : 'weekly'); }
 }
 const reservePearls = A => {  // pearls kept back for the build: Breakthrough / Potential of the first character(s), memberships
-  const P = A.P; let r = 0; if (P.memberPearls) { const m = memberOn(A); if (!m.p2) r += 60; if (!m.p1) r += 30; }
+  const P = A.P; let r = 0; if (P.memberPearls) { const m = memberOn(A); if (!m.p1) r += 30; }
   const L = focusList(A).filter(c => c.kind !== 'mc')[0]; if (L) r += Math.max(0, stars(L) - L.bt) * 10 + Math.max(0, (stars(L) + 1) * 6 - L.pot) * 2;
   const idle = FARM_ORDER.filter(id => A.farm[id].upEnd == null && A.farm[id].lv < 7).length; r += idle * 5 + (P.whale ? idle * 60 : 0);
   return r;
@@ -549,7 +550,7 @@ function day(A) {
   if (dow === 0) { A.honor.wk = 0; if (d > 1) { const rk = arRank(A.arena.vp); gain(A, 'pearls', AR_WEEK[rk][0], 'arena weekly rewards'); gain(A, 'atok', AR_WEEK[rk][1], 'arena'); } }
   spendings(A);
   dailyFree(A);
-  if (A.P.memberPearls) { const m = memberOn(A); if (!m.p2 && A.w.pearls >= 60) buyMember(A, 'p2'); if (!memberOn(A).p1 && A.w.pearls >= 30) buyMember(A, 'p1'); }
+  if (A.P.memberPearls && !A.P.whale && A.P.key !== 'small') { if (!memberOn(A).p1 && A.w.pearls >= 30) buyMember(A, 'p1'); }   // free players: only the Lantern can be bought with pearls
   if (A.P.whale && d === 1) { while (A.honor.lv < 80 && spend(A, 'pearls', 3, 'Pearl Honor levels')) { A.honor.xp = Math.max(A.honor.xp, A.honor.lv * 800); honorLevels(A); } }
   if (A.P.whale && d === 2 && !A.mbox && spend(A, 'pearls', 200, 'Mystery Fountain')) { A.mbox = true; if (!A.skins.ur[MBOX_SKIN]) A.skins.ur[MBOX_SKIN] = true; else gain(A, 'starlight', 40); give(A, { wishes: 10, tickets: 5, pearls: 30, bottles: 2, coins: 2e4, gplush: 1 }, 'Mystery Fountain'); A.xp += 500; log(A, 'emptied the Mystery Fountain (200 pearls)'); }
   if (A.P.key === 'small') { for (const c of focusList(A).filter(c => c.r === 5 && c.kind !== 'mc' && c.idx < 6).slice(0, 2)) if ((A.boughtSkins || 0) < 2 && d >= 3 && buyOutfit(A, 'ur', c.idx)) A.boughtSkins = (A.boughtSkins || 0) + 1; }

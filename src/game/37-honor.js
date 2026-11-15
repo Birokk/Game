@@ -74,7 +74,8 @@ function bpGain(n, capped = true) {
 /* rewards per level: one item per level and track, {reward key: amount}. Every 10th level is a milestone (bigger column,
    BP_MILES), every 5th gives tickets, the other levels cycle through four everyday rewards (BP_CYCLE, by level % 4). */
 const BP_MILES = {
-  free: { 10: { tickets: 2 }, 20: { cfssr: 5 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { wishes: 5 }, 80: { eggur: 1 } },
+  // every 10th free level also gives 5 skin tickets : Pearl Honor is the only place to get them (the owner's rule)
+  free: { 10: { tickets: 2, sktk: 5 }, 20: { cfssr: 5, sktk: 5 }, 30: { wishes: 3, sktk: 5 }, 40: { fragur: 5, sktk: 5 }, 50: { tickets: 3, sktk: 5 }, 60: { cfur: 3, sktk: 5 }, 70: { wishes: 5, sktk: 5 }, 80: { eggur: 1, sktk: 5 } },
   paid: { 10: { pearls: 30 }, 20: { memtk: 1 }, 30: { pearls: 40 }, 40: { cfur: 10 }, 50: { eggur: 2 }, 60: { memtk: 1 }, 70: { pearls: 60 }, 80: { ursel: 1 } }
 };
 const BP_FIVE = { free: { wishes: 1 }, paid: { tickets: 2 } };
@@ -89,6 +90,9 @@ function bpReward(lv, track) {
 }
 /* a reward as a square inventory card in its rarity colours (REW_R), amount under it */
 const bpItem = (k, n, extra = '', cls = '', attrs = '') => `<button type="button" class="inv-cell bp-sq r${REW_R[k] || 4} ${cls}" ${attrs} title="${fmt(n)} ${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}"><span class="inv-pic">${curIcon(k)}${extra}</span><b>${fmt(n)}</b></button>`;
+/* a level can give more than one item (the free milestones add skin tickets): the first is the card, the rest small chips on it */
+const bpNm = (k, v) => `${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}`;
+const bpXtra = list => list.map(([k, v]) => `<span class="bp-xtra r${REW_R[k] || 4}">${curIcon(k)}<b>${fmt(v)}</b></span>`).join('');
 const bpCanClaim = (lv, track) => { const st = bpState(); return lv <= bpLv() && !st[track].includes(lv) && (track === 'free' || st.tier > 0); };
 const bpClaimable = () => { const out = []; for (let lv = 1; lv <= bpLv(); lv++) ['free', 'paid'].forEach(t => { if (bpCanClaim(lv, t)) out.push([lv, t]); }); return out; };
 const bpMissionsReady = () => Object.keys(BP_SETS).some(set => BP_SETS[set].list.some(q => qCan(q, set)));
@@ -196,15 +200,15 @@ function renderHonor(jump) {
     <button class="btn gold sm bp-buylv" id="bpBuyLv" ${lv >= BP_MAX ? 'disabled' : ''}>${icon('plus')}Purchase level</button></div>`;
   let body = '';
   if (bpTab === 'rewards') {
-    const cell = (l, t) => { const [k, n] = Object.entries(bpReward(l, t))[0], got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
-      return bpItem(k, n, got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : '', `bp-cell ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''} ${lock ? 'locked' : ''}`, `data-bpc="${l}|${t}"`); };
+    const cell = (l, t) => { const all = Object.entries(bpReward(l, t)), [k, n] = all[0], got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
+      return bpItem(k, n, bpXtra(all.slice(1)) + (got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : ''), `bp-cell ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''} ${lock ? 'locked' : ''} ${all.length > 1 ? 'multi' : ''}`, `data-bpc="${l}|${t}" title="${esc(all.map(([a, b]) => bpNm(a, b)).join(' + '))}"`); };
     const cols = Array.from({ length: BP_MAX }, (_, i) => i + 1).map(l => `<div class="bp-col ${l === lv ? 'now' : ''} ${l <= lv ? 'reached' : ''} ${l % 10 === 0 ? 'big' : ''}" data-lv="${l}"><span class="bp-lvt">Lv. ${l}</span>${cell(l, 'free')}${cell(l, 'paid')}</div>`).join('');
     const n = bpClaimable().length, nm = (k, v) => `${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}`;
     const next = Math.min(BP_MAX, Math.ceil((lv + 1) / 10) * 10);
-    const miles = Array.from({ length: BP_MAX / 10 }, (_, i) => (i + 1) * 10).map(l => { const [fk, fn] = Object.entries(bpReward(l, 'free'))[0], [pk, pn] = Object.entries(bpReward(l, 'paid'))[0];
+    const miles = Array.from({ length: BP_MAX / 10 }, (_, i) => (i + 1) * 10).map(l => { const fa = Object.entries(bpReward(l, 'free')), [fk, fn] = fa[0], [pk, pn] = Object.entries(bpReward(l, 'paid'))[0];
       const gf = st.free.includes(l), gp = st.paid.includes(l);
-      return `<button type="button" class="bp-mile ${l <= lv ? 'on' : ''} ${l === next && lv < BP_MAX ? 'next' : ''}" data-bpml="${l}" title="Level ${l}: ${nm(fk, fn)} · ${BP_NAMES.paid}: ${nm(pk, pn)}">
-        <span class="bp-mlv">Lv ${l}</span><span class="bp-mits"><i class="r${REW_R[fk] || 4} ${gf ? 'got' : bpCanClaim(l, 'free') ? 'can' : ''}">${curIcon(fk)}<b>${fmt(fn)}</b>${gf ? icon('check') : ''}</i><i class="r${REW_R[pk] || 4} ${gp ? 'got' : bpCanClaim(l, 'paid') ? 'can' : ''} ${st.tier ? '' : 'lk'}">${curIcon(pk)}<b>${fmt(pn)}</b>${gp ? icon('check') : st.tier ? '' : icon('lock')}</i></span></button>`; }).join('');
+      return `<button type="button" class="bp-mile ${l <= lv ? 'on' : ''} ${l === next && lv < BP_MAX ? 'next' : ''}" data-bpml="${l}" title="Level ${l}: ${fa.map(([a, b]) => nm(a, b)).join(' + ')} · ${BP_NAMES.paid}: ${nm(pk, pn)}">
+        <span class="bp-mlv">Lv ${l}</span><span class="bp-mits"><i class="r${REW_R[fk] || 4} ${gf ? 'got' : bpCanClaim(l, 'free') ? 'can' : ''}">${curIcon(fk)}<b>${fmt(fn)}</b>${gf ? icon('check') : ''}</i>${fa.slice(1).map(([a, b]) => `<i class="bp-mx r${REW_R[a] || 4} ${gf ? 'got' : ''}">${curIcon(a)}<b>${fmt(b)}</b></i>`).join('')}<i class="r${REW_R[pk] || 4} ${gp ? 'got' : bpCanClaim(l, 'paid') ? 'can' : ''} ${st.tier ? '' : 'lk'}">${curIcon(pk)}<b>${fmt(pn)}</b>${gp ? icon('check') : st.tier ? '' : icon('lock')}</i></span></button>`; }).join('');
     const mlFill = Math.min(100, Math.max(0, (lv - 10) / (BP_MAX - 10) * 100));
     body = `<div class="bp-rew">
       <div class="bp-labels"><div class="bp-lab"><span class="bp-emb">${bpEmblem(0)}</span><b>${BP_NAMES.free}</b></div><div class="bp-lab paid ${st.tier ? '' : 'locked'}"><span class="bp-emb">${bpEmblem(1)}</span><b>${BP_NAMES.paid}</b>${st.tier ? '' : `<small>${icon('lock')}Locked</small>`}</div></div>
@@ -212,7 +216,7 @@ function renderHonor(jump) {
       <div class="bp-side"><div class="bp-show"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(64, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + namecard</small></div>
         ${st.tier ? `<button class="btn gold bp-claim" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>` : `<button class="btn gold bp-claim" data-bptab="unlock">Unlock ${BP_NAMES.paid}</button><button class="btn ghost sm" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>`}</div>
     </div>
-    <div class="bp-mls"><div class="bp-mlh"><b>Season milestones</b><small>Every 10th level · tap one to see it on the track</small></div>
+    <div class="bp-mls"><div class="bp-mlh"><b>Season milestones</b><small>Every 10th level · free ones add 5 skin tickets · tap one to see it on the track</small></div>
       <div class="bp-mlrow" style="--mf:${mlFill}%"><span class="bp-mlbar" aria-hidden="true"><i></i></span>${miles}</div></div>`;
   } else if (bpTab === 'missions') {
     const set = bpMTab, L = BP_SETS[set].list, order = q => qCan(q, set) ? 0 : qDone(q, set) ? 2 : 1;

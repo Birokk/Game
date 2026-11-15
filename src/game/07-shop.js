@@ -141,7 +141,7 @@ function renderShop() {
       </div>` : '<p class="mall-empty">No outfits for sale yet. Add skins in the admin panel.</p>';
   } else if (shopTab === 'skins') {
     const list = shopSkins();
-    body = `<p class="tiny">Every outfit costs ${SKIN_PRICE} pearls, or skin tickets: ${SKTK_COST[4]} for SSR, ${SKTK_COST[5]} for UR (you have ${fmt(W.sktk || 0)}; Exchange → Seaweeds, the Arena and Guild shops). Wedding (MR) outfits can't be bought; marry the character to unlock them.</p>
+    body = `<p class="tiny">Every outfit costs ${SKIN_PRICE} pearls, or skin tickets: ${SKTK_COST[4]} for SSR, ${SKTK_COST[5]} for UR (you have ${fmt(W.sktk || 0)}; Pearl Honor gives 5 on every 10th level). Wedding (MR) outfits can't be bought; marry the character to unlock them.</p>
       <div class="mall-skins">${list.map(x => { const par = findEntry(x.parent), own = owns(x.id);
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
           ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE || (W.sktk || 0) >= sktkCost(x) ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}<i class="mall-or">or</i>${curIcon('sktk')}${sktkCost(x)}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
@@ -175,8 +175,6 @@ function renderShop() {
     <h3 class="mall-h">Monthly pulls</h3><p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
     <div class="mall-grid">${['limited', 'standard'].map(bk => { const left = MONTHLY_LIMIT - m[bk];
       return item('mo-' + bk, TK(bk), `Monthly ${TK_NAME[TK(bk)]}`, `${left} / ${MONTHLY_LIMIT} left this month`, MONTHLY_PRICE, 'dust', left <= 0 ? 'soldout' : '', bk === 'limited' ? 5 : 4); }).join('')}</div>
-    <h3 class="mall-h">Skin tickets</h3><p class="tiny">Buy outfits with skin tickets instead of pearls: ${SKTK_COST[4]} for an SSR outfit, ${SKTK_COST[5]} for a UR one. You have ${fmt(W.sktk || 0)}.</p>
-    <div class="mall-grid">${item('ds-sktk', 'sktk', 'Skin ticket', `${SKTK_DUST} Seaweeds each`, SKTK_DUST, 'dust', '', 4)}${item('ds-sktk10', 'sktk', 'Skin ticket ×10', `${SKTK_DUST * 10} Seaweeds`, SKTK_DUST * 10, 'dust', '', 4)}${item('ds-sktk60', 'sktk', 'Skin ticket ×60', 'Enough for an SSR outfit', SKTK_DUST * 60, 'dust', '', 5)}</div>
     <h3 class="mall-h">Gifts</h3><p class="tiny">Tap one to choose how many to buy.</p>
     <div class="mall-grid">${Object.entries(DUST_GIFTS).map(([k, p], i) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust', '', 3 + i)).join('')}</div>`;
   const oldBg = shopEl.querySelector('.mallx-bg'), ob = shopEl.querySelector('.mall-body'), os = shopEl.querySelector('.mall-side');
@@ -196,7 +194,7 @@ function renderShop() {
   shopEl.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => { shopTab = b.dataset.stab; renderShop(); });
   shopEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { shopPick = b.dataset.pick; renderShop(); });
   shopEl.querySelectorAll('[data-hotsub]').forEach(b => b.onclick = () => { hotSub = b.dataset.hotsub; renderShop(); });
-  shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass));
+  shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass, b.dataset.way));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
   shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const i = +b.dataset.topup, [n, usd] = TOPUP[i], bo = topupBonus(i);

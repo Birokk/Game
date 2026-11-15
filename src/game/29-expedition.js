@@ -1,6 +1,6 @@
 /* ---------- Expedition: the Base's second tab (arrow on the Base screen) ----------
-   Send an owned character to one of 5 places for 12 hours; it comes back with gold (1k–20k), pearls (0–30, 30 is
-   very rare), a flat 100 EXP and sometimes a summon ticket. UR characters roll better. Same screen pattern as the Base:
+   Send an owned character to one of 5 places for 12 hours; it comes back with gold (1k–20k), pearls (0 or 1, 5 with a
+   5% chance, the owner's ask), a flat 100 EXP and sometimes a summon ticket. UR characters roll better. Same screen pattern as the Base:
    a 16:9 stage (wallpaper exp:bg from Settings → Admin, black by default), a label per place, a side panel.
    State S.expd[areaId] = {char, start, ends} (player save). A character can be on one expedition at a time. */
 const EXP_MS = 12 * 36e5;
@@ -15,8 +15,8 @@ const expArea = id => EXP_AREAS.find(a => a.id === id);
 const expPosDef = id => { const a = expArea(String(id).replace(/^x:/, '')); return a ? { x: a.x, y: a.y } : { x: 50, y: 50 }; };
 /* rewards: gold 1,000–20,000 (UR: best of two rolls), pearls by tier (UR: higher tiers weigh more), EXP 100, tickets */
 const EXP_GOLD = [1000, 20000], EXP_XP = 100;
-const EXP_PEARLS = [[0, 0, 30], [1, 5, 40], [6, 10, 18], [11, 20, 9], [21, 29, 2.5], [30, 30, 0.5]];   // [min, max, weight]
-const EXP_UR_MULT = [0.6, 1, 1.5, 2, 2.5, 3];
+const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]];   // [min, max, weight]: 0 or 1 pearl, 5 pearls 5% of the time (the owner's ask)
+const EXP_UR_MULT = [1, 1, 1];   // pearls are the same for every character; UR characters still bring more gold and tickets
 const EXP_TICKETS = { wishes: [6, 12], tickets: [3, 6] };   // % chance for SSR / UR characters
 const expPearlW = ur => EXP_PEARLS.map((t, i) => t[2] * (ur ? EXP_UR_MULT[i] : 1));
 function rollExpedition(ur) {
@@ -71,11 +71,11 @@ function collectExpeditions(ids) {
 }
 INFO.expedition = () => { const pc = ur => { const w = expPearlW(ur), t = w.reduce((a, b) => a + b, 0); return w.map(x => `${Math.round(x / t * 1000) / 10}%`); };
   const s = pc(false), u = pc(true);
-  return { title: 'Expedition', body: `<p class="desc">Send a character to a place for 12 hours. When they come back they bring gold, maybe some pearls, ${EXP_XP} EXP and sometimes a summon ticket. <b>UR characters</b> find more gold and roll better pearls and tickets. Each character can go on one expedition at a time.</p>
+  return { title: 'Expedition', body: `<p class="desc">Send a character to a place for 12 hours. When they come back they bring gold, maybe some pearls, ${EXP_XP} EXP and sometimes a summon ticket. <b>UR characters</b> find more gold and find more tickets. Each character can go on one expedition at a time.</p>
     <table class="cs-table"><thead><tr><th>Reward</th><th>SSR character</th><th>UR character</th></tr></thead><tbody>
       <tr><td>Gold</td><td colspan="2">${fmt(EXP_GOLD[0])} – ${fmt(EXP_GOLD[1])} (UR rolls twice and keeps the better one)</td></tr>
       <tr><td>EXP</td><td colspan="2">${EXP_XP}</td></tr>
-      ${EXP_PEARLS.map(([lo, hi], i) => `<tr><td>${lo === hi ? (lo ? `${lo} pearls` : 'No pearls') : `${lo}–${hi} pearls`}</td><td>${s[i]}</td><td>${u[i]}</td></tr>`).join('')}
+      ${EXP_PEARLS.map(([lo, hi], i) => `<tr><td>${lo === hi ? (lo ? `${lo} pearl${lo === 1 ? '' : 's'}` : 'No pearls') : `${lo}–${hi} pearls`}</td><td>${s[i]}</td><td>${u[i]}</td></tr>`).join('')}
       <tr><td>Standard ticket</td><td>${EXP_TICKETS.wishes[0]}%</td><td>${EXP_TICKETS.wishes[1]}%</td></tr>
       <tr><td>Limited ticket</td><td>${EXP_TICKETS.tickets[0]}%</td><td>${EXP_TICKETS.tickets[1]}%</td></tr>
     </tbody></table>` }; };
@@ -121,7 +121,7 @@ function expPanel(a) {
     body = list.length ? `<span class="lbl-sm">Choose a character</span>
       <div class="ex-pick">${list.map(x => { const busy = busyWhere(x.id);
         return `<button class="ex-pc r${x.rarity} ${exPick === x.id ? 'on' : ''}" data-expick="${esc(x.id)}" ${busy ? 'disabled' : ''} title="${esc(x.name)}${busy ? ` · away at the ${esc(busy)}` : ''}"><span class="ex-av r${x.rarity}">${thumbImg(x)}</span><small>${esc(x.name)}</small>${busy ? '<em>Away</em>' : ''}</button>`; }).join('')}</div>
-      <p class="tiny">UR characters bring back more gold and roll better pearls and tickets.</p>
+      <p class="tiny">UR characters bring back more gold and find more tickets.</p>
       <button class="btn mint" id="exGo" ${exPick ? '' : 'disabled'}>${icon('map')}Send · 12 hours</button>`
       : '<p class="tiny">You don\'t own any characters yet. Summon one first.</p>';
   } else if (expDone(a.id)) {

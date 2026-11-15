@@ -1,4 +1,6 @@
-/* ---------- monthly memberships (bought with pearls for now, in the shop's Hot Picks) ----------
+/* ---------- monthly memberships (in the shop's Hot Picks) ----------
+   Prices (the owner's rule): the Lantern Membership costs 30 pearls OR $4.99, the Prism Membership only $9.99 (no pearls).
+   Real payments aren't connected yet: while TOPUP_FREE is on the $ buttons are free test buttons that still give VIP EXP.
    Two passes, 30 days each; buying again while active adds 30 more days. Each purchase gives its one-time reward
    right away; every day the game is opened while a pass is active, its daily reward arrives in Mail.
    Perks while active: stamina max / recharge (PASS_STAM in 03-ui.js, best one counts) and daily wheel spins
@@ -8,9 +10,9 @@ const PASS_DAYS = 30, PASS_MS = PASS_DAYS * 864e5;
 const PASS_MAX_DAYS = 180;   // a membership can be stacked up to 180 days; a purchase that would go past that is refused
 const passCanBuy = id => passLeft(id) + PASS_MS <= PASS_MAX_DAYS * 864e5 + 6e4;
 const PASSES = [
-  { id: 'p1', icon: 'pass1', name: 'Lantern Membership', price: 30, col: '#8fd0ff',   // light blue (the owner's ask; it was orange)
+  { id: 'p1', icon: 'pass1', name: 'Lantern Membership', price: 30, usd: 4.99, col: '#8fd0ff',   // light blue (the owner's ask; it was orange)
     daily: { tickets: 1, pearls: 3 }, once: { pearls: 5, eggur: 1 }, spins: 2 },
-  { id: 'p2', icon: 'pass2', name: 'Prism Membership', price: 60, col: '#d58bff',
+  { id: 'p2', icon: 'pass2', name: 'Prism Membership', price: 0, usd: 9.99, col: '#d58bff',   // money only
     daily: { tickets: 2, pearls: 6 }, once: { pearls: 10, eggur: 2, memtk: 1 }, spins: 2 }
 ];
 const passDef = id => PASSES.find(p => p.id === id);
@@ -92,29 +94,35 @@ function showPassPop() {
   el.querySelector('#mbpOk').onclick = close; el.querySelector('#mbpOk').focus({ preventScroll: true });
 }
 function passMaxMsg(p) { toast(`${p.name} can be stacked up to ${PASS_MAX_DAYS} days. You have ${passDaysLeft(p.id)} days, so another ${PASS_DAYS} would go past the limit.`); }
-function confirmPass(id) {
+/* how a membership can be paid: pearls (when it has a pearl price) and / or money (usd) */
+const passPays = p => [p.price ? 'pearls' : null, p.usd ? 'usd' : null].filter(Boolean);
+const passCostHTML = (p, way) => way === 'usd' ? `<b>$${p.usd.toFixed(2)}</b>` : `${curIcon('pearls')}<b>${p.price}</b>`;
+function confirmPass(id, way) {
   const p = passDef(id); if (!p) return;
+  way = passPays(p).includes(way) ? way : passPays(p)[0];
   if (!passCanBuy(id)) return passMaxMsg(p);
+  if (way === 'usd' && !TOPUP_FREE) { toast('Real payments are not connected yet.'); return; }
   const on = passOn(id);
   openModal({ title: on ? `Extend ${p.name}?` : `Buy ${p.name}?`, ic: 'shop', small: true, body: `<div class="stack" style="text-align:center">
     <span class="pass-card big">${curIcon(p.icon)}</span>
     <p class="desc">${on ? `Adds ${PASS_DAYS} more days (${passDaysLeft(id)} left now).` : `${PASS_DAYS} days of membership.`} You get ${Object.entries(p.once).map(([k, n]) => passItem(k, n)).join(', ')} right away.</p>
-    <span class="tiny">You have ${fmt(S.wallet.pearls)} pearls.</span>
-    <div class="row" style="justify-content:center"><button class="btn ghost" id="passNo">Cancel</button><button class="btn gold" id="passYes">Buy · ${costHTML(p.price)}</button></div></div>`,
-    onMount: () => { $('#passNo').onclick = closeModal; $('#passYes').onclick = () => { closeModal(); buyPass(id); }; } });
+    <span class="tiny">${way === 'usd' ? `${TOPUP_FREE ? 'Free while testing · ' : ''}+${fmt(Math.round(p.usd * VIP_PER_USD))} VIP EXP` : `You have ${fmt(S.wallet.pearls)} pearls.`}</span>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="passNo">Cancel</button><button class="btn gold" id="passYes">Buy · ${way === 'usd' ? `$${p.usd.toFixed(2)}` : costHTML(p.price)}</button></div></div>`,
+    onMount: () => { $('#passNo').onclick = closeModal; $('#passYes').onclick = () => { closeModal(); buyPass(id, way); }; } });
 }
-function buyPass(id) {
+function buyPass(id, way) {
   const p = passDef(id); if (!p) return;
+  way = passPays(p).includes(way) ? way : passPays(p)[0];
   if (!passCanBuy(id)) return passMaxMsg(p);
-  if (S.wallet.pearls < p.price) { toast(`${p.name} costs ${p.price} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
-  S.wallet.pearls -= p.price;
+  if (way === 'usd') { if (!TOPUP_FREE) { toast('Real payments are not connected yet.'); return; } vipFromUsd(p.usd); }
+  else { if (S.wallet.pearls < p.price) { toast(`${p.name} costs ${p.price} pearls. You have ${fmt(S.wallet.pearls)}.`); return; } S.wallet.pearls -= p.price; }
   S.member = { ...(S.member || {}), [id]: Math.max(Date.now(), (S.member || {})[id] || 0) + PASS_MS };
   for (const [k, n] of Object.entries(p.once)) { if (k === 'eggur') for (let i = 0; i < n; i++) S.pets.eggs.push('ur'); else S.wallet[k] = (S.wallet[k] || 0) + n; }
   persist(); passDaily(); renderMenu(); renderStamina(); refreshSummon(); renderShop();
   openModal({ title: p.name, ic: 'sparkle', small: true, body: `<div class="stack" style="text-align:center">
     <span class="pass-card big">${curIcon(p.icon)}</span><b class="pass-ok">Membership active · ${passDaysLeft(id)} days</b>
     <div class="ex-got" style="justify-content:center">${Object.entries(p.once).map(([k, n]) => `<span class="ex-item">${passPic(k)}<b>${fmt(n)}</b><small>${PASS_NAMES[k]}${n > 1 ? 's' : ''}</small></span>`).join('')}</div>
-    <p class="tiny">Today's daily reward is waiting in your Mail. ${p.id === 'p2' ? 'Use the UR memory ticket from your Bag.' : 'Hatch the UR egg in Pets.'}</p>
+    <p class="tiny">Today's daily reward pops up on the home screen. ${p.id === 'p2' ? 'Use the UR memory ticket from your Bag.' : 'Hatch the UR egg in Pets.'}</p>
     <button class="btn gold" data-close>Great!</button></div>`, onMount: b => { b.querySelector('[data-close]').onclick = closeModal; } });
 }
 /* the Memberships part of Hot Picks */
@@ -124,7 +132,8 @@ function passShopHTML() {
       <span class="pass-card">${curIcon(p.icon)}</span>
       <div class="pass-head"><h3>${esc(p.name)}</h3><span class="pass-state">${on ? `Active · ${passDaysLeft(p.id)} day${passDaysLeft(p.id) === 1 ? '' : 's'} left` : `${PASS_DAYS} days`}</span></div>
       <ul class="pass-perks">${passPerks(p).map(([k, t]) => `<li><span class="pass-pi">${k === 'wheel' ? icon('wheel') : passPic(k)}</span>${esc(t)}</li>`).join('')}</ul>
-      ${passCanBuy(p.id) ? `<button class="mall-go pass-buy ${S.wallet.pearls >= p.price ? '' : 'poor'}" data-pass="${p.id}">${on ? 'Extend' : 'Buy'} · ${curIcon('pearls')}<b>${p.price}</b></button>` : `<button class="mall-go pass-buy owned" disabled>Max ${PASS_MAX_DAYS} days reached</button>`}
+      ${passCanBuy(p.id) ? `<div class="pass-ways">${passPays(p).map(w => `<button class="mall-go pass-buy ${w === 'usd' ? 'usd' : S.wallet.pearls >= p.price ? '' : 'poor'}" data-pass="${p.id}" data-way="${w}">${on ? 'Extend' : 'Buy'} · ${passCostHTML(p, w)}</button>`).join(passPays(p).length > 1 ? '<span class="pass-or">or</span>' : '')}</div>
+        ${p.usd ? `<span class="tiny pass-vip">${TOPUP_FREE ? 'Free while testing · ' : ''}The $ price gives +${fmt(Math.round(p.usd * VIP_PER_USD))} VIP EXP</span>` : ''}` : `<button class="mall-go pass-buy owned" disabled>Max ${PASS_MAX_DAYS} days reached</button>`}
       <span class="tiny pass-cap">Stack up to ${PASS_MAX_DAYS} days${on ? ` · ${passDaysLeft(p.id)} / ${PASS_MAX_DAYS} now` : ''}</span>
     </div>`; }).join('')}</div>`;
 }

@@ -3,7 +3,7 @@
 const fs = require('fs'), path = require('path');
 const R = require('./results.json');   // written by sim30.cjs
 const simCode = fs.readFileSync(path.join(__dirname, 'sim30.cjs'), 'utf8'), myCode = fs.readFileSync(__filename, 'utf8');
-const NAMES = { f2p: 'Free to play', small: 'Small spender', whale: 'Whale', f2pnm: 'F2P, memberships money-only', f2pcut: 'F2P, expedition pearls cut to a tenth', f2pnb: 'F2P, building the leader wins no extra battles' };
+const NAMES = { f2p: 'Free to play', small: 'Small spender', whale: 'Whale', f2pnm: 'F2P, no membership', f2pcut: 'F2P, no expedition pearls', f2pnb: 'F2P, building the leader wins no extra battles' };
 const MAIN = ['f2p', 'small', 'whale'];
 const meta = what => [
   { label: 'What', value: what },
