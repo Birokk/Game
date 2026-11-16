@@ -106,7 +106,7 @@ function openSpin() {
       while (r >= SPIN[i].w) { r -= SPIN[i].w; i++; }
       const s = SPIN[i];
       // the reward is granted right away so closing the window mid-spin loses nothing
-      S.spin.n = spinsUsed() + 1; S.spin.last = dayKey(); S.wallet[s.give] += s.n; gainExp(EXP.spin); persist(); renderMenu();
+      S.spin.n = spinsUsed() + 1; S.spin.last = dayKey(); S.wallet[s.give] += s.n; persist(); renderMenu();
       $('#spinGo').disabled = true; $('#spinGo').textContent = '…';
       const pp = $('#spinPips'); if (pp) pp.innerHTML = spinPips();
       [['#spinLeftA', `${spinsLeft()} of ${spinsPerDay()} left today`], ['#spinLeftB', `${spinsLeft()} / ${spinsPerDay()}`]].forEach(([k, t]) => { const e = $(k); if (e) e.textContent = t; });

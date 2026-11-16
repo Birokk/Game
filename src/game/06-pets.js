@@ -160,7 +160,7 @@ function renderPets() {
 function hatch(i) {
   const inc = S.pets.inc[i], list = petsOf(inc.r); if (!list.length) return;
   const item = rpick(list), res = grantEntry(item);
-  S.pets.inc[i] = null; gainExp(EXP.hatch); persist(); renderMenu(); renderPets(); refreshCharacters();
+  S.pets.inc[i] = null; persist(); renderMenu(); renderPets(); refreshCharacters();
   showHatch(inc.r, item, res);
 }
 /* hatch reveal: pitch dark, lights rising from the ground in the rarity colour, the egg wobbles and cracks, the pet appears in the middle */

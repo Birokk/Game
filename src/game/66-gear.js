@@ -22,11 +22,11 @@ const gearSpent = L => Object.entries(GEAR_BT).reduce((t, [lv, th]) => t + (L > 
 const GEAR_DIS = { 3: 3, 4: 8, 5: 20 };   // Thread for dismantling (× the star for UR)
 const GEAR_TOK = 30;                     // set tokens for one chosen piece
 const GEAR_MATS = [2, 4, 6, 9, 12];   // Thread per gear raid clear by stage
-const GEAR_SLOT_TXT = { top: 'Hero +1 HP', pants: 'Hero heals 1 a turn (every 2 milestones)', shoes: '+1 opening card (every 2 milestones)', hat: 'Skill ready 1 turn sooner (every 2 milestones)', acc: 'Weak spot: enemy −5% more HP', hand: 'Resisted: the enemy’s extra HP −5%' };
+const GEAR_SLOT_TXT = { top: 'Hero +1 HP', pants: 'Hero heal passive +1: 1 HP every other turn, up to 3 a match (every 2 milestones)', shoes: '+1 opening card (every 2 milestones)', hat: 'Skill ready 1 turn sooner (every 2 milestones)', acc: 'Weak spot: enemy −5% more HP', hand: 'Resisted: the enemy’s extra HP −5%' };
 /* set traits: 3 pieces = the first half, 6 = all of it (bonus fields as in lsBonus) */
 const GEAR_SETS = { r: [{ hp: 1 }, { hp: 2 }], ssr: [{ fu: 1 }, { fu: 2 }], ur: [{ cheap: 1 }, { cheap: 1, ap1: 1 }], ur2: [{ heal: 1 }, { heal: 1, hp: 2 }], ur3: [{ cards: 1 }, { cards: 1, hp: 2 }] };
 const GEAR_SET_BY_R = { 3: GEAR_SETS.r, 4: GEAR_SETS.ssr, 5: GEAR_SETS.ur3 };   // admin-made sets
-const gearTraitTxt = t => Object.entries(t).map(([k, v]) => ({ hp: `hero +${v} HP`, fu: `first unit +${v} max HP`, cheap: 'first skill use −1 AP', ap1: `+${v} AP on the first turn`, heal: `heal ${v} a turn`, cards: `+${v} opening card` }[k])).join(', ');
+const gearTraitTxt = t => Object.entries(t).map(([k, v]) => ({ hp: `hero +${v} HP`, fu: `first unit +${v} max HP`, cheap: 'first skill use −1 AP', ap1: `+${v} AP on the first turn`, heal: `heal passive +${v} (1 HP every other turn, up to ${3 * v} a match)`, cards: `+${v} opening card` }[k])).join(', ');
 function gS() { const g = S.gear || (S.gear = {}); for (const k of ['pool', 'wl', 'wk', 'mast', 'tok']) g[k] = g[k] || {}; return g; }
 const gPool = (id, k) => { const P = gS().pool, a = P[id] = P[id] || {}; return a[k] = a[k] || []; };
 const gearWornLv = (cid, slot) => (gS().wl[cid] || {})[slot] || 0;

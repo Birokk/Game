@@ -1,6 +1,6 @@
 /* ---------- Expedition: the Base's second tab (arrow on the Base screen) ----------
    Send an owned character to one of 5 places for 12 hours; it comes back with gold (1k–20k), pearls (0 or 1, 5 with a
-   5% chance, the owner's ask), a flat 100 EXP and sometimes a summon ticket. UR characters roll better. Same screen pattern as the Base:
+   5% chance, the owner's ask) and sometimes a summon ticket (no EXP: EXP only comes from quests and stamina). UR characters roll better. Same screen pattern as the Base:
    a 16:9 stage (wallpaper exp:bg from Settings → Admin, black by default), a label per place, a side panel.
    State S.expd[areaId] = {char, start, ends} (player save). A character can be on one expedition at a time. */
 const EXP_MS = 12 * 36e5;
@@ -13,8 +13,8 @@ const EXP_AREAS = [
 ];
 const expArea = id => EXP_AREAS.find(a => a.id === id);
 const expPosDef = id => { const a = expArea(String(id).replace(/^x:/, '')); return a ? { x: a.x, y: a.y } : { x: 50, y: 50 }; };
-/* rewards: gold 1,000–20,000 (UR: best of two rolls), pearls by tier (UR: higher tiers weigh more), EXP 100, tickets */
-const EXP_GOLD = [1000, 20000], EXP_XP = 100;
+/* rewards: gold 1,000–20,000 (UR: best of two rolls), pearls by tier, tickets */
+const EXP_GOLD = [1000, 20000], EXP_XP = 0;   // no player EXP any more (EXP only from quests and stamina)
 const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]];   // [min, max, weight]: 0 or 1 pearl, 5 pearls 5% of the time (the owner's ask)
 const EXP_UR_MULT = [1, 1, 1];   // pearls are the same for every character; UR characters still bring more gold and tickets
 const EXP_TICKETS = { wishes: [6, 12], tickets: [3, 6] };   // % chance for SSR / UR characters
@@ -25,7 +25,7 @@ function rollExpedition(ur) {
   const w = expPearlW(ur), tot = w.reduce((a, b) => a + b, 0); let x = Math.random() * tot, tier = 0;
   for (; tier < w.length - 1; tier++) { if (x < w[tier]) break; x -= w[tier]; }
   const [lo, hi] = EXP_PEARLS[tier], pearls = lo + Math.floor(Math.random() * (hi - lo + 1));
-  const out = [['coins', gold]]; if (pearls) out.push(['pearls', pearls]); out.push(['exp', EXP_XP]);
+  const out = [['coins', gold]]; if (pearls) out.push(['pearls', pearls]); if (EXP_XP) out.push(['exp', EXP_XP]);
   for (const [k, ch] of Object.entries(EXP_TICKETS)) if (Math.random() * 100 < ch[ur ? 1 : 0]) out.push([k, 1]);
   return out;
 }
@@ -71,10 +71,9 @@ function collectExpeditions(ids) {
 }
 INFO.expedition = () => { const pc = ur => { const w = expPearlW(ur), t = w.reduce((a, b) => a + b, 0); return w.map(x => `${Math.round(x / t * 1000) / 10}%`); };
   const s = pc(false), u = pc(true);
-  return { title: 'Expedition', body: `<p class="desc">Send a character to a place for 12 hours. When they come back they bring gold, maybe some pearls, ${EXP_XP} EXP and sometimes a summon ticket. <b>UR characters</b> find more gold and find more tickets. Each character can go on one expedition at a time.</p>
+  return { title: 'Expedition', body: `<p class="desc">Send a character to a place for 12 hours. When they come back they bring gold, maybe some pearls, and sometimes a summon ticket. <b>UR characters</b> find more gold and find more tickets. Each character can go on one expedition at a time.</p>
     <table class="cs-table"><thead><tr><th>Reward</th><th>SSR character</th><th>UR character</th></tr></thead><tbody>
       <tr><td>Gold</td><td colspan="2">${fmt(EXP_GOLD[0])} – ${fmt(EXP_GOLD[1])} (UR rolls twice and keeps the better one)</td></tr>
-      <tr><td>EXP</td><td colspan="2">${EXP_XP}</td></tr>
       ${EXP_PEARLS.map(([lo, hi], i) => `<tr><td>${lo === hi ? (lo ? `${lo} pearl${lo === 1 ? '' : 's'}` : 'No pearls') : `${lo}–${hi} pearls`}</td><td>${s[i]}</td><td>${u[i]}</td></tr>`).join('')}
       <tr><td>Standard ticket</td><td>${EXP_TICKETS.wishes[0]}%</td><td>${EXP_TICKETS.wishes[1]}%</td></tr>
       <tr><td>Limited ticket</td><td>${EXP_TICKETS.tickets[0]}%</td><td>${EXP_TICKETS.tickets[1]}%</td></tr>

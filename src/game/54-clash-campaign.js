@@ -492,7 +492,7 @@ const ccCampChDone = c => c.stages.every(s => ccCampHave(s.id)[0]);
 function ccCampChapters() {
   const cur = ccCampStage(cmpSel), curCh = cur ? cur.ch : ccCampCurCh(), shown = ccCampShown(), L = ccCampList();
   const card = c => { const op = ccCampChOpen(c), n = ccCampChN(c), max = ccCampChMax(c), done = ccCampChDone(c), cleared = c.stages.filter(s => ccCampHave(s.id)[0]).length, hidden = !shown.includes(c);
-    const prev = CC_CAMP[CC_CAMP.indexOf(c) - 1], state = done ? 'Cleared' : op ? (cleared ? `${cleared} / ${c.stages.length} stages cleared` : 'Ready to start') : `Clear Chapter ${prev ? prev.no : 0} to open`;
+    const prev = CC_CAMP[CC_CAMP.indexOf(c) - 1], gate = !op && typeof ccCampGateTxt === 'function' && prev && prev.stages.every(s => ccCampHave(s.id)[0]) ? ccCampGateTxt(c) : '', state = done ? 'Cleared' : op ? (cleared ? `${cleared} / ${c.stages.length} stages cleared` : 'Ready to start') : gate ? `Needs ${gate}` : `Clear Chapter ${prev ? prev.no : 0} to open`;
     return `<button class="cmpl-ch ${c.id === curCh.id ? 'on' : ''} ${op ? '' : 'lock'} ${done ? 'done' : ''}" data-cpch="${c.id}">
       <span class="cmpl-no">${op ? `<b>${c.no}</b>` : icon('lock')}</span>
       <span class="cmpl-t"><small>Chapter ${c.no} · ${esc(c.sub)}${hidden ? ' · <em>Hidden from players</em>' : ''}</small><b>${esc(c.name)}</b><span class="cmpl-st">${done ? icon('check') : ''}${state}</span></span>

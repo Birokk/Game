@@ -28,7 +28,7 @@ const WQUESTS = [
 /* daily milestones: 1 pearl, 2,000 gold, 100 EXP; 60 adds a Standard ticket, 100 a Limited ticket.
    weekly: 2 pearls, 2,000 gold, 100 EXP; 60 adds 5 Standard tickets, 100 adds 5 Limited tickets */
 function questReward(m, set = 'daily') {
-  const w = set === 'weekly', r = [['pearls', w ? 2 : 1], ['coins', 2000], ['exp', 100]];
+  const w = set === 'weekly', r = [['pearls', w ? 2 : 1], ['coins', 2000], ['exp', w ? EXP.wquest : EXP.quest]];   // quests are one of the two ways to get EXP (with stamina)
   if (m === 60) r.push(['wishes', w ? 5 : 1]);
   if (m === 100) r.push(['tickets', w ? 5 : 1]);
   if (m === 100 && !w) r.push(['vip', VIP_QUEST]);   // 50 VIP EXP a day (35-vip.js)

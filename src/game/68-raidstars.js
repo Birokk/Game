@@ -37,9 +37,9 @@ function raidScoreStars(G, r) {
    (the selected stage's strip on the raid page, and the window that opens before a raid battle) ---- */
 function raidStageRewards(d, si) {
   const g = raidStg(d, si), gold = d.kind === 'gold';
-  if (gold) return [[curIcon('coins'), `~${fmt(g.gold)}`, 'Gold (±15%)'], [curIcon('exp'), `+${g.exp}`, 'EXP']];
+  if (gold) return [[curIcon('coins'), `~${fmt(g.gold)}`, 'Gold (±15%)'], [curIcon('exp'), `+${g.st * EXP.stam}`, 'EXP (from the stamina)']];
   return [[icon('hanger'), raidPcs(g), `Clothing piece${raidPcs(g) === '1' ? '' : 's'} · ${g.ur ? `UR ${g.ur}% · ` : ''}SSR ${g.ssr}% · R ${raidRpct(g)}%`],
-    [curIcon('thread'), `+${GEAR_MATS[Math.max(0, Math.min(GEAR_MATS.length - 1, si || 0))]}`, 'Thread'], [curIcon('exp'), `+${EXP.raid}`, 'EXP']];
+    [curIcon('thread'), `+${GEAR_MATS[Math.max(0, Math.min(GEAR_MATS.length - 1, si || 0))]}`, 'Thread'], [curIcon('exp'), `+${raidStam(d) * EXP.stam}`, 'EXP (from the stamina)']];
 }
 function raidStageInfoHTML(d, si, cls = '') {
   const st = raidStarsOf(d.id, si), n = raidStarN(d.id, si), auto = n >= 1, inst = n >= 3, adm = canAdmin();   // admins skip the locks: say so instead of "Open"

@@ -1,10 +1,13 @@
-/* ---------- player level: EXP from playing, a reward for every level (Level rewards window) ----------
+/* ---------- player level: EXP from quests and stamina, a reward for every level (Level rewards window) ----------
+   EXP comes only from the daily (and weekly) quest rewards and from spending stamina, 1 EXP per stamina (EXP.stam, in
+   spendStamina; raids, Quick match and everything else that costs stamina) — the owner's rule; summons, logins, the spin,
+   achievements, hatching, expeditions, the Inn, shops and the fountain give none any more. Future quests may give EXP too.
    S.player.xp = total EXP earned; S.lvClaimed = levels whose reward was taken. The EXP icon (icon slot 'exp', editable in
    Settings or admin → Icons) only shows where EXP is offered as a reward. */
 const LV_MAX = 60;
 const lvNeed = lv => 100 + (lv - 1) * 50;                 // EXP to go from lv to lv + 1
-const EXP = { pull: 10, login: 50, spin: 20, ach: 30, hatch: 25, raid: 15 };
-const EXP_WAYS = [['pull', 'Summon', 'per pull'], ['login', 'Daily login', 'per day'], ['spin', 'Daily spin', 'per spin'], ['ach', 'Achievement', 'each'], ['hatch', 'Hatch a pet', 'each'], ['raid', 'Raid', 'per clear']];
+const EXP = { stam: 1, quest: 100, wquest: 100 };
+const EXP_WAYS = [['quest', 'Daily quests', 'each reward box (5 a day)'], ['wquest', 'Weekly quests', 'each reward box (5 a week)'], ['stam', 'Spend stamina', 'per stamina (raids, battles…)']];
 CUR_SVG.exp = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#3fd47e" stroke="#16683a" stroke-width="1.4"/><circle cx="12" cy="12" r="7.4" fill="none" stroke="#c8ffd9" stroke-width=".9" opacity=".8"/><path d="M12 5.2l1.9 4.3 4.6.4-3.5 3 1.1 4.6L12 15l-4.1 2.5 1.1-4.6-3.5-3 4.6-.4z" fill="#fff8c8" stroke="#16683a" stroke-width=".8" stroke-linejoin="round"/></svg>';
 ICONS.level = '<path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/><path d="M12 8v6"/><path d="M9.5 10.5L12 8l2.5 2.5"/>';
 const expTag = n => `<span class="exp-tag">${curIcon('exp')}+${fmt(n)} EXP</span>`;
@@ -58,7 +61,7 @@ function claimLevels(list) {
    to earn EXP, and the rewards as a timeline of glass rows (a rail lit up to your level, a diamond node per level, the
    rewards as inventory cards in their rarity colours, Claim / Claimed / Reach Lv n), filtered by All / Ready / Milestones */
 let lvFilter = 'all';
-const LV_WAY_IC = { pull: 'summon', login: 'calendar', spin: 'wheel', ach: 'ach', hatch: 'paw', raid: 'raid' };
+const LV_WAY_IC = { quest: 'quests', wquest: 'calendar', stam: 'bolt' };
 const lvItem = (k, n) => `<span class="inv-cell bp-sq lvx-it r${REW_R[k] || 4}" title="${fmt(n)} ${esc((REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1])}"><span class="inv-pic">${curIcon(k)}</span><b>${fmt(n)}</b></span>`;
 function openLevel() { lvFilter = 'all'; openModal({ title: 'Level rewards', ic: 'level', wide: true, kind: 'level', body: '<div id="lvRoot"></div>', onMount: () => { renderLevel(true); } }); }
 function renderLevel(scrollToNext) {
@@ -83,7 +86,7 @@ function renderLevel(scrollToNext) {
         <div class="lvx-stats"><span><b>${claimedN}</b><small>Claimed</small></span><span class="${ready.length ? 'hot' : ''}"><b>${ready.length}</b><small>Ready</small></span><span><b>${LV_MAX}</b><small>Max level</small></span></div></div>
       <div class="lvx-card lvx-ways"><span class="lvx-h">${icon('sparkle')}How to earn EXP</span>
         ${EXP_WAYS.map(([k, l, per]) => `<div class="lvx-way"><span class="lvx-wi">${icon(LV_WAY_IC[k] || 'star')}</span><span class="lvx-wt"><b>${l}</b><small>${per}</small></span>${expTag(EXP[k])}</div>`).join('')}
-        <div class="lvx-way"><span class="lvx-wi">${icon('farm')}</span><span class="lvx-wt"><b>Base · Inn</b><small>per day at Lv 7</small></span>${expTag(farmDef('inn').day)}</div></div>
+        <p class="tiny lvx-wnote">Only quests and spending stamina give EXP. New quests that give EXP may come later.</p></div>
     </aside>
     <section class="lvx-main">
       <div class="lvx-top"><span class="lvx-tt"><b>Level rewards</b><small>${ready.length ? `${ready.length} reward${ready.length === 1 ? '' : 's'} ready to claim` : 'Level up to unlock more rewards'}</small></span>

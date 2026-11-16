@@ -134,7 +134,7 @@ function openFrProfile(uid) {
       <button class="inv-x frp-x" data-frx aria-label="Close">${icon('close')}</button>
       <div class="pf-card frp-card">${cardLayer(fp.card)}${arPlaqueHTML(arVpOf(fp.name), true)}
         <div class="pf-me">${frAvatar(fp, 104)}
-          <div class="pf-who"><span class="pf-lvrow">${fp.vip ? vipBadge(fp.vip) : ''}<span class="lbl-sm ts" style="color:#fff">Lv ${fp.lv} · UID ${fp.uid}</span></span><span class="pf-namerow"><b class="ts">${esc(fp.name)}</b></span>${titleHTML(fp.title)}
+          <div class="pf-who"><span class="pf-lvrow">${fp.vip ? `<span class="pf-vip">${vipCircle(fp.vip)}${vipTextHTML(fp.vip)}</span>` : ''}<span class="lbl-sm ts" style="color:#fff">Lv ${fp.lv} · UID ${fp.uid}</span></span><span class="pf-namerow"><b class="ts">${esc(fp.name)}</b></span>${titleHTML(fp.title)}
             ${fp.guild ? `<span class="pf-guild">${guildIcon(fp.guild.icon, 24)}<b>${esc(fp.guild.name)}</b></span>` : ''}</div></div></div>
       <div class="frp-status"><span class="fr-on ${fp.mins < 5 ? 'on' : ''}"><i></i>${frSeen(fp.mins)}</span><span>${icon('chat')}${esc(fp.status)}</span></div>
       <div class="pf-stats frp-stats">

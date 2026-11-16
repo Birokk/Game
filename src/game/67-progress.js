@@ -10,7 +10,7 @@
    already cleared or joined stays open, and older saves start with a rank worked out from their record and stars. */
 const PB_TYPES = {
   gold: ['Battle gold', 'gold from battles', '+'], expd: ['Quick expeditions', 'Expedition time', '−'], drop2: ['Lucky finds', 'chance of a 2nd clothing piece in raids', '+'],
-  stam: ['Second breath', 'chance to get the stamina of a won battle back', ''], bond: ['Close friend', 'bond EXP for its character', '+'], exp: ['Wise eyes', 'player and Battle Rank EXP from battles', '+']
+  stam: ['Second breath', 'chance to get the stamina of a won battle back', ''], bond: ['Close friend', 'bond EXP for its character', '+'], exp: ['Wise eyes', 'Battle Rank EXP from battles', '+']
 };
 const PB_KIND = { dragon: 'gold', fox: 'expd', cat: 'drop2', bird: 'stam', bunny: 'bond', owl: 'exp' };
 const PB_ORDER = ['gold', 'expd', 'drop2', 'stam', 'bond', 'exp'];
@@ -41,7 +41,6 @@ const pbLeader = () => (ccM && ccM.leader) || ccLeaderOf(ccSave().sel);
     const res = f0.apply(this, arguments), cid = (pbLeader() || {}).id;
     if (res && res.win && !res.broke && cid) {
       if (res.gold) { const x = Math.round(res.coins * petPct(cid, 'gold') / 100); if (x) { S.wallet.coins += x; res.coins += x; } }
-      const xp = Math.round((res.exp || 0) * petPct(cid, 'exp') / 100); if (xp) { gainExp(xp); res.exp += xp; }
       if (Math.random() * 100 < petPct(cid, 'stam')) { giveStamina(r.cost); toast(`Your leader's pet got the ${r.cost} stamina back`); }
     }
     return res;
@@ -89,7 +88,17 @@ const BR_CHAPTER = { c1: 3, c2: 7, c3: 11, c4: 15, c5: 19, c6: 21, c7: 23, c8: 2
 const brStageNeed = st => { if (!st || !st.ch) return 0; if (st.ch.tower) return st.no >= 4 ? 2 * st.no : 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? BR_CHAPTER[st.ch.id] || 0 : 0; };
 const brStageBlock = st => { const n = brStageNeed(st); if (!n || brOk(n)) return 0; if (ccCampHave(st.id)[0] || (!st.ch.tower && st.ch.stages.some(s => ccCampHave(s.id)[0]))) return 0; return n; };   // anything already cleared stays open
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !brStageBlock(st); }; }
-const brLockHTML = st => { const n = brStageBlock(st); return n ? `<div class="br-lock">${icon('lock')}<span><b>Needs Battle Rank ${n}</b><small>You are rank ${brLv()}. Every Card Battle match gives Battle Rank EXP (a win 100, the first win of the day +200).</small></span></div>` : ''; };
+/* player level gates (the owner's rule): from Chapter 6 a chapter also needs a player level to start (EXP only comes from
+   quests and stamina, so these pace the hard chapters over a month); anything already started stays open; admins skip */
+const LV_CHAPTER = { c6: 18, c7: 21, c8: 23, c9: 25, c10: 27 };   // the economy test (quests + stamina EXP): a free player opens them about day 13 / 17 / 20 / 23 / 27 of a 30-day patch
+const lvStageNeed = st => { if (!st || !st.ch || st.ch.tower) return 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? LV_CHAPTER[st.ch.id] || 0 : 0; };
+const lvStageBlock = st => { const n = lvStageNeed(st); if (!n || playerLv().lv >= n || canAdmin()) return 0; if (st.ch.stages.some(s => ccCampHave(s.id)[0])) return 0; return n; };
+{ const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !lvStageBlock(st); }; }
+const lvLockHTML = st => { const n = lvStageBlock(st); return n ? `<div class="br-lock lv">${icon('lock')}<span><b>Needs player level ${n}</b><small>You are level ${playerLv().lv}. Player EXP comes from daily and weekly quests and from spending stamina (1 EXP per stamina).</small></span></div>` : ''; };
+/* why a chapter is closed, for the chapter list */
+const ccCampGateTxt = ch => { const st = { ...ch.stages[0], ch }, lv = lvStageBlock(st), br = brStageBlock(st); return [lv ? `player level ${lv}` : '', br ? `Battle Rank ${br}` : ''].filter(Boolean).join(' and '); };
+const brLockHTML = st => lvLockHTML(st) + brLockOnly(st);
+const brLockOnly = st => { const n = brStageBlock(st); return n ? `<div class="br-lock">${icon('lock')}<span><b>Needs Battle Rank ${n}</b><small>You are rank ${brLv()}. Every Card Battle match gives Battle Rank EXP (a win 100, the first win of the day +200).</small></span></div>` : ''; };
 function brChipHTML() {
   const o = brOf(brState().xp);
   return `<span class="br-chip" title="Battle Rank ${o.r}${o.need ? ` · ${o.xp} / ${o.need} EXP to rank ${o.r + 1}` : ' · max'}. Win, lose or draw, every match gives Battle Rank EXP; it opens campaign chapters, Great Tree floors, the Expert challenger and the Arena."><b>${o.r}</b><span><small>Battle Rank</small><i style="--p:${o.need ? (o.xp / o.need * 100).toFixed(1) : 100}%"></i></span></span>`;

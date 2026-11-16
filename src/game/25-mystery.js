@@ -28,12 +28,13 @@ function MB_ITEMS() {
     { k: 'bottles', r: 4, name: '2 Stamina bottles', sub: `+${BOTTLE_STAMINA} stamina each`, pic: curIcon('bottles') },
     { k: 'gold', r: 3, name: '20,000 gold', sub: 'Gold coins', pic: curIcon('coins') },
     { k: 'gifts', r: 3, name: 'Gift bundle', sub: `${MB_GIFTS.sweets} Sweets, ${MB_GIFTS.bracelet} Bracelets, ${MB_GIFTS.plush} Plushie`, pic: curIcon('gplush') },
-    { k: 'exp', r: 3, name: '500 EXP', sub: 'Player experience', pic: curIcon('exp') }
+    { k: 'thread', r: 3, name: '60 Thread', sub: 'For gear breakthroughs', pic: curIcon('thread') }
   ];
 }
 const mbItem = k => MB_ITEMS().find(x => x.k === k);
 function mboxState() {
   const id = (S.mystery || {}).id || 'box-1', s = S.mbox && S.mbox.box === id ? S.mbox : (S.mbox = { box: id, got: [] });
+  if (s.got.includes('exp')) s.got = s.got.map(k => k === 'exp' ? 'thread' : k);   // the 500 EXP prize became 60 Thread (EXP only from quests and stamina)
   return s;
 }
 const mboxLeft = () => MB_COST.length - mboxState().got.length;
@@ -54,7 +55,7 @@ function grantMbox(k) {
   else if (k === 'bottles') W.bottles += 2;
   else if (k === 'gold') W.coins += 20000;
   else if (k === 'gifts') Object.entries(MB_GIFTS).forEach(([g, n]) => S.gifts[g] = (S.gifts[g] || 0) + n);
-  else if (k === 'exp') gainExp(500);
+  else if (k === 'thread') S.wallet.thread = (S.wallet.thread || 0) + 60;
   return note;
 }
 /* one draw: every prize left weighs 1, the skin MB_SKIN_W (and 0 before pull 4) */

@@ -18,6 +18,8 @@ const vipGrade = lv => lv > 0 ? VIP_GRADES[Math.min(lv, VIP_GRADES.length) - 1] 
    drawn circle / badge / emblem wherever that level shows */
 const vipIcon = lv => lv > 0 ? customIcon('vip-' + lv) : null;
 const vipCircle = (lv = vipLv()) => { const u = vipIcon(lv); return u ? `<span class="vipc up" title="VIP ${lv}"><img src="${u}" alt="VIP ${lv}"></span>` : `<span class="vipc ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'}" title="VIP ${lv}"><b>${lv}</b></span>`; };
+/* "VIP n" in the level's grade colours (the same as the badge border / the VIP-coloured names, .vipn.vn-*), next to the badge on profiles */
+const vipTextHTML = lv => `<b class="vipn vn-${lv ? vipGrade(lv).toLowerCase() : '0'} pf-viptx">VIP ${lv}</b>`;
 const vipBadge = (lv = vipLv(), cls = '') => { const u = vipIcon(lv); return u ? `<span class="vipb up ${cls}" title="VIP ${lv}"><img src="${u}" alt="VIP ${lv}"></span>` : `<span class="vipb ${lv ? 'v-' + vipGrade(lv).toLowerCase() : 'v-0'} ${cls}"><span>VIP <b>${lv}</b></span></span>`; };
 const vipCanClaim = () => vipLv() > 0 && vipState().day !== dayKey();
 /* rank names (shown on the VIP card) */

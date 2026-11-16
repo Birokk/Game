@@ -8,7 +8,7 @@
    several are live), a mini banner in the home carousel (62-home.js) and banners in Top Up → Pearls.
    While TOPUP_FREE the price button is a free test that still gives VIP EXP. Player state S.offerBought {offerId: count};
    the 'newbie' clock starts at S.account.since (older saves: the first time they see an offer, S.ftuStart). */
-const OFFER_KEYS = ['pearls', 'tickets', 'wishes', 'coins', 'stamina', 'bottles', 'dust', 'starlight', 'cfssr', 'cfur', 'fragssr', 'fragur', 'eggur', 'memtk', 'nametk', 'ursel', 'exp', 'gpts', 'gplush'];
+const OFFER_KEYS = ['pearls', 'tickets', 'wishes', 'coins', 'stamina', 'bottles', 'dust', 'starlight', 'cfssr', 'cfur', 'fragssr', 'fragur', 'eggur', 'memtk', 'nametk', 'ursel', 'gpts', 'gplush', 'thread'];   // no 'exp': EXP only comes from quests and stamina (the owner's rule)
 const OFFER_KINDS = [['newbie', 'New players (days after the account is made)'], ['dated', 'Between two dates'], ['always', 'Always on']];
 REW_NAMES.stamina = REW_NAMES.stamina || ['stamina', 'stamina']; REW_R.stamina = REW_R.stamina || 4;
 function offerList() {

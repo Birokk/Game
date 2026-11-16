@@ -1,22 +1,23 @@
 /* ---------- Pearl Honor: the battle pass (home "Honor" icon → openHonor(tab)) ----------
-   A season lasts 8 weeks (BP_WEEKS, seasons counted from BP_EPOCH, the same for everyone). Levels 1–80 (BP_MAX),
-   800 Honor EXP per level (BP_LV_XP). Honor EXP comes from the pass missions: daily (BP_DAILY) and weekly (BP_WEEKLY),
-   built like the Quests and counted by the same questAdd hooks; at most 8,000 Honor EXP a week (BP_WEEK_CAP, resets
+   A season lasts 30 days like a patch (BP_DAYS, the owner's rule; seasons counted from BP_EPOCH, the same for everyone).
+   Levels 1–80 (BP_MAX), 480 Honor EXP per level (BP_LV_XP), so a full month of missions (~38,000 Honor EXP) reaches level 80
+   on about the last day. Honor EXP comes from the pass missions: daily (BP_DAILY) and weekly (BP_WEEKLY),
+   built like the Quests and counted by the same questAdd hooks; at most 9,000 Honor EXP a week (BP_WEEK_CAP, resets
    Monday 00:00 local). Levels can also be bought with pearls (BP_LV_PEARLS, not capped).
    Two reward tracks per level (bpReward), one item per level and track so the rows line up: Pearl Gift (free) and
    Coral Tide (paid). Two paid options (BP_OFFERS): Coral Tide $9.99 unlocks the paid track and the season milestones
    (BP_MILE: 1 pearl + 5 skin tickets on every 10th level, paid only, the owner's rule); Moon Tide $19.99 also gives
-   80 pearls, 5 Standard + 5 Limited tickets (10 pulls), the Moonlit Halo avatar frame, the Pearl Honor namecard and
-   +10 levels at once. The paid track is worth about 950 pearls (bpWorth, BP_VAL; the owner asked for at least $120 of
+   30 pearls, 3 stamina bottles, 5 Standard + 5 Limited tickets (10 pulls), the Moonlit Halo avatar frame, the Pearl Honor namecard and
+   +10 levels at once. The paid track is worth about 980 pearls (bpWorth, BP_VAL; the owner asked for at least $120 of
    items at about 5 pearls per $1 = 600 pearls). Real payments aren't connected: while TOPUP_FREE is on they are free
    test buttons (and still give VIP EXP).
    State S.bp {season, xp, tier: 0 | 1 Coral Tide | 2 Moon Tide (ids glory / crown kept for saves), free: [levels], paid: [levels], mile: [levels], wk: {key, xp}};
    missions S.bpq (daily) / S.bpwq (weekly), same shape as S.quests / S.wquests. Rewards: BP_BIG / BP_FIVE / BP_CYCLE / BP_MILE. The track emblems are icon slots bp0 / bp1 / bp2 (admin → Art & icons). */
-const BP_EPOCH = new Date(2026, 9, 12), BP_WEEKS = 8, BP_MAX = 80, BP_LV_XP = 800, BP_WEEK_CAP = 8000, BP_LV_PEARLS = 3;
+const BP_EPOCH = new Date(2026, 10, 2), BP_DAYS = 30, BP_MAX = 80, BP_LV_XP = 480, BP_WEEK_CAP = 9000, BP_LV_PEARLS = 3;   // the epoch keeps the running season as season 1
 const BP_NAMES = { free: 'Pearl Gift', paid: 'Coral Tide' };
 const BP_OFFERS = [
   { tier: 1, id: 'glory', name: 'Coral Tide', usd: '9.99', now: {}, levels: 0, desc: 'Unlocks the Coral Tide rewards on every level and the season milestones (1 pearl + 5 skin tickets on every 10th level).' },
-  { tier: 2, id: 'crown', name: 'Moon Tide', usd: '19.99', was: '24.99', now: { pearls: 80, wishes: 5, tickets: 5 }, levels: 10, desc: 'Everything in Coral Tide, plus 80 pearls, 5 Standard and 5 Limited tickets (10 pulls), an avatar frame and a namecard. Also raises 10 Honor levels at once.' }
+  { tier: 2, id: 'crown', name: 'Moon Tide', usd: '19.99', was: '24.99', now: { pearls: 30, bottles: 3, wishes: 5, tickets: 5 }, levels: 10, desc: 'Everything in Coral Tide, plus 30 pearls, 3 stamina bottles, 5 Standard and 5 Limited tickets (10 pulls), an avatar frame and a namecard. Also raises 10 Honor levels at once.' }
 ];
 const BP_DAILY = [
   { id: 'login', name: 'Log into the game', need: 1, xp: 100 },
@@ -55,8 +56,8 @@ function bpQState(set) {
 }
 
 /* season */
-const bpSeason = (t = Date.now()) => Math.max(0, Math.floor((t - BP_EPOCH.getTime()) / (BP_WEEKS * 7 * 864e5)));
-const bpEnds = () => BP_EPOCH.getTime() + (bpSeason() + 1) * BP_WEEKS * 7 * 864e5;
+const bpSeason = (t = Date.now()) => Math.max(0, Math.floor((t - BP_EPOCH.getTime()) / (BP_DAYS * 864e5)));
+const bpEnds = () => BP_EPOCH.getTime() + (bpSeason() + 1) * BP_DAYS * 864e5;
 function bpState() {
   const s = bpSeason(), wk = dayKey(weekStart());
   if (!S.bp || S.bp.season !== s) S.bp = { season: s, xp: 0, tier: 0, free: [], paid: [], mile: [], wk: { key: wk, xp: 0 } };
@@ -85,9 +86,9 @@ const BP_BIG = {
   paid: { 10: { pearls: 50 }, 20: { memtk: 1 }, 30: { tickets: 5 }, 40: { cfur: 10 }, 50: { pearls: 80 }, 60: { memtk: 1 }, 70: { tickets: 10 }, 80: { ursel: 1 } }
 };
 const BP_FIVE = { free: [{ wishes: 1 }], paid: [{ tickets: 3 }, { wishes: 3 }] };
-const BP_CYCLE = {
-  free: [{ coins: 5000 }, { thread: 15 }, { pearls: 2 }, { fragssr: 2 }, { coins: 5000 }, { thread: 15 }, { dust: 30 }, { cfssr: 2 }],
-  paid: [{ pearls: 10 }, { thread: 40 }, { tickets: 1 }, { cfur: 2 }, { pearls: 10 }, { starlight: 15 }, { wishes: 1 }, { fragur: 2 }]
+const BP_CYCLE = {   // more materials (the owner's ask: stamina bottles, gold, more Thread)
+  free: [{ coins: 8000 }, { thread: 25 }, { pearls: 2 }, { bottles: 1 }, { coins: 8000 }, { thread: 25 }, { fragssr: 2 }, { cfssr: 2 }],
+  paid: [{ pearls: 10 }, { thread: 60 }, { tickets: 1 }, { bottles: 1 }, { pearls: 10 }, { coins: 20000 }, { wishes: 1 }, { cfur: 2 }]
 };
 const BP_MILE = { pearls: 1, sktk: 5 };
 function bpReward(lv, track) {
@@ -271,7 +272,7 @@ function renderHonor(jump) {
           <div class="bp-ofits">${sample.map(r => Object.entries(r).map(([k, n]) => bpItem(k, n)).join('')).join('')}<span class="bp-more">…</span></div>
           <button class="bp-price" data-bpbuy="${o.id}" ${owned ? 'disabled' : ''}>${owned ? 'Unlocked' : `$${usd}${o.was && !upg ? ` <s>$${o.was}</s>` : ''}${TOPUP_FREE ? ' · free test' : ''}`}</button></div></div>`; };
     body = `<div class="bp-unlock"><div class="bp-uleft"><div class="bp-show big"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(96, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + Pearl Honor namecard</small></div>
-      <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season: ${fmt(BP_TOT('pearls'))} pearls, ${fmt(BP_TOT('pulls'))} pulls, ${fmt(BP_TOT('thread'))} Thread, 2 UR memory tickets, a UR selector and the ${BP_MAX / 10} season milestones. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
+      <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season: ${fmt(BP_TOT('pearls'))} pearls, ${fmt(BP_TOT('pulls'))} pulls, ${fmt(BP_TOT('thread'))} Thread, ${fmt(BP_TOT('bottles'))} stamina bottles, ${fmt(BP_TOT('coins'))} gold, 2 UR memory tickets, a UR selector and the ${BP_MAX / 10} season milestones. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
       <div class="bp-offers">${BP_OFFERS.map(card).join('')}</div></div>`;
   }
   root.innerHTML = `<header class="bpx-head">

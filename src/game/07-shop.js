@@ -464,7 +464,7 @@ function renderAch() {
   const card = ({ a, st }) => { const v = Math.min(a.goal, a.n()), cc = ACH_CATS.find(c => c.id === a.cat);
     return `<div class="ach ${st === 'got' ? 'got' : st === 'ready' ? 'ready' : ''}" style="--ac:${cc.col}">${st === 'ready' ? '<i class="ach-done">Completed</i>' : ''}<span class="ach-ic">${icon(st === 'got' ? 'check' : st === 'ready' ? 'trophy' : cc.ic)}</span>
       <div class="ach-txt"><b>${esc(a.name)}${a.long ? ' <em class="ach-long">Legendary</em>' : ''}</b><span class="tiny">${esc(a.desc)}</span>
-        <span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="ach-meta"><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${st === 'got' ? '' : expTag(EXP.ach)}${C.id === 'all' ? `<span class="ach-cat">${icon(cc.ic)}${cc.name}</span>` : ''}</span></div>
+        <span class="bar"><i style="width:${v / a.goal * 100}%"></i></span><span class="ach-meta"><span class="tiny">${fmt(v)} / ${fmt(a.goal)}</span>${C.id === 'all' ? `<span class="ach-cat">${icon(cc.ic)}${cc.name}</span>` : ''}</span></div>
       ${st === 'got' ? `<span class="ach-claimed">${icon('check')}Claimed</span>` : `<button class="btn sm ${st === 'ready' ? 'gold' : 'ghost'}" data-ach="${a.id}" ${st === 'ready' ? '' : 'disabled'}>${st === 'ready' ? 'Claim ' : ''}${costHTML(a.pearls)}</button>`}</div>`; };
   root.innerHTML = `<div class="achx">
     <aside class="achx-cats" role="tablist">${ACH_CATS.map(catBtn).join('')}</aside>
@@ -475,7 +475,7 @@ function renderAch() {
         ${ready.length ? `<button class="btn gold sm" id="achAll">Claim all · ${costHTML(ready.reduce((t, a) => t + a.pearls, 0))}</button>` : `<span class="achx-each">${curIcon('pearls')}${ACH_PEARLS} each · ${ACH_LONG_PEARLS} for Legendary</span>`}</div>
       <div class="ach-list" data-cat="${C.id}">${sorted.map(card).join('')}</div></section></div>`;
   const nl = root.querySelector('.ach-list'); if (nl && top) nl.scrollTop = top;
-  const claim = ids => { let p = 0; ids.forEach(id => { if (!S.ach.includes(id)) { const a = ACH.find(x => x.id === id) || {}; S.ach.push(id); p += a.pearls || ACH_PEARLS; gainExp(EXP.ach); } }); S.wallet.pearls += p; persist(); renderMenu(); renderAch(); if (p) toast(`+${p} pearl${p === 1 ? '' : 's'}`); };
+  const claim = ids => { let p = 0; ids.forEach(id => { if (!S.ach.includes(id)) { const a = ACH.find(x => x.id === id) || {}; S.ach.push(id); p += a.pearls || ACH_PEARLS; } }); S.wallet.pearls += p; persist(); renderMenu(); renderAch(); if (p) toast(`+${p} pearl${p === 1 ? '' : 's'}`); };
   root.querySelectorAll('[data-ach]').forEach(b => b.onclick = () => claim([b.dataset.ach]));
   root.querySelectorAll('[data-achc]').forEach(b => b.onclick = () => { achCat = b.dataset.achc; renderAch(); });
   const all = $('#achAll'); if (all) all.onclick = () => claim(ready.map(a => a.id));

@@ -6864,3 +6864,12 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 @media (max-width:640px){.bpx{--tierw:88px}.bpx .bp-tiers{padding:6px 4px}.bpx .bp-tiers .bp-lab b{font-size:11px}.bpx .bp-tiers .bp-lab small{display:none}.bpx .bp-tiers .bp-emb{width:30px;height:30px}.bp-mile .bp-mits i{width:40px;height:40px}}
 @media (max-width:640px){.bpx-adm span{display:none}.bpx-adm{padding:8px 10px}}
 .bpx .bp-lvt{white-space:nowrap}@media (max-width:900px){.bpx-adm span{display:none}.bpx-adm{padding:8px 10px}}
+
+/* profile: a bigger VIP icon with "VIP n" beside it in its grade colour (the owner's ask; 35-vip.js vipTextHTML) */
+.pf-vip{align-items:center;gap:8px;padding:2px 4px 2px 0;background:none;border:0;cursor:pointer;color:inherit}
+.pf-vip .vipc{position:relative;inset:auto;width:46px;height:46px;flex:none}
+.pf-vip .vipc>b{font-size:20px}
+.pf-vip .vipc.up{width:auto;height:auto}.pf-vip .vipc.up img{display:block;width:auto;height:50px;max-width:110px;object-fit:contain}
+.pf-who .pf-viptx{font-size:26px;letter-spacing:.04em;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+.pf-who .pf-viptx.vn-s,.pf-who .pf-viptx.vn-ss{text-shadow:none}
+@media (max-width:640px){.pf-vip .vipc{width:38px;height:38px}.pf-vip .vipc.up img{height:40px}.pf-who .pf-viptx{font-size:19px}}

@@ -273,13 +273,13 @@ const AR_SHOP_POOL = [
   { id: 'as-fs', got: { fragssr: 3 }, price: 25, lim: 2, w: 1 },
   { id: 'as-fu', got: { fragur: 1 }, price: 40, lim: 1, w: .7 },
   { id: 'as-gp', got: { gplush: 1 }, price: 25, lim: 2, w: .9 },
-  { id: 'as-ex', got: { exp: 500 }, price: 20, lim: 2, w: .9 },
+  { id: 'as-th', got: { thread: 40 }, price: 20, lim: 2, w: .9 },   // Thread (EXP left the shops: EXP only from quests and stamina)
   { id: 'as-nt', got: { nametk: 1 }, price: 120, lim: 1, w: .25 },
   { id: 'as-eg', got: { eggur: 1 }, price: 350, lim: 1, w: .2 },
   { id: 'as-mt', got: { memtk: 1 }, price: 900, lim: 1, w: .15 }
 ];
 const AR_ITEM_NM = { tickets: 'Limited ticket', wishes: 'Standard ticket', bottles: 'Stamina bottle', coins: 'Gold', pearls: 'Pearls', starlight: 'Corals', cfssr: 'SSR character fragments', cfur: 'UR character fragment',
-  fragssr: 'SSR egg fragments', fragur: 'UR egg fragment', gplush: 'Star Plushie', exp: 'EXP', nametk: 'Name change ticket', eggur: 'UR egg', memtk: 'UR memory ticket' };
+  fragssr: 'SSR egg fragments', fragur: 'UR egg fragment', gplush: 'Star Plushie', exp: 'EXP', thread: 'Thread', nametk: 'Name change ticket', eggur: 'UR egg', memtk: 'UR memory ticket' };
 function arShopState() { const a = arState(); if (!a.shop || a.shop.key !== dayKey()) a.shop = { key: dayKey(), got: {}, ref: 0 }; return a.shop; }
 function arShopToday() {
   const sh = arShopState(), r = seeded('arshop:' + dayKey() + (sh.ref ? ':' + sh.ref : '')), pool = [...AR_SHOP_POOL], out = [];

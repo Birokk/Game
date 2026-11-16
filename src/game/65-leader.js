@@ -22,10 +22,10 @@ function lsLead(e, o = {}) {
    Bond: hero +1 HP per 2 bond levels · Potential: each
    completed plan's Core unlocks one perk (LS_POT) · Memory: the skill resets once per match (from round 8 at 0★ down to 4
    at 3★; a signature memory 2 rounds sooner; a UR memory +1 AP that turn) · SSS awakening: the Ultimate (kept for good) ·
-   Signature set: skill tier +1. Caps: hero HP +8, heal +2 a turn, opening cards +2, first-turn AP +1. */
+   Signature set: skill tier +1. Caps: hero HP +8, heal +2 (each point = 1 HP every other turn, up to 3 HP a match; CC_HEAL_EVERY / CC_HEAL_MATCH in 44), opening cards +2, first-turn AP +1. */
 const LS_CAP = { hp: 8, heal: 2, cards: 2, ap1: 1 };
 const LS_POT = [
-  ['hp', 2, 'Hero +2 HP'], ['cards', 1, '+1 opening card'], ['cheap', 1, 'The first skill use costs 1 AP less'], ['heal', 1, 'Hero heals 1 at the start of each turn'],
+  ['hp', 2, 'Hero +2 HP'], ['cards', 1, '+1 opening card'], ['cheap', 1, 'The first skill use costs 1 AP less'], ['heal', 1, 'Hero heals 1 every other turn (up to 3 HP a match)'],
   ['bondN', 10, 'The attribute bond needs 10 cards instead of 12'], ['fu', 1, 'Your first unit each match gets +1 max HP'], ['ap1', 1, '+1 AP on your first turn']
 ];
 const LS_MEM_ROUND = [8, 7, 6, 4];
@@ -75,11 +75,11 @@ function lsAdvHTML(foeStyle, leader) {
 /* the battle bonuses window (Deck screen) */
 function lsDetails(e) {
   if (!e) return;
-  const b = lsBonus(e) || { src: [] }, B = [['hp', 'Hero HP', '+'], ['heal', 'Heal a turn', '+'], ['cards', 'Opening cards', '+'], ['ap1', 'First-turn AP', '+']];
+  const b = lsBonus(e) || { src: [] }, B = [['hp', 'Hero HP', '+'], ['heal', 'Heal passive', '+'], ['cards', 'Opening cards', '+'], ['ap1', 'First-turn AP', '+']];
   openModal({ title: 'Battle bonuses', ic: 'crown', kind: 'lsdet', body: `<div class="lsd">${lsInfoHTML(e)}
     <div class="lsd-sum">${B.map(([k, n]) => `<span class="${b[k] ? 'on' : ''}"><b>${b[k] ? '+' + b[k] : '—'}</b><small>${n}</small><i>max +${LS_CAP[k]}</i></span>`).join('')}</div>
     <div class="lsd-list">${b.src.length ? b.src.map(([sys, what, t]) => `<div class="lsd-row"><b>${esc(sys)}</b><small>${what}</small><span>${t}</span></div>`).join('') : '<p class="tiny">No bonuses yet. Bond, Potential plans, a memory, awakened stars, the signature set and the SSS awakening all make this leader stronger against the game\'s own opponents.</p>'}</div>
-    <p class="tiny">These bonuses count in every battle: the campaign, the Great Tree, raids, the guild boss, Quick Match, training and the Arena. Only a ranked mode (coming later) will play everyone at tier I with no bonuses.</p></div>` });
+    <p class="tiny">Heal passive: each point heals your hero 1 HP every other turn, up to 3 HP a match (so +2 = up to 6). These bonuses count in every battle: the campaign, the Great Tree, raids, the guild boss, Quick Match, training and the Arena. Only a ranked mode (coming later) will play everyone at tier I with no bonuses.</p></div>` });
 }
 
 /* the bot's tier: 1, 2 for the harder brains and boss stages */

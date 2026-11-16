@@ -28,19 +28,19 @@ const STEP_COST = [6, 12, 18, 24, 30, 30, 30], STEP_GOLD = [5e3, 1e4, 15e3, 2e4,
 const STD_MILES = { 100: 'ur', 200: 'ur', 300: 'sel', 400: 'ur', 500: 'ur', 600: 'sel' };
 const PT_PRICE = 200;
 const LV_MAX = 60, lvNeed = lv => 100 + 50 * (lv - 1);
-const EXPV = { pull: 10, login: 50, spin: 20, ach: 30, hatch: 25, raid: 15, exped: 100 };
+const EXPV = { pull: 0, login: 0, spin: 0, ach: 0, hatch: 0, raid: 0, exped: 0, stam: 1 };   // EXP only from quests (A.xp += 500 a day / week) and stamina
 const VIP_XP = [250, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000, 512000];
 const VIP_LVREW = { 1: { pearls: 20, coins: 1e4 }, 2: { pearls: 30, tickets: 2 }, 3: { pearls: 50, tickets: 5 }, 4: { pearls: 80, bottles: 5 }, 5: { pearls: 100, tickets: 10 },
   6: { pearls: 150, memtk: 1 }, 7: { pearls: 200, tickets: 15 }, 8: { pearls: 250, wishes: 20 }, 9: { pearls: 300, tickets: 20 }, 10: { pearls: 400, memtk: 2 }, 11: { pearls: 500, tickets: 30 }, 12: { pearls: 800, memtk: 3 } };
 const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1], FARM_GOLD = [0, 0, 25e3, 8e4, 2e5, 4.5e5, 9e5, 1.8e6], FARM_H = [0, 5 / 60, .5, 2, 6, 12, 24, 48];
-const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 10, res: 'pearls' }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 500, res: 'exp' } };
+const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 10, res: 'pearls' }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 40, res: 'thread' } };
 const FARM_ORDER = ['market', 'pub', 'crops', 'inn'];
 const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]], EXP_UR_MULT = [1, 1, 1];   // 0 or 1 pearl, 5 pearls 5% of the time
 const BP_BIG = { free: { 10: { tickets: 2 }, 20: { pearls: 10 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { pearls: 15 }, 80: { eggur: 1 } },
   paid: { 10: { pearls: 50 }, 20: { memtk: 1 }, 30: { tickets: 5 }, 40: { cfur: 10 }, 50: { pearls: 80 }, 60: { memtk: 1 }, 70: { tickets: 10 }, 80: { ursel: 1 } } };
 const BP_FIVE = { free: [{ wishes: 1 }], paid: [{ tickets: 3 }, { wishes: 3 }] };
-const BP_CYCLE = { free: [{ coins: 5000 }, { thread: 15 }, { pearls: 2 }, { fragssr: 2 }, { coins: 5000 }, { thread: 15 }, { dust: 30 }, { cfssr: 2 }],
-  paid: [{ pearls: 10 }, { thread: 40 }, { tickets: 1 }, { cfur: 2 }, { pearls: 10 }, { starlight: 15 }, { wishes: 1 }, { fragur: 2 }] };
+const BP_CYCLE = { free: [{ coins: 8000 }, { thread: 25 }, { pearls: 2 }, { bottles: 1 }, { coins: 8000 }, { thread: 25 }, { fragssr: 2 }, { cfssr: 2 }],
+  paid: [{ pearls: 10 }, { thread: 60 }, { tickets: 1 }, { bottles: 1 }, { pearls: 10 }, { coins: 20000 }, { wishes: 1 }, { cfur: 2 }] };
 const BP_MILE = { pearls: 1, sktk: 5 };   // the season milestones: every 10th level, Coral Tide / Moon Tide only (the only skin tickets)
 const bpReward = (lv, t) => { if (lv % 10 === 0) return BP_BIG[t][lv]; if (lv % 5 === 0) { const L = BP_FIVE[t]; return L[(lv - 5) / 10 % L.length]; } const L = BP_CYCLE[t]; return L[(lv - 1 - Math.floor(lv / 5)) % L.length]; };
 const TOPUP = [[6, .99], [30, 4.99], [98, 14.99], [198, 29.99], [328, 49.99], [648, 99.99]];
@@ -70,10 +70,10 @@ const AR_WEEK = [[5, 50], [10, 80], [15, 120], [20, 160], [25, 200], [30, 260], 
 const AR_WIN = [.80, .72, .60, .52, .42, .34, .22, .15];              // assumed win chance against your own rank's brains (easy → expert planner)
 const arRank = vp => AR_RANKS.filter(r => vp >= r[1]).length - 1;
 const AR_SHOP = [['tickets', 1, 100, 2, 1], ['wishes', 1, 80, 2, 1.2], ['bottles', 1, 20, 1, 1.4], ['coins', 1e4, 15, 3, 1.4], ['pearls', 1, 60, 1, .7], ['starlight', 10, 40, 2, .8], ['cfssr', 3, 30, 2, 1],
-  ['cfur', 1, 50, 2, .8], ['fragssr', 3, 25, 2, 1], ['fragur', 1, 40, 1, .7], ['gplush', 1, 25, 2, .9], ['exp', 500, 20, 2, .9], ['nametk', 1, 120, 1, .25], ['eggur', 1, 350, 1, .2], ['memtk', 1, 900, 1, .15], ['ictk', 2, 30, 2, 1]];
+  ['cfur', 1, 50, 2, .8], ['fragssr', 3, 25, 2, 1], ['fragur', 1, 40, 1, .7], ['gplush', 1, 25, 2, .9], ['thread', 40, 20, 2, .9], ['nametk', 1, 120, 1, .25], ['eggur', 1, 350, 1, .2], ['memtk', 1, 900, 1, .15], ['ictk', 2, 30, 2, 1]];
 const G_SHOP = [['tickets', 1, 50, 1, 1], ['wishes', 1, 40, 1, 1.2], ['bottles', 1, 10, 1, 1.4], ['coins', 5000, 8, 3, 1.4], ['cfssr', 3, 15, 2, 1], ['cfur', 1, 25, 2, .8], ['fragssr', 3, 10, 2, 1], ['fragur', 1, 20, 1, .7],
-  ['gplush', 1, 15, 2, .9], ['gbracelet', 2, 10, 2, .9], ['exp', 300, 10, 2, .9], ['nametk', 1, 60, 1, .25], ['memtk', 1, 450, 1, .15], ['ictk', 1, 12, 2, 1]];
-const SHOP_PRIO = ['memtk', 'eggur', 'cfur', 'pearls', 'tickets', 'wishes', 'fragur', 'ictk', 'sktk', 'cfssr', 'starlight', 'fragssr', 'gplush', 'bottles', 'coins', 'exp', 'gbracelet'];
+  ['gplush', 1, 15, 2, .9], ['gbracelet', 2, 10, 2, .9], ['thread', 20, 10, 2, .9], ['nametk', 1, 60, 1, .25], ['memtk', 1, 450, 1, .15], ['ictk', 1, 12, 2, 1]];
+const SHOP_PRIO = ['memtk', 'eggur', 'cfur', 'pearls', 'tickets', 'wishes', 'fragur', 'ictk', 'sktk', 'cfssr', 'starlight', 'fragssr', 'gplush', 'bottles', 'thread', 'coins', 'gbracelet'];
 const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [15, 1, .3, 9000, 1], [30, 2, .35, 14000, 2], [45, 2, .45, 20000, 2], [60, 3, .5, 26000, 3], [75, 3, .6, 32000, 3]];
 
 /* campaign stages: [chapter, base win chance for an average player (the owner's Node sims), chance of each extra star on a win] */
@@ -183,7 +183,7 @@ function pull10(A, bk, opts = {}) {
   A.x10++; const out = [];
   if (A.lv >= 10 && A.pulls >= 100 && R() < .001 && !['beginner', 'stepup'].includes(bk)) {   // Max Win: 5 UR characters + 5 UR memories
     A.maxwin++; log(A, 'MAX WIN on a ×10'); for (let i = 0; i < 5; i++) { grantChar(A, randUR(A), 'Max Win'); grantMem(A, 5, Math.floor(R() * N_URMEM)); }
-    A.urGot += 10; A.urCharGot += 5; A.pulls += 10; A.pullsBy[bk] += 10; A.xp += 100; gain(A, 'dust', 50, 'pulls'); return;
+    A.urGot += 10; A.urCharGot += 5; A.pulls += 10; A.pullsBy[bk] += 10; gain(A, 'dust', 50, 'pulls'); return;
   }
   for (let i = 0; i < 10; i++) out.push(rollOne(A, bk, i === 9 ? opts.force10 : null, opts.urX || 1));
   // every ×10 holds at least 1 UR and 2 SSR character fragments (fragFloor)
@@ -287,15 +287,15 @@ function levelUps(A) {
 }
 const vipLv = A => VIP_XP.filter(t => A.vipxp >= t).length;
 function vipRewards(A) { const v = vipLv(A); while (A.vipGot < v) { A.vipGot++; give(A, VIP_LVREW[A.vipGot], 'VIP level rewards'); } }
-function honorGain(A, n) { const room = Math.max(0, 8000 - A.honor.wk), g = Math.min(n, room); A.honor.wk += g; A.honor.xp += g; honorLevels(A); }
-function honorLevels(A) { const H = A.honor; while (H.lv < 80 && H.xp >= H.lv * 800) H.lv++;
+function honorGain(A, n) { const room = Math.max(0, 9000 - A.honor.wk), g = Math.min(n, room); A.honor.wk += g; A.honor.xp += g; honorLevels(A); }
+function honorLevels(A) { const H = A.honor; while (H.lv < 80 && H.xp >= H.lv * 480) H.lv++;
   while (H.claimed < H.lv) { H.claimed++; give(A, bpReward(H.claimed, 'free'), 'Pearl Honor'); }
   if (H.tier) while (H.claimedPaid < H.lv) { H.claimedPaid++; give(A, bpReward(H.claimedPaid, 'paid'), 'Pearl Honor (paid)'); if (H.claimedPaid % 10 === 0) give(A, BP_MILE, 'Pearl Honor (milestones)'); } }
 
 /* ---------- stamina ---------- */
 const memberOn = A => ({ p1: A.member.p1 >= A.day, p2: A.member.p2 >= A.day });
 const stamDay = A => { const m = memberOn(A); return m.p2 ? 360 : m.p1 ? 300 : 240; };
-const useStam = (A, n) => { if (A.stam < n) return false; A.stam -= n; A.stamSpent += n; return true; };
+const useStam = (A, n) => { if (A.stam < n) return false; A.stam -= n; A.stamSpent += n; A.xp += n * EXPV.stam; return true; };
 
 /* ---------- battles ---------- */
 const lead = A => focusList(A)[0];
@@ -303,7 +303,8 @@ const buildF = A => { if (process.env.NOBOOST || A.P.noBoost) return 0; const c 
 const winP = (A, p) => 1 - (1 - p) * (1 - buildF(A));
 const brOf = A => { let r = 1, left = A.br; while (r < 30 && left >= BR_NEED(r)) { left -= BR_NEED(r); r++; } return r; };
 const brAdd = (A, k) => { let n = { w: 100, d: 60, l: 40 }[k]; if (k === 'w' && A.brDay !== A.day) { A.brDay = A.day; n += 200; } A.br += n; };
-function campOpen(A, i) { const s = CAMP[i]; if (i > 0 && !A.camp.clear[i - 1]) return false; if (s.first && brOf(A) < BR_CH[s.ch]) return false; return true; }
+const LV_CH = { 6: 18, 7: 21, 8: 23, 9: 25, 10: 27 };   // player level to start Chapters 6-10
+function campOpen(A, i) { const s = CAMP[i]; if (i > 0 && !A.camp.clear[i - 1]) return false; if (s.first && brOf(A) < BR_CH[s.ch]) return false; if (s.first && LV_CH[s.ch] && A.lv < LV_CH[s.ch]) return false; return true; }
 function treeOpen(A, i) { if (i > 0 && !A.camp.treeClear[i - 1]) return false; const no = i + 1; return no < 4 || brOf(A) >= 2 * no; }
 function playStage(A, st, starsArr, isTree) {
   const win = R() < winP(A, st.p); brAdd(A, win ? 'w' : 'l');
@@ -352,7 +353,7 @@ function raidBattle(A, raid, si) {  // raid 0–2 gear raids, 3 = Golden Vault
   got.forEach((v, k) => { if (v && !st[k]) { st[k] = 1; gain(A, 'pearls', 1, 'raid stars'); } });
 }
 function raidClear(A, raid, si, n) {
-  for (let i = 0; i < n; i++) { if (raid === 3) { gain(A, 'coins', Math.round(GOLD_STAGES[si].g * (0.85 + R() * .3)), 'Golden Vault'); A.xp += GOLD_STAGES[si].x; }
+  for (let i = 0; i < n; i++) { if (raid === 3) { gain(A, 'coins', Math.round(GOLD_STAGES[si].g * (0.85 + R() * .3)), 'Golden Vault'); }
     else { gearDrop(A, si, raid); A.xp += EXPV.raid; } A.raidClears++; }
 }
 
@@ -376,7 +377,7 @@ function spendings(A) {
   if (P.key === 'small' && d === 3) buyTopup(A, 2, 'Top Up $14.99 (for outfits)');
   if (P.whale) {
     if (d === 1) { for (let i = 0; i < 6; i++) buyTopup(A, i); pay(A, 4.99, 'First Top-Up offer'); grantChar(A, randStdUR(A), 'First Top-Up offer'); A.urGot++; A.urCharGot++; gain(A, 'stamina', 240); gain(A, 'wishes', 10, 'First Top-Up offer');
-      pay(A, 19.99, 'Pearl Honor: Moon Tide'); A.honor.tier = 2; gain(A, 'pearls', 80, 'Pearl Honor (Moon Tide)'); gain(A, 'wishes', 5, 'Pearl Honor (Moon Tide)'); gain(A, 'tickets', 5, 'Pearl Honor (Moon Tide)'); A.honor.xp += 8000; honorLevels(A);
+      pay(A, 19.99, 'Pearl Honor: Moon Tide'); A.honor.tier = 2; gain(A, 'pearls', 30, 'Pearl Honor (Moon Tide)'); gain(A, 'bottles', 3, 'Pearl Honor (Moon Tide)'); gain(A, 'wishes', 5, 'Pearl Honor (Moon Tide)'); gain(A, 'tickets', 5, 'Pearl Honor (Moon Tide)'); A.honor.xp += 4800; honorLevels(A);
       PACKS.monthly.paid.forEach((_, j) => buyPack(A, 'monthly', j)); }
     if (dow === 0) PACKS.weekly.paid.forEach((_, j) => buyPack(A, 'weekly', j));
     PACKS.daily.paid.forEach((_, j) => buyPack(A, 'daily', j));
@@ -414,7 +415,7 @@ function dailyQuests(A) {
 function farmDay(A) {
   for (const id of FARM_ORDER) { const f = A.farm[id]; if (f.upEnd != null && f.upEnd <= A.day) { f.lv++; f.upEnd = null; }
     const out = FARM[id].day * FARM_PCT[f.lv]; A.farmAcc[id] += out; const whole = Math.floor(A.farmAcc[id]); A.farmAcc[id] -= whole;
-    if (whole) { if (id === 'crops') A.stam = Math.min(999, A.stam + whole); else if (id === 'inn') A.xp += whole; else gain(A, FARM[id].res, whole, 'Base'); } }
+    if (whole) { if (id === 'crops') A.stam = Math.min(999, A.stam + whole); else if (id === 'inn') A.w.thread += whole; else gain(A, FARM[id].res, whole, 'Base'); } }
   A.stats.baseCol += 2;
 }
 function farmUpgrades(A) {
@@ -495,8 +496,8 @@ function shops(A) {
   const roll = (pool, n) => { const p = [...pool], out = []; while (out.length < n && p.length) { const tot = p.reduce((t, x) => t + x[4], 0); let x = R() * tot, i = 0; for (; i < p.length - 1; i++) { if (x < p[i][4]) break; x -= p[i][4]; } out.push(p.splice(i, 1)[0]); } return out; };
   for (const [cur, pool, n] of [['atok', AR_SHOP, 8], ['gpts', G_SHOP, 6]]) {
     const today = roll(pool, n).sort((a, b) => SHOP_PRIO.indexOf(a[0]) - SHOP_PRIO.indexOf(b[0]));
-    for (const it of today) { if (it[0] === 'memtk' && A.w[cur] < it[2] + 50) continue; for (let l = 0; l < it[3]; l++) { if (A.w[cur] < it[2]) break; if (['coins', 'exp', 'nametk', 'gbracelet'].includes(it[0]) && A.w[cur] < 3 * it[2]) break;
-      A.w[cur] -= it[2]; if (it[0] === 'exp') A.xp += it[1]; else if (it[0] === 'nametk' || it[0] === 'gbracelet') {} else gain(A, it[0], it[1], cur === 'atok' ? 'Arena shop' : 'Guild shop'); } } }
+    for (const it of today) { if (it[0] === 'memtk' && A.w[cur] < it[2] + 50) continue; for (let l = 0; l < it[3]; l++) { if (A.w[cur] < it[2]) break; if (['coins', 'thread', 'nametk', 'gbracelet'].includes(it[0]) && A.w[cur] < 3 * it[2]) break;
+      A.w[cur] -= it[2]; if (it[0] === 'exp') {} else if (it[0] === 'nametk' || it[0] === 'gbracelet') {} else gain(A, it[0], it[1], cur === 'atok' ? 'Arena shop' : 'Guild shop'); } } }
 }
 
 /* ---------- pulls ---------- */
@@ -555,8 +556,8 @@ function day(A) {
   spendings(A);
   dailyFree(A);
   if (A.P.memberPearls && !A.P.whale && A.P.key !== 'small') { if (!memberOn(A).p1 && A.w.pearls >= 30) buyMember(A, 'p1'); }   // free players: only the Lantern can be bought with pearls
-  if (A.P.whale && d === 1) { while (A.honor.lv < 80 && spend(A, 'pearls', 3, 'Pearl Honor levels')) { A.honor.xp = Math.max(A.honor.xp, A.honor.lv * 800); honorLevels(A); } }
-  if (A.P.whale && d === 2 && !A.mbox && spend(A, 'pearls', 200, 'Mystery Fountain')) { A.mbox = true; if (!A.skins.ur[MBOX_SKIN]) A.skins.ur[MBOX_SKIN] = true; else gain(A, 'starlight', 40); give(A, { wishes: 10, tickets: 5, pearls: 30, bottles: 2, coins: 2e4, gplush: 1 }, 'Mystery Fountain'); A.xp += 500; log(A, 'emptied the Mystery Fountain (200 pearls)'); }
+  if (A.P.whale && d === 1) { while (A.honor.lv < 80 && spend(A, 'pearls', 3, 'Pearl Honor levels')) { A.honor.xp = Math.max(A.honor.xp, A.honor.lv * 480); honorLevels(A); } }
+  if (A.P.whale && d === 2 && !A.mbox && spend(A, 'pearls', 200, 'Mystery Fountain')) { A.mbox = true; if (!A.skins.ur[MBOX_SKIN]) A.skins.ur[MBOX_SKIN] = true; else gain(A, 'starlight', 40); give(A, { wishes: 10, tickets: 5, pearls: 30, bottles: 2, coins: 2e4, gplush: 1, thread: 60 }, 'Mystery Fountain'); log(A, 'emptied the Mystery Fountain (200 pearls)'); }
   if (A.P.key === 'small') { for (const c of focusList(A).filter(c => c.r === 5 && c.kind !== 'mc' && c.idx < 6).slice(0, 2)) if ((A.boughtSkins || 0) < 2 && d >= 3 && buyOutfit(A, 'ur', c.idx)) A.boughtSkins = (A.boughtSkins || 0) + 1; }
   if (A.P.whale) for (const c of focusList(A)) if (c.r === 5 && c.kind !== 'mc' && c.idx < 6) { buyOutfit(A, 'ur', c.idx); buyOutfit(A, 'ssr', c.idx); }
   // stamina for the day

@@ -158,7 +158,7 @@ const GSHOP_POOL = [
   { id: 'gs-fu', got: { fragur: 1 }, price: 20, lim: 1, w: .7 },
   { id: 'gs-gp', got: { gplush: 1 }, price: 15, lim: 2, w: .9 },
   { id: 'gs-gb', got: { gbracelet: 2 }, price: 10, lim: 2, w: .9 },
-  { id: 'gs-ex', got: { exp: 300 }, price: 10, lim: 2, w: .9 },
+  { id: 'gs-th', got: { thread: 20 }, price: 10, lim: 2, w: .9 },   // Thread (EXP left the shops: EXP only from quests and stamina)
   { id: 'gs-nt', got: { nametk: 1 }, price: 60, lim: 1, w: .25 },
   { id: 'gs-mt', got: { memtk: 1 }, price: 450, lim: 1, w: .15 }
 ];

@@ -270,7 +270,6 @@ function doPull(n, bk = curBanner, free = false) {
   if (n === 10 && !maxwin) fragFloor(results, bk);   // every ×10: at least 1 UR and 2 SSR character fragments
   addPoints(bk, n);   // summon points: 1 per pull (not on the Beginner Banner or Step-Up)
   if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
-  gainExp(EXP.pull * n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk, { maxwin, bonus });
   // remember the best ×10 pulls so they can be replayed: Max Wins, upgrades, and pulls with 2+ URs (with or without the double animation)
@@ -1265,7 +1264,6 @@ function sumItems(st) {
   add('pearls', R.reduce((a, r) => a + (r.pearls || 0), 0), 'Pearls (extra copies)');
   add('dust', st.preview ? 0 : R.length * DUST_PER_PULL, 'Seaweeds');
   add('starlight', R.reduce((a, r) => a + (r.starlight || 0), 0), 'Corals');
-  add('exp', st.preview ? 0 : R.length * EXP.pull, 'EXP');
   return out;
 }
 function closePull(silent) {

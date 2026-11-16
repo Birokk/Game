@@ -118,7 +118,7 @@ function loginState() {
 function claimLogin() {
   const st = loginState(); if (!st.ready) return;
   const n = loginDays()[st.today - 1];
-  S.wallet.tickets += n; S.login = { last: dayKey(), streak: st.next }; gainExp(EXP.login); persist(); renderMenu(); refreshSummon(); renderEvents();
+  S.wallet.tickets += n; S.login = { last: dayKey(), streak: st.next }; persist(); renderMenu(); refreshSummon(); renderEvents();
   toast(`Claimed ${n} Limited ticket${n === 1 ? '' : 's'} (day ${st.today}). That is ${n} free pull${n === 1 ? '' : 's'} on the limited banner.`);
 }
 function openLogin() { openEvents('login'); }
@@ -192,7 +192,7 @@ function loginBoard() {
       <span class="tl-ft">${done ? 'Claimed' : now ? 'Claim' : '✦'}</span></button>`; }).join('');
   return `<div class="tl"><div class="tl-top"><span class="tl-count">Day <b>${st.today}</b> of 7</span><span class="tl-dates">${streak ? `Streak ${streak} day${streak === 1 ? '' : 's'}` : 'Start your streak today'}</span></div>
     <div class="tl-strip" id="tlStrip">${cards}</div>
-    <p class="evp-note">${st.ready ? 'Tap the glowing card to claim today\'s Limited tickets.' : 'Claimed for today. Come back tomorrow.'} Missing a day starts again from day 1. Each day also gives ${expTag(EXP.login)}</p></div>`;
+    <p class="evp-note">${st.ready ? 'Tap the glowing card to claim today\'s Limited tickets.' : 'Claimed for today. Come back tomorrow.'} Missing a day starts again from day 1.</p></div>`;
 }
 function loginCharHTML(e) {
   const cut = MEDIA.get('evchar:login'), c = e.char && findEntry(e.char), name = e.charName || (c && c.name) || '';

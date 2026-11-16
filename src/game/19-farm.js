@@ -11,7 +11,7 @@ const FARM_MAX = 7, FARM_CAP_H = 24, FARM_REQ_PEARLS = 5;
 const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1];   // share of a building's level-7 output at each level
 const fmtDay = n => n >= 100 ? fmt(Math.round(n)) : String(Math.round(n * 10) / 10);   // per day, at most one decimal (collecting is whole units only)
 /* what each building produces */
-const FARM_RES = { pearls: { name: 'pearls', ic: 'pearls' }, coins: { name: 'gold', ic: 'coins' }, stamina: { name: 'stamina', ic: 'stamina' }, exp: { name: 'EXP', ic: 'exp' } };
+const FARM_RES = { pearls: { name: 'pearls', ic: 'pearls' }, coins: { name: 'gold', ic: 'coins' }, stamina: { name: 'stamina', ic: 'stamina' }, exp: { name: 'EXP', ic: 'exp' }, thread: { name: 'Thread', ic: 'thread' } };
 const farmRes = id => FARM_RES[farmDef(id).res];
 const farmIc = id => curIcon(farmRes(id).ic);
 const FARM_GOLD = [0, 0, 25000, 80000, 200000, 450000, 900000, 1800000];   // gold to reach each level (level 1 = the building's build cost)
@@ -20,7 +20,7 @@ const FARM_SKIP_MIN = 10;   // finishing an upgrade right away costs 1 pearl per
 const farmSkipCost = id => { const f = farmOf(id); return f.up ? Math.max(1, Math.ceil((f.up.ends - Date.now()) / (FARM_SKIP_MIN * 60e3))) : 0; };
 const FARM_DEFS = [
   { id: 'crops', name: 'Crops', res: 'stamina', day: 60, build: 0, start: 1, desc: 'Fresh food from the fields keeps you going: makes stamina.' },
-  { id: 'inn', name: 'Inn', res: 'exp', day: 500, build: 10000, start: 0, desc: 'Travelers share their stories over dinner: makes EXP.' },
+  { id: 'inn', name: 'Inn', res: 'thread', day: 40, build: 10000, start: 0, desc: 'Travelers trade spare cloth over dinner: makes Thread for gear breakthroughs.' },   // it made EXP before (EXP now only from quests and stamina)
   { id: 'market', name: 'Market', res: 'coins', day: 20000, build: 25000, start: 0, desc: 'Stalls that trade the town\'s goods: makes gold.' },
   { id: 'pub', name: "Girls' Pub", res: 'pearls', day: 10, build: 50000, start: 0, desc: 'Music, drinks and the liveliest crowd in town: makes pearls.' }
 ];
@@ -28,6 +28,7 @@ const farmDef = id => FARM_DEFS.find(d => d.id === id);
 function farmOf(id) {
   if (!S.farm || typeof S.farm !== 'object') S.farm = {};
   if (!S.farm[id]) S.farm[id] = { lv: farmDef(id).start, t: Date.now(), acc: 0, req: 0, up: null };
+  if (id === 'inn' && !S.farm[id].thr) { S.farm[id].thr = 1; S.farm[id].acc = 0; }   // the Inn switched from EXP to Thread: stored EXP doesn't turn into Thread
   return S.farm[id];
 }
 /* amount per day: each building's level-7 output (`day`) × the level's share */

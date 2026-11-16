@@ -676,10 +676,13 @@ function ccSkill(G, P, a) {
    fu = the first unit each match +max HP, rs = from round rs the skill's cooldown resets once (memory, rsAp extra AP that
    turn), ult = the SSS Ultimate (once per match from round 5). */
 const CC_ULT_ROUND = 5;
+/* the hero heal passive (nerfed: the owner found 1-2 HP every turn too strong): 1 HP at the start of every other turn of
+   yours, at most CC_HEAL_MATCH HP a match per point of heal (heal 1 → 3 HP, heal 2 → 6 HP; it used to be 2 HP every turn) */
+const CC_HEAL_EVERY = 2, CC_HEAL_MATCH = 3;
 const ccUltReady = (G, L) => !!(L && L.ult && !L.ultU && G.round >= CC_ULT_ROUND && G.phase === 'main');
 function ccLeadTurn(G, p, L) {
   const P = G.players[p];
-  if (L.heal && P.hp < P.max) lsHealHero(G, p, L.heal);
+  if (L.heal) { L.hT = (L.hT || 0) + 1; if (L.hT % CC_HEAL_EVERY === 0 && (L.hU || 0) < CC_HEAL_MATCH * L.heal && P.hp < P.max) L.hU = (L.hU || 0) + lsHealHero(G, p, 1); }
   if (!L.t1) { L.t1 = true; if (L.ap1) P.ap += L.ap1; }
   if (L.rs && !L.rsU && G.round >= L.rs && L.cd > 0) { L.rsU = true; L.cd = 0; if (L.rsAp) P.ap += L.rsAp; ccLog(G, `Memory: ${G.names[p]}’s leader skill is ready again`, 'buff', p); }
 }
