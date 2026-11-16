@@ -132,28 +132,33 @@ function ccLeaderBox(deckId) {
 
 /* ---- rewards ---- */
 const CC_GOLD = { win: 2000, draw: 800, lose: 400 };
+/* Quick match rewards (the owner's rules): 1 pearl a win (Normal and up), at most 60 a week (resets Monday, ccSave().qmPw);
+   gear only R (blue) pieces, 1 a win and a 50% chance of a 2nd (CC_QM_GEAR2), so at most 2 a game; Easy gives neither */
+const CC_QM_WEEK_PEARLS = 60, CC_QM_GEAR2 = .5;
+function qmPearlWeek() { const sv = ccSave(), wk = dayKey(weekStart()); if (!sv.qmPw || sv.qmPw.wk !== wk) sv.qmPw = { wk, n: 0 }; return sv.qmPw; }
+const qmPearlsLeft = () => Math.max(0, CC_QM_WEEK_PEARLS - qmPearlWeek().n);
+const qmRPieces = () => { const d = rpick(raidGear()), L = d ? dungeonPieces(d, 3) : []; return L.length ? L : (S.clothes || []).filter(x => +x.rarity === 3); };
 function ccGrantRewards(winner) {
-  const D = ccM && ccM.qm ? qmDiff(ccM.qm.diff) : null;   // Quick match difficulty: gold ×0.5–2, 0–3 pearls, gear (not on Easy)
-  const k = winner === 0 ? 'win' : winner === 1 ? 'lose' : 'draw', out = { k, gold: D ? qmGold(k, D) : CC_GOLD[k], pearls: k === 'win' ? (D ? D.pearls : CC_WIN_PEARLS) : 0, gear: null, full: false };
+  const D = ccM && ccM.qm ? qmDiff(ccM.qm.diff) : null;   // Quick match difficulty: gold ×0.5–2, 1 pearl and R gear (not on Easy)
+  const k = winner === 0 ? 'win' : winner === 1 ? 'lose' : 'draw', out = { k, gold: D ? qmGold(k, D) : CC_GOLD[k], pearls: k === 'win' && (!D || D.pearls) ? 1 : 0, gear: null, gears: [], full: false, capped: false };
   S.wallet.coins = (S.wallet.coins || 0) + out.gold;
+  if (out.pearls) { const w = qmPearlWeek(); if (w.n >= CC_QM_WEEK_PEARLS) { out.pearls = 0; out.capped = true; } else w.n += out.pearls; }
   if (out.pearls) S.wallet.pearls = (S.wallet.pearls || 0) + out.pearls;
   if (k === 'win') {
     questAdd('clash', 1);   // guild quest: win a Card Clash match
     if (D && !D.gear) { /* Easy gives no gear */ }
-    else if (wardFree() < 1) out.full = true;
-    else {   // one piece, rolled like a gear raid clear on your deepest open stage of a random gear dungeon (its UR set, the shared R / SSR sets, 1.5% a 2★ UR on UR stages)
-      const d = rpick(raidGear()), si = raidTopStage(d), ur = raidStg(d, si).ur > 0 ? dungeonPieces(d, 5) : [], st2 = Math.random() < RAID_STAR2 && ur.length, x = st2 ? rpick(ur) : rollRaidPiece(d, si);
-      if (x) { const isNew = !owns(x.id); addCloth(x.id, st2 ? 2 : 1); out.gear = { x, isNew, st: st2 ? 2 : (hasClothStars(x) ? 1 : 0) }; }
-    }
+    else { const n = 1 + (Math.random() < CC_QM_GEAR2 ? 1 : 0);
+      for (let i = 0; i < n; i++) { if (wardFree() < 1) { out.full = true; break; } const L = qmRPieces(); if (!L.length) break; const x = rpick(L), isNew = !owns(x.id); addCloth(x.id, 1); out.gears.push({ x, isNew, st: hasClothStars(x) ? 1 : 0 }); }
+      out.gear = out.gears[0] || null; }
   }
   return out;
 }
 function ccRewardsHTML(r) {
   if (!r) return '';
-  const g = r.gear;
+  const L = r.gears || (r.gear ? [r.gear] : []);
   return `<div class="ccm-rews">
     <span class="ccm-rw">${curIcon('coins')}<b>+${fmt(r.gold)}</b><small>gold</small></span>
-    ${r.pearls ? `<span class="ccm-rw pearl">${curIcon('pearls')}<b>+${r.pearls}</b><small>pearl</small></span>` : ''}
-    ${g ? `<span class="ccm-rw gear r${g.x.rarity}" title="${esc(g.x.name)}"><span class="ccm-rw-pic"><img src="${clothImg(g.x)}" alt="">${g.isNew ? '<i class="ccm-rw-new">NEW</i>' : ''}</span><span class="ccm-rw-txt">${ctag(g.x.rarity)}<b>${esc(g.x.name)}</b>${g.st ? clothStarRow(g.st) : ''}</span></span>` : r.full ? '<span class="ccm-rw none"><small>Wardrobe full: no gear this time</small></span>' : r.k !== 'win' ? '<span class="ccm-rw none"><small>Win to earn a gear piece</small></span>' : ''}
+    ${r.pearls ? `<span class="ccm-rw pearl">${curIcon('pearls')}<b>+${r.pearls}</b><small>pearl · ${qmPearlWeek().n} / ${CC_QM_WEEK_PEARLS} this week</small></span>` : r.capped ? `<span class="ccm-rw none"><small>This week's ${CC_QM_WEEK_PEARLS} Quick match pearls are collected · back on Monday</small></span>` : ''}
+    ${L.map(g => `<span class="ccm-rw gear r${g.x.rarity}" title="${esc(g.x.name)}"><span class="ccm-rw-pic"><img src="${clothImg(g.x)}" alt="">${g.isNew ? '<i class="ccm-rw-new">NEW</i>' : ''}</span><span class="ccm-rw-txt">${ctag(g.x.rarity)}<b>${esc(g.x.name)}</b>${g.st ? clothStarRow(g.st) : ''}</span></span>`).join('')}${r.full ? '<span class="ccm-rw none"><small>Wardrobe full: no more gear this time</small></span>' : !L.length && r.k !== 'win' ? '<span class="ccm-rw none"><small>Win to earn blue gear</small></span>' : ''}
   </div>`;
 }

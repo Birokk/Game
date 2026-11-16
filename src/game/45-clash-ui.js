@@ -142,8 +142,8 @@ const QM_MODES = [
 const QM_DIFF = [
   { id: 'easy', name: 'Easy', pips: 1, hpX: .7, brain: 'easy', gold: .5, pearls: 0, gear: false, col: '#9ff5c6', desc: 'Makes mistakes and has less HP. Good for trying a new deck.' },
   { id: 'normal', name: 'Normal', pips: 2, hpX: 1, brain: 'bot', gold: 1, pearls: 1, gear: true, col: '#94b8ff', desc: 'An average player. The classic Quick match.' },
-  { id: 'hard', name: 'Hard', pips: 3, hpX: 1, brain: 'plan', gold: 1.5, pearls: 2, gear: true, col: '#ffb3dd', desc: 'Plans its whole turn ahead before it moves.' },
-  { id: 'expert', name: 'Expert', pips: 4, hpX: 1.2, brain: 'best', gold: 2, pearls: 3, gear: true, col: '#ff8a8a', need: { hard: 3 }, desc: 'Plans like auto play and has 20% more HP.' }
+  { id: 'hard', name: 'Hard', pips: 3, hpX: 1, brain: 'plan', gold: 1.5, pearls: 1, gear: true, col: '#ffb3dd', desc: 'Plans its whole turn ahead before it moves.' },
+  { id: 'expert', name: 'Expert', pips: 4, hpX: 1.2, brain: 'best', gold: 2, pearls: 1, gear: true, col: '#ff8a8a', need: { hard: 3 }, desc: 'Plans like auto play and has 20% more HP.' }
 ];
 const QM_RIVALS = ['raiders', 'arcane', 'traps', 'frost', 'storm', 'holy', 'fort', 'warlord', 'p-balanced', 'p-rush', 'p-defensive'];
 const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', holy: 'Holy deck', fort: 'Fortress deck', warlord: 'Warlord deck', titan: 'Titan deck', blaze: 'Blaze deck', bastion: 'Bastion deck', hex: 'Hex deck', gale: 'Gale deck', choir: 'Choir deck', dawn: 'Dawn deck' };
@@ -221,7 +221,7 @@ function renderQuickMatch() {
       <span class="qmx-dfh">${pip(d.pips)}<b>${d.name}</b>${open ? '' : `<i class="qmx-lock">${icon('lock')}</i>`}</span>
       <small class="qmx-dfd">${open ? esc(d.desc) : esc(qmNeedTxt(d)) + ' to unlock'}</small>
       <span class="qmx-dfs"><span>${icon('heart')}Challenger ${bh} HP</span><span>${icon('trophy')}${w} win${w === 1 ? '' : 's'}</span></span>
-      <span class="qmx-dfr">${curIcon('coins')}${fmt(qmGold('win', d))}${d.pearls ? `<i>${curIcon('pearls')}${d.pearls}</i>` : ''}${d.gear ? `<i title="One clothing piece on a win, like a gear raid clear">${icon('hanger')}Gear</i>` : ''}</span></button>`; };
+      <span class="qmx-dfr">${curIcon('coins')}${fmt(qmGold('win', d))}${d.pearls ? `<i>${curIcon('pearls')}${d.pearls}</i>` : ''}${d.gear ? `<i title="1–2 blue (R) clothing pieces on a win">${icon('hanger')}R gear</i>` : ''}</span></button>`; };
   let adm = '';
   if (canAdmin()) { const ss = qmSetup(seed, m.id, D.id, deck), foe = ccQmFoe(seed), E = ss.ev && CC_EVENTS[ss.ev];
     adm = `<div class="rdx-panel qmx-adm"><div class="rdx-ph"><b>Admin preview</b><small>Players never see this: the challenger stays hidden until the battle starts</small></div>
@@ -249,7 +249,7 @@ function renderQuickMatch() {
           <span class="rdx-vsx">VS</span>
           <div class="rdx-side op qmx-myst"><span class="rdx-si qmx-q">?</span><span class="rdx-st"><small>Challenger</small><b>??? · ${D.name}</b><em>${icon('eye')}Revealed when the battle starts</em></span></div>
         </div>
-        <div class="rdx-inst qmx-rew"><span class="rdx-il">${icon('gift')}Rewards · ${D.name}</span><div class="qmx-rws"><span class="w"><b>Win</b>${curIcon('coins')}${fmt(qmGold('win', D))}${D.pearls ? ` ${curIcon('pearls')}${D.pearls}` : ''}${D.gear ? ` ${icon('hanger')}` : ''}</span><span><b>Draw</b>${curIcon('coins')}${fmt(qmGold('draw', D))}</span><span><b>Loss</b>${curIcon('coins')}${fmt(qmGold('lose', D))}</span></div></div>
+        <div class="rdx-inst qmx-rew"><span class="rdx-il">${icon('gift')}Rewards · ${D.name}</span><div class="qmx-rws"><span class="w"><b>Win</b>${curIcon('coins')}${fmt(qmGold('win', D))}${D.pearls ? ` ${curIcon('pearls')}${qmPearlsLeft() ? D.pearls : 0}<small class="qmx-pw">${qmPearlWeek().n} / ${CC_QM_WEEK_PEARLS} this week</small>` : ''}${D.gear ? ` ${icon('hanger')}` : ''}</span><span><b>Draw</b>${curIcon('coins')}${fmt(qmGold('draw', D))}</span><span><b>Loss</b>${curIcon('coins')}${fmt(qmGold('lose', D))}</span></div></div>
         <button class="rdx-go" id="qmGo" ${valid ? '' : 'disabled'}><span class="rdx-goi">${icon('bolt')}</span><span class="rdx-got"><b>Battle!</b><small>${curIcon('stamina')}${CC_QM_STAM} stamina</small></span></button>
       </div></section>`;
   const sc = qmEl.querySelector('.rdx-scroll'); if (sc && top) sc.scrollTop = top;

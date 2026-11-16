@@ -1,9 +1,9 @@
 /* =========================================================
-   Farm: buildings that produce over time, each its own resource: Crops → stamina, Inn → EXP, Market → gold, Girls' Pub → pearls.
+   Farm: buildings that produce over time, each its own resource: Crops → stamina, Inn → Thread, Market → gold, Girls' Pub → pearls.
    It is its own full-screen town screen: a wallpaper (admin → Farm, or the drawn default town) with a label on each building;
-   tapping a building opens its panel. Each building goes from level 0 (not built) to 7. An upgrade first needs its requirement
+   tapping a building opens its panel. Each building goes from level 0 (not built) to 7, the Girls' Pub only to 3 (`max`). An upgrade first needs its requirement
    (for now: pay 5 pearls), then costs gold and takes time (up to 48 h for level 7), which pearls can skip.
-   At level 7 they make 60 stamina, 500 EXP, 20,000 gold and 10 pearls a day. Production keeps running and is stored up to one
+   At level 7 they make 60 stamina, 15 Thread and 20,000 gold a day; the Girls' Pub makes 1 pearl a day per level (`perLv`), 3 at its top level 3 (the owner's rule). Production keeps running and is stored up to one
    day's worth (at least one whole unit); only whole units are shown and collected.
    State: S.farm[id] = { lv, t (last settled), acc (stored amount), req (level whose requirement is paid), up: {to, start, ends} | null }
    ========================================================= */
@@ -20,19 +20,21 @@ const FARM_SKIP_MIN = 10;   // finishing an upgrade right away costs 1 pearl per
 const farmSkipCost = id => { const f = farmOf(id); return f.up ? Math.max(1, Math.ceil((f.up.ends - Date.now()) / (FARM_SKIP_MIN * 60e3))) : 0; };
 const FARM_DEFS = [
   { id: 'crops', name: 'Crops', res: 'stamina', day: 60, build: 0, start: 1, desc: 'Fresh food from the fields keeps you going: makes stamina.' },
-  { id: 'inn', name: 'Inn', res: 'thread', day: 40, build: 10000, start: 0, desc: 'Travelers trade spare cloth over dinner: makes Thread for gear breakthroughs.' },   // it made EXP before (EXP now only from quests and stamina)
+  { id: 'inn', name: 'Inn', res: 'thread', day: 15, build: 10000, start: 0, desc: 'Travelers trade spare cloth over dinner: makes Thread for gear breakthroughs.' },   // it made EXP before (EXP now only from quests and stamina)
   { id: 'market', name: 'Market', res: 'coins', day: 20000, build: 25000, start: 0, desc: 'Stalls that trade the town\'s goods: makes gold.' },
-  { id: 'pub', name: "Girls' Pub", res: 'pearls', day: 10, build: 50000, start: 0, desc: 'Music, drinks and the liveliest crowd in town: makes pearls.' }
+  { id: 'pub', name: "Girls' Pub", res: 'pearls', day: 3, perLv: 1, max: 3, build: 50000, start: 0, desc: 'Music, drinks and the liveliest crowd in town: makes pearls.' }
 ];
 const farmDef = id => FARM_DEFS.find(d => d.id === id);
 function farmOf(id) {
   if (!S.farm || typeof S.farm !== 'object') S.farm = {};
   if (!S.farm[id]) S.farm[id] = { lv: farmDef(id).start, t: Date.now(), acc: 0, req: 0, up: null };
-  if (id === 'inn' && !S.farm[id].thr) { S.farm[id].thr = 1; S.farm[id].acc = 0; }   // the Inn switched from EXP to Thread: stored EXP doesn't turn into Thread
+  if (id === 'inn' && !S.farm[id].thr) { S.farm[id].thr = 1; S.farm[id].acc = 0; }
+  { const f = S.farm[id], mx = farmMax(id); if (f.lv > mx || (f.up && f.up.to > mx)) { f.lv = Math.min(f.lv, mx); f.up = null; f.req = Math.min(f.req || 0, mx); f.acc = Math.min(f.acc || 0, farmCap(id)); } }   // a lower top level (the Girls' Pub's 3): older saves come down to it   // the Inn switched from EXP to Thread: stored EXP doesn't turn into Thread
   return S.farm[id];
 }
 /* amount per day: each building's level-7 output (`day`) × the level's share */
-const farmDaily = (id, lv = farmOf(id).lv) => farmDef(id).day * FARM_PCT[lv];
+const farmMax = id => farmDef(id).max || FARM_MAX;   // the Girls' Pub stops at level 3
+const farmDaily = (id, lv = farmOf(id).lv) => farmDef(id).perLv ? farmDef(id).perLv * lv : farmDef(id).day * FARM_PCT[lv];
 const farmRate = (id, lv = farmOf(id).lv) => farmDaily(id, lv) / 24;   // per hour (fractions build up in the background)
 const farmCap = (id, lv = farmOf(id).lv) => lv ? Math.max(1, farmDaily(id, lv) * FARM_CAP_H / 24) : 0;   // a day's worth, but always room for one whole unit
 const farmCapShown = id => Math.floor(farmCap(id) + 1e-9);
@@ -81,13 +83,13 @@ function farmCollect(id) {
 }
 function farmPayReq(id) {
   const f = farmOf(id), to = f.lv + 1;
-  if (f.req >= to || f.up || f.lv >= FARM_MAX) return;
+  if (f.req >= to || f.up || f.lv >= farmMax(id)) return;
   if (S.wallet.pearls < FARM_REQ_PEARLS) { toast(`The requirement costs ${FARM_REQ_PEARLS} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   S.wallet.pearls -= FARM_REQ_PEARLS; f.req = to; persist(); renderMenu(); renderFarm(); toast(`Requirement met for ${farmDef(id).name} level ${to}.`);
 }
 function farmUpgrade(id) {
   const f = farmOf(id), to = f.lv + 1, cost = farmCost(id, to);
-  if (f.up || f.lv >= FARM_MAX || f.req < to) return;
+  if (f.up || f.lv >= farmMax(id) || f.req < to) return;
   if (S.wallet.coins < cost) { toast(`This upgrade costs ${fmt(cost)} gold coins. You have ${fmt(S.wallet.coins)}.`); return; }
   S.wallet.coins -= cost; farmSettle(id);
   const now = Date.now(); f.up = { to, start: now, ends: now + FARM_TIME[to] };
@@ -125,7 +127,7 @@ function farmStatus(id) {
   return { cls: '', html: `<span>Lv ${f.lv}${st >= 1 ? ` · <b id="fms-${id}">${fmt(st)}</b> ${farmIc(id)}` : ''}</span>` };
 }
 const fmtClock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, '0')).join(':'); };
-const farmCanUp = id => { const f = farmOf(id), to = f.lv + 1; return !f.up && f.lv < FARM_MAX && (f.req >= to ? S.wallet.coins >= farmCost(id, to) : S.wallet.pearls >= FARM_REQ_PEARLS && S.wallet.coins >= farmCost(id, to)); };
+const farmCanUp = id => { const f = farmOf(id), to = f.lv + 1; return !f.up && f.lv < farmMax(id) && (f.req >= to ? S.wallet.coins >= farmCost(id, to) : S.wallet.pearls >= FARM_REQ_PEARLS && S.wallet.coins >= farmCost(id, to)); };
 /* on portrait phones the 16:9 stage is wider than the screen: it scrolls sideways (kept between renders, starts centred) */
 const fmScrollX = () => { const s = fmEl && fmEl.querySelector('.fm-scroll'); return s && s.scrollWidth > s.clientWidth + 1 ? { x: s.scrollLeft, v: fmEl.dataset.view } : null; };
 function fmScrollBack(k) { const s = fmEl.querySelector('.fm-scroll'); if (!s) return; s.scrollLeft = k && k.v === fmView ? k.x : (s.scrollWidth - s.clientWidth) / 2; fmEl.dataset.view = fmView; }
@@ -170,21 +172,21 @@ function renderFarm() {
 }
 function farmPanel(d) {
   const f = farmOf(d.id), lv = f.lv, to = lv + 1, stored = farmWhole(d.id), cap = farmCap(d.id), frac = farmStored(d.id);
-  const pips = Array.from({ length: FARM_MAX }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
+  const pips = Array.from({ length: farmMax(d.id) }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
   let up;
   if (f.up) {
     const skip = farmSkipCost(d.id);
     up = `<div class="farm-up busy"><span class="lbl-sm">${lv ? `Upgrading to level ${f.up.to}` : 'Building'}</span><span class="bar"><i id="fupb-${d.id}" style="width:${(Date.now() - f.up.start) / (f.up.ends - f.up.start) * 100}%"></i></span>
       <span class="tiny" id="fupt-${d.id}">${fmtDur2(f.up.ends - Date.now())} left</span>
       <button class="btn gold" data-fskip="${d.id}">${icon('bolt')}Finish now · <span class="cost">${curIcon('pearls')}<span id="fsk-${d.id}">${skip}</span></span></button><span class="tiny">1 pearl per ${FARM_SKIP_MIN} minutes left.</span></div>`;
-  } else if (lv >= FARM_MAX) up = `<div class="farm-up max"><b>Max level</b><span class="tiny">This building is fully upgraded.</span></div>`;
+  } else if (lv >= farmMax(d.id)) up = `<div class="farm-up max"><b>Max level</b><span class="tiny">This building is fully upgraded.</span></div>`;
   else {
     const cost = farmCost(d.id, to), met = f.req >= to;
     up = `<div class="farm-up"><span class="lbl-sm">${lv ? `Next: level ${to}` : 'Build'} · ${fmtDay(farmDaily(d.id, to))} ${farmRes(d.id).name}/day</span>
       <div class="farm-req ${met ? 'met' : ''}">${met ? `${icon('check')}<span>Requirement met</span>` : `<span>Requirement: ${FARM_REQ_PEARLS} ${curIcon('pearls')}</span><button class="btn ghost sm" data-freq="${d.id}">Unlock</button>`}</div>
       <button class="btn ${met ? 'mint' : 'ghost'}" data-fup="${d.id}" ${met ? '' : 'disabled'}>${icon(lv ? 'up' : 'plus')}${lv ? 'Upgrade' : 'Build'} · ${cost ? `<span class="cost">${curIcon('coins')}${fmt(cost)}</span>` : 'free'} · ${fmtDur2(FARM_TIME[to])}</button></div>`;
   }
-  return `<div class="fm-ph" style="--fc:${FARM_COL[d.id]}"><div><b>${esc(d.name)}</b><span class="farm-lv">${lv ? `Level ${lv} / ${FARM_MAX}` : 'Not built yet'}<span class="farm-pips">${pips}</span></span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
+  return `<div class="fm-ph" style="--fc:${FARM_COL[d.id]}"><div><b>${esc(d.name)}</b><span class="farm-lv">${lv ? `Level ${lv} / ${farmMax(d.id)}` : 'Not built yet'}<span class="farm-pips">${pips}</span></span></div><button class="iconbtn" data-fmx aria-label="Close">${icon('close')}</button></div>
     <p class="tiny">${esc(d.desc)}</p>
     ${lv ? `<div class="farm-store" style="--fc:${FARM_COL[d.id]}"><div class="row" style="justify-content:space-between"><span class="tiny">${fmtDay(farmDaily(d.id))} ${farmRes(d.id).name}/day · holds ${fmt(farmCapShown(d.id))}</span><span class="tiny" id="fst-${d.id}">${fmt(stored)} / ${fmt(farmCapShown(d.id))}</span></div>
       <span class="bar"><i id="fsb-${d.id}" style="width:${cap ? frac / cap * 100 : 0}%"></i></span>

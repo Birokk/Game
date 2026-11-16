@@ -244,7 +244,7 @@ const gqReady = () => inGuild() && GQUESTS.some(gqCan);
 function claimGuildQuests() {
   const list = GQUESTS.filter(gqCan); if (!list.length) return;
   const st = gqState(), g = guildState(), b = gqBonus();
-  let gp = 0, gx = 0; list.forEach(q => { st.done.push(q.id); gp += Math.round(q.gp * b); gx += q.gx; });
+  let gp = 0, gx = 0; list.forEach(q => { st.done.push(q.id); gp += Math.round(q.gp * b); gx += q.gx; }); statAdd('gquest', list.length);
   const before = guildLv(); S.wallet.gpts = (S.wallet.gpts || 0) + gp; g.xp = (g.xp || 0) + gx;
   persist(); renderMenu(); renderFarm();
   showRewards('Guild quests', { gpts: gp }, `+${fmt(gx)} guild EXP for ${esc(myGuild().name)}${guildLv() > before ? ` · the guild reached level ${guildLv()}!` : ''}`);
@@ -286,7 +286,7 @@ const GUILD_SPOTS = [
   { id: 'reward', name: 'Rewards', sub: 'Daily login', x: 48, y: 70, col: '#5be3a8', ic: 'gift' },
   { id: 'quests', name: 'Guild Quests', sub: 'Daily · guild EXP', x: 66, y: 44, col: '#6fb8ff', ic: 'quests' },
   { id: 'boss', name: 'Guild Boss', sub: 'Card battle · 48 h', x: 80, y: 70, col: '#ff8a5a', ic: 'dragon' },
-  { id: 'hangout', name: 'Hangout', sub: 'Minigames · daily pearls', x: 16, y: 34, col: '#ff9ad8', ic: 'mug' }
+  { id: 'hangout', name: 'Hangout', sub: 'To be added', x: 16, y: 34, col: '#ff9ad8', ic: 'mug' }   // the minigames were removed (the owner's ask): the spot stays
 ];
 const guildPosDef = id => { const p = GUILD_SPOTS.find(s => s.id === String(id).replace(/^g:/, '')); return p ? { x: p.x, y: p.y } : { x: 50, y: 50 }; };
 function guildBg() { const bg = MEDIA.get('guild:bg'); return bg ? artImgClip('guild:bg', 'fm-bg') : '<div class="fm-bg gd-bg"></div>'; }
@@ -307,7 +307,7 @@ function renderGuild() {
   }
   fmEl.innerHTML = `<div class="fm-scroll"><div class="fm-stage">${guildBg()}
       ${GUILD_SPOTS.map(p => { const q = farmPos('g:' + p.id), bd = p.id === 'boss' ? gbBoard(g) : null, ready = (p.id === 'reward' && guildDayReady()) || (p.id === 'quests' && gqReady()) || (bd && gbReady()) || (p.id === 'hangout' && hangReady()), done = GQUESTS.filter(gqDone).length;
-        return `<button class="fm-spot ${fmSel === p.id ? 'on' : ''}" data-gs="${p.id}" style="left:${q.x}%;top:${q.y}%;--fc:${p.col}">${ready ? `<span class="fm-bubble">${bd ? icon('swords') : p.id === 'hangout' ? curIcon('pearls') : curIcon('gpts')}</span>` : ''}<span class="fm-label"><b>${esc(p.name)}</b><span>${p.id === 'reward' ? (ready ? `+${guildDaily()} guild points` : 'Come back tomorrow') : p.id === 'quests' ? `${done} / ${GQUESTS.length} done · Lv ${guildLvOf(g)}` : bd ? `Lv ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP · ${gbLeft()} battle${gbLeft() === 1 ? '' : 's'} left` : p.id === 'hangout' ? (hangLeft() ? `3 minigames · ${hangLeft()} pearl${hangLeft() === 1 ? '' : 's'} left today` : 'Play for fun · pearls collected') : esc(p.sub)}</span></span></button>`; }).join('')}
+        return `<button class="fm-spot ${fmSel === p.id ? 'on' : ''}" data-gs="${p.id}" style="left:${q.x}%;top:${q.y}%;--fc:${p.col}">${ready ? `<span class="fm-bubble">${bd ? icon('swords') : p.id === 'hangout' ? curIcon('pearls') : curIcon('gpts')}</span>` : ''}<span class="fm-label"><b>${esc(p.name)}</b><span>${p.id === 'reward' ? (ready ? `+${guildDaily()} guild points` : 'Come back tomorrow') : p.id === 'quests' ? `${done} / ${GQUESTS.length} done · Lv ${guildLvOf(g)}` : bd ? `Lv ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP · ${gbLeft()} battle${gbLeft() === 1 ? '' : 's'} left` : p.id === 'hangout' ? 'To be added' : esc(p.sub)}</span></span></button>`; }).join('')}
     </div></div>
     <div class="fm-top"><button class="cs-back" id="fmBack">${icon('back')}Back</button><span class="gd-tname">${guildIcon(g.icon, 38)}<h2 class="ts">${esc(g.name)}</h2></span>${infoBtn('guild', 'How guilds work')}<span class="fm-rate ts">Guild Lv ${guildLvOf(g)} · ${g.members.length} / ${guildCap(guildLvOf(g))} members · Total CS ${fmt(guildCS(g))}</span></div>${cur}
     ${fmSel && GUILD_SPOTS.some(s => s.id === fmSel) ? `<aside class="fm-panel glass-deep gd-panel" id="fmPanel">${guildPanel(g, fmSel)}</aside>` : ''}`;

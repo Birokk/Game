@@ -123,7 +123,7 @@ function stamina() {
   if (k > 0) { st.v = Math.min(stamMax(), st.v + k); st.t = st.v >= stamMax() ? now : st.t + k * stamMs(); persist(); }
   return st.v;
 }
-function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= stamMax()) S.stamina.t = Date.now(); S.stamina.v -= n; questAdd('stamina', n); gainExp(n * EXP.stam); persist(); renderStamina(); return true; }   // 1 EXP per stamina spent (22-level.js)
+function spendStamina(n) { if (stamina() < n) return false; if (S.stamina.v >= stamMax()) S.stamina.t = Date.now(); S.stamina.v -= n; questAdd('stamina', n); gainExp(n * EXP.stam); persist(); renderStamina(); return true; }   // EXP for the stamina spent (EXP.stam a point, 22-level.js)
 function renderStamina() {
   const el = $('#stamVal'); if (!el) return;
   const v = stamina(), left = stamMs() - (Date.now() - S.stamina.t), m = Math.floor(left / 6e4), sec = Math.floor(left % 6e4 / 1e3);

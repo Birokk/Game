@@ -90,11 +90,11 @@ const brStageBlock = st => { const n = brStageNeed(st); if (!n || brOk(n)) retur
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !brStageBlock(st); }; }
 /* player level gates (the owner's rule): from Chapter 6 a chapter also needs a player level to start (EXP only comes from
    quests and stamina, so these pace the hard chapters over a month); anything already started stays open; admins skip */
-const LV_CHAPTER = { c6: 18, c7: 21, c8: 23, c9: 25, c10: 27 };   // the economy test (quests + stamina EXP): a free player opens them about day 13 / 17 / 20 / 23 / 27 of a 30-day patch
+const LV_CHAPTER = { c6: 25, c7: 29, c8: 32, c9: 36, c10: 40 };   // the economy test (quests + 5 EXP a stamina): a free player opens them about day 13 / 17 / 20 / 23 / 27 of a 30-day patch
 const lvStageNeed = st => { if (!st || !st.ch || st.ch.tower) return 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? LV_CHAPTER[st.ch.id] || 0 : 0; };
 const lvStageBlock = st => { const n = lvStageNeed(st); if (!n || playerLv().lv >= n || canAdmin()) return 0; if (st.ch.stages.some(s => ccCampHave(s.id)[0])) return 0; return n; };
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !lvStageBlock(st); }; }
-const lvLockHTML = st => { const n = lvStageBlock(st); return n ? `<div class="br-lock lv">${icon('lock')}<span><b>Needs player level ${n}</b><small>You are level ${playerLv().lv}. Player EXP comes from daily and weekly quests and from spending stamina (1 EXP per stamina).</small></span></div>` : ''; };
+const lvLockHTML = st => { const n = lvStageBlock(st); return n ? `<div class="br-lock lv">${icon('lock')}<span><b>Needs player level ${n}</b><small>You are level ${playerLv().lv}. Player EXP comes from daily and weekly quests and from spending stamina (${EXP.stam} EXP per stamina).</small></span></div>` : ''; };
 /* why a chapter is closed, for the chapter list */
 const ccCampGateTxt = ch => { const st = { ...ch.stages[0], ch }, lv = lvStageBlock(st), br = brStageBlock(st); return [lv ? `player level ${lv}` : '', br ? `Battle Rank ${br}` : ''].filter(Boolean).join(' and '); };
 const brLockHTML = st => lvLockHTML(st) + brLockOnly(st);

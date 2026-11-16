@@ -407,14 +407,14 @@ const ACH = [
   { id: 'cctree10', name: 'Sky High', desc: 'Clear floor 10 of the Great Tree', n: () => ccTowerTop(), goal: 10 },
   { id: 'farm4', name: 'Thriving Base', desc: 'Build all four Base buildings', n: () => FARM_DEFS.filter(d => farmOf(d.id).lv > 0).length, goal: 4 },
   { id: 'farm7', name: 'Master Builder', desc: 'Raise a Base building to level 7', n: () => maxOf(FARM_DEFS.map(d => farmOf(d.id).lv)), goal: 7 },
-  { id: 'farm7all', name: 'Grand Estate', desc: 'Raise all four Base buildings to level 7', n: () => FARM_DEFS.filter(d => farmOf(d.id).lv >= 7).length, goal: 4 },
+  { id: 'farm7all', name: 'Grand Estate', desc: 'Raise all four Base buildings to their top level', n: () => FARM_DEFS.filter(d => farmOf(d.id).lv >= (d.max || 7)).length, goal: 4 },
   { id: 'farm100', name: 'Harvester', desc: 'Collect at the Base 100 times', n: () => stat('base'), goal: 100 },
   { id: 'house1', name: 'Homeowner', desc: 'Buy a house', n: () => ((S.house || {}).own || []).length, goal: 1 },
   { id: 'house5', name: 'Estate', desc: 'Own all five houses', n: () => ((S.house || {}).own || []).length, goal: 5 },
   { id: 'guild', name: 'Better Together', desc: 'Join or create a guild', n: () => (S.guild && S.guild.id) ? 1 : 0, goal: 1 },
   { id: 'friend5', name: 'Social Butterfly', desc: 'Have 5 friends', n: () => ((S.friends || {}).list || []).length, goal: 5 },
   { id: 'friend20', name: 'Popular', desc: 'Have 20 friends', n: () => ((S.friends || {}).list || []).length, goal: 20 },
-  { id: 'guildhang', name: 'Game Night', desc: 'Complete 10 Guild Hangout minigames', n: () => stat('hang'), goal: 10 },
+  { id: 'guildhang', name: 'Guild Spirit', desc: 'Complete 30 guild quests', n: () => stat('gquest'), goal: 30 },   // was 10 Hangout minigames (the minigames were removed)
   { id: 'bp30', name: 'Honored', desc: 'Reach Pearl Honor level 30', n: () => bpLv(), goal: 30 },
   { id: 'bp80', name: 'Season Champion', desc: 'Reach Pearl Honor level 80', n: () => bpLv(), goal: 80 },
   { id: 'spin', name: 'Wheel of Fortune', desc: 'Spin the daily wheel', n: () => S.spin.last ? 1 : 0, goal: 1 }

@@ -102,6 +102,8 @@ function bpReward(lv, track) {
    worth 60 pearls)); the paid one includes the milestones */
 const BP_VAL = { ...PACK_VAL, thread: .1, starlight: .3, dust: .04, fragssr: .5, fragur: 2.5, eggur: 25, ursel: 150, sktk: 1, exp: .002 };
 const BP_TOT = what => { let t = 0; for (let l = 1; l <= BP_MAX; l++) { const r = bpReward(l, 'paid'), m = l % 10 === 0 ? BP_MILE : {}; t += what === 'pulls' ? (r.tickets || 0) + (r.wishes || 0) : (r[what] || 0) + (m[what] || 0); } return t; };
+/* every kind of reward on a track, in level order (the Unlock cards show just their icons, no amounts: the owner's ask) */
+const bpKinds = track => [...new Set(Array.from({ length: BP_MAX }, (_, i) => Object.keys(bpReward(i + 1, track))[0]))];
 const bpWorthOf = got => Object.entries(got).reduce((t, [k, n]) => t + n * (BP_VAL[k] || 0), 0);
 function bpWorth(track) {
   let t = 0; for (let l = 1; l <= BP_MAX; l++) { t += bpWorthOf(bpReward(l, track)); if (track === 'paid' && l % 10 === 0) t += bpWorthOf(BP_MILE); }
@@ -261,7 +263,7 @@ function renderHonor(jump) {
     </div>`;
   } else {
     const card = o => { const owned = st.tier >= o.tier, upg = st.tier === 1 && o.tier === 2, usd = upg ? (parseFloat(o.usd) - parseFloat(BP_OFFERS[0].usd)).toFixed(2) : o.usd;
-      const sample = [1, 2, 3, 5, 10, 20, 80].map(l => bpReward(l, 'paid')), worth = bpWorth('paid') + (o.tier === 2 ? Math.round(bpWorthOf(o.now)) : 0);
+      const worth = bpWorth('paid') + (o.tier === 2 ? Math.round(bpWorthOf(o.now)) : 0);
       return `<div class="bp-offer t${o.tier}"><div class="bp-ofl"><span class="bp-emb big">${bpEmblem(o.tier)}</span><b>${o.name}</b><span class="bp-worth" title="What every reward it unlocks is worth in pearls (a pull = 3 pearls)">${curIcon('pearls')}Worth ≈ <b>${fmt(Math.round(worth / 10) * 10)}</b> pearls</span></div>
         <div class="bp-ofr"><span class="lbl-sm">Get now</span>
           <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => bpItem(k, n)).join('')}<span class="inv-cell bp-sq r5"><span class="inv-pic bp-avpic">${avatarHTML(40, avatarEntry(), 'crown')}</span><b>Frame</b></span><span class="inv-cell bp-sq r5"><span class="inv-pic"><span class="nc nc-honor"></span></span><b>Namecard</b></span>` : '<span class="tiny">The Coral Tide track on all 80 levels</span>'}</div>
@@ -269,7 +271,7 @@ function renderHonor(jump) {
           ${o.tier === 1 ? `<span class="lbl-sm">Season milestones · every 10th level</span>
           <div class="bp-ofits">${Object.entries(BP_MILE).map(([k, n]) => bpItem(k, n)).join('')}<span class="tiny bp-ofmx">× ${BP_MAX / 10} = ${Object.entries(BP_MILE).map(([k, n]) => bpNm(k, n * BP_MAX / 10)).join(' + ')} a season</span></div>` : ''}
           <span class="lbl-sm">Available after leveling up</span>
-          <div class="bp-ofits">${sample.map(r => Object.entries(r).map(([k, n]) => bpItem(k, n)).join('')).join('')}<span class="bp-more">…</span></div>
+          <div class="bp-ofits icons">${bpKinds('paid').map(k => `<span class="inv-cell bp-sq bp-ic r${REW_R[k] || 4}" title="${esc((REW_NAMES[k] || [k, k])[1])}"><span class="inv-pic">${curIcon(k)}</span></span>`).join('')}</div>
           <button class="bp-price" data-bpbuy="${o.id}" ${owned ? 'disabled' : ''}>${owned ? 'Unlocked' : `$${usd}${o.was && !upg ? ` <s>$${o.was}</s>` : ''}${TOPUP_FREE ? ' · free test' : ''}`}</button></div></div>`; };
     body = `<div class="bp-unlock"><div class="bp-uleft"><div class="bp-show big"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(96, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + Pearl Honor namecard</small></div>
       <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season: ${fmt(BP_TOT('pearls'))} pearls, ${fmt(BP_TOT('pulls'))} pulls, ${fmt(BP_TOT('thread'))} Thread, ${fmt(BP_TOT('bottles'))} stamina bottles, ${fmt(BP_TOT('coins'))} gold, 2 UR memory tickets, a UR selector and the ${BP_MAX / 10} season milestones. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>

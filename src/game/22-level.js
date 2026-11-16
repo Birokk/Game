@@ -1,12 +1,12 @@
 /* ---------- player level: EXP from quests and stamina, a reward for every level (Level rewards window) ----------
-   EXP comes only from the daily (and weekly) quest rewards and from spending stamina, 1 EXP per stamina (EXP.stam, in
+   EXP comes only from the daily (and weekly) quest rewards and from spending stamina, 5 EXP per stamina (EXP.stam, in
    spendStamina; raids, Quick match and everything else that costs stamina) — the owner's rule; summons, logins, the spin,
    achievements, hatching, expeditions, the Inn, shops and the fountain give none any more. Future quests may give EXP too.
    S.player.xp = total EXP earned; S.lvClaimed = levels whose reward was taken. The EXP icon (icon slot 'exp', editable in
    Settings or admin → Icons) only shows where EXP is offered as a reward. */
 const LV_MAX = 60;
 const lvNeed = lv => 100 + (lv - 1) * 50;                 // EXP to go from lv to lv + 1
-const EXP = { stam: 1, quest: 100, wquest: 100 };
+const EXP = { stam: 5, quest: 100, wquest: 100 };   // 5 EXP per stamina spent (the owner raised it from 1)
 const EXP_WAYS = [['quest', 'Daily quests', 'each reward box (5 a day)'], ['wquest', 'Weekly quests', 'each reward box (5 a week)'], ['stam', 'Spend stamina', 'per stamina (raids, battles…)']];
 CUR_SVG.exp = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#3fd47e" stroke="#16683a" stroke-width="1.4"/><circle cx="12" cy="12" r="7.4" fill="none" stroke="#c8ffd9" stroke-width=".9" opacity=".8"/><path d="M12 5.2l1.9 4.3 4.6.4-3.5 3 1.1 4.6L12 15l-4.1 2.5 1.1-4.6-3.5-3 4.6-.4z" fill="#fff8c8" stroke="#16683a" stroke-width=".8" stroke-linejoin="round"/></svg>';
 ICONS.level = '<path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/><path d="M12 8v6"/><path d="M9.5 10.5L12 8l2.5 2.5"/>';

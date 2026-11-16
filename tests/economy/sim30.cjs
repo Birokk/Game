@@ -28,12 +28,12 @@ const STEP_COST = [6, 12, 18, 24, 30, 30, 30], STEP_GOLD = [5e3, 1e4, 15e3, 2e4,
 const STD_MILES = { 100: 'ur', 200: 'ur', 300: 'sel', 400: 'ur', 500: 'ur', 600: 'sel' };
 const PT_PRICE = 200;
 const LV_MAX = 60, lvNeed = lv => 100 + 50 * (lv - 1);
-const EXPV = { pull: 0, login: 0, spin: 0, ach: 0, hatch: 0, raid: 0, exped: 0, stam: 1 };   // EXP only from quests (A.xp += 500 a day / week) and stamina
+const EXPV = { pull: 0, login: 0, spin: 0, ach: 0, hatch: 0, raid: 0, exped: 0, stam: 5 };   // EXP only from quests (A.xp += 500 a day / week) and stamina
 const VIP_XP = [250, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000, 512000];
 const VIP_LVREW = { 1: { pearls: 20, coins: 1e4 }, 2: { pearls: 30, tickets: 2 }, 3: { pearls: 50, tickets: 5 }, 4: { pearls: 80, bottles: 5 }, 5: { pearls: 100, tickets: 10 },
   6: { pearls: 150, memtk: 1 }, 7: { pearls: 200, tickets: 15 }, 8: { pearls: 250, wishes: 20 }, 9: { pearls: 300, tickets: 20 }, 10: { pearls: 400, memtk: 2 }, 11: { pearls: 500, tickets: 30 }, 12: { pearls: 800, memtk: 3 } };
 const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1], FARM_GOLD = [0, 0, 25e3, 8e4, 2e5, 4.5e5, 9e5, 1.8e6], FARM_H = [0, 5 / 60, .5, 2, 6, 12, 24, 48];
-const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 10, res: 'pearls' }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 40, res: 'thread' } };
+const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 3, res: 'pearls', perLv: 1, max: 3 }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 15, res: 'thread' } };
 const FARM_ORDER = ['market', 'pub', 'crops', 'inn'];
 const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]], EXP_UR_MULT = [1, 1, 1];   // 0 or 1 pearl, 5 pearls 5% of the time
 const BP_BIG = { free: { 10: { tickets: 2 }, 20: { pearls: 10 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { pearls: 15 }, 80: { eggur: 1 } },
@@ -303,7 +303,7 @@ const buildF = A => { if (process.env.NOBOOST || A.P.noBoost) return 0; const c 
 const winP = (A, p) => 1 - (1 - p) * (1 - buildF(A));
 const brOf = A => { let r = 1, left = A.br; while (r < 30 && left >= BR_NEED(r)) { left -= BR_NEED(r); r++; } return r; };
 const brAdd = (A, k) => { let n = { w: 100, d: 60, l: 40 }[k]; if (k === 'w' && A.brDay !== A.day) { A.brDay = A.day; n += 200; } A.br += n; };
-const LV_CH = { 6: 18, 7: 21, 8: 23, 9: 25, 10: 27 };   // player level to start Chapters 6-10
+const LV_CH = { 6: 25, 7: 29, 8: 32, 9: 36, 10: 40 };   // player level to start Chapters 6-10
 function campOpen(A, i) { const s = CAMP[i]; if (i > 0 && !A.camp.clear[i - 1]) return false; if (s.first && brOf(A) < BR_CH[s.ch]) return false; if (s.first && LV_CH[s.ch] && A.lv < LV_CH[s.ch]) return false; return true; }
 function treeOpen(A, i) { if (i > 0 && !A.camp.treeClear[i - 1]) return false; const no = i + 1; return no < 4 || brOf(A) >= 2 * no; }
 function playStage(A, st, starsArr, isTree) {
@@ -338,7 +338,8 @@ function qmBattle(A) {
   if (!useStam(A, 5)) return false;
   const pw = winP(A, .54) , x = R(); const k = x < pw ? 'w' : x < pw + .06 ? 'd' : 'l'; A.qm[k]++; brAdd(A, k);
   gain(A, 'coins', { w: 2000, d: 800, l: 400 }[k], 'Quick match');
-  if (k === 'w') { gain(A, 'pearls', 1, 'Quick match wins'); const si = topGearStage(A); const S = GEAR_STAGES[si], y = R(); if (y < S.ur) urPiece(A, ri(0, 2)); else if (y < S.ur + S.ssr) A.gear.ssr[ri(0, 5)]++; else A.gear.r[ri(0, 5)]++; }
+  if (k === 'w') { const wk = Math.floor((A.day - 1) / 7); if (A.qmPwk !== wk) { A.qmPwk = wk; A.qmPw = 0; } if (A.qmPw < 60) { A.qmPw++; gain(A, 'pearls', 1, 'Quick match wins'); }
+    A.gear.r[ri(0, 5)]++; if (R() < .5) A.gear.r[ri(0, 5)]++; }   // R gear only, at most 2 a game
   return true;
 }
 const topGearStage = A => GEAR_STAGES.filter(s => A.lv >= s.lv).length - 1;
@@ -402,7 +403,6 @@ function dailyFree(A) {
     if (x < 25) gain(A, 'coins', 2000, 'daily spin'); else if (x < 45) gain(A, 'pearls', 1, 'daily spin'); else if (x < 60) gain(A, 'bottles', 1, 'daily spin'); else if (x < 72) gain(A, 'pearls', 3, 'daily spin');
     else if (x < 84) gain(A, 'wishes', 1, 'daily spin'); else if (x < 94) gain(A, 'coins', 5000, 'daily spin'); else if (x < 99) gain(A, 'pearls', 5, 'daily spin'); else gain(A, 'rings', 1, 'daily spin'); }
   if (R() < 1 / 3) gain(A, 'tickets', 1, 'Base fountain'); A.stats.wishes++;
-  gain(A, 'pearls', 2, 'guild Hangout'); A.stats.hang += 2;
   gain(A, 'gpts', 30 + 75, 'guild');   // daily login 30 + the 8 guild quests (~75 points with the level bonus)
 }
 function dailyQuests(A) {
@@ -414,12 +414,12 @@ function dailyQuests(A) {
 /* ---------- base, expeditions, camp, houses ---------- */
 function farmDay(A) {
   for (const id of FARM_ORDER) { const f = A.farm[id]; if (f.upEnd != null && f.upEnd <= A.day) { f.lv++; f.upEnd = null; }
-    const out = FARM[id].day * FARM_PCT[f.lv]; A.farmAcc[id] += out; const whole = Math.floor(A.farmAcc[id]); A.farmAcc[id] -= whole;
+    const out = FARM[id].perLv ? FARM[id].perLv * f.lv : FARM[id].day * FARM_PCT[f.lv]; A.farmAcc[id] += out; const whole = Math.floor(A.farmAcc[id]); A.farmAcc[id] -= whole;
     if (whole) { if (id === 'crops') A.stam = Math.min(999, A.stam + whole); else if (id === 'inn') A.w.thread += whole; else gain(A, FARM[id].res, whole, 'Base'); } }
   A.stats.baseCol += 2;
 }
 function farmUpgrades(A) {
-  for (const id of FARM_ORDER) { const f = A.farm[id]; if (f.upEnd != null || f.lv >= 7) continue; const to = f.lv + 1, cost = to === 1 ? FARM[id].build : FARM_GOLD[to];
+  for (const id of FARM_ORDER) { const f = A.farm[id]; if (f.upEnd != null || f.lv >= (FARM[id].max || 7)) continue; const to = f.lv + 1, cost = to === 1 ? FARM[id].build : FARM_GOLD[to];
     if (A.w.coins < cost || (to > 1 && A.w.pearls < 5)) continue; spend(A, 'coins', cost, 'Base upgrades'); if (to > 1) spend(A, 'pearls', 5, 'Base upgrade requirements');
     let hours = FARM_H[to]; if (A.P.whale) { const sk = Math.ceil(hours * 6); if (spend(A, 'pearls', sk, 'Base: finish now')) hours = 0; }
     f.upEnd = A.day + Math.ceil(hours / 24); if (!hours) { f.lv++; f.upEnd = null; } }
@@ -545,7 +545,7 @@ function achievements(A) {
     stam5k: A.stamSpent >= 5000, stam25k: A.stamSpent >= 25000, gold1m: A.goldSpent >= 1e6, gold10m: A.goldSpent >= 1e7, wish30: A.stats.wishes >= 30, exp10: A.stats.exped >= 10, exp50: A.stats.exped >= 50,
     ccwin1: A.qm.w >= 1, ccwin25: A.qm.w >= 25, ccwin100: A.qm.w >= 100, cccamp0: A.camp.clear[4], ccstar50: campStars >= 50, cctree5: treeTop >= 5, cctree10: treeTop >= 10,
     farm4: farmLv.every(l => l >= 1), farm7: farmLv.some(l => l >= 7), farm7all: farmLv.every(l => l >= 7), farm100: A.stats.baseCol >= 100, house1: A.houses.length >= 1, house5: A.houses.length >= 5,
-    guild: true, friend5: A.day >= 3, guildhang: A.stats.hang >= 10, bp30: A.honor.lv >= 30, bp80: A.honor.lv >= 80, spin: true };
+    guild: true, friend5: A.day >= 3, guildhang: A.day >= 4, bp30: A.honor.lv >= 30, bp80: A.honor.lv >= 80, spin: true };
   for (const [id, ok] of Object.entries(T)) if (ok && !A.ach.has(id)) { A.ach.add(id); gain(A, 'pearls', 1, 'achievements'); A.xp += EXPV.ach; }
 }
 
