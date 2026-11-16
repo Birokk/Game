@@ -3,17 +3,20 @@
    800 Honor EXP per level (BP_LV_XP). Honor EXP comes from the pass missions: daily (BP_DAILY) and weekly (BP_WEEKLY),
    built like the Quests and counted by the same questAdd hooks; at most 8,000 Honor EXP a week (BP_WEEK_CAP, resets
    Monday 00:00 local). Levels can also be bought with pearls (BP_LV_PEARLS, not capped).
-   Two reward tracks per level (bpReward): Pearl Gift (free) and Coral Tide (paid). Two paid options (BP_OFFERS):
-   Coral Tide $9.99 unlocks the paid track; Moon Tide $19.99 also gives 300 pearls, 10 Limited tickets (10 pulls),
-   the Moonlit Halo avatar frame, the Pearl Honor namecard and +10 levels at once. Real payments aren't connected:
-   while TOPUP_FREE is on they are free test buttons (and still give VIP EXP).
-   State S.bp {season, xp, tier: 0 | 1 Coral Tide | 2 Moon Tide (ids glory / crown kept for saves), free: [levels], paid: [levels], wk: {key, xp}};
-   missions S.bpq (daily) / S.bpwq (weekly), same shape as S.quests / S.wquests. Rewards: BP_MILES / BP_FIVE / BP_CYCLE. The track emblems are icon slots bp0 / bp1 / bp2 (admin → Art & icons). */
+   Two reward tracks per level (bpReward), one item per level and track so the rows line up: Pearl Gift (free) and
+   Coral Tide (paid). Two paid options (BP_OFFERS): Coral Tide $9.99 unlocks the paid track and the season milestones
+   (BP_MILE: 1 pearl + 5 skin tickets on every 10th level, paid only, the owner's rule); Moon Tide $19.99 also gives
+   80 pearls, 5 Standard + 5 Limited tickets (10 pulls), the Moonlit Halo avatar frame, the Pearl Honor namecard and
+   +10 levels at once. The paid track is worth about 950 pearls (bpWorth, BP_VAL; the owner asked for at least $120 of
+   items at about 5 pearls per $1 = 600 pearls). Real payments aren't connected: while TOPUP_FREE is on they are free
+   test buttons (and still give VIP EXP).
+   State S.bp {season, xp, tier: 0 | 1 Coral Tide | 2 Moon Tide (ids glory / crown kept for saves), free: [levels], paid: [levels], mile: [levels], wk: {key, xp}};
+   missions S.bpq (daily) / S.bpwq (weekly), same shape as S.quests / S.wquests. Rewards: BP_BIG / BP_FIVE / BP_CYCLE / BP_MILE. The track emblems are icon slots bp0 / bp1 / bp2 (admin → Art & icons). */
 const BP_EPOCH = new Date(2026, 9, 12), BP_WEEKS = 8, BP_MAX = 80, BP_LV_XP = 800, BP_WEEK_CAP = 8000, BP_LV_PEARLS = 3;
 const BP_NAMES = { free: 'Pearl Gift', paid: 'Coral Tide' };
 const BP_OFFERS = [
-  { tier: 1, id: 'glory', name: 'Coral Tide', usd: '9.99', now: {}, levels: 0, desc: 'Unlocks the Coral Tide rewards on every level.' },
-  { tier: 2, id: 'crown', name: 'Moon Tide', usd: '19.99', was: '24.99', now: { pearls: 300, tickets: 10 }, levels: 10, desc: 'Everything in Coral Tide, plus extra pearls, 10 pulls, an avatar frame and a namecard. Also raises 10 Honor levels at once.' }
+  { tier: 1, id: 'glory', name: 'Coral Tide', usd: '9.99', now: {}, levels: 0, desc: 'Unlocks the Coral Tide rewards on every level and the season milestones (1 pearl + 5 skin tickets on every 10th level).' },
+  { tier: 2, id: 'crown', name: 'Moon Tide', usd: '19.99', was: '24.99', now: { pearls: 80, wishes: 5, tickets: 5 }, levels: 10, desc: 'Everything in Coral Tide, plus 80 pearls, 5 Standard and 5 Limited tickets (10 pulls), an avatar frame and a namecard. Also raises 10 Honor levels at once.' }
 ];
 const BP_DAILY = [
   { id: 'login', name: 'Log into the game', need: 1, xp: 100 },
@@ -56,7 +59,8 @@ const bpSeason = (t = Date.now()) => Math.max(0, Math.floor((t - BP_EPOCH.getTim
 const bpEnds = () => BP_EPOCH.getTime() + (bpSeason() + 1) * BP_WEEKS * 7 * 864e5;
 function bpState() {
   const s = bpSeason(), wk = dayKey(weekStart());
-  if (!S.bp || S.bp.season !== s) S.bp = { season: s, xp: 0, tier: 0, free: [], paid: [], wk: { key: wk, xp: 0 } };
+  if (!S.bp || S.bp.season !== s) S.bp = { season: s, xp: 0, tier: 0, free: [], paid: [], mile: [], wk: { key: wk, xp: 0 } };
+  if (!S.bp.mile) S.bp.mile = S.bp.paid.filter(l => l % 10 === 0);   // older saves: a claimed Coral Tide milestone already gave its skin tickets
   if (S.bp.wk.key !== wk) S.bp.wk = { key: wk, xp: 0 };
   return S.bp;
 }
@@ -71,30 +75,43 @@ function bpGain(n, capped = true) {
   if (bpLv() > before) setTimeout(() => toast(`Pearl Honor level ${bpLv()}!`), 300);
   return add;
 }
-/* rewards per level: one item per level and track, {reward key: amount}. Every 10th level is a milestone (bigger column,
-   BP_MILES), every 5th gives tickets, the other levels cycle through four everyday rewards (BP_CYCLE, by level % 4). */
-const BP_MILES = {
-  // every 10th level of the paid track (Coral Tide) also gives 5 skin tickets: the only place to get them (the owner's rule)
-  free: { 10: { tickets: 2 }, 20: { cfssr: 5 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { wishes: 5 }, 80: { eggur: 1 } },
-  paid: { 10: { pearls: 30, sktk: 5 }, 20: { memtk: 1, sktk: 5 }, 30: { pearls: 40, sktk: 5 }, 40: { cfur: 10, sktk: 5 }, 50: { eggur: 2, sktk: 5 }, 60: { memtk: 1, sktk: 5 }, 70: { pearls: 60, sktk: 5 }, 80: { ursel: 1, sktk: 5 } }
+/* rewards per level (remade at the owner's ask: more pearls, more pulls, more materials, Thread): one item per level and
+   track, {reward key: amount}, so the two rows line up. Every 10th level is a big reward (bigger column, BP_BIG), every
+   other 5th gives pulls (BP_FIVE, the paid one alternates Limited / Standard), the other 64 levels go round an
+   8-step cycle (BP_CYCLE, each step 8 times a season). The season milestones (BP_MILE) are separate: 1 pearl + 5 skin
+   tickets on every 10th level, only with Coral Tide or Moon Tide (the owner's rule; skin tickets come from nowhere else). */
+const BP_BIG = {
+  free: { 10: { tickets: 2 }, 20: { pearls: 10 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { pearls: 15 }, 80: { eggur: 1 } },
+  paid: { 10: { pearls: 50 }, 20: { memtk: 1 }, 30: { tickets: 5 }, 40: { cfur: 10 }, 50: { pearls: 80 }, 60: { memtk: 1 }, 70: { tickets: 10 }, 80: { ursel: 1 } }
 };
-const BP_FIVE = { free: { wishes: 1 }, paid: { tickets: 2 } };
+const BP_FIVE = { free: [{ wishes: 1 }], paid: [{ tickets: 3 }, { wishes: 3 }] };
 const BP_CYCLE = {
-  free: [{ dust: 30 }, { coins: 4000 }, { bottles: 1 }, { fragssr: 2 }],
-  paid: [{ cfssr: 3 }, { pearls: 5 }, { starlight: 8 }, { cfur: 1 }]
+  free: [{ coins: 5000 }, { thread: 15 }, { pearls: 2 }, { fragssr: 2 }, { coins: 5000 }, { thread: 15 }, { dust: 30 }, { cfssr: 2 }],
+  paid: [{ pearls: 10 }, { thread: 40 }, { tickets: 1 }, { cfur: 2 }, { pearls: 10 }, { starlight: 15 }, { wishes: 1 }, { fragur: 2 }]
 };
+const BP_MILE = { pearls: 1, sktk: 5 };
 function bpReward(lv, track) {
-  if (lv % 10 === 0) return BP_MILES[track][lv];
-  if (lv % 5 === 0) return BP_FIVE[track];
-  return BP_CYCLE[track][lv % 4];
+  if (track === 'mile') return lv % 10 === 0 ? BP_MILE : null;
+  if (lv % 10 === 0) return BP_BIG[track][lv];
+  if (lv % 5 === 0) { const L = BP_FIVE[track]; return L[(lv - 5) / 10 % L.length]; }
+  const L = BP_CYCLE[track]; return L[(lv - 1 - Math.floor(lv / 5)) % L.length];
+}
+/* what a track is worth in pearls (BP_VAL: a pull = 3 pearls (its shop price), a UR memory ticket 60, a UR selector 150,
+   a UR egg 25, a UR character / egg fragment 2.5, 2,000 gold 1, 10 Thread 1, a Coral 0.3, a skin ticket 1 (60 buy an outfit
+   worth 60 pearls)); the paid one includes the milestones */
+const BP_VAL = { ...PACK_VAL, thread: .1, starlight: .3, dust: .04, fragssr: .5, fragur: 2.5, eggur: 25, ursel: 150, sktk: 1, exp: .002 };
+const BP_TOT = what => { let t = 0; for (let l = 1; l <= BP_MAX; l++) { const r = bpReward(l, 'paid'), m = l % 10 === 0 ? BP_MILE : {}; t += what === 'pulls' ? (r.tickets || 0) + (r.wishes || 0) : (r[what] || 0) + (m[what] || 0); } return t; };
+const bpWorthOf = got => Object.entries(got).reduce((t, [k, n]) => t + n * (BP_VAL[k] || 0), 0);
+function bpWorth(track) {
+  let t = 0; for (let l = 1; l <= BP_MAX; l++) { t += bpWorthOf(bpReward(l, track)); if (track === 'paid' && l % 10 === 0) t += bpWorthOf(BP_MILE); }
+  return Math.round(t);
 }
 /* a reward as a square inventory card in its rarity colours (REW_R), amount under it */
 const bpItem = (k, n, extra = '', cls = '', attrs = '') => `<button type="button" class="inv-cell bp-sq r${REW_R[k] || 4} ${cls}" ${attrs} title="${fmt(n)} ${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}"><span class="inv-pic">${curIcon(k)}${extra}</span><b>${fmt(n)}</b></button>`;
-/* a level can give more than one item (the Coral Tide milestones add skin tickets): the first is the card, the rest small chips on it */
 const bpNm = (k, v) => `${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}`;
-const bpXtra = list => list.map(([k, v]) => `<span class="bp-xtra r${REW_R[k] || 4}">${curIcon(k)}<b>${fmt(v)}</b></span>`).join('');
-const bpCanClaim = (lv, track) => { const st = bpState(); return lv <= bpLv() && !st[track].includes(lv) && (track === 'free' || st.tier > 0); };
-const bpClaimable = () => { const out = []; for (let lv = 1; lv <= bpLv(); lv++) ['free', 'paid'].forEach(t => { if (bpCanClaim(lv, t)) out.push([lv, t]); }); return out; };
+/* track 'free' | 'paid' | 'mile' (the season milestones, every 10th level, paid only) */
+const bpCanClaim = (lv, track) => { const st = bpState(); return lv <= bpLv() && (track !== 'mile' || lv % 10 === 0) && !st[track].includes(lv) && (track === 'free' || st.tier > 0); };
+const bpClaimable = () => { const out = []; for (let lv = 1; lv <= bpLv(); lv++) ['free', 'paid', 'mile'].forEach(t => { if (bpCanClaim(lv, t)) out.push([lv, t]); }); return out; };
 const bpMissionsReady = () => Object.keys(BP_SETS).some(set => BP_SETS[set].list.some(q => qCan(q, set)));
 const bpReady = () => bpClaimable().length > 0 || bpMissionsReady();
 function bpGrant(got) {
@@ -132,7 +149,7 @@ function bpBuy(offer) {
       const got = { ...o.now }; if (o.tier === 2) { S.unlocks = [...new Set([...(S.unlocks || []), 'bp-crown'])]; bpGain(o.levels * BP_LV_XP, false); }
       bpGrant(got); vipFromUsd(usd); got.vip = Math.round(parseFloat(usd) * VIP_PER_USD);
       persist(); renderMenu(); refreshSummon(); openHonor('rewards');
-      showRewards(o.name + ' unlocked', got, o.tier === 2 ? `${prev ? '' : 'Coral Tide rewards unlocked · '}+${o.levels} levels · Moonlit Halo frame and Pearl Honor namecard added to your profile` : 'The Coral Tide rewards are unlocked on every level');
+      showRewards(o.name + ' unlocked', got, o.tier === 2 ? `${prev ? '' : 'Coral Tide rewards and season milestones unlocked · '}+${o.levels} levels · Moonlit Halo frame and Pearl Honor namecard added to your profile` : 'The Coral Tide rewards and the season milestones are unlocked on every level');
     }; } });
 }
 function bpBuyLevels() {
@@ -200,23 +217,25 @@ function renderHonor(jump) {
     <button class="btn gold sm bp-buylv" id="bpBuyLv" ${lv >= BP_MAX ? 'disabled' : ''}>${icon('plus')}Purchase level</button></div>`;
   let body = '';
   if (bpTab === 'rewards') {
-    const cell = (l, t) => { const all = Object.entries(bpReward(l, t)), [k, n] = all[0], got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
-      return bpItem(k, n, bpXtra(all.slice(1)) + (got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : ''), `bp-cell ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''} ${lock ? 'locked' : ''} ${all.length > 1 ? 'multi' : ''}`, `data-bpc="${l}|${t}" title="${esc(all.map(([a, b]) => bpNm(a, b)).join(' + '))}"`); };
+    const cell = (l, t) => { const [k, n] = Object.entries(bpReward(l, t))[0], got = st[t].includes(l), can = bpCanClaim(l, t), lock = t === 'paid' && !st.tier;
+      return bpItem(k, n, got ? `<span class="bp-ok">${icon('check')}</span>` : lock ? `<span class="bp-lock">${icon('lock')}</span>` : '', `bp-cell ${got ? 'got' : can ? 'can' : l > lv ? 'future' : ''} ${lock ? 'locked' : ''}`, `data-bpc="${l}|${t}"`); };
+    const tiers = `<div class="bp-tiers"><span class="bp-th">Lv</span>
+      <div class="bp-lab"><span class="bp-emb">${bpEmblem(0)}</span><b>${BP_NAMES.free}</b><small>Free</small></div>
+      <div class="bp-lab paid ${st.tier ? '' : 'locked'}"><span class="bp-emb">${bpEmblem(st.tier === 2 ? 2 : 1)}</span><b>${BP_NAMES.paid}</b><small>${st.tier ? `${icon('check')}${st.tier === 2 ? 'Moon Tide' : 'Active'}` : `${icon('lock')}Locked`}</small></div></div>`;
     const cols = Array.from({ length: BP_MAX }, (_, i) => i + 1).map(l => `<div class="bp-col ${l === lv ? 'now' : ''} ${l <= lv ? 'reached' : ''} ${l % 10 === 0 ? 'big' : ''}" data-lv="${l}"><span class="bp-lvt">Lv. ${l}</span>${cell(l, 'free')}${cell(l, 'paid')}</div>`).join('');
-    const n = bpClaimable().length, nm = (k, v) => `${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}`;
-    const next = Math.min(BP_MAX, Math.ceil((lv + 1) / 10) * 10);
-    const miles = Array.from({ length: BP_MAX / 10 }, (_, i) => (i + 1) * 10).map(l => { const fa = Object.entries(bpReward(l, 'free')), [fk, fn] = fa[0], pa = Object.entries(bpReward(l, 'paid')), [pk, pn] = pa[0];
-      const gf = st.free.includes(l), gp = st.paid.includes(l);
-      return `<button type="button" class="bp-mile ${l <= lv ? 'on' : ''} ${l === next && lv < BP_MAX ? 'next' : ''}" data-bpml="${l}" title="Level ${l}: ${fa.map(([a, b]) => nm(a, b)).join(' + ')} · ${BP_NAMES.paid}: ${pa.map(([a, b]) => nm(a, b)).join(' + ')}">
-        <span class="bp-mlv">Lv ${l}</span><span class="bp-mits"><i class="r${REW_R[fk] || 4} ${gf ? 'got' : bpCanClaim(l, 'free') ? 'can' : ''}">${curIcon(fk)}<b>${fmt(fn)}</b>${gf ? icon('check') : ''}</i>${fa.slice(1).map(([a, b]) => `<i class="bp-mx r${REW_R[a] || 4} ${gf ? 'got' : ''}">${curIcon(a)}<b>${fmt(b)}</b></i>`).join('')}<i class="r${REW_R[pk] || 4} ${gp ? 'got' : bpCanClaim(l, 'paid') ? 'can' : ''} ${st.tier ? '' : 'lk'}">${curIcon(pk)}<b>${fmt(pn)}</b>${gp ? icon('check') : st.tier ? '' : icon('lock')}</i>${pa.slice(1).map(([a, b]) => `<i class="bp-mx r${REW_R[a] || 4} ${gp ? 'got' : ''} ${gp || st.tier ? '' : 'lk'}">${curIcon(a)}<b>${fmt(b)}</b>${gp ? icon('check') : st.tier ? '' : icon('lock')}</i>`).join('')}</span></button>`; }).join('');
+    const n = bpClaimable().length;
+    const next = Math.min(BP_MAX, Math.ceil((lv + 1) / 10) * 10), mGot = st.mile.length;
+    // the season milestones: the same two items on every 10th level (1 pearl + 5 skin tickets), Coral Tide / Moon Tide only
+    const miles = Array.from({ length: BP_MAX / 10 }, (_, i) => (i + 1) * 10).map(l => { const got = st.mile.includes(l), can = bpCanClaim(l, 'mile');
+      return `<button type="button" class="bp-mile ${l <= lv ? 'on' : ''} ${l === next && lv < BP_MAX ? 'next' : ''} ${got ? 'got' : can ? 'can' : ''} ${st.tier ? '' : 'lk'}" data-bpml="${l}" title="Level ${l} milestone: ${Object.entries(BP_MILE).map(([a, b]) => bpNm(a, b)).join(' + ')}${st.tier ? got ? ' · claimed' : can ? ' · tap to claim' : '' : ` · needs ${BP_NAMES.paid} or Moon Tide`}">
+        <span class="bp-mlv">Lv ${l}</span><span class="bp-mits">${Object.entries(BP_MILE).map(([k, v]) => `<i class="r${REW_R[k] || 4} ${got ? 'got' : can ? 'can' : ''} ${st.tier ? '' : 'lk'}">${curIcon(k)}<b>${fmt(v)}</b>${got ? icon('check') : st.tier ? '' : icon('lock')}</i>`).join('')}</span></button>`; }).join('');
     const mlFill = Math.min(100, Math.max(0, (lv - 10) / (BP_MAX - 10) * 100));
-    body = `<div class="bp-rew">
-      <div class="bp-labels"><div class="bp-lab"><span class="bp-emb">${bpEmblem(0)}</span><b>${BP_NAMES.free}</b></div><div class="bp-lab paid ${st.tier ? '' : 'locked'}"><span class="bp-emb">${bpEmblem(1)}</span><b>${BP_NAMES.paid}</b>${st.tier ? '' : `<small>${icon('lock')}Locked</small>`}</div></div>
-      <div class="bp-track" id="bpTrack">${cols}</div>
+    body = `<div class="bp-rew v3">
+      <div class="bp-track" id="bpTrack">${tiers}${cols}</div>
       <div class="bp-side"><div class="bp-show"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(64, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + namecard</small></div>
         ${st.tier ? `<button class="btn gold bp-claim" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>` : `<button class="btn gold bp-claim" data-bptab="unlock">Unlock ${BP_NAMES.paid}</button><button class="btn ghost sm" id="bpClaim" ${n ? '' : 'disabled'}>${n ? `Claim all · ${n}` : 'Nothing to claim'}</button>`}</div>
     </div>
-    <div class="bp-mls"><div class="bp-mlh"><b>Season milestones</b><small>Every 10th level · ${BP_NAMES.paid} adds 5 skin tickets · tap one to see it on the track</small></div>
+    <div class="bp-mls ${st.tier ? '' : 'locked'}"><div class="bp-mlh"><b>Season milestones</b><small>${st.tier ? `${mGot} / ${BP_MAX / 10} claimed · ` : ''}Every 10th level: 1 pearl + 5 skin tickets · ${st.tier ? 'tap a reached one to claim it' : `only with ${BP_NAMES.paid} or Moon Tide`}</small></div>
       <div class="bp-mlrow" style="--mf:${mlFill}%"><span class="bp-mlbar" aria-hidden="true"><i></i></span>${miles}</div></div>`;
   } else if (bpTab === 'missions') {
     const set = bpMTab, L = BP_SETS[set].list, order = q => qCan(q, set) ? 0 : qDone(q, set) ? 2 : 1;
@@ -241,16 +260,18 @@ function renderHonor(jump) {
     </div>`;
   } else {
     const card = o => { const owned = st.tier >= o.tier, upg = st.tier === 1 && o.tier === 2, usd = upg ? (parseFloat(o.usd) - parseFloat(BP_OFFERS[0].usd)).toFixed(2) : o.usd;
-      const sample = [1, 2, 3, 5, 20, 80].map(l => bpReward(l, 'paid'));
-      return `<div class="bp-offer t${o.tier}"><div class="bp-ofl"><span class="bp-emb big">${bpEmblem(o.tier)}</span><b>${o.name}</b></div>
+      const sample = [1, 2, 3, 5, 10, 20, 80].map(l => bpReward(l, 'paid')), worth = bpWorth('paid') + (o.tier === 2 ? Math.round(bpWorthOf(o.now)) : 0);
+      return `<div class="bp-offer t${o.tier}"><div class="bp-ofl"><span class="bp-emb big">${bpEmblem(o.tier)}</span><b>${o.name}</b><span class="bp-worth" title="What every reward it unlocks is worth in pearls (a pull = 3 pearls)">${curIcon('pearls')}Worth ≈ <b>${fmt(Math.round(worth / 10) * 10)}</b> pearls</span></div>
         <div class="bp-ofr"><span class="lbl-sm">Get now</span>
           <div class="bp-ofits">${o.tier === 2 ? `${Object.entries(o.now).map(([k, n]) => bpItem(k, n)).join('')}<span class="inv-cell bp-sq r5"><span class="inv-pic bp-avpic">${avatarHTML(40, avatarEntry(), 'crown')}</span><b>Frame</b></span><span class="inv-cell bp-sq r5"><span class="inv-pic"><span class="nc nc-honor"></span></span><b>Namecard</b></span>` : '<span class="tiny">The Coral Tide track on all 80 levels</span>'}</div>
           ${o.tier === 2 ? `<span class="bp-ofx">Also raises <b>${o.levels}</b> Pearl Honor levels at once.</span>` : ''}
+          ${o.tier === 1 ? `<span class="lbl-sm">Season milestones · every 10th level</span>
+          <div class="bp-ofits">${Object.entries(BP_MILE).map(([k, n]) => bpItem(k, n)).join('')}<span class="tiny bp-ofmx">× ${BP_MAX / 10} = ${Object.entries(BP_MILE).map(([k, n]) => bpNm(k, n * BP_MAX / 10)).join(' + ')} a season</span></div>` : ''}
           <span class="lbl-sm">Available after leveling up</span>
           <div class="bp-ofits">${sample.map(r => Object.entries(r).map(([k, n]) => bpItem(k, n)).join('')).join('')}<span class="bp-more">…</span></div>
           <button class="bp-price" data-bpbuy="${o.id}" ${owned ? 'disabled' : ''}>${owned ? 'Unlocked' : `$${usd}${o.was && !upg ? ` <s>$${o.was}</s>` : ''}${TOPUP_FREE ? ' · free test' : ''}`}</button></div></div>`; };
     body = `<div class="bp-unlock"><div class="bp-uleft"><div class="bp-show big"><span class="nc nc-honor"></span><span class="bp-show-av">${avatarHTML(96, avatarEntry(), 'crown')}</span><b>Moon Tide</b><small>Moonlit Halo frame + Pearl Honor namecard</small></div>
-      <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
+      <p class="tiny">Unlock <b>Coral Tide</b> and raise Pearl Honor to level ${BP_MAX} to collect every Coral Tide reward of the season: ${fmt(BP_TOT('pearls'))} pearls, ${fmt(BP_TOT('pulls'))} pulls, ${fmt(BP_TOT('thread'))} Thread, 2 UR memory tickets, a UR selector and the ${BP_MAX / 10} season milestones. Real payments aren't connected yet, so both are free while testing (they still count for VIP EXP).</p></div>
       <div class="bp-offers">${BP_OFFERS.map(card).join('')}</div></div>`;
   }
   root.innerHTML = `<header class="bpx-head">
@@ -272,10 +293,11 @@ function renderHonor(jump) {
   const ma = $('#bpMAll'); if (ma) ma.onclick = () => bpClaimMissions(bpMTab);
   const ca = $('#bpClaim'); if (ca) ca.onclick = bpClaimAll;
   $('#bpBuyLv').onclick = bpBuyLevels;
-  root.querySelectorAll('[data-bpml]').forEach(b => b.onclick = () => { const t = $('#bpTrack'), c = t && t.querySelector(`.bp-col[data-lv="${b.dataset.bpml}"]`); if (!c) return;
-    t.scrollTo({ left: Math.max(0, bpColX(t, c) - (t.clientWidth - c.offsetWidth) / 2), behavior: 'smooth' }); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); });
+  const tierW = t => { const x = t.querySelector('.bp-tiers'); return x ? x.offsetWidth : 0; };
+  root.querySelectorAll('[data-bpml]').forEach(b => b.onclick = () => { if (bpCanClaim(+b.dataset.bpml, 'mile')) return bpClaimAll(); const t = $('#bpTrack'), c = t && t.querySelector(`.bp-col[data-lv="${b.dataset.bpml}"]`); if (!c) return;
+    const w = tierW(t); t.scrollTo({ left: Math.max(0, bpColX(t, c) - w - (t.clientWidth - w - c.offsetWidth) / 2), behavior: 'smooth' }); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); });
   const tr = $('#bpTrack');
-  if (tr) { if (jump || keep === null) { const c = tr.querySelector('.bp-col.now'); if (c) tr.scrollLeft = Math.max(0, bpColX(tr, c) - 120); } else tr.scrollLeft = keep;
+  if (tr) { if (jump || keep === null) { const c = tr.querySelector('.bp-col.now'); if (c) tr.scrollLeft = Math.max(0, bpColX(tr, c) - tierW(tr) - 10); } else tr.scrollLeft = keep;
     tr.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { tr.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false }); }
 }
 

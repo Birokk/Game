@@ -2356,3 +2356,4 @@ b.ccd-dname{border:0}
 .ccsl-edge.l{clip-path:polygon(calc(34% - 12px) 0,calc(34% + 2px) 0,calc(16% + 2px) 100%,calc(16% - 12px) 100%);background:linear-gradient(180deg,#9fdcff,#ffb3e0 55%,#fff)}
 .ccsl-txt{left:50%;top:auto;bottom:calc(var(--lby,0px) + 80px);align-items:center;text-align:center;transform:translateX(-50%) skewX(-8deg);animation-name:ccslTxt2}
 @keyframes ccslTxt2{0%,12%{opacity:0;transform:translateX(-50%) skewX(-8deg) translateX(-60px)}24%{opacity:1;transform:translateX(-50%) skewX(-8deg)}80%{opacity:1}100%{opacity:0}}
+@media (max-width:640px),(orientation:portrait){.cmp-map.many{height:calc(var(--cmpn,5) * 126px + 322px)}}   /* 10-stage chapters get the climb's room per stage on portrait screens */

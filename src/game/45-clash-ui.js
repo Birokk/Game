@@ -146,7 +146,7 @@ const QM_DIFF = [
   { id: 'expert', name: 'Expert', pips: 4, hpX: 1.2, brain: 'best', gold: 2, pearls: 3, gear: true, col: '#ff8a8a', need: { hard: 3 }, desc: 'Plans like auto play and has 20% more HP.' }
 ];
 const QM_RIVALS = ['raiders', 'arcane', 'traps', 'frost', 'storm', 'holy', 'fort', 'warlord', 'p-balanced', 'p-rush', 'p-defensive'];
-const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', holy: 'Holy deck', fort: 'Fortress deck', warlord: 'Warlord deck' };
+const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', holy: 'Holy deck', fort: 'Fortress deck', warlord: 'Warlord deck', titan: 'Titan deck', blaze: 'Blaze deck', bastion: 'Bastion deck', hex: 'Hex deck', gale: 'Gale deck', choir: 'Choir deck', dawn: 'Dawn deck' };
 const qmMode = id => QM_MODES.find(m => m.id === id) || QM_MODES[0];
 const qmDiff = id => QM_DIFF.find(d => d.id === id) || QM_DIFF[1];
 function qmState() { const sv = ccSave(); if (!sv.qm || typeof sv.qm !== 'object') sv.qm = { mode: 'mirror', diff: 'normal' }; if (!sv.qmWins || typeof sv.qmWins !== 'object') sv.qmWins = {}; return sv.qm; }
@@ -482,7 +482,7 @@ async function ccAutoStep() {
 /* one bot move: cards it plays are shown first (ccReveal), then applied and animated like yours */
 function ccBotStep(G) {
   if (!ccM || ccM.G !== G) return;
-  const ai = !ccM.boss && qmAi(ccM.qm || ccM.arena || ccM.train), plans = ccM.boss || ai;   // the guild boss and Hard / Expert Quick match challengers plan their turn (48-clash-auto.js)
+  const ai = !ccM.boss && qmAi(ccM.qm || ccM.arena || ccM.train || (ccM.camp && ccM.camp.st)), plans = ccM.boss || ai;   // campaign bosses of Chapters 8-10 have brain 'plan'   // the guild boss and Hard / Expert Quick match challengers plan their turn (48-clash-auto.js)
   if (plans && !ccM.bossA) { const m = ccM; (ccM.boss ? gbBossPick(G) : ccPlanPick(G, ai)).then(a => { if (ccM !== m || m.G !== G) return; m.bossA = a || { k: 'end' }; ccBotStep(G); }); return; }
   const br = ccM.qm || ccM.arena || ccM.train;
   let a = ccM.bossA || (ccM.camp && ccM.camp.st.dummy || ccM.train && ccM.train.brain === 'dummy' ? { k: 'end' } : (br && br.brain === 'easy') || (ccM.camp && ccM.camp.st.brain === 'easy') ? ccBotPickEasy(G) : ccBotPick(G));   // Chapters 1–2 of the campaign: the Easy brain   // the campaign's (and Free Training's) Dummy never acts

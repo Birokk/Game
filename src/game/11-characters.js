@@ -258,7 +258,7 @@ function renderCharacters() {
   const sg = $('#sssGo'); if (sg) sg.onclick = () => sssAwaken(c);
   const bs = $('#csBuySkin'); if (bs) bs.onclick = () => buySkin(shown.id);
   csEl.querySelectorAll('[data-art]').forEach(b => b.onclick = () => { S.artPick[c.id] = b.dataset.art; persist(); applyWallpaper(); renderMenu(); renderCharacters(); toast(`Now showing ${c.name}'s ${ASC.find(a => a.k === b.dataset.art).label.toLowerCase()} splash art.`); });
-  const br = $('#csRing'); if (br) br.onclick = buyRing;
+  const br = $('#csRing'); if (br) br.onclick = () => buyRing();
   const mp = $('#csMRPrev'); if (mp) mp.onclick = () => previewMR(c);
   $('#csViewBtn').onclick = e => { e.stopPropagation(); csView = true; csEl.classList.add('viewing'); };
   const eqb = $('#csEquip'); if (eqb) eqb.onclick = () => {

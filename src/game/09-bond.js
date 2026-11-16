@@ -1,7 +1,7 @@
 /* ---------- bond: gifts give bond xp, level 10 unlocks marriage (costs 1 ring) ---------- */
 /* total bond needed for each level (50,000 for level 10): cheap first levels, each level costs more than the last.
    Levels 1–7 take 25,000 together (400, 1,100, 2,200, 3,500, 4,800, 5,900, 7,100), levels 8–10 the other 25,000 (7,600, 8,300, 9,100). */
-const BOND_XP = [0, 400, 1500, 3700, 7200, 12000, 17900, 25000, 32600, 40900, 50000], BOND_MAX = 10, RING_PRICE = 300;
+const BOND_XP = [0, 400, 1500, 3700, 7200, 12000, 17900, 25000, 32600, 40900, 50000], BOND_MAX = 10, RING_PRICE = 99, RING_USD = 4.99;   // a ring: 99 pearls, or $4.99 in Hot Picks → Marriage ring (the owner's prices)
 const GIFTS = {
   sweets: { name: 'Lantern Sweets', xp: 40, price: 1000 },
   bracelet: { name: 'Pearl Bracelet', xp: 150, price: 4000 },
@@ -68,9 +68,34 @@ function openBuyGifts(gift = 'sweets', cur = 'coins') {
     };
   } });
 }
-function buyRing() {
-  if (S.wallet.pearls < RING_PRICE) { toast(`A ring costs ${RING_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
-  S.wallet.pearls -= RING_PRICE; S.wallet.rings++; persist(); renderMenu(); refreshCharacters(); toast('Bought 1 ring.');
+/* buy a ring: with pearls (the Bond tab, the Pearl Shop and Hot Picks) or for $4.99 (Hot Picks → Marriage ring only;
+   a free test button while TOPUP_FREE, it still gives VIP EXP) */
+function buyRing(way = 'pearls') {
+  if (way === 'usd') { if (!TOPUP_FREE) { toast('Real payments are not connected yet.'); return; } vipFromUsd(RING_USD); }
+  else { if (S.wallet.pearls < RING_PRICE) { toast(`A ring costs ${RING_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; } S.wallet.pearls -= RING_PRICE; }
+  S.wallet.rings++; persist(); renderMenu(); refreshCharacters(); if (typeof shopEl !== 'undefined' && shopEl) renderShop();
+  toast(`Bought 1 marriage ring${way === 'usd' ? ` (+${fmt(Math.round(RING_USD * VIP_PER_USD))} VIP EXP)` : ''}. You have ${fmt(S.wallet.rings)}.`);
+}
+function confirmRing(way) {
+  if (way === 'usd' && !TOPUP_FREE) { toast('Real payments are not connected yet.'); return; }
+  openModal({ title: 'Buy a marriage ring?', ic: 'shop', small: true, body: `<div class="stack" style="text-align:center;justify-items:center">
+    <span class="ring-pic sm">${curIcon('rings')}</span>
+    <p class="desc">Propose to a character at bond level ${BOND_MAX}. You have ${fmt(S.wallet.rings || 0)} ring${S.wallet.rings === 1 ? '' : 's'}.</p>
+    <span class="tiny">${way === 'usd' ? `${TOPUP_FREE ? 'Free while testing · ' : ''}+${fmt(Math.round(RING_USD * VIP_PER_USD))} VIP EXP` : `You have ${fmt(S.wallet.pearls)} pearls.`}</span>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="rgNo">Cancel</button><button class="btn gold" id="rgYes" ${way !== 'usd' && S.wallet.pearls < RING_PRICE ? 'disabled' : ''}>Buy · ${way === 'usd' ? `$${RING_USD.toFixed(2)}` : costHTML(RING_PRICE)}</button></div></div>`,
+    onMount: () => { $('#rgNo').onclick = closeModal; $('#rgYes').onclick = () => { closeModal(); buyRing(way); }; } });
+}
+/* Hot Picks → Marriage ring: the ring on its own card, for pearls or $4.99 (the Pearl Shop shows only the pearl price) */
+function ringShopHTML() {
+  const W = S.wallet, married = Object.values(S.bond || {}).filter(b => b && b.married).length;
+  const perks = [['heart', `Propose to a character at bond level ${BOND_MAX}`], ['hanger', 'Unlocks their wedding (MR) outfit when one is set'], ['sparkle', 'The Eternal Vow badge on that character'], ['rings', 'One ring per marriage']];
+  return `<div class="pass-grid ring-grid"><div class="pass-box ring-box" style="--pc:#ff86c0">
+    <span class="ring-pic">${curIcon('rings')}</span>
+    <div class="pass-head"><h3>Marriage ring</h3><span class="pass-state">You have ${fmt(W.rings || 0)}${married ? ` · ${married} married` : ''}</span></div>
+    <ul class="pass-perks">${perks.map(([k, t]) => `<li><span class="pass-pi">${k === 'rings' ? curIcon('rings') : icon(k)}</span>${esc(t)}</li>`).join('')}</ul>
+    <div class="pass-ways"><button class="mall-go pass-buy ${W.pearls >= RING_PRICE ? '' : 'poor'}" data-ring="pearls">Buy · ${curIcon('pearls')}<b>${RING_PRICE}</b></button><span class="pass-or">or</span><button class="mall-go pass-buy usd" data-ring="usd">Buy · <b>$${RING_USD.toFixed(2)}</b></button></div>
+    <span class="tiny pass-vip">${TOPUP_FREE ? 'Free while testing · ' : ''}The $ price gives +${fmt(Math.round(RING_USD * VIP_PER_USD))} VIP EXP</span>
+  </div></div>`;
 }
 function askMarry(id) {
   const e = findEntry(id);

@@ -36,11 +36,13 @@ const FARM_PCT = [0, .1, .2, .3, .45, .6, .8, 1], FARM_GOLD = [0, 0, 25e3, 8e4, 
 const FARM = { market: { build: 25e3, day: 2e4, res: 'coins' }, pub: { build: 5e4, day: 10, res: 'pearls' }, crops: { build: 0, day: 60, res: 'stamina' }, inn: { build: 1e4, day: 500, res: 'exp' } };
 const FARM_ORDER = ['market', 'pub', 'crops', 'inn'];
 const EXP_PEARLS = [[0, 0, 47.5], [1, 1, 47.5], [5, 5, 5]], EXP_UR_MULT = [1, 1, 1];   // 0 or 1 pearl, 5 pearls 5% of the time
-const BP_MILES = { free: { 10: { tickets: 2 }, 20: { cfssr: 5 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { wishes: 5 }, 80: { eggur: 1 } },
-  paid: { 10: { pearls: 30, sktk: 5 }, 20: { memtk: 1, sktk: 5 }, 30: { pearls: 40, sktk: 5 }, 40: { cfur: 10, sktk: 5 }, 50: { eggur: 2, sktk: 5 }, 60: { memtk: 1, sktk: 5 }, 70: { pearls: 60, sktk: 5 }, 80: { ursel: 1, sktk: 5 } } };
-const BP_FIVE = { free: { wishes: 1 }, paid: { tickets: 2 } };
-const BP_CYCLE = { free: [{ dust: 30 }, { coins: 4000 }, { bottles: 1 }, { fragssr: 2 }], paid: [{ cfssr: 3 }, { pearls: 5 }, { starlight: 8 }, { cfur: 1 }] };
-const bpReward = (lv, t) => lv % 10 === 0 ? BP_MILES[t][lv] : lv % 5 === 0 ? BP_FIVE[t] : BP_CYCLE[t][lv % 4];
+const BP_BIG = { free: { 10: { tickets: 2 }, 20: { pearls: 10 }, 30: { wishes: 3 }, 40: { fragur: 5 }, 50: { tickets: 3 }, 60: { cfur: 3 }, 70: { pearls: 15 }, 80: { eggur: 1 } },
+  paid: { 10: { pearls: 50 }, 20: { memtk: 1 }, 30: { tickets: 5 }, 40: { cfur: 10 }, 50: { pearls: 80 }, 60: { memtk: 1 }, 70: { tickets: 10 }, 80: { ursel: 1 } } };
+const BP_FIVE = { free: [{ wishes: 1 }], paid: [{ tickets: 3 }, { wishes: 3 }] };
+const BP_CYCLE = { free: [{ coins: 5000 }, { thread: 15 }, { pearls: 2 }, { fragssr: 2 }, { coins: 5000 }, { thread: 15 }, { dust: 30 }, { cfssr: 2 }],
+  paid: [{ pearls: 10 }, { thread: 40 }, { tickets: 1 }, { cfur: 2 }, { pearls: 10 }, { starlight: 15 }, { wishes: 1 }, { fragur: 2 }] };
+const BP_MILE = { pearls: 1, sktk: 5 };   // the season milestones: every 10th level, Coral Tide / Moon Tide only (the only skin tickets)
+const bpReward = (lv, t) => { if (lv % 10 === 0) return BP_BIG[t][lv]; if (lv % 5 === 0) { const L = BP_FIVE[t]; return L[(lv - 5) / 10 % L.length]; } const L = BP_CYCLE[t]; return L[(lv - 1 - Math.floor(lv / 5)) % L.length]; };
 const TOPUP = [[6, .99], [30, 4.99], [98, 14.99], [198, 29.99], [328, 49.99], [648, 99.99]];
 const PACKS = {
   daily: { free: { coins: 1000, bottles: 1 }, paid: [[.99, { pearls: 7, bottles: 1 }], [2.99, { pearls: 20, cfssr: 1, bottles: 1 }], [4.99, { pearls: 34, cfssr: 2, bottles: 2 }], [9.99, { pearls: 70, cfur: 1, cfssr: 2, bottles: 3 }]] },
@@ -61,15 +63,15 @@ const GEAR_TRY = { 3: 75, 4: 125, 5: 190 }, GEAR_BT = { 10: 20, 20: 50, 30: 100 
 const gearChance = n => Math.max(.35, .9 - .015 * n), gearCap = (r, st) => r === 5 ? [0, 30, 35, 40][st] : r === 4 ? 20 : 10;
 const GEAR_STAGES = [{ lv: 1, ur: 0, ssr: .30, dbl: .25 }, { lv: 10, ur: 0, ssr: .36, dbl: .30 }, { lv: 20, ur: .06, ssr: .40, dbl: .33 }, { lv: 30, ur: .09, ssr: .44, dbl: .40 }, { lv: 40, ur: .11, ssr: .48, dbl: 1 }];
 const GOLD_STAGES = [{ lv: 1, st: 5, g: 3000, x: 10 }, { lv: 10, st: 10, g: 7000, x: 15 }, { lv: 20, st: 15, g: 12000, x: 20 }, { lv: 30, st: 20, g: 18000, x: 25 }, { lv: 40, st: 25, g: 26000, x: 30 }];
-const BR_NEED = r => 200 + 50 * r, BR_CH = [0, 3, 7, 11, 15, 19];
+const BR_NEED = r => 200 + 50 * r, BR_CH = [0, 3, 7, 11, 15, 19, 21, 23, 25, 27, 29];
 const AR_RANKS = [['Bronze', 0], ['Silver', 1000], ['Gold', 2000], ['Platinum', 3000], ['Diamond', 4000], ['Mythic', 5000], ['Ascendant', 5250], ['Celestial', 5500]];
 const AR_VP = [[25, 0, 25, 0], [22, -2, 22, -2], [20, -4, 20, -4], [18, -6, 18, -6], [15, -8, 15, -8], [12, -10, 12, -10], [10, -8, 10, -6], [10, -10, 10, -10]];
 const AR_WEEK = [[5, 50], [10, 80], [15, 120], [20, 160], [25, 200], [30, 260], [40, 320], [50, 400]];
 const AR_WIN = [.80, .72, .60, .52, .42, .34, .22, .15];              // assumed win chance against your own rank's brains (easy → expert planner)
 const arRank = vp => AR_RANKS.filter(r => vp >= r[1]).length - 1;
-const AR_SHOP = [['tickets', 1, 100, 2, 1], ['wishes', 1, 80, 2, 1.2], ['bottles', 1, 20, 3, 1.4], ['coins', 1e4, 15, 3, 1.4], ['pearls', 5, 60, 1, .7], ['starlight', 10, 40, 2, .8], ['cfssr', 3, 30, 2, 1],
+const AR_SHOP = [['tickets', 1, 100, 2, 1], ['wishes', 1, 80, 2, 1.2], ['bottles', 1, 20, 1, 1.4], ['coins', 1e4, 15, 3, 1.4], ['pearls', 1, 60, 1, .7], ['starlight', 10, 40, 2, .8], ['cfssr', 3, 30, 2, 1],
   ['cfur', 1, 50, 2, .8], ['fragssr', 3, 25, 2, 1], ['fragur', 1, 40, 1, .7], ['gplush', 1, 25, 2, .9], ['exp', 500, 20, 2, .9], ['nametk', 1, 120, 1, .25], ['eggur', 1, 350, 1, .2], ['memtk', 1, 900, 1, .15], ['ictk', 2, 30, 2, 1]];
-const G_SHOP = [['tickets', 1, 50, 1, 1], ['wishes', 1, 40, 1, 1.2], ['bottles', 1, 10, 3, 1.4], ['coins', 5000, 8, 3, 1.4], ['cfssr', 3, 15, 2, 1], ['cfur', 1, 25, 2, .8], ['fragssr', 3, 10, 2, 1], ['fragur', 1, 20, 1, .7],
+const G_SHOP = [['tickets', 1, 50, 1, 1], ['wishes', 1, 40, 1, 1.2], ['bottles', 1, 10, 1, 1.4], ['coins', 5000, 8, 3, 1.4], ['cfssr', 3, 15, 2, 1], ['cfur', 1, 25, 2, .8], ['fragssr', 3, 10, 2, 1], ['fragur', 1, 20, 1, .7],
   ['gplush', 1, 15, 2, .9], ['gbracelet', 2, 10, 2, .9], ['exp', 300, 10, 2, .9], ['nametk', 1, 60, 1, .25], ['memtk', 1, 450, 1, .15], ['ictk', 1, 12, 2, 1]];
 const SHOP_PRIO = ['memtk', 'eggur', 'cfur', 'pearls', 'tickets', 'wishes', 'fragur', 'ictk', 'sktk', 'cfssr', 'starlight', 'fragssr', 'gplush', 'bottles', 'coins', 'exp', 'gbracelet'];
 const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [15, 1, .3, 9000, 1], [30, 2, .35, 14000, 2], [45, 2, .45, 20000, 2], [60, 3, .5, 26000, 3], [75, 3, .6, 32000, 3]];
@@ -80,6 +82,8 @@ const CAMP = [];
 [.98, .98, .98, .98, .90, .98, .90, .84, .98, .90].forEach(p => CAMP.push({ ch: 1, p, sx: .6 }));
 [.97, .93, .97, .97, .93, .78, .97, .93, .90, .76].forEach(p => CAMP.push({ ch: 2, p, sx: .55 }));
 for (let c = 3; c <= 5; c++) for (let i = 0; i < 10; i++) CAMP.push({ ch: c, p: i === 4 || i === 9 ? .8 : .9, sx: .7 });
+[[.73, .80, .63, .73, .50, .80, .57, .83, .63, .40], [.60, .57, .63, .43, .50, .83, .33, .53, .77, .30], [.63, .37, .57, .73, .37, .73, .67, .60, .40, .27],
+ [.80, .67, .57, .40, .37, .70, .57, .40, .47, .37], [.77, .83, .63, .77, .27, .57, .60, .57, .37, .23]].forEach((L, k) => L.forEach(p => CAMP.push({ ch: 6 + k, p, sx: .45 })));   // Chapters 6-10 (harder, weakness / resistance)
 CAMP.forEach((s, i) => { s.i = i; s.first = i === 0 || CAMP[i - 1].ch !== s.ch; s.last = i === CAMP.length - 1 || CAMP[i + 1].ch !== s.ch; });
 const TREE = [.60, .57, .50, .47, .30, .40, .47, .20, .13, .07].map((p, i) => ({ no: i + 1, p, sx: .5 }));
 const RAID_P = { gear: [.87, .84, .8, .78, .75], gold: [.85, .78, .7, .6, .5] };   // raid guardians (tuned for ~77–87%, vault V ~50%)
@@ -286,7 +290,7 @@ function vipRewards(A) { const v = vipLv(A); while (A.vipGot < v) { A.vipGot++; 
 function honorGain(A, n) { const room = Math.max(0, 8000 - A.honor.wk), g = Math.min(n, room); A.honor.wk += g; A.honor.xp += g; honorLevels(A); }
 function honorLevels(A) { const H = A.honor; while (H.lv < 80 && H.xp >= H.lv * 800) H.lv++;
   while (H.claimed < H.lv) { H.claimed++; give(A, bpReward(H.claimed, 'free'), 'Pearl Honor'); }
-  if (H.tier) while (H.claimedPaid < H.lv) { H.claimedPaid++; give(A, bpReward(H.claimedPaid, 'paid'), 'Pearl Honor (paid)'); } }
+  if (H.tier) while (H.claimedPaid < H.lv) { H.claimedPaid++; give(A, bpReward(H.claimedPaid, 'paid'), 'Pearl Honor (paid)'); if (H.claimedPaid % 10 === 0) give(A, BP_MILE, 'Pearl Honor (milestones)'); } }
 
 /* ---------- stamina ---------- */
 const memberOn = A => ({ p1: A.member.p1 >= A.day, p2: A.member.p2 >= A.day });
@@ -309,7 +313,7 @@ function playStage(A, st, starsArr, isTree) {
   return true;
 }
 function campMiles(A) {
-  for (let ch = 0; ch <= 5; ch++) { const n = CAMP.filter(s => s.ch === ch).reduce((t, s) => t + A.camp.stars[s.i].reduce((a, b) => a + b, 0), 0);
+  for (let ch = 0; ch <= 10; ch++) { const n = CAMP.filter(s => s.ch === ch).reduce((t, s) => t + A.camp.stars[s.i].reduce((a, b) => a + b, 0), 0);
     if (ch === 0) { if (n >= 15 && !A.camp.miles.has('c0')) { A.camp.miles.add('c0'); gain(A, 'wishes', 10, 'campaign rewards'); } }
     else for (const m of [10, 20, 30]) if (n >= m && !A.camp.miles.has(ch + ':' + m)) { A.camp.miles.add(ch + ':' + m); gain(A, 'pearls', 10, 'campaign rewards'); gain(A, 'bottles', 1, 'campaign rewards'); } }
 }
@@ -372,7 +376,7 @@ function spendings(A) {
   if (P.key === 'small' && d === 3) buyTopup(A, 2, 'Top Up $14.99 (for outfits)');
   if (P.whale) {
     if (d === 1) { for (let i = 0; i < 6; i++) buyTopup(A, i); pay(A, 4.99, 'First Top-Up offer'); grantChar(A, randStdUR(A), 'First Top-Up offer'); A.urGot++; A.urCharGot++; gain(A, 'stamina', 240); gain(A, 'wishes', 10, 'First Top-Up offer');
-      pay(A, 19.99, 'Pearl Honor: Moon Tide'); A.honor.tier = 2; gain(A, 'pearls', 300, 'Pearl Honor (Moon Tide)'); gain(A, 'tickets', 10, 'Pearl Honor (Moon Tide)'); A.honor.xp += 8000; honorLevels(A);
+      pay(A, 19.99, 'Pearl Honor: Moon Tide'); A.honor.tier = 2; gain(A, 'pearls', 80, 'Pearl Honor (Moon Tide)'); gain(A, 'wishes', 5, 'Pearl Honor (Moon Tide)'); gain(A, 'tickets', 5, 'Pearl Honor (Moon Tide)'); A.honor.xp += 8000; honorLevels(A);
       PACKS.monthly.paid.forEach((_, j) => buyPack(A, 'monthly', j)); }
     if (dow === 0) PACKS.weekly.paid.forEach((_, j) => buyPack(A, 'weekly', j));
     PACKS.daily.paid.forEach((_, j) => buyPack(A, 'daily', j));
@@ -450,7 +454,7 @@ function pearlBuild(A) {
     while (c.bt < stars(c) && A.w.pearls >= 10 + 30) { spend(A, 'pearls', 10, 'Breakthrough'); c.bt++; }
     while (c.pot < (stars(c) + 1) * 6 && A.w.pearls >= (c.pot % 6 === 5 ? 5 : 1) + 30) { spend(A, 'pearls', c.pot % 6 === 5 ? 5 : 1, 'Potential'); c.pot++; }
   }
-  if (P.whale) { for (const c of F) { if (bondLv(c.bond) >= 10 && !c.married && (A.w.rings > 0 || A.w.pearls >= 300)) { if (A.w.rings > 0) A.w.rings--; else spend(A, 'pearls', 300, 'rings'); c.married = true; log(A, `married ${c.name}`); } }
+  if (P.whale) { for (const c of F) { if (bondLv(c.bond) >= 10 && !c.married && (A.w.rings > 0 || A.w.pearls >= 99)) { if (A.w.rings > 0) A.w.rings--; else spend(A, 'pearls', 99, 'rings'); c.married = true; log(A, `married ${c.name}`); } }
     for (let k = A.incB || 0; k < 2; k++) if (spend(A, 'pearls', [15, 30][k], 'incubators')) A.incB = k + 1; }
 }
 function goldBuild(A) {
@@ -663,6 +667,6 @@ for (const r of Object.values(res)) {
   console.log(`\n=== ${r.label} ===  $${r.usd.mean}  pearls in ${r.pearlsIn.med}  pulls ${r.pulls.med} (p10 ${r.pulls.p10}, p90 ${r.pulls.p90})`);
   console.log(`UR copies ${r.urCopies.med}, UR chars owned ${r.urChars.med}, 6★ URs ${r.six.med} (any 6★ ${Math.round(r.sixAny * 100)}%), Aria stars ${r.ariaStars.med} (owned ${Math.round(r.ariaOwned * 100)}%)`);
   console.log(`top CS ${r.topCS.med} (p10 ${r.topCS.p10} p90 ${r.topCS.p90}), 2nd ${r.top2CS.med}, 3rd ${r.top3CS.med}; grades top`, r.gradeTop, `SSS chars ${r.sssChars.med} SS+ ${r.ssPlus.med} S+ ${r.sPlus.med} UR+ ${r.urPlus.med}`);
-  console.log(`lv ${r.lv.med} vip ${r.vip.med} honor ${r.honor.med} BR ${r.br.med} camp ${r.camp.med}/55 stars ${r.campStars.med} tree ${r.tree.med}/10 arena ${r.arenaVP.med} farm`, Object.fromEntries(Object.entries(r.farm).map(([k, v]) => [k, v.med])), `ach ${r.ach.med} skins ${r.skins.med} pets ${r.pets.med} urMems ${r.urMems.med} gearUR ${r.gearUR.med} fullURset ${r.fullURset}`);
+  console.log(`lv ${r.lv.med} vip ${r.vip.med} honor ${r.honor.med} BR ${r.br.med} camp ${r.camp.med}/${CAMP.length} stars ${r.campStars.med} tree ${r.tree.med}/10 arena ${r.arenaVP.med} farm`, Object.fromEntries(Object.entries(r.farm).map(([k, v]) => [k, v.med])), `ach ${r.ach.med} skins ${r.skins.med} pets ${r.pets.med} urMems ${r.urMems.med} gearUR ${r.gearUR.med} fullURset ${r.fullURset}`);
   console.log('pearl src', r.pearlSrc); console.log('pearl sink', r.pearlSink); console.log('gold src', r.goldSrc); console.log('gold sink', r.goldSink); console.log('pullsBy', r.pullsBy, 'stamLeft', r.stamLeft.med);
 }

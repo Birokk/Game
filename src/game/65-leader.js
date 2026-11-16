@@ -54,7 +54,8 @@ const LS_ADV = .25;
 function ccDeckStyle(cards) { const n = {}; for (const id of cards || []) { const st = (ccDef(id) || {}).style; if (st) n[st] = (n[st] || 0) + 1; } return Object.keys(n).sort((a, b) => n[b] - n[a])[0] || null; }
 const ccAdvOf = (foe, me) => !foe || !me ? null : CC_WEAK[foe] === me ? 'weak' : foe === me ? 'res' : null;
 const gbFoeStyle = () => Object.keys(CC_STYLES)[((gbKey() % 5) + 5) % 5];
-const lsCampFoeStyle = st => { if (!st || (st.ch && st.ch.id === 'c0')) return null; const pre = id => (CC_PRESETS.find(d => d.id === id) || {}).cards; return ccDeckStyle(st.botDeck ? pre(st.botDeck) : st.deck ? pre(st.deck) : st.bot); };   // the stage bot's deck (the same pick as ccCampMatch)
+const LS_CAMP_ADV_FROM = 6;   // campaign chapters 0-5 are the basic game: no weakness / resistance (the owner's rule); the Great Tree always has them
+const lsCampFoeStyle = st => { if (!st || (st.ch && (st.ch.id === 'c0' || (!st.ch.tower && st.ch.no < LS_CAMP_ADV_FROM)))) return null; const pre = id => (CC_PRESETS.find(d => d.id === id) || {}).cards; return ccDeckStyle(st.botDeck ? pre(st.botDeck) : st.deck ? pre(st.deck) : st.bot); };   // the stage bot's deck (the same pick as ccCampMatch)
 /* applied in startClash right after the match is built */
 function lsApplyAdv(G, foeStyle, boss) {
   const L = G.lead && G.lead[0], me = ccM && ccM.leader && ccM.leader.ccStyle, adv = ccAdvOf(foeStyle, me), P = G.players[1];

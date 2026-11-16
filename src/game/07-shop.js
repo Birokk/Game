@@ -91,7 +91,7 @@ function vipShopBar() {
     <span class="vsb-mid"><span class="vsb-rank">${esc(VIP_RANKS[lv] || 'Guest')}</span><span class="vsb-xp">${curIcon('vip')}<span class="vsb-bar"><i style="width:${pct}%"></i><em>${next ? `${fmt(xp)} / ${fmt(next)}` : `${fmt(xp)} · max level`}</em></span></span></span>
     <button class="vsb-btn" data-open="vip">Privileges${vipReady() ? '<span class="dot-n"></span>' : ''}</button></div>`;
 }
-let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'skins' (new outfits)
+let shopTab = 'hot', shopEl = null, shopPick = null, hotSub = 'pass';   // Hot Picks: 'pass' (memberships) | 'ring' (marriage ring) | 'skins' (new outfits)
 /* top-up pack pictures: the admin's upload (Settings → Admin → Top Up icons, media keys topup:0…5) or the pearl icon; no rarity frame */
 const topupIcon = i => { const c = MEDIA.get('topup:' + i); return c ? `<img class="cic" src="${c}" alt="">` : curIcon('pearls'); };
 function openShop(tab) {
@@ -113,7 +113,7 @@ const hotPicks = () => { const all = shopSkins(); return [...all.filter(e => !ow
    picture worth seeing through (the admin's shop wallpaper shop:bg, else the home wallpaper's art) with soft drifting
    glows; the sidebar rows carry a line on what is inside (SHOP_SUB). The backdrop node is kept across redraws while its
    picture stays the same, so buying or switching tabs never re-decodes or flashes it. */
-const SHOP_SUB = { hot: 'Memberships · new outfits', skins: 'Every outfit for sale', topup: 'Pearls and bundles', pearl: 'Tickets · rings · name ticket', exchange: 'Corals · Seaweeds · more', points: 'Featured · Permanent shop', board: 'Board skins · card backs', arena: 'Spend arena tokens' };
+const SHOP_SUB = { hot: 'Memberships · ring · new outfits', skins: 'Every outfit for sale', topup: 'Pearls and bundles', pearl: 'Tickets · rings · name ticket', exchange: 'Corals · Seaweeds · more', points: 'Featured · Permanent shop', board: 'Board skins · card backs', arena: 'Spend arena tokens' };
 /* the blurred backdrop of a glass page: an admin picture (adminKey, e.g. shop:bg), else the home wallpaper's art, else
    soft glows; also used by the Bag (20-inventory.js). Pages keep the node across redraws while data-k stays the same. */
 function pageBgHTML(adminKey) {
@@ -132,9 +132,9 @@ function renderShop() {
   if (shopTab === 'hot') {
     const picks = hotPicks(); if (!picks.some(e => e.id === shopPick)) shopPick = picks[0] ? picks[0].id : null;
     const e = hotSub === 'skins' && shopPick && findEntry(shopPick), par = e && findEntry(e.parent);
-    strip = [['pass', 'Memberships'], ['skins', 'New outfits']].map(([k, l]) => `<button class="mall-pill ${k === hotSub ? 'on' : ''}" data-hotsub="${k}">${l}</button>`).join('');
+    strip = [['pass', 'Memberships'], ['ring', 'Marriage ring'], ['skins', 'New outfits']].map(([k, l]) => `<button class="mall-pill ${k === hotSub ? 'on' : ''}" data-hotsub="${k}">${l}</button>`).join('');
     bg = e ? `<img class="mall-art" src="${baseSplash(e)}" alt="">` : '';
-    body = hotSub === 'pass' ? passShopHTML() : e ? `<div class="mall-hot">
+    body = hotSub === 'pass' ? passShopHTML() : hotSub === 'ring' ? ringShopHTML() : e ? `<div class="mall-hot">
         <div class="mall-hot-name"><h1>${esc(e.name)}</h1><span class="mall-time">${rtag(e.rarity)}${par ? esc(par.name) : 'Outfit'}</span></div>
         <div class="mall-thumbs">${picks.map(x => `<button class="mall-thumb ${x.id === shopPick ? 'on' : ''}" data-pick="${esc(x.id)}"><img src="${baseCard(x)}" alt=""><b>${esc(x.name)}</b></button>`).join('')}</div>
         <div class="mall-price"><span>${curIcon('pearls')}<b>${SKIN_PRICE}</b><i class="mall-or">or</i>${curIcon('sktk')}<b>${sktkCost(e)}</b></span>${owns(e.id) ? '<button class="mall-go owned" disabled>Owned</button>' : `<button class="mall-go" data-skin="${esc(e.id)}">Buy ${icon('up')}</button>`}</div>
@@ -183,7 +183,7 @@ function renderShop() {
     <div class="mall-top"><div class="inv-title"><span class="inv-badge">${icon('shop')}</span><h2 class="ts">Shop</h2></div>
       <div class="inv-cur">${(shopTab === 'points' ? ['spt', 'sptp', 'pearls'] : shopTab === 'arena' ? ['atok', 'pearls'] : shopTab === 'exchange' && exSub === 'frags' ? ['cfssr', 'cfur', 'pearls'] : ['pearls', 'starlight', 'dust']).map(k => `<div class="cur">${curIcon(k)}<b>${fmt(k === 'spt' ? PT_FEAT.reduce((a, b) => a + ptOf(b), 0) : k === 'sptp' ? ptOf('perm') : W[k] || 0)}</b></div>`).join('')}<button class="inv-x" id="shopClose" aria-label="Close">${icon('close')}</button></div></div>
     <aside class="mall-side"><span class="mallx-gh">${icon('shop')}Store<em>${SHOP_TABS.length}</em></span>${SHOP_TABS.map(([k, ic, l]) => `<button class="evp-item ${k === shopTab ? 'on' : ''}" data-stab="${k}"><span class="evp-ic">${icon(ic)}</span><span class="mallx-it"><b>${l}</b>${SHOP_SUB[k] ? `<small>${SHOP_SUB[k]}</small>` : ''}</span>${k === 'topup' && packsReady() ? '<span class="dot-n"></span>' : ''}</button>`).join('')}</aside>
-    <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && hotSub === 'pass' ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
+    <section class="mall-main ${shopTab === 'hot' && hotSub === 'skins' ? 'hot' : ''} ${shopTab === 'hot' && (hotSub === 'pass' || hotSub === 'ring') ? 'passes' : ''}">${bg}<div class="mall-strip">${strip}</div><div class="mall-body">${body}</div></section>
     <p class="mall-foot">Please spend responsibly.</p>`;
   const nb = shopEl.querySelector('.mallx-bg'); if (oldBg && nb && oldBg.dataset.k === nb.dataset.k) nb.replaceWith(oldBg);
   const side = shopEl.querySelector('.mall-side'), bodyEl = shopEl.querySelector('.mall-body'), onIt = side && side.querySelector('.evp-item.on');
@@ -195,6 +195,7 @@ function renderShop() {
   shopEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { shopPick = b.dataset.pick; renderShop(); });
   shopEl.querySelectorAll('[data-hotsub]').forEach(b => b.onclick = () => { hotSub = b.dataset.hotsub; renderShop(); });
   shopEl.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => confirmPass(b.dataset.pass, b.dataset.way));
+  shopEl.querySelectorAll('[data-ring]').forEach(b => b.onclick = () => confirmRing(b.dataset.ring));
   shopEl.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { buySkin(b.dataset.skin); renderShop(); });
   shopEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => buyShop(b.dataset.buy));
   shopEl.querySelectorAll('[data-topup]').forEach(b => b.onclick = () => { if (!TOPUP_FREE) return; const i = +b.dataset.topup, [n, usd] = TOPUP[i], bo = topupBonus(i);
@@ -299,7 +300,7 @@ function buyShop(id) {
   else if (id.startsWith('pt-')) { const k = id.slice(3); if (W.pearls < TICKET_PEARLS) { toast(`A ticket costs ${TICKET_PEARLS} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= TICKET_PEARLS; W[k]++; msg = `Bought 1 ${TK_NAME[k].toLowerCase()}.`; }
   else if (id === 'pn-name') { if (W.pearls < NAMETK_PEARLS) { toast(`A name change ticket costs ${NAMETK_PEARLS} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= NAMETK_PEARLS; W.nametk = (W.nametk || 0) + 1; msg = 'Bought 1 name change ticket.'; }
   else if (id === 'sn-name') { if (!pay('starlight', NAMETK_CORALS)) return; W.nametk = (W.nametk || 0) + 1; msg = 'Bought 1 name change ticket.'; }
-  else if (id === 'pr-ring') { if (W.pearls < RING_PRICE) { toast(`A ring costs ${RING_PRICE} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= RING_PRICE; W.rings++; msg = 'Bought 1 marriage ring.'; }
+  else if (id === 'pr-ring') { buyRing('pearls'); return; }
   else if (id.startsWith('mo-')) { const bk = id.slice(3), m = monthly(); if (m[bk] >= MONTHLY_LIMIT) return; if (!pay('dust', MONTHLY_PRICE)) return; m[bk]++; W[TK(bk)]++; msg = `Bought 1 monthly ${TK_NAME[TK(bk)].toLowerCase()}.`; }
   persist(); renderMenu(); refreshSummon(); renderShop(); toast(msg);
 }

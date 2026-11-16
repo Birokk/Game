@@ -38,6 +38,17 @@ const CC_CAMP_DECKS = {
   titan: ['AGG-U08', 'AGG-U08', 'AGG-U07', 'AGG-U07', 'AGG-U03', 'AGG-U03', 'DEF-U04', 'DEF-U04', 'SUP-U06', 'SUP-U06', 'CON-U02', 'CON-U02', 'CON-U04', 'CON-U04', 'MOB-U07', 'MOB-U07', 'CON-U08', 'CON-U08', 'AGG-S04', 'AGG-S04', 'AGG-S02', 'AGG-S02', 'CON-S04', 'CON-S04', 'AGG-E02', 'AGG-E02', 'DEF-T02', 'DEF-T02', 'SUP-E02', 'SUP-E02'],
   warlord: ['AGG-U08', 'AGG-U08', 'AGG-U07', 'AGG-U07', 'SUP-U06', 'SUP-U06', 'SUP-U03', 'SUP-U03', 'CON-U02', 'CON-U02', 'CON-U04', 'CON-U04', 'MOB-U01', 'MOB-U01', 'MOB-U07', 'MOB-U07', 'MOB-U06', 'MOB-U06', 'AGG-S02', 'AGG-S02', 'AGG-S04', 'AGG-S04', 'SUP-E02', 'SUP-E02', 'AGG-E02', 'AGG-E02', 'DEF-T02', 'DEF-T02', 'AGG-S01', 'AGG-S01']
 };
+/* Chapters 6-10: one playstyle each (mono decks), so the weakness / resistance is clear (ccDeckStyle) */
+const ccMono = (st, ids) => ids.flatMap(x => [st + '-' + x, st + '-' + x]);
+Object.assign(CC_CAMP_DECKS, {
+  blaze: ccMono('AGG', ['U01', 'U02', 'U03', 'U04', 'U05', 'U06', 'U07', 'U08', 'S01', 'S02', 'S04', 'T01', 'T02', 'E01', 'E02']),
+  bastion: ccMono('DEF', ['U01', 'U02', 'U03', 'U04', 'U05', 'U06', 'U07', 'U08', 'S01', 'S02', 'S03', 'S04', 'T01', 'T02', 'E02']),
+  hex: ccMono('CON', ['U01', 'U02', 'U03', 'U04', 'U05', 'U06', 'U07', 'U08', 'S01', 'S02', 'S03', 'S04', 'T01', 'T02', 'E01']),
+  gale: ccMono('MOB', ['U01', 'U02', 'U03', 'U04', 'U05', 'U06', 'U07', 'U08', 'S01', 'S02', 'S03', 'S04', 'T01', 'T02', 'E02']),
+  choir: ccMono('SUP', ['U01', 'U02', 'U03', 'U04', 'U05', 'U06', 'U07', 'U08', 'S01', 'S02', 'S03', 'S04', 'T01', 'T02', 'E02']),
+  // the last boss: support at its heart (weak to Aggression) with the heaviest hitters of every style
+  dawn: ['SUP-U02', 'SUP-U02', 'SUP-U04', 'SUP-U04', 'SUP-U06', 'SUP-U06', 'SUP-U03', 'SUP-U03', 'SUP-U08', 'SUP-U08', 'AGG-U08', 'AGG-U08', 'DEF-U04', 'DEF-U04', 'CON-U02', 'CON-U02', 'MOB-U06', 'MOB-U06', 'SUP-S01', 'SUP-S01', 'SUP-S03', 'SUP-S03', 'AGG-S04', 'AGG-S04', 'SUP-T02', 'SUP-T02', 'DEF-T02', 'DEF-T02', 'SUP-E02', 'SUP-E02']
+});
 const ccOne = t => [{ id: 'go', at: 'low', t }];   // a Chapter 1 stage's single coach tip (under the battle line, so the bot's side stays visible)
 
 const CC_CAMP = [{
@@ -164,16 +175,16 @@ const CC_CAMP = [{
       setup: G => { ccCampUnit(G, 1, 'MOB-U01', 0, 0); ccCampUnit(G, 1, 'MOB-U03', 2, 0); },
       stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'kills', n: 8, t: 'Destroy 8 enemy units' }, { k: 'round', n: 15, t: 'Win by round 15' }],
       tips: ccOne('<b>Tailwind</b>: moving costs no AP, for the bot too. Its assassins will shift lanes, so keep every lane guarded.') },
-    { id: '2-3', name: 'Avalanche', twist: 'Blood Moon · a raider already out', ev: 'bloodmoon', hp: [20, 8], first: 0, brain: 'easy', seed: 303, bot: CC_CAMP_DECKS.raiders,
-      intro: 'Raiders ride the avalanche down the mountain under a red moon. One is already out and every unit hits harder.',
+    { id: '2-3', name: 'Avalanche', twist: 'Raiders ride the snow · one already out', hp: [20, 8], first: 0, brain: 'easy', seed: 303, bot: CC_CAMP_DECKS.raiders,
+      intro: 'Raiders ride the avalanche down the mountain. One is already out, charging at your lines.',
       setup: G => { ccCampUnit(G, 1, 'AGG-U02', 0, 0); },
       stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 12, t: 'Win by round 12' }],
-      tips: ccOne('<b>Blood Moon</b> and a raider already out, Block its lane right away.') },
-    { id: '2-4', name: 'The Ice Caverns', twist: 'Starfall: draw 3 a turn · traps everywhere', ev: 'starfall', hp: [20, 10], first: 0, brain: 'easy', seed: 304, bot: CC_CAMP_DECKS.traps,
-      intro: 'Glittering caverns under the glacier. Starlight gives both sides three cards a turn, and the hunters have set traps in two lanes already.',
+      tips: ccOne('A raider is already out: block its lane right away, then push the other two.') },
+    { id: '2-4', name: 'The Ice Caverns', twist: 'Traps in two lanes · a Protector', hp: [20, 10], first: 0, brain: 'easy', seed: 304, bot: CC_CAMP_DECKS.traps,
+      intro: 'Glittering caverns under the glacier. The hunters have set traps in two lanes already, with a Protector in the middle.',
       setup: G => { ccCampTrap(G, 1, 'MOB-T02', 0); ccCampTrap(G, 1, 'DEF-T02', 2); ccCampUnit(G, 1, 'DEF-U08', 1, 0); },
       stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }],
-      tips: ccOne('<b>Starfall</b>: three cards a turn. Traps wait in the left and right lanes: send something cheap in first.') },
+      tips: ccOne('Traps wait in the left and right lanes: send something cheap in first.') },
     { id: '2-5', name: 'The Frost Witch', twist: 'Mid-chapter boss: stuns, curses and snares', boss: true, hp: [20, 10], first: 0, brain: 'easy', seed: 305, bot: CC_CAMP_DECKS.frost,
       intro: 'The Frost Witch herself. Her apprentices curse and stun from the back row, and snares lie in two lanes.',
       setup: G => { ccCampUnit(G, 1, 'CON-U02', 1, 1); ccCampUnit(G, 1, 'CON-U03', 0, 1); ccCampUnit(G, 1, 'DEF-U07', 1, 0); ccCampTrap(G, 1, 'CON-T02', 1); ccCampTrap(G, 1, 'MOB-T02', 2); },
@@ -188,11 +199,11 @@ const CC_CAMP = [{
       setup: G => { ccCampUnit(G, 1, 'MOB-U06', 1, 0); ccCampUnit(G, 1, 'MOB-U07', 0, 0); },
       stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 14, t: 'Win by round 14' }],
       tips: ccOne('<b>Rainstorm</b>: 5 AP a turn for both sides. Phantoms hit your back row first, so don\'t leave Ranged units alone.') },
-    { id: '2-8', name: 'The Iron Glacier', twist: 'Scorching Sun on the ice · a tough fort', ev: 'heat', hp: [20, 9], first: 0, brain: 'easy', seed: 308, bot: CC_CAMP_DECKS.fort,
-      intro: 'A fort carved into the glacier. A strange sun melts the ice: Overtime from round 12.',
+    { id: '2-8', name: 'The Iron Glacier', twist: 'A tough fort on the ice', hp: [20, 9], first: 0, brain: 'easy', seed: 308, bot: CC_CAMP_DECKS.fort,
+      intro: 'A fort carved into the glacier, Guardians on both flanks.',
       setup: G => { ccCampUnit(G, 1, 'DEF-U02', 0, 0); ccCampUnit(G, 1, 'DEF-U07', 2, 0); },
-      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 16, t: 'Win by round 16' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }],
-      tips: ccOne('<b>Scorching Sun</b>: Overtime from round 12. The fort is tough: strike the open middle lane early.') },
+      stars: [{ k: 'win', t: 'Clear the stage' }, { k: 'round', n: 18, t: 'Win by round 18' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }],
+      tips: ccOne('The fort is tough: strike the open middle lane early.') },
     { id: '2-9', name: 'The Crystal Gate', twist: 'Arcane Surge · battle mages', ev: 'surge', hp: [20, 9], first: 0, brain: 'easy', seed: 309, bot: CC_CAMP_DECKS.arcane,
       intro: 'The gate to the summit is guarded by battle mages whose spells hit harder in the surge, with a Counter Trap in the middle.',
       setup: G => { ccCampUnit(G, 1, 'CON-U04', 2, 1); ccCampTrap(G, 1, 'DEF-T01', 1); },
@@ -223,7 +234,7 @@ const CC_CAMP_EASY = [
     ['The Windmill', 'Tailwind: moving is free', 'p-rush', 8, 'wind', 'An old windmill turns in a friendly breeze. Moving costs no AP, so switch lanes as much as you like.', '<b>Tailwind</b>: moving is free. Slide your units to the lane with no defender.', [['moves', 2], ['hp', 12]]],
     ['Honey Hollow', 'A few bees and a lot of honey', 'storm', 8, null, 'A hollow full of beehives. The keepers send their quick fliers, but they tire fast.', 'The bot\'s units are fast but fragile. Trade them away with your sturdier ones.', [['hp', 12], ['round', 12]]],
     ['The Meadow Knight', 'Boss: a knight with a shield', 'traps', 10, null, 'The Meadow Knight guards the bridge out of the fields behind a Shieldbearer, but he is not much of a fighter.', 'The Meadow Knight: 10 HP and a Shieldbearer in front. Go around the shield through the side lanes.', [['hp', 10], ['round', 14]], G => { ccCampUnit(G, 1, 'DEF-U03', 1, 0); }],
-    ['Picnic Hill', 'Starfall: draw 3 a turn', 'storm', 8, 'starfall', 'A hill for picnics under a sky full of falling stars. Both sides draw three cards a turn.', '<b>Starfall</b>: three cards a turn. Spend your AP every turn, cards won\'t run out.', [['spells', 1], ['hp', 12]]],
+    ['Picnic Hill', 'Quick little fighters', 'storm', 8, null, 'A hill for picnics where the lanterns are lit early. The picnickers defend their baskets with quick little fighters.', 'Quick fighters again: trade them away and keep your stronger units for the hero.', [['spells', 1], ['hp', 12]]],
     ['The Old Orchard', 'Blood Moon: every unit +1 ATK', 'p-rush', 8, 'bloodmoon', 'Apple trees under a red moon: every unit hits a little harder tonight, yours included.', '<b>Blood Moon</b>: +1 ATK for everyone. Attack first and the trades go your way.', [['kills', 4], ['round', 12]]],
     ['Butterfly Brook', 'A shallow brook to cross', 'arcane', 5, null, 'A brook full of butterflies. A few apprentice mages guard the stepping stones.', 'The mages are weak up close: put Melee units in front of them.', [['hp', 12], ['round', 14]]],
     ['Sunset Ridge', 'Rainstorm: 5 AP a turn', 'storm', 9, 'rain', 'A warm summer rain over the ridge gives both sides 5 AP a turn.', '<b>Rainstorm</b>: 5 AP a turn. Play an extra card or attack once more each turn.', [['hp', 10], ['kills', 5]]],
@@ -232,29 +243,108 @@ const CC_CAMP_EASY = [
   ccEasyCh(4, 'The Coral Coast', 'Coral Coast', 'river', [
     ['Sandy Shore', 'Waves and seashells', 'storm', 7, null, 'The meadows end at a warm sandy shore. Crabs scuttle off as a lazy beach patrol wakes up.', 'Chapter 4: the Coral Coast. Another easy stretch: keep all three lanes busy.', [['hp', 14], ['round', 10]]],
     ['Tide Pools', 'Tailwind: moving is free', 'storm', 8, 'wind', 'Shallow pools left by the tide. A sea breeze makes every move free.', '<b>Tailwind</b>: moving is free. Dodge into the lane the bot left open.', [['moves', 2], ['hp', 12]]],
-    ['The Lighthouse', 'Starfall: draw 3 a turn', 'p-rush', 8, 'starfall', 'A lighthouse on the rocks, its lamp shining under falling stars. Both sides draw three cards a turn.', '<b>Starfall</b>: three cards a turn. Play wide and fill the board.', [['kills', 4], ['hp', 12]]],
+    ['The Lighthouse', 'Keepers rush out', 'p-rush', 8, null, 'A lighthouse on the rocks, its lamp sweeping the waves. The keepers rush out to meet you.', 'The rush deck hits early: hold the front row and strike back.', [['kills', 4], ['hp', 12]]],
     ['Seagull Cliffs', 'Noisy birds, weak fighters', 'p-rush', 8, null, 'Cliffs full of seagulls. The cliff guards are loud, quick and easy to knock over.', 'The rush deck attacks early but runs out of steam. Hold the front row and it falls apart.', [['hp', 12], ['round', 12]]],
     ['The Pearl Diver', 'Boss: a diver with a net', 'traps', 10, null, 'The Pearl Diver guards the reef with a net trap in the middle lane. Send something cheap in first.', 'The Pearl Diver: 10 HP and a trap in the middle lane. Use the side lanes or spring it with a cheap unit.', [['hp', 10], ['round', 14]], G => { ccCampTrap(G, 1, 'MOB-T02', 1); }],
     ['Coral Gardens', 'Sacred Ground: units enter with Armor', 'storm', 7, 'sanctuary', 'Glowing coral gardens under clear water. Sacred ground again: every unit enters with Armor 1.', '<b>Sacred Ground</b>: Armor 1 on every unit. Stack your attacks on one target.', [['kills', 3], ['hp', 12]]],
     ['Shipwreck Bay', 'Blood Moon: every unit +1 ATK', 'raiders', 8, 'bloodmoon', 'An old shipwreck under a red moon. A handful of pirates hide in the hull.', '<b>Blood Moon</b>: +1 ATK for everyone. The pirates are few: clear them out fast.', [['kills', 4], ['round', 12]]],
     ['Moonlit Lagoon', 'Arcane Surge: spells +1 damage', 'arcane', 7, 'surge', 'A calm lagoon where the moonlight makes magic stronger: spells deal 1 more damage.', '<b>Arcane Surge</b>: spells deal +1 damage. Cast yours at the enemy hero or its best unit.', [['spells', 1], ['hp', 12]]],
-    ['Whale Song Reef', 'Rainstorm: 5 AP a turn', 'frost', 9, 'rain', 'A reef where whales sing in the rain. 5 AP a turn for both sides.', '<b>Rainstorm</b>: 5 AP a turn. Use the extra AP to attack with everything.', [['hp', 10], ['kills', 5]]],
+    ['Whale Song Reef', 'Frost apprentices on the coral', 'frost', 9, null, 'A reef where whales sing under the waves. Frost apprentices guard the coral.', 'The frost apprentices are slow: get in close and hit hard before they freeze you.', [['hp', 10], ['kills', 5]]],
     ['The Tide Queen', 'Final boss: the queen of the coast', 'storm', 10, null, 'The Tide Queen rules the coast from a coral throne, a Mage at her side. She is gracious, and not too strong.', 'The Tide Queen: 10 HP and a Mage in the back. Push the open lanes and she falls quickly.', [['hp', 10], ['round', 15]], G => { ccCampUnit(G, 1, 'CON-U01', 1, 1); }]
   ]),
   ccEasyCh(5, 'The Starlit Isles', 'Starlit Isles', 'spiral', [
     ['Driftwood Dock', 'Sail to the first isle', 'storm', 7, null, 'A little boat takes you to the Starlit Isles, floating islands joined by bridges of light. A dock keeper waves you in.', 'Chapter 5: the Starlit Isles. The road spirals in to the heart of the isles. Easy fights all the way.', [['hp', 14], ['round', 10]]],
-    ['Lantern Bridge', 'Starfall: draw 3 a turn', 'p-rush', 8, 'starfall', 'A bridge of lanterns between two isles, stars falling all around. Three cards a turn for both sides.', '<b>Starfall</b>: three cards a turn. Keep your AP busy.', [['kills', 4], ['hp', 12]]],
+    ['Lantern Bridge', 'A quick patrol on the bridge', 'p-rush', 8, null, 'A bridge of lanterns between two isles. A quick patrol runs across to stop you.', 'Hold the bridge: block the lanes with sturdy units and let the rush break on them.', [['kills', 4], ['hp', 12]]],
     ['Cloud Meadow', 'Tailwind: moving is free', 'storm', 8, 'wind', 'A meadow of soft clouds. The wind makes every move free.', '<b>Tailwind</b>: moving costs no AP. Shift to where the enemy is weakest.', [['moves', 2], ['hp', 12]]],
     ['The Star Well', 'Arcane Surge: spells +1 damage', 'arcane', 7, 'surge', 'A well that holds starlight. Magic is stronger here: spells deal 1 more damage.', '<b>Arcane Surge</b>: spells +1 damage, the bot\'s too. Rush its mages before they cast.', [['spells', 1], ['round', 12]]],
     ['The Lamplighter', 'Boss: the keeper of the lights', 'traps', 10, null, 'The Lamplighter keeps the isles\' lights burning, a Shieldbearer at his side. He blocks the middle bridge.', 'The Lamplighter: 10 HP and a Shieldbearer in the middle. Go around it through the side lanes.', [['hp', 10], ['round', 14]], G => { ccCampUnit(G, 1, 'DEF-U03', 1, 0); }],
     ['Moonpetal Grove', 'Sacred Ground: units enter with Armor', 'storm', 7, 'sanctuary', 'A grove of glowing flowers on a floating isle. Sacred ground: every unit enters with Armor 1.', '<b>Sacred Ground</b>: Armor 1 on every unit. Focus your hits.', [['kills', 3], ['hp', 12]]],
-    ['Comet Falls', 'Rainstorm: 5 AP a turn', 'p-rush', 8, 'rain', 'A waterfall pouring off the edge of an isle into the stars. Rain gives 5 AP a turn.', '<b>Rainstorm</b>: 5 AP a turn. The rush deck comes fast: hold the front and hit back.', [['hp', 12], ['round', 12]]],
+    ['Comet Falls', 'Raiders in the spray', 'p-rush', 8, null, 'A waterfall pouring off the edge of an isle into the stars. Fast raiders ride the spray.', 'The rush deck comes fast: hold the front and hit back.', [['hp', 12], ['round', 12]]],
     ['Aurora Steps', 'Blood Moon: every unit +1 ATK', 'raiders', 8, 'bloodmoon', 'Steps of light under a red moon climbing to the inner isles. Every unit hits harder.', '<b>Blood Moon</b>: +1 ATK for everyone. Strike first.', [['kills', 4], ['hp', 10]]],
     ['The Crystal Spire', 'A spire of singing crystals', 'frost', 9, null, 'A spire of crystals that hum when you pass. Frost apprentices guard the last bridge.', 'The frost apprentices can stun. Spread your units so one stun doesn\'t stop everything.', [['hp', 10], ['kills', 4]]],
     ['The Star Keeper', 'Final boss: the heart of the isles', 'p-rush', 8, null, 'At the heart of the spiral the Star Keeper waits with a Warhound. Win here and the isles are yours.', 'The Star Keeper: 8 HP and a Warhound in front. You know this by now: fill the lanes and push.', [['hp', 10], ['round', 15]], G => { ccCampUnit(G, 1, 'AGG-U06', 1, 0); }]
   ])
 ];
 CC_CAMP.push(...CC_CAMP_EASY);
+/* Chapters 6-10 (the owner's ask: harder chapters after the first five, now with weaknesses and resistances; the same
+   star rewards): your own deck against the normal bot (the bosses of Chapters 8-10 plan their whole turn like the Hard
+   Quick match challenger, brain 'plan'), more bot HP, the bot going first on the bosses, battle events more often.
+   Every chapter leans on one playstyle (the mono decks above), so the right leader makes it weak: Chapter 6 Aggression
+   (bring Defense), 7 Defense (bring Control), 8 Control (bring Mobility), 9 Mobility (bring Support), 10 Support (bring
+   Aggression), with a few stages of other styles in between. Weakness / resistance only apply from Chapter 6 on
+   (lsCampFoeStyle in 65-leader.js; Chapters 0-5 are the basic game). Rows: [name, twist, deck, bot HP, event, intro,
+   tip, star goals, setup, options {first, brain, me}]; stages 5 and 10 are the bosses. Each chapter has its own path
+   (cmpLayout): a canyon of two V's (6), a battlement (7), a Z (8), a crescent moon (9) and a heart with the last boss in
+   the middle (10). */
+const ccHardCh = (no, name, sub, path, rows) => ({ id: 'c' + no, no, name, sub, own: true, hard: true, path,
+  miles: [10, 20, 30].map(n => ({ id: `c${no}:${n}`, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  stages: rows.map(([nm, twist, bot, hp, ev, intro, tip, stars, setup, o = {}], i) => ({ id: `${no}-${i + 1}`, name: nm, twist, hp: [o.me || 20, hp], first: o.first || 0, seed: no * 100 + 101 + i,
+    ...(bot.startsWith('p-') ? { botDeck: bot } : { bot: CC_CAMP_DECKS[bot] }), ...(ev ? { ev } : {}), ...(o.brain ? { brain: o.brain } : {}), ...(i === 4 || i === 9 ? { boss: true } : {}), ...(setup ? { setup } : {}),
+    intro, stars: [['win'], ...stars].map(ccEasyStar), tips: ccOne(tip) })) });
+const ccU = (...L) => G => L.forEach(([id, lane, row]) => id.includes('-T') ? ccCampTrap(G, 1, id, lane) : ccCampUnit(G, 1, id, lane, row || 0));   // a stage's board: [card, lane, row]
+const CC_CAMP_HARD = [
+  ccHardCh(6, 'The Ember Wastes', 'Ember Wastes', 'canyon', [
+    ['Ashfall Road', 'Raiders on the ash road', 'raiders', 12, null, 'Past the Starlit Isles the sky turns grey with ash. Raiders patrol the road into the Ember Wastes, and from here on every enemy has a weakness and a resistance.', 'From Chapter 6 on every stage has a <b>weakness</b> and a <b>resistance</b>. These raiders are weak to a Defense leader and resist Aggression: pick your leader to match.', [['hp', 10], ['round', 14]]],
+    ['Cinder Dunes', 'Scorching Sun: Overtime from round 12', 'blaze', 12, 'heat', 'Black dunes under a burning sun. Overtime comes early here, and the fire raiders want a short fight.', '<b>Scorching Sun</b>: Overtime from round 12. Trade carefully early and keep your hero healthy.', [['hp', 8], ['kills', 6]]],
+    ['The Slag Fort', 'A fort of cooled lava', 'bastion', 10, null, 'A fort built from cooled lava blocks the canyon. Its defenders resist Defense leaders but crack against Control.', 'This fort plays <b>Defense</b>: weak to Control, resists Defense. Its Guardian holds the middle, so open the side lanes.', [['round', 16], ['lost', 5]], ccU(['DEF-U02', 1])],
+    ['Blood Moon Canyon', 'Blood Moon: all units +1 ATK', 'blaze', 12, 'bloodmoon', 'A red moon over a narrow canyon. Every hit lands harder, and a Warhound is already loose.', '<b>Blood Moon</b>: +1 ATK for everyone. A Warhound is already out: block its lane before you attack.', [['hp', 8], ['round', 14]], ccU(['AGG-U06', 0])],
+    ['The Cinder Tyrant', 'Mid-chapter boss: a Champion and two traps', 'warlord', 9, null, 'The Cinder Tyrant rules the canyon with a Champion at his side and traps in both flank lanes. He moves first.', 'The Tyrant plays <b>Aggression</b>: a Defense leader starts him on less HP and your skill ready. Thorns hide on the left, a Flare Trap on the right.', [['hp', 8], ['round', 16]], ccU(['AGG-U08', 1], ['DEF-T02', 0], ['AGG-T02', 2]), { first: 1 }],
+    ['Smoke and Mirrors', 'Arcane Surge · mages in the smoke', 'hex', 15, 'surge', 'Thick smoke hides a camp of battle mages. Their spells hit harder in the surge.', '<b>Arcane Surge</b>: spells +1 damage. These mages play <b>Control</b>, weak to Mobility. Rush them before they cast.', [['kills', 8], ['hp', 10]], ccU(['CON-U01', 0, 1])],
+    ['The Burning Bridge', 'A trap under a Berserker', 'blaze', 9, null, 'A rope bridge over a river of lava, burning at the far end. The raiders hold the other side.', 'A Flare Trap waits in the middle lane under the Berserker. Go round through the sides.', [['round', 14], ['lost', 4]], ccU(['AGG-U03', 1], ['AGG-T02', 1])],
+    ['Ember Storm', 'Rainstorm: 5 AP a turn', 'raiders', 16, 'rain', 'Rain hisses on the hot rocks and gives both sides 5 AP a turn. The raiders use every point of it.', '<b>Rainstorm</b>: 5 AP a turn, the bot\'s too. Expect two or three units a turn from it.', [['hp', 8], ['kills', 8]]],
+    ['The Obsidian Gate', 'A wall of black glass', 'bastion', 11, null, 'The gate out of the canyon is a wall of black glass, held by heavy shields.', '<b>Defense</b> again: weak to Control, resists Defense. Its units are slow but tough: hit the hero through the open lane.', [['round', 18], ['hp', 10]], ccU(['DEF-U04', 1], ['DEF-U03', 0])],
+    ['The Ember King', 'Final boss: a king of fire', 'blaze', 12, null, 'The Ember King sits on a throne of cooling lava, a Champion before him and Thorns in the middle. He moves first and hits hard.', 'The Ember King plays <b>Aggression</b>. Bring a Defense leader if you have one: a quarter less HP for him and your skill ready.', [['hp', 6], ['round', 18]], ccU(['AGG-U08', 1], ['DEF-T02', 1]), { first: 1 }]
+  ]),
+  ccHardCh(7, 'The Sunken Bastion', 'Sunken Bastion', 'battlement', [
+    ['Tidegate', 'Shields at the tide gate', 'bastion', 11, null, 'Beyond the wastes, a fortress half sunk into the sea. Its tide gates are held by shield-bearers.', 'Chapter 7: the Sunken Bastion mostly plays <b>Defense</b>, weak to a Control leader. Walls hit softly: chip the hero through the gaps.', [['round', 16], ['hp', 10]], ccU(['DEF-U03', 1])],
+    ['Flooded Halls', 'Tailwind: moving is free', 'bastion', 11, 'wind', 'Seawater runs through the halls and carries everyone along: moving costs nothing.', '<b>Tailwind</b>: moving is free. Slide into the lane the walls leave open.', [['moves', 3], ['round', 16]], ccU(['DEF-U01', 0], ['DEF-U08', 2])],
+    ['The Coral Garrison', 'Sacred Ground: units enter with Armor', 'choir', 9, 'sanctuary', 'Healers garrison the coral towers. On sacred ground every unit enters with Armor 1.', 'These healers play <b>Support</b>: weak to Aggression, resists Support. Kill the healers first.', [['kills', 8], ['round', 18]]],
+    ['Barnacle Walls', 'A wall and Thorns', 'fort', 8, null, 'Walls crusted with barnacles, a Guardian on the left and a trap in the middle lane. The defenders have dug in.', 'Thorns wait in the middle. This <b>Defense</b> deck resists Defense leaders: bring Control.', [['lost', 4], ['hp', 10]], ccU(['DEF-U02', 0], ['DEF-T02', 1])],
+    ['The Drowned Warden', 'Mid-chapter boss: three walls in front', 'bastion', 16, null, 'The Drowned Warden: a Fortress Golem, a Paladin that heals itself and a Guardian, all on the front row. He moves first.', 'Three walls in front. Spells and Ranged units get around them; the Paladin heals every turn, so finish it in one go.', [['round', 18], ['hp', 8]], ccU(['DEF-U05', 1], ['DEF-U06', 0], ['DEF-U02', 2], ['DEF-T02', 0]), { first: 1 }],
+    ['Kelp Labyrinth', 'Starfall: draw 3 a turn', 'gale', 18, 'starfall', 'A maze of kelp where quick raiders hide. Falling stars give both sides three cards a turn.', '<b>Starfall</b>: three cards a turn. This is a <b>Mobility</b> deck, weak to Support: hold every lane, they will slip around.', [['kills', 8], ['hp', 10]]],
+    ['The Lighthouse Keep', 'An Archer behind a Knight', 'fort', 8, null, 'An old lighthouse turned into a keep, archers on its walls.', 'An Archer shoots from behind the Knight, and Ranged attacks from the back row get no melee answer. Hit it with spells or a Flank unit.', [['hp', 10], ['round', 16]], ccU(['DEF-U01', 1], ['MOB-U04', 1, 1])],
+    ['Storm Surge', 'Rainstorm: 5 AP a turn', 'bastion', 14, 'rain', 'A storm surge floods the outer walls. Rain gives 5 AP a turn: the defenders can raise two walls at once.', '<b>Rainstorm</b>: 5 AP a turn. Use the extra AP to attack twice where the walls are thin.', [['round', 16], ['lost', 5]]],
+    ['The Pearl Vault', 'A trap in every lane', 'traps', 17, null, 'The vault where the Bastion keeps its pearls. Every lane is trapped and a Protector stands in the middle.', 'A trap in every lane. Send a cheap unit first to spring each one.', [['hp', 10], ['kills', 6]], ccU(['MOB-T02', 0], ['DEF-T02', 1], ['AGG-T02', 2], ['DEF-U08', 1])],
+    ['The Abyssal Admiral', 'Final boss: a Bulwark, a Guardian and Thorns', 'fort', 11, null, 'The Abyssal Admiral commands the Bastion from its flooded throne room: a Bulwark and a Guardian, with Thorns in the middle. He moves first.', 'The Admiral plays <b>Defense</b>: a Control leader takes a quarter of his HP and has its skill ready.', [['hp', 6], ['round', 20]], ccU(['DEF-U04', 1], ['DEF-U02', 0], ['DEF-T02', 1]), { first: 1 }]
+  ]),
+  ccHardCh(8, 'The Hexwood', 'Hexwood', 'zed', [
+    ['Witchlight Path', 'A Hexer in the trees', 'hex', 15, null, 'A dark forest where the trees whisper spells. Witches walk its paths at night.', 'Chapter 8: the Hexwood plays <b>Control</b>, weak to a Mobility leader. Hexers weaken what they hit: attack them first.', [['hp', 10], ['round', 16]], ccU(['CON-U03', 1, 1])],
+    ['Poison Fen', 'Poison and curses', 'frost', 8, null, 'A fen of green mist. Alchemists poison whatever they hit.', 'Poison deals 2 damage a turn for 3 turns. Trade away a poisoned unit before it falls for nothing.', [['lost', 5], ['kills', 7]], ccU(['CON-U06', 0, 1], ['DEF-U07', 0])],
+    ['The Hanging Lanterns', 'Arcane Surge: spells +1 damage', 'arcane', 13, 'surge', 'Lanterns hang from every branch, glowing with wild magic. Spells hit harder in the surge.', '<b>Arcane Surge</b>: spells +1 damage, the witches\' too. Spread your units so one Arcane Burst doesn\'t hit them all.', [['hp', 8], ['round', 16]]],
+    ['Thornveil', 'Hex Fields in two lanes', 'hex', 16, null, 'Briars hide hex circles in two lanes: whatever walks in is stunned.', 'Hex Field stuns a unit that enters its lane. Send a cheap unit in first, or win the middle.', [['round', 16], ['hp', 10]], ccU(['CON-T02', 0], ['CON-T02', 2], ['CON-U08', 1, 1])],
+    ['The Hollow Witch', 'Mid-chapter boss: she plans every move', 'hex', 8, null, 'The Hollow Witch plans every move ahead. A Frost Witch and a Hexer cast from her back row behind a Guardian. She moves first.', 'The Hollow Witch <b>plans her whole turn</b> like a Hard Quick match challenger. A Mobility leader makes her weak.', [['hp', 8], ['round', 18]], ccU(['CON-U02', 1, 1], ['CON-U03', 0, 1], ['DEF-U02', 1], ['CON-T02', 1]), { first: 1, brain: 'plan' }],
+    ['Moonless Glade', 'Starfall: draw 3 a turn', 'storm', 17, 'starfall', 'A glade without moonlight, full of quick shadows. Three cards a turn for both sides.', 'A <b>Mobility</b> deck in the Hexwood: weak to Support. Assassins move for free, so keep a defender in every lane.', [['kills', 8], ['hp', 10]]],
+    ['The Mirror Pond', 'Tailwind: moving is free', 'hex', 17, 'wind', 'A still pond that shows what isn\'t there. A breeze makes every move free.', '<b>Tailwind</b>: moving costs no AP. The witches will dodge away from your strong units.', [['moves', 3], ['round', 16]], ccU(['CON-U07', 0], ['CON-U05', 2, 1])],
+    ['The Rotting Oak', 'Traps in the roots', 'traps', 15, null, 'A rotting oak as big as a tower. Hunters set traps in its roots.', 'This one plays <b>Defense</b>: weak to Control. Net Trap stuns for a turn, Thorns hit back.', [['lost', 5], ['hp', 10]], ccU(['MOB-T02', 0], ['DEF-T02', 1], ['DEF-U01', 1])],
+    ['The Coven', 'Blood Moon: all units +1 ATK', 'hex', 10, 'bloodmoon', 'Thirteen witches dance under a red moon. Every hit lands harder.', '<b>Blood Moon</b>: +1 ATK for everyone. A Frost Witch already waits in the back row: reach her before she fires.', [['round', 16], ['kills', 8]], ccU(['CON-U02', 0, 1])],
+    ['The Witch Queen', 'Final boss: she plans every turn', 'hex', 10, null, 'The Witch Queen of the Hexwood: a Spellweaver and a Frost Witch behind a Guardian, and a Hex Field on the left. She plans every turn and moves first.', 'The Witch Queen plans her whole turn. A Mobility leader takes a quarter of her HP.', [['hp', 6], ['round', 20]], ccU(['CON-U08', 1, 1], ['CON-U02', 0, 1], ['DEF-U02', 1], ['CON-T02', 0]), { first: 1, brain: 'plan' }]
+  ]),
+  ccHardCh(9, 'The Gale Spires', 'Gale Spires', 'crescent', [
+    ['Windward Steps', 'Wind riders on the steps', 'gale', 18, null, 'Stone spires rise above the clouds, joined by narrow steps. Wind riders own the skies here.', 'Chapter 9: the Gale Spires play <b>Mobility</b>, weak to a Support leader. They move for free: guard every lane.', [['hp', 10], ['kills', 7]], ccU(['MOB-U02', 0])],
+    ['Cloudbreak', 'Tailwind: moving is free', 'gale', 17, 'wind', 'The wind breaks through the clouds and carries everyone along.', '<b>Tailwind</b>: moving is free for both sides. Their killers will find the lane you leave empty.', [['round', 16], ['lost', 5]], ccU(['MOB-U03', 0], ['MOB-U08', 2])],
+    ['Thunder Ledge', 'Rainstorm: 5 AP a turn', 'storm', 16, 'rain', 'A ledge struck by lightning every few seconds. Rain gives 5 AP a turn.', '<b>Rainstorm</b>: 5 AP a turn. The Shadowblade has Haste: block it right away.', [['hp', 8], ['round', 16]], ccU(['MOB-U07', 1])],
+    ['The Kite Riders', 'Two Phantoms on kites', 'gale', 12, null, 'Riders on great kites swoop down on the back row.', 'Phantoms hit your back row first (Flank). Don\'t leave a Ranged unit alone behind an empty front.', [['kills', 8], ['hp', 10]], ccU(['MOB-U06', 0], ['MOB-U06', 2])],
+    ['The Storm Hawk', 'Mid-chapter boss: it plans every strike', 'gale', 11, null, 'The Storm Hawk plans every strike. An Assassin already circles, and a Net Trap waits on the right. It moves first.', 'The Storm Hawk <b>plans its whole turn</b>. A Support leader makes it weak: a quarter less HP and your skill ready.', [['hp', 8], ['round', 18]], ccU(['MOB-U01', 1], ['MOB-T02', 2]), { first: 1, brain: 'plan' }],
+    ['Sky Monastery', 'Scorching Sun: Overtime from round 12', 'holy', 16, 'heat', 'Monks of the high winds tend their shrine under a burning sun. Overtime comes early.', 'A <b>Support</b> deck: weak to Aggression. Healers undo your damage, but Overtime from round 12 wears them down: kill the healers first.', [['kills', 8], ['round', 18]]],
+    ['The Broken Bridge', 'Spikes and nets', 'gale', 15, null, 'A bridge of light broken in the middle. Spikes and nets wait on what is left.', 'Hidden Spikes in the middle, a Net Trap on the left. Spring them with cheap units.', [['lost', 4], ['hp', 10]], ccU(['MOB-T01', 1], ['MOB-T02', 0], ['MOB-U05', 2])],
+    ['Eye of the Storm', 'Starfall: draw 3 a turn', 'storm', 11, 'starfall', 'At the heart of the storm the air is still and the stars fall. Three cards a turn.', '<b>Starfall</b>: three cards a turn. Two killers are already out: answer them first.', [['round', 16], ['kills', 8]], ccU(['MOB-U01', 0], ['MOB-U07', 2])],
+    ['Thunderhead', 'Blood Moon: all units +1 ATK', 'raiders', 12, 'bloodmoon', 'A thunderhead lit red by the moon. Sky raiders dive out of it.', 'An <b>Aggression</b> deck: weak to Defense. Blood Moon makes their charge hurt.', [['hp', 8], ['round', 16]], ccU(['AGG-U02', 1])],
+    ['The Tempest Lord', 'Final boss: an Assassin and a Net Trap', 'gale', 13, null, 'The Tempest Lord rides the storm at the top of the highest spire. His Assassin is already out, with a Net Trap behind it.', 'The Tempest Lord plans every turn and moves first. A Support leader takes a quarter of his HP.', [['hp', 6], ['round', 20]], ccU(['MOB-U01', 1], ['MOB-T02', 1]), { first: 1, brain: 'plan' }]
+  ]),
+  ccHardCh(10, 'The Dawn Citadel', 'Dawn Citadel', 'heart', [
+    ['The Last Road', 'A Priest on the road', 'choir', 20, null, 'The last road climbs to the Dawn Citadel, where the healers of the old world keep the light.', 'Chapter 10: the Citadel plays <b>Support</b>, weak to an Aggression leader. Its healers keep units alive: focus one target at a time.', [['hp', 10], ['round', 18]], ccU(['SUP-U02', 1, 1])],
+    ['The Gardens of Dawn', 'Blood Moon: all units +1 ATK', 'choir', 20, 'bloodmoon', 'Gardens of white flowers under a red moon. Every hit lands harder.', '<b>Blood Moon</b>: +1 ATK for everyone, so the healers can\'t keep up. Strike first.', [['kills', 8], ['hp', 10]]],
+    ['The Bell Tower', 'Banners in the tower', 'choir', 18, null, 'Bells ring the alarm. A Bannerbearer and a Commander rally the defenders: units beside them hit harder.', 'The Bannerbearer and the Commander give +1 ATK to their lane. Take them out first.', [['round', 18], ['lost', 5]], ccU(['SUP-U03', 0], ['SUP-U06', 2])],
+    ['The Sunlit Cloister', 'Scorching Sun: Overtime from round 12', 'choir', 24, 'heat', 'A cloister in blazing light. Overtime comes early and the healers can\'t keep up with it.', '<b>Scorching Sun</b>: Overtime from round 12. Healers stall, so Overtime is on your side.', [['hp', 8], ['round', 16]]],
+    ['The High Priestess', 'Mid-chapter boss: she heals the whole board', 'choir', 13, null, 'The High Priestess heals her whole board every turn. A Druid and a Priest stand behind a Paladin, and a Guardian Angel protects the middle. She moves first.', 'She <b>plans her whole turn</b>. Guardian Angel stops the first attack in the middle: attack the sides first.', [['hp', 8], ['round', 18]], ccU(['SUP-U04', 1, 1], ['SUP-U02', 0, 1], ['DEF-U06', 1], ['SUP-T02', 1]), { first: 1, brain: 'plan' }],
+    ['Halls of Memory', 'Arcane Surge: spells +1 damage', 'arcane', 13, 'surge', 'Halls lined with old memories. Mages guard them with spells that hit harder in the surge.', 'A <b>Control</b> deck: weak to Mobility. Arcane Burst hits your whole front row: don\'t crowd it.', [['kills', 8], ['hp', 10]]],
+    ['The Golden Stair', 'Two Sentinels on the stair', 'choir', 19, null, 'A golden stair guarded by Sentinels that shoot from the back row, a Healing Spring between them.', 'Two Sentinels shoot from the back row. Flank units and spells reach them.', [['round', 18], ['hp', 10]], ccU(['SUP-U08', 0, 1], ['SUP-U08', 2, 1], ['SUP-T01', 1])],
+    ['Dawnbreak', 'Rainstorm: 5 AP a turn', 'bastion', 14, 'rain', 'Rain falls on the citadel walls at dawn. 5 AP a turn: the walls go up fast.', 'A <b>Defense</b> deck: weak to Control. Use the extra AP to strike twice in one lane.', [['lost', 5], ['hp', 10]], ccU(['DEF-U04', 1])],
+    ['The Prism Gate', 'Blood Moon · a Champion out first', 'titan', 13, 'bloodmoon', 'The last gate glows like a prism under a red moon. The titan\'s champions hold it, and they move first.', 'An <b>Aggression</b> deck: weak to Defense. Blood Moon and a Champion already out: block the middle now.', [['hp', 8], ['round', 18]], ccU(['AGG-U08', 1]), { first: 1 }],
+    ['The Dawn Sovereign', 'Final boss: the end of the road', 'dawn', 11, null, 'The Dawn Sovereign waits on the throne of light with every kind of fighter at her call: a Champion and a Commander up front and Thorns in the middle. This is the end of the road.', 'The Dawn Sovereign plans every turn and moves first. Her deck is <b>Support</b> at heart, weak to Aggression: bring your best Aggression leader.', [['hp', 6], ['round', 20]], ccU(['AGG-U08', 1], ['SUP-U06', 0], ['DEF-T02', 1]), { first: 1, brain: 'plan' }]
+  ])
+];
+CC_CAMP.push(...CC_CAMP_HARD);
 const ccCampStages = () => CC_CAMP.flatMap(ch => ch.stages.map(st => ({ ...st, ch })));
 const ccCampStage = id => ccCampStages().find(s => s.id === id) || null;
 
@@ -336,7 +426,9 @@ const CMP_POS = [[9, 74], [29, 22], [50, 70], [70, 20], [90, 62]];
    middle; on portrait screens each of them sways its own way */
 const cmpLin = (k, a, b) => Array.from({ length: k }, (_, i) => k > 1 ? a + (b - a) * i / (k - 1) : (a + b) / 2);
 function cmpLayout(n, mode, path) {   // mode 'h' tall landscape screens, 'v' portrait, 'q' short landscape screens (flat rows: the field is short)
-  if (mode === 'v') return Array.from({ length: n }, (_, i) => [path === 'climb' ? [22, 52, 82, 52][i % 4] : path === 'arc' ? 50 + 30 * Math.sin(i * Math.PI / 2.5) : path === 'river' ? 50 + 30 * Math.sin(i * .95) : path === 'spiral' ? [24, 50, 76, 62, 38][i % 5] : i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]);
+  if (mode === 'v') { const VX = { climb: i => [22, 52, 82, 52][i % 4], arc: i => 50 + 30 * Math.sin(i * Math.PI / 2.5), river: i => 50 + 30 * Math.sin(i * .95), spiral: i => [24, 50, 76, 62, 38][i % 5],
+      canyon: i => [20, 50, 80, 50][i % 4], battlement: i => [24, 24, 76, 76][i % 4], zed: i => [20, 44, 68, 80, 56, 32, 20, 44, 68, 80][i % 10], crescent: i => 50 + 32 * Math.cos(i * Math.PI / Math.max(1, n - 1)), heart: i => [50, 28, 16, 30, 50, 70, 84, 72, 50, 50][i % 10] };
+    return Array.from({ length: n }, (_, i) => [VX[path] ? VX[path](i) : i % 2 ? 74 : 26, n > 1 ? 6 + i * 88 / (n - 1) : 50]); }
   // Chapters 3-5 are two-row paths too (10 stages with names don't fit on one line), each with its own shape:
   const q = mode === 'q', A = Math.ceil(n / 2), B = n - A, sin = u => Math.sin(Math.PI * u), U = (i, k) => k > 1 ? i / (k - 1) : .5;
   // Chapter 3: rolling hills, along the low hill at the bottom first, then back over a high rainbow hill on top
@@ -346,6 +438,19 @@ function cmpLayout(n, mode, path) {   // mode 'h' tall landscape screens, 'v' po
   // Chapter 5: a ring of isles, over the top and back under the bottom, ending in the heart of the isles in the middle
   if (path === 'spiral') { if (q) return [...cmpLin(A, 8, 92).map((x, i) => [x, 30 - 14 * sin(U(i, A))]), ...cmpLin(B, 86, 14).map((x, i) => [x, 70 + 14 * sin(U(i, B))])];
     const a2 = Math.floor(n / 2), b2 = n - a2 - 1; return [...cmpLin(a2, 8, 92).map((x, i) => [x, 34 - 22 * sin(U(i, a2))]), ...cmpLin(b2, 88, 22).map((x, i) => [x, 66 + 22 * sin(U(i, b2))]), [50, 50]]; }
+  // Chapter 6: a canyon, two V's (down into the gorge and up again on top, then the same below, right to left)
+  if (path === 'canyon') { const V = u => 1 - Math.abs(2 * u - 1); return [...cmpLin(A, 8, 92).map((x, i) => [x, (q ? 14 : 12) + (q ? 20 : 28) * V(U(i, A))]), ...cmpLin(B, 92, 8).map((x, i) => [x, (q ? 62 : 60) + (q ? 20 : 28) * V(U(i, B))])]; }
+  // Chapter 7: a battlement, a square wave up and down the columns of the fortress wall
+  if (path === 'battlement') { const k = Math.ceil(n / 2); return Array.from({ length: n }, (_, i) => { const c = Math.floor(i / 2), up = c % 2 === 0 ? i % 2 === 0 : i % 2 === 1; return [k > 1 ? 9 + c * 82 / (k - 1) : 50, up ? (q ? 20 : 16) : (q ? 80 : 80)]; }); }
+  // Chapter 8: a Z, along the top, back down the diagonal and along the bottom
+  if (path === 'zed' && q) { const t = Math.round(n * .4), d = n - 2 * t; return [...cmpLin(t, 8, 92).map(x => [x, 16]), ...cmpLin(d, 78, 22).map((x, i) => [x, 16 + 68 * (i + 1) / (d + 1)]), ...cmpLin(t, 8, 92).map(x => [x, 84])]; }   // short screens: the diagonal between the columns
+  if (path === 'zed') { const t = Math.round(n * .3), b = t, d = n - t - b, y0 = q ? 16 : 14, y1 = q ? 84 : 86; return [...cmpLin(t, 8, 92).map(x => [x, y0]), ...Array.from({ length: d }, (_, i) => { const f = (i + 1) / (d + 1); return [92 - 84 * f, y0 + (y1 - y0) * f]; }), ...cmpLin(b, 8, 92).map(x => [x, y1])]; }
+  // Chapter 9: a crescent moon lying on its back, along the deep outer curve and back along the shallow inner one
+  if (path === 'crescent') { const o = Math.ceil(n * .6), k = n - o, bow = u => 1 - (2 * u - 1) ** 2;
+    return [...cmpLin(o, 8, 92).map((x, i) => [x, (q ? 28 : 30) + (q ? 54 : 56) * bow(U(i, o))]), ...cmpLin(k, 74, 26).map((x, i) => [x, (q ? 16 : 18) + (q ? 20 : 23) * bow(U(i, k))])]; }
+  // Chapter 10: a heart, from its point round both halves, the last boss in the middle
+  if (path === 'heart' && q) return [...cmpLin(A, 8, 92).map((x, i) => [x, 34 - 20 * Math.abs(Math.sin(2 * Math.PI * U(i, A)))]), ...cmpLin(B, 76, 24).map((x, i) => [x, 64 + 22 * sin(U(i, B))])];   // short screens: the two lobes on top, the point below
+  if (path === 'heart') { const H = [[50, 92], [28, 78], [8, 52], [15, 22], [32, 8], [50, 27], [68, 8], [85, 22], [92, 52], [50, 60]]; const P = H.slice(0, n - 1).concat([H[9]]); return P.map(([x, y]) => [x, q ? 50 + (y - 50) * .82 : y]); }
   if (n <= 5) return CMP_POS.slice(0, n);
   if (path === 'climb') {
     if (mode === 'q') { const b = Math.ceil(n / 2); return [...cmpLin(b, 8, 92).map(x => [x, 80]), ...cmpLin(n - b, 92, 8).map(x => [x, 24])]; }   // bottom row first, then back along the top

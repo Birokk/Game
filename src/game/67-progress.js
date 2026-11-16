@@ -5,8 +5,8 @@
    Battle Rank EXP from battles. Grade sets the size (SSR 2% → 10%, UR 3% → 15% at SSS); at 3★ a second bonus (the next
    kind's) comes at half strength. Caps: Expedition time −25%, stamina refund 15%.
    Battle Rank: a Card Battle level earned by playing (every match except Free Training: win 100, draw 60, loss 40 EXP, the
-   first win of the day +200). It opens content (no daily limits, only rank): Campaign chapters 1–5 at ranks 3 / 7 / 11 /
-   15 / 19, Great Tree floor n (from floor 4) at rank 2n, the Quick Match Expert at rank 10, the Arena at rank 5. Anything
+   first win of the day +200). It opens content (no daily limits, only rank): Campaign chapters 1–10 at ranks 3 / 7 / 11 /
+   15 / 19 / 21 / 23 / 25 / 27 / 29, Great Tree floor n (from floor 4) at rank 2n, the Quick Match Expert at rank 10, the Arena at rank 5. Anything
    already cleared or joined stays open, and older saves start with a rank worked out from their record and stars. */
 const PB_TYPES = {
   gold: ['Battle gold', 'gold from battles', '+'], expd: ['Quick expeditions', 'Expedition time', '−'], drop2: ['Lucky finds', 'chance of a 2nd clothing piece in raids', '+'],
@@ -85,7 +85,7 @@ function brGain(winner) {
   return { n, up: after > before, r: after };
 }
 /* what opens at which rank */
-const BR_CHAPTER = { c1: 3, c2: 7, c3: 11, c4: 15, c5: 19 };
+const BR_CHAPTER = { c1: 3, c2: 7, c3: 11, c4: 15, c5: 19, c6: 21, c7: 23, c8: 25, c9: 27, c10: 29 };
 const brStageNeed = st => { if (!st || !st.ch) return 0; if (st.ch.tower) return st.no >= 4 ? 2 * st.no : 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? BR_CHAPTER[st.ch.id] || 0 : 0; };
 const brStageBlock = st => { const n = brStageNeed(st); if (!n || brOk(n)) return 0; if (ccCampHave(st.id)[0] || (!st.ch.tower && st.ch.stages.some(s => ccCampHave(s.id)[0]))) return 0; return n; };   // anything already cleared stays open
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !brStageBlock(st); }; }

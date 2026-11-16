@@ -1,7 +1,7 @@
 /* ---------- Skin tickets and instant clear tickets (the owner's ask) ----------
    Skin tickets (wallet sktk): buy any buyable outfit with them instead of pearls, by its rarity: 60 for SSR, 120 for UR
    (SKTK_COST). Only Pearl Honor's paid track gives them (the owner's rule): 5 on every 10th level of Coral Tide
-   (37-honor.js BP_MILES.paid). buySkin opens a small window to choose how to pay.
+   (37-honor.js BP_MILE, the season milestones, Coral Tide or Moon Tide only). buySkin opens a small window to choose how to pay.
    Instant clear tickets (wallet ictk): once the day's free instant clears are used, each extra instant clear uses one
    (23-raids.js raidUseClears). They work on every raid stage you got 3 stars on. From the Pearl Shop (2 pearls each),
    the Arena and Guild shops and special offers. */
@@ -12,6 +12,7 @@ CUR_SVG.sktk = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><l
 CUR_SVG.ictk = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="ictkG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6f0ff"/><stop offset=".5" stop-color="#6fc3ff"/><stop offset="1" stop-color="#7a6bff"/></linearGradient></defs><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5v2a2.5 2.5 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5v-2a2.5 2.5 0 0 0 0-5z" fill="url(#ictkG)" stroke="#fff" stroke-width=".9"/><path d="M13.2 8.2L9.6 12.6h2.3l-1.1 3.4 3.6-4.5h-2.3z" fill="#fff"/></svg>';
 REW_NAMES.sktk = ['skin ticket', 'skin tickets']; REW_R.sktk = 4;
 REW_NAMES.ictk = ['instant clear ticket', 'instant clear tickets']; REW_R.ictk = 4;
+REW_NAMES.thread = REW_NAMES.thread || ['Thread', 'Thread']; REW_R.thread = REW_R.thread || 4;
 OFFER_KEYS.push('ictk');   // skin tickets only come from Pearl Honor's paid track
 AR_SHOP_POOL.push({ id: 'as-ic', got: { ictk: 2 }, price: 30, lim: 2, w: 1 });
 GSHOP_POOL.push({ id: 'gs-ic', got: { ictk: 1 }, price: 12, lim: 2, w: 1 });

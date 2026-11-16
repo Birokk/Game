@@ -6826,3 +6826,41 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .bp-cell .inv-pic{position:relative}
 .bp-mits .bp-mx{opacity:.95}
 .bp-mits .bp-mx .cic{width:16px;height:16px}
+
+/* Hot Picks → Marriage ring (09-bond.js ringShopHTML): the ring alone on a membership-style card, pearls or $4.99 */
+.ring-grid{grid-template-columns:minmax(0,520px);justify-content:center}
+.ring-pic{display:grid;place-items:center;align-self:center;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,134,192,.38),rgba(255,134,192,.08) 58%,transparent 70%);filter:drop-shadow(0 8px 20px rgba(255,90,170,.35))}
+.ring-pic .cic,.ring-pic img{width:62%;height:62%;object-fit:contain}
+.ring-pic.sm{width:96px;height:96px}
+.ring-box .pass-perks li .ic{width:18px;height:18px}
+
+/* ---- Pearl Honor v3: the tier labels are a sticky first column inside the track (37-honor.js .bp-tiers), so the Pearl Gift
+   and Coral Tide labels share their rows with the reward cells and stay lined up at any size; one item per cell ---- */
+.bpx .bp-rew.v3{grid-template-columns:minmax(0,1fr) 230px;align-items:stretch}
+.bpx .bp-rew.v3 .bp-track{padding-left:0;align-items:stretch}
+.bpx .bp-rew.v3 .bp-col{grid-template-rows:28px 1fr 1fr;align-content:stretch}
+.bpx .bp-rew.v3 .bp-cell{align-self:stretch;align-content:center}
+.bp-tiers{position:sticky;left:0;z-index:4;flex:0 0 var(--tierw,150px);display:grid;grid-template-rows:28px 1fr 1fr;gap:8px;padding:6px 8px 6px 10px;border:1px solid transparent;
+  background:linear-gradient(90deg,#1c1238,#1f1440);border-radius:22px 0 0 6px;
+  box-shadow:14px 0 18px -10px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.bp-th{display:grid;place-items:center;font-family:var(--display);font-size:12px;letter-spacing:.08em;color:rgba(240,232,255,.55)}
+.bpx .bp-tiers .bp-lab{height:auto;min-height:0;padding:8px 6px;gap:4px;align-content:center;box-sizing:border-box}
+.bpx .bp-tiers .bp-lab b{font-size:13px;line-height:1.15}
+.bpx .bp-tiers .bp-lab small{font-family:var(--read);font-size:10.5px}
+.bpx .bp-tiers .bp-emb{width:44px;height:44px}
+.bpx .bp-rew.v3 .bp-tiers + .bp-col::before{left:50%}
+.bpx .bp-rew.v3 .bp-col:first-child::before{left:-7px}
+.bpx .bp-rew.v3 .bp-col.big .bp-lvt::after{content:"";position:absolute;top:-3px;right:-3px;width:7px;height:7px;transform:rotate(45deg);background:var(--cry-grad);box-shadow:0 0 6px var(--cry-glow)}
+/* the season milestones: the same pair of items on every milestone */
+.bpx .bp-mls.locked .bp-mits i{filter:saturate(.6) brightness(.85)}
+.bp-mile.can .bp-mlv{background:var(--cry-grad);border-color:var(--cry-edge);color:var(--cry-ink)}
+.bp-mile .bp-mits{justify-content:center}
+.bp-mile .bp-mits i{width:46px;height:46px}
+/* the unlock offers: what the track is worth */
+.bp-worth{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 10px;border-radius:12px 4px 12px 4px;font-family:var(--read);font-size:12px;background:rgba(255,255,255,.1);border:1px solid rgba(251,230,255,.4);color:#fff;white-space:nowrap}
+.bp-worth .cic{width:16px;height:16px}.bp-worth b{font-family:var(--display);font-weight:400;font-size:14px}
+.bp-ofmx{align-self:center;opacity:.85}
+@media (max-width:900px){.bpx .bp-rew.v3{grid-template-columns:minmax(0,1fr)}.bpx{--tierw:112px}.bpx .bp-tiers .bp-emb{width:36px;height:36px}}
+@media (max-width:640px){.bpx{--tierw:88px}.bpx .bp-tiers{padding:6px 4px}.bpx .bp-tiers .bp-lab b{font-size:11px}.bpx .bp-tiers .bp-lab small{display:none}.bpx .bp-tiers .bp-emb{width:30px;height:30px}.bp-mile .bp-mits i{width:40px;height:40px}}
+@media (max-width:640px){.bpx-adm span{display:none}.bpx-adm{padding:8px 10px}}
+.bpx .bp-lvt{white-space:nowrap}@media (max-width:900px){.bpx-adm span{display:none}.bpx-adm{padding:8px 10px}}

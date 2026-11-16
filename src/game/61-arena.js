@@ -264,9 +264,9 @@ const AR_SHOP_N = 8, AR_SHOP_REF = 30;
 const AR_SHOP_POOL = [
   { id: 'as-tk', got: { tickets: 1 }, price: 100, lim: 2, w: 1 },
   { id: 'as-wi', got: { wishes: 1 }, price: 80, lim: 2, w: 1.2 },
-  { id: 'as-bo', got: { bottles: 1 }, price: 20, lim: 3, w: 1.4 },
+  { id: 'as-bo', got: { bottles: 1 }, price: 20, lim: 1, w: 1.4 },   // stamina bottles: 1 a day (the owner's rule)
   { id: 'as-co', got: { coins: 10000 }, price: 15, lim: 3, w: 1.4 },
-  { id: 'as-pe', got: { pearls: 5 }, price: 60, lim: 1, w: .7 },
+  { id: 'as-pe', got: { pearls: 1 }, price: 60, lim: 1, w: .7 },   // 1 pearl for 60 tokens (the owner's rule)
   { id: 'as-st', got: { starlight: 10 }, price: 40, lim: 2, w: .8 },
   { id: 'as-cs', got: { cfssr: 3 }, price: 30, lim: 2, w: 1 },
   { id: 'as-cu', got: { cfur: 1 }, price: 50, lim: 2, w: .8 },

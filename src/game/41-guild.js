@@ -150,7 +150,7 @@ const GSHOP_N = 6;
 const GSHOP_POOL = [
   { id: 'gs-tk', got: { tickets: 1 }, price: 50, lim: 1, w: 1 },
   { id: 'gs-wi', got: { wishes: 1 }, price: 40, lim: 1, w: 1.2 },
-  { id: 'gs-bo', got: { bottles: 1 }, price: 10, lim: 3, w: 1.4 },
+  { id: 'gs-bo', got: { bottles: 1 }, price: 10, lim: 1, w: 1.4 },   // stamina bottles: 1 a day (the owner's rule)
   { id: 'gs-co', got: { coins: 5000 }, price: 8, lim: 3, w: 1.4 },
   { id: 'gs-cs', got: { cfssr: 3 }, price: 15, lim: 2, w: 1 },
   { id: 'gs-cu', got: { cfur: 1 }, price: 25, lim: 2, w: .8 },
@@ -168,14 +168,14 @@ function guildShopToday() {
   return out;
 }
 function guildShopState() { const st = guildState(); if (!st.shop || st.shop.key !== dayKey()) st.shop = { key: dayKey(), got: {}, ref: 0 }; return st.shop; }
-/* guild level 3+: refresh the shop (new items, limits reset); the first refresh each day is free, then GSHOP_REF_COST guild points */
-const GSHOP_REF_COST = 20;
-const gshopRefCost = () => (guildShopState().ref || 0) ? GSHOP_REF_COST : 0;
+/* guild level 3+: refresh the shop (new items, limits reset) once a day for free, and that's it (the owner's rule: no paid refreshes) */
+const GSHOP_REF_FREE = 1;
+const gshopRefLeft = () => Math.max(0, GSHOP_REF_FREE - (guildShopState().ref || 0));
 function refreshGuildShop() {
   if (guildLv() < 3) return;
-  const c = gshopRefCost(); if ((S.wallet.gpts || 0) < c) { toast(`A refresh costs ${c} guild points. You have ${fmt(S.wallet.gpts || 0)}.`); return; }
-  S.wallet.gpts -= c; const sh = guildShopState(); sh.ref = (sh.ref || 0) + 1; sh.got = {};
-  persist(); renderMenu(); renderFarm(); toast(c ? `Shop refreshed (−${c} guild points)` : 'Shop refreshed for free');
+  if (!gshopRefLeft()) { toast('The free refresh is used for today. New items come at midnight.'); return; }
+  const sh = guildShopState(); sh.ref = (sh.ref || 0) + 1; sh.got = {};
+  persist(); renderMenu(); renderFarm(); toast('Shop refreshed for free');
 }
 const gshopLeft = it => it.lim - (guildShopState().got[it.id] || 0);
 const GIFT_KEYS = { gsweets: 'sweets', gbracelet: 'bracelet', gplush: 'plush' };
@@ -210,7 +210,7 @@ const GUILD_LV_XP = [0, 1500, 4000, 8000, 14000, 22000, 32000, 45000, 62000, 850
 const GUILD_PERKS = [
   [1, 'Guild founded: 30 members, 30 guild points a day, 6 shop items'],
   [2, '+10% guild points from guild quests'],
-  [3, 'Guild shop refresh: once free every day, then 20 guild points'],
+  [3, 'Guild shop refresh: once free every day'],
   [4, 'Room for 35 members'],
   [5, 'Double daily login reward: 60 guild points'],
   [6, 'Room for 40 members'],
@@ -341,9 +341,9 @@ function guildPanel(g, id) {
       <div class="row" style="gap:8px;flex-wrap:wrap">${isLeader() ? `<button class="btn ghost" id="gdEdit">${icon('edit')}Edit name, icon & notice</button>` : ''}<button class="btn danger" id="gdLeave">${isLeader() ? 'Disband guild' : 'Leave guild'}</button></div>`;
   } else if (id === 'shop') {
     const items = guildShopToday();
-    const lv = guildLvOf(g), rc = gshopRefCost();
+    const lv = guildLvOf(g), rl = gshopRefLeft();
     body = `<div class="gd-shead"><span>${curIcon('gpts')}<b>${fmt(S.wallet.gpts || 0)}</b> guild points</span><span class="tiny">${icon('clock')}New items in ${gLeftTxt()}</span></div>
-      ${lv >= 3 ? `<button class="btn ghost sm gd-ref" id="gdRef">${icon('wheel')}Refresh items · ${rc ? `${curIcon('gpts')}${rc}` : 'free today'}</button>` : '<p class="tiny">Guild level 3 unlocks refreshing the shop.</p>'}
+      ${lv >= 3 ? `<button class="btn ghost sm gd-ref" id="gdRef" ${rl ? '' : 'disabled'}>${icon('wheel')}${rl ? 'Refresh items · free today' : 'Refresh used today'}</button>` : '<p class="tiny">Guild level 3 unlocks one free shop refresh a day.</p>'}
       <div class="gd-shop">${items.map(it => { const [k, n] = Object.entries(it.got)[0], left = gshopLeft(it), can = left > 0 && (S.wallet.gpts || 0) >= it.price;
         return `<div class="gd-it ${left <= 0 ? 'sold' : ''}"><span class="inv-cell r${REW_R[k] || 4}"><span class="inv-pic">${curIcon(k)}</span></span><b>${fmt(n)} ${(REW_NAMES[k] || [k, k])[n === 1 ? 0 : 1]}</b><small>${left} / ${it.lim} left today</small>
           <button class="btn ${can ? 'gold' : 'ghost'} sm" data-gbuy="${it.id}" ${left > 0 ? '' : 'disabled'}>${left > 0 ? `${curIcon('gpts')}${it.price}` : 'Sold out'}</button></div>`; }).join('')}</div>
