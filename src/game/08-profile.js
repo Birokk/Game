@@ -45,7 +45,8 @@ const titleHTML = (t = titleOf()) => titleMarkup(t);   // 71-titles.js: the admi
 /* avatar picture inside a frame; size in px */
 function avatarHTML(size, entry = avatarEntry(), frame = frameOf().id) {
   const img = entry ? wpThumb(entry.e ? entry : wpParse(entry.id)) : `<img src="${portrait(S.player.look, 4)}" alt="" class="chibi">`;
-  return `<span class="avf f-${frame}" style="--s:${size}px"><span class="avi">${img}</span></span>`;
+  const L = frameLook(frame);   // 72-frames.js: the admin's edits (ring style, picture)
+  return `<span class="avf ${L.cls}${L.pic ? ' has-pic' : ''}" style="--s:${size}px"><span class="avi">${img}</span>${L.pic}</span>`;
 }
 /* namecard background: a design, or the art of an owned character ("char:<id>") */
 function cardBG(id) {
@@ -141,8 +142,8 @@ function renderProfile() {
   root.innerHTML = `<div class="stack pf-mode-${pfMode}">
     ${view ? '' : `<div class="row pf-back"><button class="btn ghost sm" id="pfBack">${icon('back')}Back to profile</button><span class="tiny">Tap a showcase slot, or one of the buttons below to change your avatar, frame, title or namecard.</span></div>`}
     <div class="pf-card">${cardLayer(cardBG(P.card))}${arPlaqueHTML(arJoined() ? arState().vp : 0, arJoined(), true)}${view ? `<button class="pf-set" id="pfSet" aria-label="Profile settings" data-tip="${esc('<b>Profile settings</b><span>Avatar, frame, title, namecard, showcase and name</span>')}">${icon('gear')}<span>Profile settings</span></button>` : ''}
-      <div class="pf-me"><span class="pf-avw">${avatarHTML(108)}<button class="pf-vipav" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipCircle(vipLv())}${vipReady() ? '<span class="dot-n"></span>' : ''}</button></span>
-        <div class="pf-who"><span class="pf-lvrow"><button class="pf-vip" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipTextHTML(vipLv())}</button><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span></span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="Change name">${icon('edit')}</button></span>${titleHTML()}${(() => { const g = myGuild(); return g ? `<span class="pf-guild" title="Guild">${guildIcon(g.icon, 24)}<b>${esc(g.name)}</b></span>` : ''; })()}</div>
+      <div class="pf-me">${avatarHTML(108)}
+        <div class="pf-who"><span class="pf-lvrow"><button class="pf-vip" data-open="vip" aria-label="VIP level ${vipLv()}, open VIP rewards">${vipCircle(vipLv())}${vipTextHTML(vipLv())}${vipReady() ? '<span class="dot-n"></span>' : ''}</button><span class="lbl-sm ts" style="color:#fff">Lv ${playerLv().lv} · UID ${P.uid}</span></span><span class="pf-namerow">${pfEditName ? `<input class="input pf-name-in" id="pfNameIn" maxlength="16" value="${esc(S.player.name)}" aria-label="Your name">` : `<b class="ts">${esc(S.player.name)}</b>`}<button class="rbtn glass pf-edit" id="pfEdit" aria-label="Change name">${icon('edit')}</button></span>${titleHTML()}${(() => { const g = myGuild(); return g ? `<span class="pf-guild" title="Guild">${guildIcon(g.icon, 24)}<b>${esc(g.name)}</b></span>` : ''; })()}</div>
       </div>
     </div>
       <div class="pf-stats">

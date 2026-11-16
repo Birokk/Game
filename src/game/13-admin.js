@@ -39,6 +39,7 @@ const ADMIN_NAV = [
   { g: 'Look & icons', ic: 'image', items: [
     ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
     ['titles', 'Titles', 'crown', 'titles rename style colour picture upload new title', 'Rename the titles, change their style or colours, give them a picture, add new ones'],
+    ['frames', 'Avatar frames', 'team', 'avatar frames ring picture upload new frame rename', 'Rename the avatar frames, change their ring style, give them a picture, add new ones'],
     ['icons', 'Interface icons', 'grid', 'replace any icon ui', 'Replace any icon of the interface with a picture'],
     ['art', 'Item icons', 'coin', 'exp egg memory ticket name selector fragments summon points guild points currency vip level skin instant clear thread gear honor participation quest', 'Icons of currencies and items: EXP, eggs, tickets, fragments, points']] },
   { g: 'Testing & server', ic: 'wrench', items: [
@@ -98,6 +99,7 @@ function renderAdminTab() {
   if (adminTab === 'world') return renderWorldTab();
   if (adminTab === 'tree') return renderTreeTab();
   if (adminTab === 'titles') return renderTitlesTab();
+  if (adminTab === 'frames') return renderFramesTab();
   renderPoolTab();
 }
 /* the Base page holds five parts (Base, Expedition, Camp, Guild, House + Inside the houses): show only the one picked in

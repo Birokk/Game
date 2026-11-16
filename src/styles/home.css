@@ -481,7 +481,8 @@
 .menu .hm-me.hmp .hm-id .ttl{font-size:11px;padding:1px 10px}
 .menu .hmp-bar{position:absolute;left:36px;right:16px;bottom:5px;height:3px;border-radius:999px;background:rgba(255,255,255,.16);overflow:hidden}
 .menu .hmp-bar i{position:absolute;left:0;top:0;bottom:0;min-width:4px;border-radius:inherit;background:#ff8fc8;box-shadow:0 0 7px rgba(255,143,200,.9)}
-.menu .hm-me.hmp .vipc{left:-2px;bottom:14%}   /* raised a little (the owner's ask): 9 px on the 64 px desktop avatar */
+.menu .hm-me.hmp .vipc{left:14.6%;top:85.4%;bottom:auto;translate:-50% -50%}   /* centred on the avatar's rim at its bottom left (the owner's ask; it sat half off the avatar's edge) */
+.menu .hm-me.hmp .vipc.up{width:28px;height:28px}
 @media (min-width:821px) and (max-width:1240px){.menu .hm-me.hmp .hm-name{max-width:180px}}
 @media (max-width:820px) and (orientation:portrait){
   .menu .hm-me.hmp .avf{--s:50px!important}

@@ -7003,12 +7003,14 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .csl-r.on b::after{content:" ✓";color:#9ff5c8}
 .lsd-cs{display:grid;gap:8px;margin-top:10px}.lsd-csh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
 .cs-lh{margin:6px 0 0;font:700 15px var(--display)}
-/* the VIP badge on the profile avatar: centred on the avatar's rim at its bottom left (the owner's ask) */
-.pf-avw{position:relative;display:inline-grid;flex:none}
-.pf-vipav{position:absolute;left:14.6%;top:85.4%;transform:translate(-50%,-50%);z-index:3;padding:0;margin:0;background:none;border:0;cursor:pointer;display:grid;place-items:center;line-height:0}
-.pf-vipav .vipc{position:relative;inset:auto;width:36px;height:36px;min-width:0;border-width:2.5px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
-.pf-vipav .vipc>b{font-size:16px}
-.pf-vipav .vipc.up{width:auto;height:auto;box-shadow:none}.pf-vipav .vipc.up img{display:block;width:auto;height:42px;max-width:64px}
-.pf-vipav .dot-n{position:absolute;top:-3px;right:-3px}
-.pf-vipav:hover .vipc{filter:brightness(1.15)}
-@media (max-width:640px){.pf-vipav .vipc{width:30px;height:30px}.pf-vipav .vipc>b{font-size:13px}.pf-vipav .vipc.up img{height:34px}}
+/* Avatar frames editor (72-frames.js): an uploaded frame picture laid over the avatar, the admin page */
+.avf .avf-pic{position:absolute;left:50%;top:50%;width:calc(var(--s) * var(--fk,1.3));height:calc(var(--s) * var(--fk,1.3));translate:-50% -50%;max-width:none;object-fit:contain;z-index:2;pointer-events:none}
+.avf.f-none::before,.avf.f-none::after{content:none!important}
+.fra-list{display:flex;flex-wrap:wrap;gap:8px}
+.fra-it{display:grid;justify-items:center;gap:6px;padding:16px 10px 10px;min-width:112px;border-radius:14px 4px 14px 4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:inherit;cursor:pointer}
+.fra-it b{font:700 12px var(--display);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fra-it small{font-size:10px;opacity:.65;letter-spacing:.06em;text-transform:uppercase}
+.fra-it.on{background:rgba(255,255,255,.14);border-color:#ffc6e8;box-shadow:0 0 0 1px #ffc6e8 inset,0 0 16px rgba(255,150,220,.25)}
+.fra-it.add{border-style:dashed;align-content:center}.fra-it.add .ic{width:22px;height:22px}
+.fra-pv{display:flex;align-items:center;justify-content:center;gap:22px;min-height:150px}.fra-pv.sm{min-height:70px}
+.fra-k{min-width:44px;text-align:right;font:700 13px var(--display)}
