@@ -32,7 +32,8 @@ const ADMIN_NAV = [
     ['farm:exp', 'Expedition', 'compass', 'places wallpaper expedition labels', 'The Expedition wallpaper and its five places'],
     ['farm:camp', 'Camp', 'tent', 'tournament tavern central wallpaper camp labels', 'The Camp wallpaper and its three places'],
     ['farm:house', 'House', 'home', 'houses rooms inside wallpaper', 'The House map, each house picture and the rooms inside'],
-    ['farm:guild', 'Guild', 'guild', 'hall shop rewards quests wallpaper', 'The guild screen wallpaper and its spots']] },
+    ['farm:guild', 'Guild', 'guild', 'hall shop rewards quests wallpaper', 'The guild screen wallpaper and its spots'],
+    ['artifacts', 'Ancient Artifacts', 'artifact', 'artifacts relics shelf showcase last stand emperor icons positions', 'The shelf wallpaper, each artifact icon, where it stands on the shelves and how big']] },
   { g: 'Look & icons', ic: 'image', items: [
     ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
     ['icons', 'Interface icons', 'grid', 'replace any icon ui', 'Replace any icon of the interface with a picture'],
@@ -90,6 +91,7 @@ function renderAdminTab() {
   if (adminTab === 'shopart') return renderShopArtTab();
   if (adminTab === 'honor') return renderHonorArtTab();
   if (adminTab === 'battle') return renderBattleTab();
+  if (adminTab === 'artifacts') return renderArtifactsTab();
   renderPoolTab();
 }
 /* the Base page holds five parts (Base, Expedition, Camp, Guild, House + Inside the houses): show only the one picked in

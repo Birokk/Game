@@ -1,6 +1,6 @@
 /* ---------- Arena (Card Battle against other players' defense decks) ----------
    Join by setting a DEFENSE DECK (a snapshot of one of your 30-card decks + its leader). Then:
-   - 5 battles every 12 hours (AR_TICKETS, windows 00:00–12:00 and 12:00–24:00 local, arWin); a battle is used when it starts.
+   - 5 battles every 12 hours (arTickets(), windows 00:00–12:00 and 12:00–24:00 local, arWin); a battle is used when it starts.
    - You attack one of 3 opponents (their defense deck, played by the bot); win / lose Victory Points (VP) by your rank (AR_VP).
    - Other players attack YOUR defense while you're away (simulated: 1–3 attacks per 12-hour window, arSimDefense); a held
      defense gives VP and arena tokens, a fallen one loses VP.
@@ -19,7 +19,8 @@ CUR_SVG.atok = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><l
 REW_NAMES.atok = ['arena token', 'arena tokens']; REW_R.atok = 5;
 if (typeof OFFER_KEYS !== 'undefined' && !OFFER_KEYS.includes('atok')) OFFER_KEYS.push('atok');
 
-const AR_TICKETS = 5;   // battles every 12 hours
+const AR_TICKETS_BASE = 5, AR_TICKETS_EMP = 8;   // battles every 12 hours; 8 with the Emperor's Artifact (70-artifacts.js)
+const arTickets = () => typeof artOwned === 'function' && artOwned('emperor') ? AR_TICKETS_EMP : AR_TICKETS_BASE;
 const AR_TOK = { win: 20, draw: 10, lose: 5 }, AR_DEF_TOK = 5;   // arena tokens per battle / per held defense
 const AR_RANKS = [
   { id: 'bronze', name: 'Bronze', min: 0, divs: 5, step: 200, c1: '#ffe0c2', c2: '#c9814a', c3: '#4a220c', gem: '#ff9a5c' },
@@ -73,7 +74,7 @@ function arState() {
   return a;
 }
 const arJoined = () => !!(S.arena && S.arena.joined && S.arena.def);
-const arLeft = () => Math.max(0, AR_TICKETS - (arState().used || 0));
+const arLeft = () => Math.max(0, arTickets() - (arState().used || 0));
 const arPush = e => { const a = arState(); a.log.unshift(e); if (a.log.length > 60) a.log.length = 60; };
 const arUid = () => String((S.profile && S.profile.uid) || (S.account && S.account.userId) || 'me');
 
@@ -183,7 +184,7 @@ const arDefChanged = () => { const a = S.arena; if (!a || !a.def) return false; 
 let arEl = null, arTab = 'battle', arSel = null, arPick = null;
 function arBattle(fid) {
   const a = arState(); if (!arJoined()) return;
-  if (arLeft() <= 0) { toast(`No battles left. ${AR_TICKETS} new battles in ${arResetTxt()}.`); return; }
+  if (arLeft() <= 0) { toast(`No battles left. ${arTickets()} new battles in ${arResetTxt()}.`); return; }
   const f = arFoes().find(x => x.id === fid); if (!f) return;
   if (a.beat.includes(f.id)) { toast('Already defeated. Pick another opponent or refresh.'); return; }
   const deck = ccCampMyDeck(); if (!ccValidateDeck(deck.cards).ok) { toast('Pick a 30-card deck to attack with.', true); return; }
@@ -341,7 +342,7 @@ function renderArena() {
   const a = arState(), joined = arJoined(), R = arRankOf(a.vp), left = arLeft(), bg = MEDIA.get('arena:bg');
   if (!AR_TABS.some(t => t[0] === arTab) || (!joined && arTab !== 'rank')) arTab = joined ? (AR_TABS.some(t => t[0] === arTab) ? arTab : 'battle') : arTab === 'rank' ? 'rank' : 'battle';
   const keep = arEl.querySelector('.rdx-scroll'), top = keep && keep.dataset.tab === arTab ? keep.scrollTop : 0;
-  const pips = `<span class="hgx-pips">${Array.from({ length: AR_TICKETS }, (_, i) => `<i class="${i < left ? 'on' : ''}"></i>`).join('')}</span>`;
+  const pips = `<span class="hgx-pips">${Array.from({ length: arTickets() }, (_, i) => `<i class="${i < left ? 'on' : ''}"></i>`).join('')}</span>`;
   const tab = ([id, ic, nm]) => { const dis = !joined && id !== 'battle' && id !== 'rank', dot = id === 'defense' && arUnseen().length;
     return `<button class="arx-tb ${id === arTab ? 'on' : ''}" data-art="${id}" ${dis ? 'disabled' : ''} aria-pressed="${id === arTab}" title="${nm}">${icon(ic)}<span>${id === 'battle' && !joined ? 'Join' : nm}</span>${dot ? '<i class="cmp-dot"></i>' : ''}</button>`; };
   arEl.style.setProperty('--rk', R.r.c2);
@@ -350,7 +351,7 @@ function renderArena() {
       ${canAdmin() ? `<button class="rdx-sec arx-adm" id="arAdm" title="Admin: Arena wallpaper and rank icons">${icon('image')}<span>Wallpaper</span></button>` : ''}
       <div class="arx-tabw"><nav class="arx-tabs" aria-label="Arena">${AR_TABS.map(tab).join('')}</nav></div><span class="rdx-sp arx-sp"></span>
       ${joined ? `<span class="rdx-ward arx-rkc" title="${esc(R.label)} · ${fmt(a.vp)} VP">${arBadge(a.vp)}<b>${esc(R.label)}</b><small>${fmt(a.vp)} VP</small></span>
-        <span class="rdx-ward arx-tk" title="Battles left in this 12-hour window · ${AR_TICKETS} new ones in ${arResetTxt()}">${icon('swords')}<b>${left} / ${AR_TICKETS}</b>${pips}<em>${icon('clock')}${arResetTxt()}</em></span>` : ''}
+        <span class="rdx-ward arx-tk" title="Battles left in this 12-hour window · ${arTickets()} new ones in ${arResetTxt()}">${icon('swords')}<b>${left} / ${arTickets()}</b>${pips}<em>${icon('clock')}${arResetTxt()}</em></span>` : ''}
       <div class="cur" data-k="atok" title="Arena tokens">${curIcon('atok')}<b>${fmt(S.wallet.atok || 0)}</b></div>
       <div class="cur arx-pearl" data-k="pearls">${curIcon('pearls')}<b>${fmt(S.wallet.pearls)}</b></div>
       <button class="inv-x" id="arClose" aria-label="Close">${icon('close')}</button></header>
@@ -365,7 +366,7 @@ function arJoinHTML() {
   return `<div class="rdx-hero"><span class="rdx-kind">${icon('arena')}Card Battle · Versus players</span>
       <h1 class="rdx-title arx-title">Arena</h1>
       <p class="rdx-desc">Battle other players' defense decks and climb from Bronze to Celestial. To join, choose a <b>defense deck</b>: it defends you while you're away, played for you when other players attack.</p>
-      <div class="rdx-meta"><span>${icon('swords')}${AR_TICKETS} battles every 12 hours</span><span>${curIcon('pearls')}Weekly pearls</span><span>${curIcon('atok')}Arena tokens</span><button class="rdx-sec arx-rinfo" data-info="arena">${icon('info')}Ranks &amp; rewards</button></div></div>
+      <div class="rdx-meta"><span>${icon('swords')}${arTickets()} battles every 12 hours</span><span>${curIcon('pearls')}Weekly pearls</span><span>${curIcon('atok')}Arena tokens</span><button class="rdx-sec arx-rinfo" data-info="arena">${icon('info')}Ranks &amp; rewards</button></div></div>
     <div class="rdx-panel"><div class="rdx-ph"><b>Choose your defense deck</b><small>You can change it any time in the Defense tab</small></div>
       ${ok.length ? `<div class="arx-dks">${ok.map(d => { const le = ccLeaderOf(d.id); return `<button class="arx-dk ${d.id === arPick ? 'on' : ''}" data-arpick="${d.id}"><span class="arx-dkav">${le ? baseThumb(le) : icon('cards')}</span><span class="arx-dkt"><b>${esc(d.name)}</b><small>${le ? `${icon('crown')}${esc(le.name)}` : 'No leader'} · ${d.preset ? 'Starter deck' : 'Your deck'}</small></span>${arMixHTML(d.cards)}</button>`; }).join('')}</div>`
         : `<p class="tiny">You need a ready 30-card deck first. <button class="btn gold sm" id="arBuild">${icon('cards')}Build a deck</button></p>`}</div>`;
@@ -411,7 +412,7 @@ function arBarHTML() {
       <button class="rdx-side me" id="arDeck" title="Change the deck you attack with"><span class="rdx-si qmx-av">${le ? baseThumb(le) : icon('cards')}</span><span class="rdx-st"><small>Attack deck</small><b>${valid ? esc(dk.name) : 'No ready deck'}</b><em>${valid ? `${le ? `${icon('crown')}${esc(le.name)} · ` : ''}Change` : 'Build a 30-card deck'}</em></span></button>
       <span class="rdx-vsx">VS</span>
       <div class="rdx-side op"><span class="rdx-si qmx-av">${f ? arAva(f.lead) : icon('user')}</span><span class="rdx-st"><small>Opponent</small><b>${f ? esc(f.name) : 'Pick an opponent'}</b><em>${f ? `${esc(FR.label)} · ${esc(f.deckName)}` : 'or refresh the list'}</em></span></div></div>
-    <div class="rdx-inst"><span class="rdx-il">${icon('clock')}${AR_TICKETS} new battles in <b>${arResetTxt()}</b></span></div>
+    <div class="rdx-inst"><span class="rdx-il">${icon('clock')}${arTickets()} new battles in <b>${arResetTxt()}</b></span></div>
     <button class="rdx-go" id="arGo" ${f && valid && left ? '' : 'disabled'}><span class="rdx-goi">${icon('swords')}</span><span class="rdx-got"><b>Battle!</b><small>${left ? `1 of ${left} battle${left === 1 ? '' : 's'} left` : 'No battles left'}</small></span></button></div>`;
 }
 /* Defense: the deck that defends you, changing it, and the battle log (your attacks and the attacks on your defense) */
@@ -470,7 +471,7 @@ setInterval(() => { if (!arEl) { arWinShown = ''; return; } const w = arState().
 
 INFO.arena = () => ({ title: 'Arena', kind: 'arinfo', body: `<p class="desc">Battle other players' defense decks in Card Battle and climb the ranks.</p>
   <ul class="info-list"><li>To join, choose a <b>defense deck</b>. It defends you while you're away: when other players attack you, it is played for you. A held defense gives VP and ${AR_DEF_TOK} arena tokens; a fallen one loses VP.</li>
-  <li>You get <b>${AR_TICKETS} battles every 12 hours</b> (at 00:00 and 12:00); unused battles don't carry over. A battle is used when it starts, and leaving it counts as a loss.</li>
+  <li>You get <b>${arTickets()} battles every 12 hours</b> (at 00:00 and 12:00); unused battles don't carry over. A battle is used when it starts, and leaving it counts as a loss.</li>
   <li>You attack <b>players of your own rank</b>: 3 at a time, with their defense deck. <b>New opponents</b> are free ${AR_REF_FREE} times every 12 hours, then cost ${AR_REF_PEARLS} pearl each; an opponent you beat is replaced by a new one straight away. Higher ranks defend with more HP and smarter play.</li>
   <li><b>Victory Points</b> decide your rank. How many you win or lose depends on your rank (below). VP never go below 0.</li>
   <li><b>Arena tokens</b>: win ${AR_TOK.win}, draw ${AR_TOK.draw}, loss ${AR_TOK.lose}, ${AR_DEF_TOK} per held defense, plus the weekly rewards. Spend them in the <b>Arena Shop</b> (new items every day, also in the Shop).</li>
@@ -493,10 +494,10 @@ function arAdminBind(p, redo) {
 ADMIN_ART.atok = () => adIconRow('atok', 'Arena token icon', 'Earned in the Arena, spent in the Arena Shop');
 if (!ADMIN_ART_SECS.icons.includes('atok')) ADMIN_ART_SECS.icons.push('atok');
 const arTestHTML = () => `<div><h3>Arena</h3><p class="tiny">Test helpers for the Arena.</p></div>
-  <div class="row"><button class="btn ghost sm" id="wArTk">${icon('swords')}Arena: battles back to ${AR_TICKETS}</button><button class="btn ghost sm" id="wArVp">${icon('trophy')}Arena: +500 VP</button><button class="btn ghost sm" id="wArVpM">Arena: −500 VP</button><button class="btn ghost sm" id="wArTok">${curIcon('atok')}+500 arena tokens</button><button class="btn ghost sm" id="wArDef">${icon('shield')}Arena: attacks on my defense now</button><button class="btn ghost sm" id="wArWk">${icon('mail')}Arena: settle the week now</button><button class="btn danger sm" id="wArReset">Arena: reset</button></div>`;
+  <div class="row"><button class="btn ghost sm" id="wArTk">${icon('swords')}Arena: battles back to ${arTickets()}</button><button class="btn ghost sm" id="wArVp">${icon('trophy')}Arena: +500 VP</button><button class="btn ghost sm" id="wArVpM">Arena: −500 VP</button><button class="btn ghost sm" id="wArTok">${curIcon('atok')}+500 arena tokens</button><button class="btn ghost sm" id="wArDef">${icon('shield')}Arena: attacks on my defense now</button><button class="btn ghost sm" id="wArWk">${icon('mail')}Arena: settle the week now</button><button class="btn danger sm" id="wArReset">Arena: reset</button></div>`;
 function arTestBind() {
   const on = (id, f) => { const b = $('#' + id); if (b) b.onclick = f; };
-  on('wArTk', () => { arState().used = 0; persist(); renderMenu(); if (arEl) renderArena(); toast(`Arena: ${AR_TICKETS} battles.`); });
+  on('wArTk', () => { arState().used = 0; persist(); renderMenu(); if (arEl) renderArena(); toast(`Arena: ${arTickets()} battles.`); });
   on('wArVp', () => { const a = arState(); a.vp += 500; a.best = Math.max(a.best, a.vp); persist(); if (arEl) renderArena(); toast(`Arena: ${fmt(a.vp)} VP · ${arRankOf(a.vp).label}.`); });
   on('wArVpM', () => { const a = arState(); a.vp = Math.max(0, a.vp - 500); persist(); if (arEl) renderArena(); toast(`Arena: ${fmt(a.vp)} VP · ${arRankOf(a.vp).label}.`); });
   on('wArTok', () => { S.wallet.atok = (S.wallet.atok || 0) + 500; persist(); renderMenu(); if (arEl) renderArena(); toast('+500 arena tokens.'); });

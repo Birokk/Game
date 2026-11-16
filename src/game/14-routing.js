@@ -23,6 +23,7 @@ document.addEventListener('click', e => {
   else if (k === 'offer') openOffer(t.dataset.offer);
   else if (k === 'raids') openRaids();
   else if (k === 'vault') { if (bthEl) { bthEl.remove(); bthEl = null; bthBack = true; } openRaids('vault'); }   // the gold "+": Raids on the Golden Vault
+  else if (k === 'artifacts') openArtifacts();
   else if (k === 'collectibles') openCollection('collectible');
   else if (k === 'profile') openProfile();
   else if (k === 'login') openLogin();

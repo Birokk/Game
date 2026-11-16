@@ -29,9 +29,12 @@ const LS_POT = [
   ['bondN', 10, 'The attribute bond needs 10 cards instead of 12'], ['fu', 1, 'Your first unit each match gets +1 max HP'], ['ap1', 1, '+1 AP on your first turn']
 ];
 const LS_MEM_ROUND = [8, 7, 6, 4];
+const lsBonus0 = () => ({ hp: 0, heal: 0, cards: 0, ap1: 0, last: false, cheap: false, fu: 0, rs: 0, rsAp: 0, ult: false, bondN: 0, src: [] });
+/* the ancient artifacts work whoever leads (70-artifacts.js) */
+function lsArtifacts(b) { if (typeof artOwned === 'function' && artOwned('laststand')) { b.last = true; b.src.push(['Ancient artifact', 'Last Stand', 'Once a match your hero revives with 1 HP']); } return b; }
 function lsBonus(e) {
-  if (!e || !owns(e.id)) return null;
-  const b = { hp: 0, heal: 0, cards: 0, ap1: 0, last: false, cheap: false, fu: 0, rs: 0, rsAp: 0, ult: false, bondN: 0, src: [] };
+  if (!e || !owns(e.id)) { const b = lsArtifacts(lsBonus0()); return b.src.length ? b : null; }
+  const b = lsBonus0();
   const bl = bondLv(e.id), bh = Math.min(5, Math.floor(bl / 2));
   if (bh) { b.hp += bh; b.src.push(['Bond', `Lv ${bl}`, `Hero +${bh} HP`]); }
   LS_POT.forEach(([k, v, t], i) => { if (!potDone(e.id, i)) return; if (k === 'cheap') b.cheap = true; else if (k === 'bondN') b.bondN = v; else b[k] += v; b.src.push(['Potential', `Plan #${i + 1}`, t]); });
@@ -42,6 +45,7 @@ function lsBonus(e) {
   const n = lsAwake(e); if (n >= 2) b.src.push(['Breakthrough', `${n} stars awakened`, `Skill tier ${n >= 4 ? 'III' : 'II'}${n >= 6 ? ', cooldown −1' : ''}`]);
   const gb = typeof gearBattle === 'function' ? gearBattle(e) : null;
   if (gb) { b.hp += gb.hp; b.heal += gb.heal; b.cards += gb.cards; b.fu += gb.fu; b.ap1 += gb.ap1; if (gb.cheap) b.cheap = true; b.cd0 = gb.cd0; b.gw = gb.weak; b.gr = gb.res; b.src.push(...gb.src); }
+  lsArtifacts(b);
   for (const k of Object.keys(LS_CAP)) b[k] = Math.min(LS_CAP[k], b[k]);
   return b;
 }

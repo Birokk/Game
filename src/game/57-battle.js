@@ -37,7 +37,7 @@ function bthInfo(id) {
   if (id === 'gboss') { if (!inGuild()) return { sub: 'Join a guild', line: `${icon('guild')}Fight it with your guild`, dot: false };
     const bd = gbBoard(); return { sub: `Level ${bd.lv} · ${fmt(bd.hp)} / ${fmt(bd.max)} HP`, line: `${icon('swords')}${gbLeft()} of ${GB_TRIES} battles left`, dot: gbReady() }; }
   if (id === 'arena') { if (!arJoined()) return { sub: 'Join the Arena', line: `${icon('shield')}Set a defense deck`, dot: false };
-    const a = arState(), R = arRankOf(a.vp); return { sub: `${R.label} · ${fmt(a.vp)} VP`, line: `${icon('swords')}${arLeft()} of ${AR_TICKETS} battles left`, dot: arReady() }; }
+    const a = arState(), R = arRankOf(a.vp); return { sub: `${R.label} · ${fmt(a.vp)} VP`, line: `${icon('swords')}${arLeft()} of ${arTickets()} battles left`, dot: arReady() }; }
   if (id === 'training') return { sub: 'Set up any match', line: `${icon('check')}Free · no rewards`, dot: false };
   if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
     return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
@@ -117,7 +117,7 @@ INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in on
   <li><b>Quick Match</b>: a quick battle against a hidden challenger with one of your decks. Pick a battle type (Mirror Duel, Rival Deck, Event Storm, Blitz) and a difficulty (Easy to Expert); tougher challengers give more gold, pearls and gear.</li>
   <li><b>World Map</b>: the regions around the Great Tree. Only the tree is open for now.</li>
   <li><b>Guild Boss</b>: a dragon your whole guild fights together, ${GB_TRIES} battles every 48 hours, with rewards by the damage you deal.</li>
-  <li><b>Arena</b>: attack other players' defense decks, ${AR_TICKETS} battles every 12 hours. Climb from Bronze to Celestial for weekly pearls and arena tokens.</li></ul>` });
+  <li><b>Arena</b>: attack other players' defense decks, ${arTickets()} battles every 12 hours. Climb from Bronze to Celestial for weekly pearls and arena tokens.</li></ul>` });
 
 /* admin → Battle screen: a wallpaper per card (portrait; it covers the card) and the campaign chapter wallpapers */
 function renderBattleTab() {

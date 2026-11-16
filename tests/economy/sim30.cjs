@@ -316,7 +316,7 @@ function playStage(A, st, starsArr, isTree) {
 function campMiles(A) {
   for (let ch = 0; ch <= 10; ch++) { const n = CAMP.filter(s => s.ch === ch).reduce((t, s) => t + A.camp.stars[s.i].reduce((a, b) => a + b, 0), 0);
     if (ch === 0) { if (n >= 15 && !A.camp.miles.has('c0')) { A.camp.miles.add('c0'); gain(A, 'wishes', 10, 'campaign rewards'); } }
-    else for (const m of [10, 20, 30]) if (n >= m && !A.camp.miles.has(ch + ':' + m)) { A.camp.miles.add(ch + ':' + m); gain(A, 'pearls', 10, 'campaign rewards'); gain(A, 'bottles', 1, 'campaign rewards'); } }
+    else for (const m of [10, 20, 30]) if (n >= m && !A.camp.miles.has(ch + ':' + m)) { A.camp.miles.add(ch + ':' + m); gain(A, 'pearls', 10, 'campaign rewards'); if (m === 10) gain(A, 'coins', 20000, 'campaign rewards'); else if (m === 20) gain(A, 'thread', 30, 'campaign rewards'); else gain(A, 'bottles', 1, 'campaign rewards'); } }
 }
 function arenaBattle(A) {
   const rk = arRank(A.arena.vp), win = R() < winP(A, AR_WIN[rk]), v = AR_VP[rk];

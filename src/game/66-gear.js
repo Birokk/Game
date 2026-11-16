@@ -111,6 +111,28 @@ function gearDismantle(id, k, si) {
   S.wallet.thread = (S.wallet.thread || 0) + th; if (tok) gS().tok[x.set] = (gS().tok[x.set] || 0) + tok;
   persist(); return { th, tok, x };
 }
+/* Set tokens: tapping a piece asks first (the owner's ask), in a popup that shows the piece's art, its set, slot, the
+   tokens before → after and Craft / Cancel; without enough tokens it still shows the piece and says how many are missing */
+/* a set's name from its id (clothSetName takes a piece) */
+const gearSetNm = set => { const x = (S.clothes || []).find(c => c.set === set); return typeof clothSetName === 'function' ? clothSetName(x || { set }) : set; };
+function gearCraftAsk(id) {
+  const x = clothOf(id); if (!x) return;
+  document.querySelectorAll('.gtc').forEach(e => e.remove());
+  const n = gS().tok[x.set] || 0, ok = n >= GEAR_TOK, full = wardFree() < 1, slot = (typeof WARD_NAME !== 'undefined' && WARD_NAME[x.slot]) || x.slot;
+  const el = document.createElement('div'); el.className = 'rdrop gtc'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Craft ' + x.name);
+  el.innerHTML = `<div class="rdrop-box gtc-box">
+    <div class="wdp-head"><h2 class="ts">Craft this piece?</h2><button class="inv-x" data-gtcx aria-label="Close">${icon('close')}</button></div>
+    <div class="gtc-art r${x.rarity}"><img src="${clothImg(x)}" alt="">${ctag(x.rarity)}</div>
+    <div class="gtc-name"><b>${esc(x.name)}</b><small>${esc(gearSetNm(x.set))} · ${esc(slot)}</small><small>You own ${S.owned[x.id] || 0} · a new copy starts at 1★, Lv 0</small></div>
+    <div class="gtc-cost"><i class="gtc-tk">${icon('wardrobe')}</i><span>Set tokens</span><b>${n}</b>${icon('back')}<b class="${ok ? '' : 'bad'}">${ok ? n - GEAR_TOK : '—'}</b></div>
+    ${ok ? (full ? '<p class="tiny bad">Your wardrobe is full: make some space first.</p>' : '') : `<p class="tiny bad">You need ${GEAR_TOK} tokens of this set: ${GEAR_TOK - n} more. Every UR piece from a raid gives 1, dismantling a spare UR piece 5 per star.</p>`}
+    <div class="row" style="justify-content:center;gap:10px"><button class="btn ghost" data-gtcx>Cancel</button><button class="btn gold" id="gtcGo" ${ok && !full ? '' : 'disabled'}>${icon('hanger')}Craft · ${GEAR_TOK} tokens</button></div></div>`;
+  const close = () => el.remove();
+  el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-gtcx]')) close(); });
+  el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } });
+  el.querySelector('#gtcGo').onclick = () => { if (gearCraft(x.id)) { close(); toast(`Crafted ${x.name}`); renderTailor(); } };
+  document.body.appendChild(el); el.querySelector('#gtcGo').focus();
+}
 function gearCraft(id) {
   const x = clothOf(id), g = gS(); if (!x || !x.set || (g.tok[x.set] || 0) < GEAR_TOK) return false;
   if (wardFree() < 1) { toast('Your wardrobe is full.'); return false; }
@@ -174,7 +196,7 @@ function gearBattle(e) {
     if (n < 3) continue;
     const x = S.clothes.find(c => c.set === set), T = GEAR_SETS[set] || GEAR_SET_BY_R[x ? +x.rarity : 3] || GEAR_SETS.r, t = T[n >= 6 ? 1 : 0];
     for (const [k, v] of Object.entries(t)) { if (k === 'cheap') out.cheap = true; else out[k] += v; }
-    out.src.push(['Set trait', `${esc(typeof clothSetName === 'function' ? clothSetName(set) : set)} · ${n >= 6 ? 6 : 3} pieces`, gearTraitTxt(t)]);
+    out.src.push(['Set trait', `${esc(gearSetNm(set))} · ${n >= 6 ? 6 : 3} pieces`, gearTraitTxt(t)]);
   }
   return out;
 }
@@ -200,7 +222,7 @@ function renderTailor() {
   const cell = c => `<button class="gt-it r${c.x.rarity} ${key(c) === gearSelKey() ? 'on' : ''}" data-gt="${esc(key(c))}"><img src="${clothImg(c.x)}" alt="">${ctag(c.x.rarity)}${hasClothStars(c.x) ? clothStarRow(c.k, 'item') : ''}<b>Lv ${c.lv}</b><small>${c.who ? esc((findEntry(c.who) || {}).name || '') : 'Spare'}</small></button>`;
   const sets = [...new Set(S.clothes.filter(x => x.set && +x.rarity >= 5).map(x => x.set))];
   let detail = '';
-  if (gearTab === 'tok') detail = `<div class="gt-tok">${sets.map(set => { const ps = S.clothes.filter(x => x.set === set), n = g.tok[set] || 0; return `<div class="gt-set"><div class="gt-seth"><b>${esc(typeof clothSetName === 'function' ? clothSetName(set) : set)}</b><span>${n} / ${GEAR_TOK} tokens</span></div><div class="gt-setp">${ps.map(x => `<button class="gt-cr" data-gcraft="${x.id}" ${n >= GEAR_TOK ? '' : 'disabled'}><img src="${clothImg(x)}" alt=""><small>${esc(x.name)}</small></button>`).join('')}</div></div>`; }).join('') || '<p class="tiny">No UR sets yet.</p>'}<p class="tiny">Every UR piece from a raid gives 1 token of its set, dismantling a spare UR piece 5 per star. ${GEAR_TOK} tokens craft the exact piece you want.</p></div>`;
+  if (gearTab === 'tok') detail = `<div class="gt-tok">${sets.map(set => { const ps = S.clothes.filter(x => x.set === set), n = g.tok[set] || 0; return `<div class="gt-set"><div class="gt-seth"><b>${esc(gearSetNm(set))}</b><span>${n} / ${GEAR_TOK} tokens</span></div><div class="gt-setp">${ps.map(x => `<button class="gt-cr ${n >= GEAR_TOK ? '' : 'low'}" data-gcraft="${x.id}"><img src="${clothImg(x)}" alt=""><small>${esc(x.name)}</small></button>`).join('')}</div></div>`; }).join('') || '<p class="tiny">No UR sets yet.</p>'}<p class="tiny">Every UR piece from a raid gives 1 token of its set, dismantling a spare UR piece 5 per star. ${GEAR_TOK} tokens craft the exact piece you want.</p></div>`;
   else if (cur) {
     const cap = gearCap(cur.x, cur.k), c = cur.lv < cap ? gearCost(cur.x, cur.lv) : null, m = Math.floor(cur.lv / 10), next = Math.min(cap, (m + 1) * 10);
     if (!gearAuto.target || gearAuto.target <= cur.lv || gearAuto.target > cap) gearAuto.target = cap;
@@ -227,7 +249,7 @@ function renderTailor() {
   const tg = root.querySelector('#gtTarget'); if (tg) tg.onchange = () => { gearAuto.target = +tg.value; };
   root.querySelectorAll('[data-gspd]').forEach(b => b.onclick = () => { gearAuto.speed = +b.dataset.gspd; renderTailor(); });
   const dis = root.querySelector('[data-gdis]'); if (dis) dis.onclick = () => { if (dis.dataset.sure !== '1') { dis.dataset.sure = '1'; dis.innerHTML = `${icon('trash')}Tap again to dismantle`; return; } const r = gearDismantle(gearSel.id, gearSel.k, gearSel.si); if (r) toast(`Dismantled ${r.x.name}: +${r.th} Thread${r.tok ? `, +${r.tok} set tokens` : ''}`); gearSel = null; renderTailor(); };
-  root.querySelectorAll('[data-gcraft]').forEach(b => b.onclick = () => { const x = clothOf(b.dataset.gcraft); if (x && gearCraft(x.id)) { toast(`Crafted ${x.name}`); renderTailor(); } });
+  root.querySelectorAll('[data-gcraft]').forEach(b => b.onclick = () => gearCraftAsk(b.dataset.gcraft));
 }
 
 /* materials: icons, names, rarity colours */

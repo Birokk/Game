@@ -4,7 +4,7 @@
    Up to 3 stars per stage, each one a goal; star 1 is always "clear the stage" and the others only count on a win.
    Stars are kept for good once earned (one clear can earn some, a later clear the rest). Every new star gives 1 pearl
    (CC_CAMP_STAR_PEARLS); each chapter has star milestones (`miles`) claimed on the campaign map (Chapter 0: all 15 stars
-   = 10 Standard tickets, a ×10 Standard summon; Chapter 1: 10 / 20 / 30 stars = 10 pearls + 1 stamina bottle each).
+   = 10 Standard tickets, a ×10 Standard summon; Chapters 1-10: 10 stars = 10 pearls + 20,000 gold, 20 = 10 pearls + 30 Thread, 30 = 10 pearls + 1 stamina bottle, CC_MILE_REW).
    Chapter 0 uses set decks; from Chapter 1 on (`own`) you play your own deck against tougher stage decks. A chapter
    opens when the last stage of the one before is cleared. Campaign matches give no Quick match rewards and don't count
    in the deck record. State S.cc.camp = { stars: { stageId: [0|1, 0|1, 0|1] }, got: [milestone ids claimed] }.
@@ -49,6 +49,9 @@ Object.assign(CC_CAMP_DECKS, {
   // the last boss: support at its heart (weak to Aggression) with the heaviest hitters of every style
   dawn: ['SUP-U02', 'SUP-U02', 'SUP-U04', 'SUP-U04', 'SUP-U06', 'SUP-U06', 'SUP-U03', 'SUP-U03', 'SUP-U08', 'SUP-U08', 'AGG-U08', 'AGG-U08', 'DEF-U04', 'DEF-U04', 'CON-U02', 'CON-U02', 'MOB-U06', 'MOB-U06', 'SUP-S01', 'SUP-S01', 'SUP-S03', 'SUP-S03', 'AGG-S04', 'AGG-S04', 'SUP-T02', 'SUP-T02', 'DEF-T02', 'DEF-T02', 'SUP-E02', 'SUP-E02']
 });
+/* a chapter's star milestones (the owner's rule): 10 stars = 10 pearls + gold, 20 = 10 pearls + Thread, all 30 = 10 pearls + 1 stamina bottle */
+const CC_MILE_REW = { 10: [{ pearls: 10, coins: 20000 }, '10 pearls + 20,000 gold'], 20: [{ pearls: 10, thread: 30 }, '10 pearls + 30 Thread'], 30: [{ pearls: 10, bottles: 1 }, '10 pearls + 1 stamina bottle'] };
+const ccMiles = pre => [10, 20, 30].map(n => ({ id: pre + n, n, reward: CC_MILE_REW[n][0], txt: CC_MILE_REW[n][1] }));
 const ccOne = t => [{ id: 'go', at: 'low', t }];   // a Chapter 1 stage's single coach tip (under the battle line, so the bot's side stays visible)
 
 const CC_CAMP = [{
@@ -112,7 +115,7 @@ const CC_CAMP = [{
   ]
 }, {
   id: 'c1', no: 1, name: 'The Ember Road', sub: 'Ember Road', own: true,
-  miles: [10, 20, 30].map(n => ({ id: 'c1:' + n, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  miles: ccMiles('c1:'),
   stages: [
     { id: '1-1', name: 'Ambush at Dusk', twist: 'Raiders already on the board', hp: [20, 6], first: 0, brain: 'easy', seed: 201, bot: CC_CAMP_DECKS.raiders,
       intro: 'Raiders jump you on the road with a hound already out. They hit hard but break easily: hold the lanes and strike back.',
@@ -163,7 +166,7 @@ const CC_CAMP = [{
   ]
 }, {
   id: 'c2', no: 2, name: 'The Frost Peaks', sub: 'Frost Peaks', own: true, path: 'climb',
-  miles: [10, 20, 30].map(n => ({ id: 'c2:' + n, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  miles: ccMiles('c2:'),
   stages: [
     { id: '2-1', name: 'The Frozen Pass', twist: 'Frost mages that stun and weaken', hp: [20, 8], first: 0, brain: 'easy', seed: 301, bot: CC_CAMP_DECKS.frost,
       intro: 'The road climbs into the mountains. Frost mages hold the pass: their Frost Witch stuns what it hits, and a Guardian shields her.',
@@ -223,7 +226,7 @@ const CC_CAMP = [{
    meadows (3), a winding river along the coast (4), a spiral into the heart of the isles (5). */
 const ccEasyStar = ([k, n]) => ({ k, n, t: k === 'win' ? 'Clear the stage' : k === 'hp' ? `Finish with ${n} HP or more` : k === 'round' ? `Win by round ${n}` : k === 'kills' ? `Destroy ${n} enemy units` : k === 'lost' ? `Lose no more than ${n} units` : k === 'spells' ? `Cast ${n} spells` : `Move units ${n} times` });
 const ccEasyCh = (no, name, sub, path, rows) => ({ id: 'c' + no, no, name, sub, own: true, easy: true, path,
-  miles: [10, 20, 30].map(n => ({ id: `c${no}:${n}`, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  miles: ccMiles(`c${no}:`),
   stages: rows.map(([nm, twist, bot, hp, ev, intro, tip, stars, setup], i) => ({ id: `${no}-${i + 1}`, name: nm, twist, hp: [20, hp], first: 0, seed: no * 100 + 101 + i,
     ...(bot.startsWith('p-') ? { botDeck: bot } : { bot: CC_CAMP_DECKS[bot] }), ...(ev ? { ev } : {}), ...(i === 4 || i === 9 ? { boss: true } : {}), ...(setup ? { setup } : {}),
     intro, stars: [['win'], ...stars].map(ccEasyStar), tips: ccOne(tip) })) });
@@ -277,7 +280,7 @@ CC_CAMP.push(...CC_CAMP_EASY);
    (cmpLayout): a canyon of two V's (6), a battlement (7), a Z (8), a crescent moon (9) and a heart with the last boss in
    the middle (10). */
 const ccHardCh = (no, name, sub, path, rows) => ({ id: 'c' + no, no, name, sub, own: true, hard: true, path,
-  miles: [10, 20, 30].map(n => ({ id: `c${no}:${n}`, n, reward: { pearls: 10, bottles: 1 }, txt: '10 pearls + 1 stamina bottle' })),
+  miles: ccMiles(`c${no}:`),
   stages: rows.map(([nm, twist, bot, hp, ev, intro, tip, stars, setup, o = {}], i) => ({ id: `${no}-${i + 1}`, name: nm, twist, hp: [o.me || 20, hp], first: o.first || 0, seed: no * 100 + 101 + i,
     ...(bot.startsWith('p-') ? { botDeck: bot } : { bot: CC_CAMP_DECKS[bot] }), ...(ev ? { ev } : {}), ...(o.brain ? { brain: o.brain } : {}), ...(i === 4 || i === 9 ? { boss: true } : {}), ...(setup ? { setup } : {}),
     intro, stars: [['win'], ...stars].map(ccEasyStar), tips: ccOne(tip) })) });

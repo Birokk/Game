@@ -128,6 +128,7 @@ function resizeImage(file, max, type = 'image/webp', exact) {
 
 /* ---------- icons ---------- */
 const ICONS = {
+  artifact:'<path d="M9 3h6"/><path d="M10 3v3c-3 1-5 4-5 8 0 4 3 7 7 7s7-3 7-7c0-4-2-7-5-8V3"/><path d="M7 12h10"/><path d="M12 15l1.5 2-1.5 2-1.5-2z"/>',
   farm:'<path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/><path d="M9 10h6"/>',
   up:'<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
   memory:'<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 6V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/><path d="M3 15l4-4 3 3 2-2 5 5"/>',
@@ -208,7 +209,7 @@ const IC_FRAMES = '.evo,.tc,.rbtn,.so,.tbi,.unhide';
 function hydrateIcons(root = document) { root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = icon(el.dataset.ic); const f = el.closest(IC_FRAMES); if (f) f.classList.toggle('ic-up', !!customIcon(el.dataset.ic)); }); }
 const ICON_SLOTS = [
   ['Currencies', [['coins', 'Gold coins'], ['pearls', 'Pearls'], ['tickets', 'Limited tickets'], ['wishes', 'Standard tickets (permanent banner)'], ['stamina', 'Stamina'], ['fragssr', 'SSR egg fragment'], ['fragur', 'UR egg fragment'], ['rings', 'Rings'], ['bottles', 'Stamina bottle'], ['dust', 'Seaweeds'], ['starlight', 'Corals'], ['gsweets', 'Gift: Lantern Sweets'], ['gbracelet', 'Gift: Pearl Bracelet'], ['gplush', 'Gift: Star Plushie'], ['exp', 'EXP (shown on EXP rewards)'], ['vip', 'VIP EXP'], ['honor', 'Honor EXP (Pearl Honor)'], ['qpt', 'Daily quest points'], ['potential', 'Potential gem (above the stars)']]],
-  ['Home screen · top', [['mail', 'Mail'], ['gear', 'Settings'], ['ach', 'Achievements'], ['level', 'Level rewards'], ['book', 'Index (the collection)'], ['wrench', 'Admin'], ['image', 'Wallpaper'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
+  ['Home screen · top', [['mail', 'Mail'], ['gear', 'Settings'], ['ach', 'Achievements'], ['level', 'Level rewards'], ['book', 'Index (the collection)'], ['artifact', 'Ancient Artifacts'], ['wrench', 'Admin'], ['image', 'Wallpaper'], ['eyeOff', 'Hide UI'], ['eye', 'Show UI / view art'], ['chat', 'World chat']]],
   ['Home screen · side icons', [['wheel', 'Daily Spin'], ['calendar', 'Events'], ['offer', 'Special offers'], ['quests', 'Quests'], ['medal', 'Honor (Pearl Honor)'], ['guild', 'Guild'], ['grid', 'Menu button (also in the plaza)']]],
   ['Home screen · Menu dropdown', [['shop', 'Shop'], ['trophy', 'Ranking'], ['fuse', 'Fusion'], ['friends', 'Friends'], ['gift', 'Redeem / gifts']]],
   ['Home screen · bottom', [['summon', 'Summon button'], ['chars', 'Characters'], ['bag', 'Bag (next to Characters)'], ['paw', 'Pets'], ['farm', 'Base'], ['cards', 'Deck (Card Clash)'], ['plaza', 'Plaza (small round icon)'], ['swords', 'Battle button (and the Battle screen)'], ['house', 'House (now inside the Base)']]],
