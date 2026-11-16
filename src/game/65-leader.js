@@ -47,8 +47,29 @@ function lsBonus(e) {
   if (gb) { b.hp += gb.hp; b.heal += gb.heal; b.cards += gb.cards; b.fu += gb.fu; b.ap1 += gb.ap1; if (gb.cheap) b.cheap = true; b.cd0 = gb.cd0; b.gw = gb.weak; b.gr = gb.res; b.src.push(...gb.src); }
   lsArtifacts(b);
   for (const k of Object.keys(LS_CAP)) b[k] = Math.min(LS_CAP[k], b[k]);
+  lsCsBonus(e, b);
   return b;
 }
+/* ---- CS brackets (the owner's ask): a leader's CS gives extra battle stats, every 5,000 CS up to 30,000, then every 10,000.
+   Its own track, on top of the shared caps above (b.cs keeps what it added) ---- */
+const CS_LEAD = [
+  [5000, 'hp', 1, 'Hero +1 HP'], [10000, 'fu', 1, 'First unit +1 max HP'], [15000, 'hp', 1, 'Hero +1 HP'], [20000, 'cd0', 1, 'Skill ready a turn sooner'],
+  [25000, 'hp', 1, 'Hero +1 HP'], [30000, 'cards', 1, '+1 opening card'], [40000, 'hp', 1, 'Hero +1 HP'], [50000, 'ap1', 1, '+1 AP on your first turn'],
+  [60000, 'hp', 1, 'Hero +1 HP'], [70000, 'heal', 1, 'Heal passive +1'], [80000, 'hp', 1, 'Hero +1 HP'], [90000, 'fu', 1, 'First unit +1 more max HP'],
+  [100000, 'hp', 2, 'Hero +2 HP']
+];
+const csLeadOf = cs => CS_LEAD.filter(r => cs >= r[0]);
+const csLeadNext = cs => CS_LEAD.find(r => cs < r[0]) || null;
+function lsCsBonus(e, b) {
+  const cs = typeof charScore === 'function' ? charScore(e) : 0, got = csLeadOf(cs); b.cs = {}; b.csN = got.length;
+  if (!got.length) return b;
+  for (const [, k, v] of got) { b[k] = (b[k] || 0) + v; b.cs[k] = (b.cs[k] || 0) + v; }
+  const sum = Object.entries(b.cs).map(([k, v]) => ({ hp: `hero +${v} HP`, fu: `first unit +${v} max HP`, cd0: 'skill ready a turn sooner', cards: `+${v} opening card`, ap1: `+${v} AP on the first turn`, heal: `heal passive +${v}` })[k]).join(' · ');
+  b.src.push(['CS bracket', `${fmt(cs)} CS · ${got.length} / ${CS_LEAD.length}`, sum.charAt(0).toUpperCase() + sum.slice(1)]);
+  return b;
+}
+/* the bracket table (Battle bonuses window and the CS info window); cs = the character's CS to light the reached ones */
+const csLeadTable = cs => `<div class="csl">${CS_LEAD.map(([n, , , t]) => `<span class="csl-r${cs != null && cs >= n ? ' on' : ''}"><b>${n >= 1000 ? fmt(n / 1000) + 'k' : n}</b><small>${t}</small></span>`).join('')}</div>`;
 /* ---- weakness / resistance on PvE content: an enemy whose deck is mostly attribute X is weak to CC_WEAK[X] and resists X.
    Weak: the enemy hero starts with 25% less HP and your skill starts ready. Resisted: the enemy has 25% more HP and your
    skill waits 1 turn longer. Campaign (not the tutorial), the Great Tree and raids use the enemy deck; the guild boss
@@ -81,7 +102,8 @@ function lsDetails(e) {
   if (!e) return;
   const b = lsBonus(e) || { src: [] }, B = [['hp', 'Hero HP', '+'], ['heal', 'Heal passive', '+'], ['cards', 'Opening cards', '+'], ['ap1', 'First-turn AP', '+']];
   openModal({ title: 'Battle bonuses', ic: 'crown', kind: 'lsdet', body: `<div class="lsd">${lsInfoHTML(e)}
-    <div class="lsd-sum">${B.map(([k, n]) => `<span class="${b[k] ? 'on' : ''}"><b>${b[k] ? '+' + b[k] : '—'}</b><small>${n}</small><i>max +${LS_CAP[k]}</i></span>`).join('')}</div>
+    <div class="lsd-sum">${B.map(([k, n]) => `<span class="${b[k] ? 'on' : ''}"><b>${b[k] ? '+' + b[k] : '—'}</b><small>${n}</small><i>max +${LS_CAP[k]}${b.cs && b.cs[k] ? ` + ${b.cs[k]} CS` : ''}</i></span>`).join('')}</div>
+    <div class="lsd-cs"><div class="lsd-csh"><b>CS brackets</b><span class="tiny">${owns(e.id) ? (() => { const cs = charScore(e), nx = csLeadNext(cs); return `${esc(e.name)}: ${fmt(cs)} CS${nx ? ` · next at ${fmt(nx[0])}: ${nx[3]}` : ' · every bracket reached'}`; })() : 'Own the character to use its CS'}</span></div>${csLeadTable(owns(e.id) ? charScore(e) : null)}<p class="tiny">Every 5,000 CS up to 30,000, then every 10,000, the leader brings more. These come on top of the caps above.</p></div>
     <div class="lsd-list">${b.src.length ? b.src.map(([sys, what, t]) => `<div class="lsd-row"><b>${esc(sys)}</b><small>${what}</small><span>${t}</span></div>`).join('') : '<p class="tiny">No bonuses yet. Bond, Potential plans, a memory, awakened stars, the signature set and the SSS awakening all make this leader stronger against the game\'s own opponents.</p>'}</div>
     <p class="tiny">Heal passive: each point heals your hero 1 HP every other turn, up to 3 HP a match (so +2 = up to 6). These bonuses count in every battle: the campaign, the Great Tree, raids, the guild boss, Quick Match, training and the Arena. Only a ranked mode (coming later) will play everyone at tier I with no bonuses.</p></div>` });
 }

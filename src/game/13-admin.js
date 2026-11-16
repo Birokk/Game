@@ -38,6 +38,7 @@ const ADMIN_NAV = [
     ['artifacts', 'Ancient Artifacts', 'artifact', 'artifacts relics shelf showcase last stand emperor icons positions', 'The shelf wallpaper, each artifact icon, where it stands on the shelves and how big']] },
   { g: 'Look & icons', ic: 'image', items: [
     ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
+    ['titles', 'Titles', 'crown', 'titles rename style colour picture upload new title', 'Rename the titles, change their style or colours, give them a picture, add new ones'],
     ['icons', 'Interface icons', 'grid', 'replace any icon ui', 'Replace any icon of the interface with a picture'],
     ['art', 'Item icons', 'coin', 'exp egg memory ticket name selector fragments summon points guild points currency vip level skin instant clear thread gear honor participation quest', 'Icons of currencies and items: EXP, eggs, tickets, fragments, points']] },
   { g: 'Testing & server', ic: 'wrench', items: [
@@ -96,6 +97,7 @@ function renderAdminTab() {
   if (adminTab === 'artifacts') return renderArtifactsTab();
   if (adminTab === 'world') return renderWorldTab();
   if (adminTab === 'tree') return renderTreeTab();
+  if (adminTab === 'titles') return renderTitlesTab();
   renderPoolTab();
 }
 /* the Base page holds five parts (Base, Expedition, Camp, Guild, House + Inside the houses): show only the one picked in

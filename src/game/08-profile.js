@@ -41,7 +41,7 @@ const titleOf = () => TITLES.find(t => t.id === S.profile.title && unlocked(t)) 
 const frameOf = () => FRAMES.find(f => f.id === S.profile.frame && unlocked(f)) || FRAMES[0];
 /* S.profile.avatar = a wallpaper-style art id: '<id>' (base art / icon) or '<charId>@art3' / '@art6' */
 const avatarEntry = () => wpOk(S.profile.avatar) ? wpParse(S.profile.avatar) : null;
-const titleHTML = (t = titleOf()) => ttlMarkup(t);   // the ornate plates of 71-titles.js
+const titleHTML = (t = titleOf()) => titleMarkup(t);   // 71-titles.js: the admin's edits (name, style, colours, picture)
 /* avatar picture inside a frame; size in px */
 function avatarHTML(size, entry = avatarEntry(), frame = frameOf().id) {
   const img = entry ? wpThumb(entry.e ? entry : wpParse(entry.id)) : `<img src="${portrait(S.player.look, 4)}" alt="" class="chibi">`;
@@ -84,7 +84,7 @@ function pfOptsHTML(kind) {
   } else if (kind === 'bubble') {   // chat bubble skins (64-chat.js, CHAT_BUBBLES): how your messages look in the chat
     opts = `<p class="tiny">How your messages look in the chat. The two special bubbles are hard to get: they show everyone what you did.</p><div class="pf-grid wide pf-cbs">${CHAT_BUBBLES.map(b => opt(bubbleOf() === b, !unlocked(b), `<span class="pf-cb">${chatBubblePreview(b)}</span>${lockTag(b)}`, `data-cb="${b.id}"`, `${esc(b.name)}${b.rare ? ' <span class="prem">Rare</span>' : ''}`)).join('')}</div>`;
   } else if (kind === 'title') {
-    opts = `<div class="pf-grid wide">${[...TITLES].sort((a, b) => ttTier(a) - ttTier(b)).map(t => opt(titleOf() === t, !unlocked(t), `<span class="pf-tt">${titleHTML(t)}<small class="tt-tier r${ttTier(t)}">${TT_TIER[ttTier(t)]}</small></span>${lockTag(t)}`, `data-tt="${t.id}"`, '')).join('')}</div>`;
+    opts = `<div class="pf-grid wide">${TITLES.map(t => opt(titleOf() === t, !unlocked(t), `<span class="pf-tt">${titleHTML(t)}</span>${lockTag(t)}`, `data-tt="${t.id}"`, '')).join('')}</div>`;
   } else {
     const cur = cardBG(P.card);
     opts = `<p class="tiny">Namecard designs, or any art you own (base, 3★ and 6★ splash arts, skins).</p><div class="pf-grid wide">

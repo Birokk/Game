@@ -141,6 +141,7 @@ const qmRPieces = () => { const d = rpick(raidGear()), L = d ? dungeonPieces(d, 
 function ccGrantRewards(winner) {
   const D = ccM && ccM.qm ? qmDiff(ccM.qm.diff) : null;   // Quick match difficulty: gold ×0.5–2, 1 pearl and R gear (not on Easy)
   const k = winner === 0 ? 'win' : winner === 1 ? 'lose' : 'draw', out = { k, gold: D ? qmGold(k, D) : CC_GOLD[k], pearls: k === 'win' && (!D || D.pearls) ? 1 : 0, gear: null, gears: [], full: false, capped: false };
+  out.gold += afGold(out.gold);   // Cleopatra's Necklace (70-artifacts.js)
   S.wallet.coins = (S.wallet.coins || 0) + out.gold;
   if (out.pearls) { const w = qmPearlWeek(); if (w.n >= CC_QM_WEEK_PEARLS) { out.pearls = 0; out.capped = true; } else w.n += out.pearls; }
   if (out.pearls) S.wallet.pearls = (S.wallet.pearls || 0) + out.pearls;

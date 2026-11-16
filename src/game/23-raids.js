@@ -199,7 +199,7 @@ const raidTopStage = d => { const L = raidStages(d); let i = 0; L.forEach((g, k)
 const raidStage = (d = raidOf(raidSel)) => { const L = raidStages(d), v = (S.raidStages || {})[d.id] ?? (d.id === 'vault' ? S.raidStage : null); return Math.min(L.length - 1, Math.max(0, v == null ? (d.kind === 'gear' ? raidTopStage(d) : 0) : v || 0)); };
 const setRaidStage = (d, i) => { S.raidStages = S.raidStages || {}; S.raidStages[d.id] = i; if (d.id === 'vault') S.raidStage = i; };
 /* gold raid: no wardrobe space needed; each clear gives the stage's gold (±15%) (and EXP from the stamina) */
-const rollGold = (g, times) => { let coins = 0; for (let t = 0; t < times; t++) coins += Math.round(g.gold * (.85 + Math.random() * .3) / 10) * 10; return coins; };
+const rollGold = (g, times) => { let coins = 0; for (let t = 0; t < times; t++) coins += Math.round(g.gold * (.85 + Math.random() * .3) / 10) * 10; return coins + afGold(coins); };   // + Cleopatra's Necklace
 function clearGold(times) {
   const d = raidOf(raidSel), i = raidStage(d), g = raidStages(d)[i];
   if (!stageOpen(i, d)) { toast(`Stage ${ROMAN[i]} opens at player level ${g.lv}.`); return; }

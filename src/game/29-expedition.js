@@ -25,7 +25,7 @@ function rollExpedition(ur) {
   const w = expPearlW(ur), tot = w.reduce((a, b) => a + b, 0); let x = Math.random() * tot, tier = 0;
   for (; tier < w.length - 1; tier++) { if (x < w[tier]) break; x -= w[tier]; }
   const [lo, hi] = EXP_PEARLS[tier], pearls = lo + Math.floor(Math.random() * (hi - lo + 1));
-  const out = [['coins', gold]]; if (pearls) out.push(['pearls', pearls]); if (EXP_XP) out.push(['exp', EXP_XP]);
+  const out = [['coins', gold + afGold(gold)]]; if (pearls) out.push(['pearls', pearls]); if (EXP_XP) out.push(['exp', EXP_XP]);
   for (const [k, ch] of Object.entries(EXP_TICKETS)) if (Math.random() * 100 < ch[ur ? 1 : 0]) out.push([k, 1]);
   return out;
 }

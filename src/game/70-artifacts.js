@@ -8,6 +8,9 @@
    Owning one (S.artifacts = {id: time owned}, player save) gives its power:
    - Last Stand: once a match, when your hero would fall it revives with 1 HP (the leader bonus `last`, ccHit in 44)
    - Emperor's Artifact: 8 Arena battles every 12 hours instead of 5, for good (arTickets in 61)
+   - Cleopatra's Necklace: +10% gold from the game's modes (afGold): Card Battle match gold, gold raids (battles and instant
+     clears, rollGold), the guild boss, expeditions and the Base's Market. Not on gold bought or given as a reward (shop,
+     packs, offers, Pearl Honor, memberships, VIP, levels, quests, mail, login, spin, summons)
    They can't be obtained yet: only admin → Ancient Artifacts / Test tools give them. */
 const ARTIFACTS = [
   { id: 'laststand', name: 'Last Stand', kind: 'Battle', col: '#ff7a8f', where: 'Every Card Battle',
@@ -15,9 +18,14 @@ const ARTIFACTS = [
     lore: 'A crimson heart sealed in phoenix gold. It is said to beat once more for those who refuse to fall.' },
   { id: 'emperor', name: "Emperor's Artifact", kind: 'Arena', col: '#ffd36b', where: 'The Arena',
     power: 'You get <b>8 Arena battles</b> every 12 hours instead of 5. For good.',
-    lore: 'The orb of a forgotten emperor. Whoever holds it is never refused a challenge.' }
+    lore: 'The orb of a forgotten emperor. Whoever holds it is never refused a challenge.' },
+  { id: 'cleo', name: "Cleopatra's Necklace", kind: 'Gold', col: '#3fd8c4', where: 'Card Battles, gold raids, the guild boss, expeditions and the Market',
+    power: 'You get <b>10% more gold</b> from every mode: Card Battle matches, gold raids (battles and instant clears), the guild boss, expeditions and the Base\'s Market. Gold you buy or get as a reward (shop, Pearl Honor, memberships, quests…) is not raised.',
+    lore: 'A collar of gold, lapis and turquoise from the last queen of the Nile. Coins seem to find their way to whoever wears it.' }
 ];
-const AF_DEF_POS = { laststand: { x: 40, y: 33.5 }, emperor: { x: 60, y: 33.5 } }, AF_DEF_W = 11;
+const AF_GOLD = .1;   // Cleopatra's Necklace
+const afGold = n => typeof artOwned === 'function' && artOwned('cleo') && n > 0 ? Math.round(n * AF_GOLD) : 0;
+const AF_DEF_POS = { laststand: { x: 40, y: 33.5 }, emperor: { x: 60, y: 33.5 }, cleo: { x: 50, y: 62 } }, AF_DEF_W = 11;
 const afOf = id => ARTIFACTS.find(a => a.id === id);
 const afState = () => (S.artifacts = S.artifacts && typeof S.artifacts === 'object' ? S.artifacts : {});
 const artOwned = id => !!afState()[id];
@@ -54,7 +62,27 @@ const AF_ART = {
     <circle cx="47" cy="64" r="3.4" fill="#e8344f"/><circle cx="60" cy="64" r="4" fill="#3ec8ff"/><circle cx="73" cy="64" r="3.4" fill="#3fd47e"/>
     <path d="M44 52c3-6 9-9 14-9" stroke="#fff" stroke-opacity=".8" stroke-width="3" fill="none" stroke-linecap="round"/>
     <path d="M56 38V26h8v12z" fill="url(#afEmO)" stroke="#6b440c" stroke-width="1.2"/><path d="M50 28h20v-6H50z" fill="url(#afEmO)" stroke="#6b440c" stroke-width="1.2"/>
-    <path d="M46 40l4-8 5 5 5-8 5 8 5-5 4 8z" fill="#f7d774" stroke="#6b440c" stroke-width="1.2"/><circle cx="60" cy="16" r="3" fill="#e8344f" stroke="#6b440c"/></svg>`
+    <path d="M46 40l4-8 5 5 5-8 5 8 5-5 4 8z" fill="#f7d774" stroke="#6b440c" stroke-width="1.2"/><circle cx="60" cy="16" r="3" fill="#e8344f" stroke="#6b440c"/></svg>`,
+  cleo: `<svg viewBox="0 0 120 120" aria-hidden="true"><defs>
+    <linearGradient id="afClG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4c2"/><stop offset=".5" stop-color="#e8b84a"/><stop offset="1" stop-color="#8a5a16"/></linearGradient>
+    <linearGradient id="afClL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b7bff"/><stop offset="1" stop-color="#1c2a8a"/></linearGradient>
+    <linearGradient id="afClT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ff5e6"/><stop offset="1" stop-color="#1a9e8e"/></linearGradient>
+    <radialGradient id="afClA" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#3fd8c4" stop-opacity=".5"/><stop offset="1" stop-color="#3fd8c4" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="60" cy="56" r="48" fill="url(#afClA)"/>
+    <path d="M30 104h60l-5-8H35z" fill="url(#afClG)"/><path d="M26 110h68v-6H26z" fill="#6b4414"/>
+    <path d="M60 96c-14 0-22-8-26-20l8-3c3 8 9 13 18 13s15-5 18-13l8 3c-4 12-12 20-26 20z" fill="#c9cfd8" opacity=".25"/>
+    <path d="M14 30c0 30 20 52 46 52s46-22 46-52h-12c0 24-15 40-34 40S26 54 26 30z" fill="url(#afClG)" stroke="#6b4414" stroke-width="1.4"/>
+    <path d="M20 30c1 26 18 46 40 46s39-20 40-46h-5c-1 22-15 40-35 40S26 52 25 30z" fill="url(#afClL)"/>
+    <path d="M26 30c1 20 14 36 34 36s33-16 34-36" fill="none" stroke="url(#afClT)" stroke-width="5"/>
+    <path d="M31 30c1 16 12 30 29 30s28-14 29-30" fill="none" stroke="#f7d774" stroke-width="2.4" stroke-dasharray="2.6 3"/>
+    <g fill="url(#afClT)" stroke="#6b4414" stroke-width=".8"><path d="M20 76l-4 8 6-2z"/><path d="M32 84l-2 9 5-4z"/><path d="M88 84l2 9-5-4z"/><path d="M100 76l4 8-6-2z"/></g>
+    <path d="M14 30h12M94 30h12" stroke="#6b4414" stroke-width="1.4"/>
+    <ellipse cx="60" cy="88" rx="10" ry="12" fill="url(#afClT)" stroke="#6b4414" stroke-width="1.6"/>
+    <path d="M60 77v22M51 86c-6-2-10-1-13 2M69 86c6-2 10-1 13 2" stroke="#6b4414" stroke-width="1.4" fill="none"/>
+    <path d="M38 88c-4 0-8 3-9 7 5-1 8-3 9-7zM82 88c4 0 8 3 9 7-5-1-8-3-9-7z" fill="url(#afClG)" stroke="#6b4414" stroke-width="1"/>
+    <circle cx="60" cy="73" r="4.4" fill="#e8344f" stroke="#ffe7ad" stroke-width="1.4"/>
+    <path d="M55 84c1-3 3-4 5-4" stroke="#fff" stroke-opacity=".8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M30 40c4 10 10 16 16 19" stroke="#fff" stroke-opacity=".45" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>`
 };
 const afIcon = a => { const u = customIcon('af-' + a.id); return u ? `<img src="${u}" alt="">` : AF_ART[a.id] || icon('sparkle'); };
 

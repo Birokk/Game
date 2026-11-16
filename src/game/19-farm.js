@@ -78,7 +78,8 @@ function farmCollect(id) {
   if (res === 'stamina') n = giveStamina(n);   // anything over the 999 cap stays in storage
   f.acc -= n; if (n > 0) questAdd('base');
   if (res === 'exp') gainExp(n);
-  else if (res !== 'stamina') S.wallet[res] = (S.wallet[res] || 0) + n;
+  else if (res !== 'stamina') { if (res === 'coins') n += afGold(n);   // the Market's gold + Cleopatra's Necklace
+    S.wallet[res] = (S.wallet[res] || 0) + n; }
   return n;
 }
 function farmPayReq(id) {

@@ -124,7 +124,7 @@ function gbFinish(G) {
   const bs = ccM.boss, B = gbState(), d = Math.max(0, bs.hp0 - Math.max(0, G.players[1].hp));
   if (B.key === gbKey()) B.tries++;
   B.fights.push({ t: Date.now(), d, gid: bs.gid, lv: bs.lv });
-  const T = gbTier(d), out = { d, gold: T[3], wishes: T[4], stam: gbStam(d), gear: [], full: false, kill: G.players[1].hp <= 0, lv: bs.lv };
+  const T = gbTier(d), out = { d, gold: T[3] + afGold(T[3]), wishes: T[4], stam: gbStam(d), gear: [], full: false, kill: G.players[1].hp <= 0, lv: bs.lv };
   S.wallet.coins = (S.wallet.coins || 0) + out.gold; S.wallet.wishes = (S.wallet.wishes || 0) + out.wishes; out.stamGot = giveStamina(out.stam);
   for (let i = 0; i < T[1]; i++) { if (wardFree() < 1) { out.full = true; break; } const x = gbGear(T[2]); if (x) out.gear.push(x); }
   persist(); return out;
