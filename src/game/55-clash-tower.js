@@ -337,16 +337,16 @@ function renderTower(center) {
   const hz = V.haze ? V.L[V.haze - 1] : null;
   const shown = V.L.slice(0, V.vis).reverse();   // top to bottom
   const msg = V.c > V.n ? `<b>The clouds hide branches still growing</b><small>More floors are coming soon.</small>` : `<b>Hidden in the clouds</b><small>Clear floor ${V.c} to see higher.</small>`;
-  const back = MEDIA.get('battle:tree');   // the whole screen sits on a blurred copy of the Great Tree's card wallpaper, so the glass panels show it
+  const back = MEDIA.get('battle:tree') || twrArt();   // the whole screen sits on a blurred copy of the Great Tree's card wallpaper, so the glass panels show it
   twrEl.innerHTML = `${TWR_DEFS}<div class="cmp-bg twr-bg ${back ? 'has-art' : ''}">${back ? `<img class="cmp-bgart" src="${back}" alt="">` : ''}<i class="cmp-glow g1"></i><i class="cmp-glow g2"></i><i class="cmp-glow g3"></i></div>
     <header class="cmp-head twr-head"><div class="inv-title"><span class="inv-badge">${icon('tree')}</span><h2 class="ts">Great Tree</h2></div>
       <div class="twr-stats"><span class="twr-chip">${icon('up')}<small>Highest floor</small><b>${top || '–'}</b></span><span class="twr-chip st">${CC_STAR_SVG}<b>${stars}</b><small>stars</small></span></div>
       <span class="cmp-sp"></span>
       <button class="btn ghost" id="twrCamp" title="World map">${icon('compass')}<span class="twr-bl">World map</span></button><button class="btn ghost" id="twrDeck" title="Deck">${CC_IC}<span class="twr-bl">Deck</span></button><button class="btn ghost" id="twrQuick" title="Quick match">${icon('bolt')}<span class="twr-bl">Quick match</span></button>
       <button class="inv-x" id="twrClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="twr-stage"><div class="twr-sky"><i class="twr-mw"></i><i class="twr-mw m2"></i><i class="twr-stars s1"></i><i class="twr-stars s2"></i><i class="twr-aur"></i>
+    <section class="twr-stage ${twrArt() ? 'up' : ''}"><div class="twr-sky"><i class="twr-mw"></i><i class="twr-mw m2"></i><i class="twr-stars s1"></i><i class="twr-stars s2"></i><i class="twr-aur"></i>
         <i class="twr-skycl c1"></i><i class="twr-skycl c2"></i><i class="twr-shoot h1"></i><i class="twr-shoot h2"></i><i class="twr-shoot h3"></i><i class="twr-atm"></i></div>
-      <div class="twr-view"><div class="twr-col">
+      ${twrArt() ? `<div class="twr-view up">${twrPicHTML(V, st, seen, false)}</div>` : `<div class="twr-view"><div class="twr-col">
         <i class="twr-aura"></i>${[.7, 2.4, 4.3, 6.6, 8.8].map((k, i) => `<i class="twr-wisp w${i % 3}" style="--b:${k}"></i>`).join('')}
         <div class="twr-cap ${seen && V.vis > seen ? 'lift' : ''}"><div class="twr-top">${twrCrown()}</div><i class="twr-cl c0"></i><i class="twr-cl c1"></i><i class="twr-cl c2"></i><i class="twr-cl c3"></i>
           <div class="twr-capmsg">${icon('lock')}<span>${msg}</span></div></div>
@@ -355,7 +355,7 @@ function renderTower(center) {
         ${shown.map(floor).join('')}
         <div class="twr-base">${TWR_BASE}<span class="twr-sign">${esc(CC_TOWER.name)}</span><i class="twr-torch b l"></i><i class="twr-torch b r"></i><i class="twr-spore s1"></i><i class="twr-spore s2"></i><i class="twr-spore s3"></i></div>
         <div class="twr-ground">${TWR_GROUND}${TWR_SUN}</div>
-      </div></div>
+      </div></div>`}
       <canvas class="twr-fxc" aria-hidden="true"></canvas>
       <button class="twr-jump" id="twrJump" hidden>${icon('up')}<span>Floor ${Math.min(V.c, V.n)}</span></button>
     </section>
@@ -372,18 +372,73 @@ function renderTower(center) {
   view.addEventListener('scroll', () => { twrJumpCheck(); par(); }, { passive: true });
   twrFxStart(stage.querySelector('.twr-fxc'));
   twrBindPanel(st);
-  requestAnimationFrame(() => { if (!twrEl) return; if (keep != null) view.scrollTop = view.scrollHeight - keep; else twrCenter(twrEl.querySelector('.twr-fl.sel'), false); twrJumpCheck(); par(); });
+  requestAnimationFrame(() => { if (!twrEl) return; if (keep != null) view.scrollTop = view.scrollHeight - keep; else twrCenter(twrEl.querySelector('[data-floor].sel'), false); twrJumpCheck(); par(); });
+}
+/* ---------- the Great Tree from the admin's own picture (the owner's ask: "let me upload an image") ----------
+   Admin → Modes & places → Great Tree: the picture (`tree:art`, kept up to 3200 px, its size in content S.treeArt = {w, h})
+   and where each floor's button stands on it (S.farmLayout['tf:<floor>'] = {x, y}, % of the picture; TWR_PIN_DEF spreads
+   them up the trunk by default). With a picture the tree screen shows it (it scrolls when it is taller than the view)
+   with the floor buttons on it, the same rule for which floors show (cleared ones, the next, one more and a "?" one
+   half in the clouds) and clouds covering everything above that; the fireflies, falling leaves and motes keep drifting
+   over it (twrFxStart). Without a picture the drawn tree below stays. */
+const twrArt = () => MEDIA.get('tree:art');
+const twrDim = () => { const d = S.treeArt; return twrArt() && d && d.w > 0 && d.h > 0 ? d : { w: 1000, h: 2000 }; };
+const TWR_PIN_DEF = n => ({ x: n % 2 ? 42 : 58, y: Math.max(5, 93 - (n - 1) * 8.8) });
+const twrPinAt = n => ({ ...TWR_PIN_DEF(n), ...((S.farmLayout || {})['tf:' + n] || {}) });
+function twrPinHTML(f, st, edit) {
+  const s = twrFloorState(f), have = ccCampHave(f.id), p = twrPinAt(f.no);
+  return `<button class="twr-pin ${s} ${f.boss ? 'boss' : ''} ${f.id === st.id ? 'sel' : ''}" ${edit ? `data-tfdrag="${f.no}"` : `data-floor="${f.id}"`} style="left:${p.x}%;top:${p.y}%" aria-label="Floor ${f.no}: ${esc(f.name)}${s === 'locked' ? ', locked' : ''}">
+    <span class="twp-med">${f.boss ? `<i class="twp-crown">${icon('crown')}</i>` : ''}<small>Floor</small><b>${f.no}</b>${s === 'locked' ? `<i class="twp-lk">${icon('lock')}</i>` : ''}</span>
+    ${s === 'new' && !edit ? '<i class="twp-next">Next</i>' : ''}<span class="twp-plq"><span>${esc(f.name)}</span>${edit ? '' : ccStars(have)}</span></button>`;
+}
+function twrPicHTML(V, st, seen, edit) {
+  const D = twrDim(), L = edit ? V.L : V.L.slice(0, V.vis), hz = !edit && V.haze ? V.L[V.haze - 1] : null;
+  const fogY = hz ? twrPinAt(hz.no).y : !edit && V.vis < V.n ? twrPinAt(V.vis).y - 6 : null;
+  const msg = V.c > V.n ? `<b>The clouds hide branches still growing</b><small>More floors are coming soon.</small>` : `<b>Hidden in the clouds</b><small>Clear floor ${V.c} to see higher.</small>`;
+  return `<div class="twr-pic ${edit ? 'edit' : ''}" style="aspect-ratio:${D.w}/${D.h}"><img class="twr-picimg" src="${twrArt() || ''}" alt="" draggable="false">
+    ${fogY != null ? `<div class="twr-fogup ${seen && V.vis > seen ? 'lift' : ''}" style="height:${Math.max(0, fogY + 3)}%"><i class="f1"></i><i class="f2"></i><span class="twr-fogmsg">${icon('lock')}<span>${msg}</span></span></div>` : ''}
+    ${L.map(f => twrPinHTML(f, st, edit)).join('')}
+    ${hz ? `<span class="twr-pin haze ${hz.boss ? 'boss' : ''}" style="left:${twrPinAt(hz.no).x}%;top:${twrPinAt(hz.no).y}%" aria-hidden="true"><span class="twp-med"><b>?</b></span></span>` : ''}</div>`;
+}
+function renderTreeTab() {
+  const p = $('#adPanel'); if (!p) return;
+  const has = !!twrArt(), D = twrDim(), V = { ...twrView(), vis: ccTowerFloors().length };
+  p.innerHTML = `<div class="stack"><p class="tiny">Upload your Great Tree picture (any shape; a tall one, e.g. 1500×3000, scrolls up the screen; up to 3200 px is kept). Players see it with a button per floor, clouds over the floors they can't reach yet, and fireflies and falling leaves drifting over it. Drag each floor's button onto your tree. Without a picture the drawn tree shows.</p>
+    <div class="setx-list ad-art">${setRow('Great Tree picture', `<label class="sx-btn">${icon('upload')}${has ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" id="tfUp"></label>${has ? `<button type="button" class="sx-btn" id="tfDel">${icon('trash')}Remove</button>` : ''}`, has ? `Your picture · ${D.w}×${D.h}` : 'Without one the drawn tree')}</div>
+    ${has ? `<div class="tfa-prev">${twrPicHTML(V, V.L[0], 0, true)}</div>
+    <div class="tfa-list">${V.L.map(f => { const q = twrPinAt(f.no); return `<div class="tfa-row"><b>Floor ${f.no}</b><span class="tiny">${esc(f.name)}</span>${[['x', 'Left / right', q.x], ['y', 'Up / down', q.y]].map(([k, n, v]) => `<label><span>${n}</span><input type="range" min="0" max="100" step=".25" value="${v}" data-tfk="${k}" data-tfn="${f.no}"><em>${v}%</em></label>`).join('')}</div>`; }).join('')}</div>
+    <div class="row" style="gap:8px"><button class="btn ghost sm" id="tfReset">${icon('refresh')}Default places</button><button class="btn sm" id="tfOpen">${icon('tree')}Open the Great Tree</button></div>` : ''}</div>`;
+  const setPos = (n, x, y, save) => {
+    S.farmLayout = { ...(S.farmLayout || {}), ['tf:' + n]: { x: Math.round(clamp(x, 0, 100) * 4) / 4, y: Math.round(clamp(y, 0, 100) * 4) / 4 } };
+    const q = twrPinAt(n), pin = p.querySelector(`[data-tfdrag="${n}"]`); if (pin) { pin.style.left = q.x + '%'; pin.style.top = q.y + '%'; }
+    p.querySelectorAll(`[data-tfn="${n}"]`).forEach(i => { const v = q[i.dataset.tfk]; i.value = v; i.nextElementSibling.textContent = v + '%'; });
+    if (save) { persist(); if (twrEl) renderTower(); }
+  };
+  p.querySelectorAll('[data-tfk]').forEach(i => { const n = +i.dataset.tfn;
+    i.oninput = () => { const q = twrPinAt(n); setPos(n, i.dataset.tfk === 'x' ? +i.value : q.x, i.dataset.tfk === 'y' ? +i.value : q.y, false); };
+    i.onchange = () => { persist(); if (twrEl) renderTower(); }; });
+  p.querySelectorAll('[data-tfdrag]').forEach(pin => pin.onpointerdown = e => {
+    e.preventDefault(); pin.setPointerCapture(e.pointerId); const box = pin.parentElement, r0 = pin.querySelector('.twp-med').getBoundingClientRect();
+    const ox = e.clientX - (r0.left + r0.width / 2), oy = e.clientY - (r0.top + r0.height / 2), n = +pin.dataset.tfdrag;
+    const move = ev => { const r = box.getBoundingClientRect(); setPos(n, (ev.clientX - ox - r.left) / r.width * 100, (ev.clientY - oy - r.top) / r.height * 100, false); };
+    pin.onpointermove = move; pin.onpointerup = ev => { move(ev); pin.onpointermove = pin.onpointerup = null; const q = twrPinAt(n); setPos(n, q.x, q.y, true); };
+  });
+  $('#tfUp').onchange = async ev => { try { const u = await resizeImage(ev.target.files[0], 3200, 'image/jpeg'), d = await wmImgSize(u);
+    if (d && await mediaSet('tree:art', u)) { S.treeArt = d; persist(); renderTreeTab(); if (twrEl) renderTower(true); toast(`Great Tree picture saved (${d.w}×${d.h}).`); } } catch (e) { toast(e.message, true); } };
+  const del = $('#tfDel'); if (del) del.onclick = async () => { await mediaDel('tree:art'); S.treeArt = null; persist(); renderTreeTab(); if (twrEl) renderTower(true); toast('Back to the drawn tree.'); };
+  const rs = $('#tfReset'); if (rs) rs.onclick = () => { const L = { ...(S.farmLayout || {}) }; Object.keys(L).filter(k => k.startsWith('tf:')).forEach(k => delete L[k]); S.farmLayout = L; persist(); renderTreeTab(); if (twrEl) renderTower(); };
+  const op = $('#tfOpen'); if (op) op.onclick = () => { closeModal(); openTower(); };
 }
 /* scroll the tower so a floor sits in the middle of the view */
 function twrCenter(el, smooth) {
   const view = twrEl && twrEl.querySelector('.twr-view'); if (!view || !el) return;
-  const y = el.offsetTop + el.offsetHeight / 2 - view.clientHeight / 2;
+  const a = view.getBoundingClientRect(), b = el.getBoundingClientRect(), y = view.scrollTop + b.top - a.top + b.height / 2 - view.clientHeight / 2;
   view.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
 }
 /* the "Floor n" button shows while the floor to clear next is out of sight, pointing up or down to it */
 function twrJumpCheck() {
   if (!twrEl) return;
-  const view = twrEl.querySelector('.twr-view'), j = twrEl.querySelector('#twrJump'), cur = twrEl.querySelector('.twr-fl.new') || twrEl.querySelector('.twr-fl.sel');
+  const view = twrEl.querySelector('.twr-view'), j = twrEl.querySelector('#twrJump'), cur = twrEl.querySelector('[data-floor].new') || twrEl.querySelector('[data-floor].sel');
   if (!view || !j || !cur) return;
   const a = view.getBoundingClientRect(), b = cur.getBoundingClientRect(), off = b.bottom < a.top + 40 ? 'up' : b.top > a.bottom - 40 ? 'down' : '';
   j.hidden = !off; j.classList.toggle('down', off === 'down');
@@ -392,7 +447,7 @@ function twrJumpCheck() {
 function twrSelect(id) {
   const st = ccTowerFloor(id); if (!st || !twrEl) return;
   twrSel = id;
-  twrEl.querySelectorAll('.twr-fl.sel').forEach(x => x.classList.remove('sel'));
+  twrEl.querySelectorAll('[data-floor].sel').forEach(x => x.classList.remove('sel'));
   const b = twrEl.querySelector(`[data-floor="${id}"]`); if (b) b.classList.add('sel');
   const side = twrEl.querySelector('.twr-side'); side.innerHTML = ccCampPanel(st); side.scrollTop = 0;
   twrBindPanel(st);
