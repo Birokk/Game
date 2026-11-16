@@ -7003,3 +7003,12 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .csl-r.on b::after{content:" ✓";color:#9ff5c8}
 .lsd-cs{display:grid;gap:8px;margin-top:10px}.lsd-csh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
 .cs-lh{margin:6px 0 0;font:700 15px var(--display)}
+/* the VIP badge on the profile avatar: centred on the avatar's rim at its bottom left (the owner's ask) */
+.pf-avw{position:relative;display:inline-grid;flex:none}
+.pf-vipav{position:absolute;left:14.6%;top:85.4%;transform:translate(-50%,-50%);z-index:3;padding:0;margin:0;background:none;border:0;cursor:pointer;display:grid;place-items:center;line-height:0}
+.pf-vipav .vipc{position:relative;inset:auto;width:36px;height:36px;min-width:0;border-width:2.5px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.pf-vipav .vipc>b{font-size:16px}
+.pf-vipav .vipc.up{width:auto;height:auto;box-shadow:none}.pf-vipav .vipc.up img{display:block;width:auto;height:42px;max-width:64px}
+.pf-vipav .dot-n{position:absolute;top:-3px;right:-3px}
+.pf-vipav:hover .vipc{filter:brightness(1.15)}
+@media (max-width:640px){.pf-vipav .vipc{width:30px;height:30px}.pf-vipav .vipc>b{font-size:13px}.pf-vipav .vipc.up img{height:34px}}
