@@ -509,3 +509,5 @@
   .menu .hm-rc .hm-drop{grid-template-columns:repeat(3,66px)}
 }
 @media (max-width:380px) and (orientation:portrait){.menu .hm-bot .tabb{width:62px}}
+/* the Ancient Artifacts button: its whole name on two short lines (the owner's ask) */
+.menu .hm-ql .ev .el.el2{white-space:normal;line-height:1.05;text-align:center}

@@ -21,7 +21,7 @@ const BTH_MODES = [
   { id: 'arena', name: 'Arena', kind: 'Card Battle · Versus', ic: 'arena', col: '#ff9ab8', col2: '#ffcf6a' }
 ];
 /* the drawn scene of a card: BTH_ART, or for the World Map the parchment map itself (WM_SVG, centred on the tree) */
-const bthScene = id => id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
+const bthScene = id => id === 'world' && MEDIA.get('world:map') ? `<img class="bth-svg bth-wmimg" src="${MEDIA.get('world:map')}" alt="">` : id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
 const bthArt = (id, bg) => { const u = MEDIA.get('battle:' + id); if (u) return artImg('battle:' + id);
   const a = bthScene(id); return bg ? a.replace(/id="/g, 'id="bg-').replace(/url\(#/g, 'url(#bg-').replace(/href="#/g, 'href="#bg-').replace(/class="/g, 'data-c="') : a; };   // the blurred copy behind gets its own ids and no animations
 /* each card's progress: a sub line, an optional bar (0-100) and a small stat line */

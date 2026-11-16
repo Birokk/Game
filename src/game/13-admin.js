@@ -33,6 +33,7 @@ const ADMIN_NAV = [
     ['farm:camp', 'Camp', 'tent', 'tournament tavern central wallpaper camp labels', 'The Camp wallpaper and its three places'],
     ['farm:house', 'House', 'home', 'houses rooms inside wallpaper', 'The House map, each house picture and the rooms inside'],
     ['farm:guild', 'Guild', 'guild', 'hall shop rewards quests wallpaper', 'The guild screen wallpaper and its spots'],
+    ['world', 'World map', 'compass', 'world map regions buttons upload desert volcano forest isles frozen underwater cursed fairy black desert', 'Your world map picture and where each region button stands on it'],
     ['artifacts', 'Ancient Artifacts', 'artifact', 'artifacts relics shelf showcase last stand emperor icons positions', 'The shelf wallpaper, each artifact icon, where it stands on the shelves and how big']] },
   { g: 'Look & icons', ic: 'image', items: [
     ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
@@ -92,6 +93,7 @@ function renderAdminTab() {
   if (adminTab === 'honor') return renderHonorArtTab();
   if (adminTab === 'battle') return renderBattleTab();
   if (adminTab === 'artifacts') return renderArtifactsTab();
+  if (adminTab === 'world') return renderWorldTab();
   renderPoolTab();
 }
 /* the Base page holds five parts (Base, Expedition, Camp, Guild, House + Inside the houses): show only the one picked in

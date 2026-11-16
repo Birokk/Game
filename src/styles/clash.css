@@ -2357,3 +2357,44 @@ b.ccd-dname{border:0}
 .ccsl-txt{left:50%;top:auto;bottom:calc(var(--lby,0px) + 80px);align-items:center;text-align:center;transform:translateX(-50%) skewX(-8deg);animation-name:ccslTxt2}
 @keyframes ccslTxt2{0%,12%{opacity:0;transform:translateX(-50%) skewX(-8deg) translateX(-60px)}24%{opacity:1;transform:translateX(-50%) skewX(-8deg)}80%{opacity:1}100%{opacity:0}}
 @media (max-width:640px),(orientation:portrait){.cmp-map.many{height:calc(var(--cmpn,5) * 126px + 322px)}}   /* 10-stage chapters get the climb's room per stage on portrait screens */
+
+/* ---------- World map v3 (the owner's own map picture + region buttons, 56-clash-world.js) ---------- */
+.wm-map .wm-img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.wm-stage{background:#0f0c1e;border-color:rgba(255,255,255,.22)}
+.wm-stage::after{inset:0;border-radius:24px;border:0;box-shadow:inset 0 0 60px rgba(0,0,0,.35)}
+.wm-pin{position:relative;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;color:#fff;
+  background:radial-gradient(circle at 50% 35%,rgba(40,32,70,.92),rgba(12,10,26,.92));border:2px solid color-mix(in srgb,var(--rc,#e3b6ff) 75%,#fff);
+  box-shadow:0 6px 16px rgba(0,0,0,.55),0 0 0 3px rgba(0,0,0,.25),0 0 18px color-mix(in srgb,var(--rc,#e3b6ff) 45%,transparent)}
+.wm-pin svg{width:64%;height:64%;color:color-mix(in srgb,var(--rc,#e3b6ff) 55%,#fff)}
+.wm-pin img{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);object-fit:contain}
+.wm-lab{transform:translate(-50%,-28px) scale(var(--is,1));transform-origin:50% 28px}
+.wm-lab .wm-ic.wm-pin{width:56px;height:56px;filter:none}
+.wm-lab.open .wm-ic.wm-pin{box-shadow:0 6px 16px rgba(0,0,0,.55),0 0 0 3px rgba(0,0,0,.25),0 0 26px var(--rc)}
+.wm-lab b{margin-top:6px;padding:3px 12px;border-radius:999px;font:700 14px var(--display);letter-spacing:.03em;color:#fff;text-shadow:none;
+  background:rgba(12,10,26,.72);border:1px solid color-mix(in srgb,var(--rc,#e3b6ff) 55%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.wm-lab small{margin-top:3px;padding:1px 8px;border-radius:999px;font:600 11px var(--read);font-style:normal;color:rgba(255,255,255,.85);text-shadow:none;background:rgba(12,10,26,.55)}
+.wm-lab.open small{color:color-mix(in srgb,var(--rc) 50%,#fff)}
+.wm-lab:hover .wm-ic,.wm-lab.on .wm-ic,.wm-lab:focus-visible .wm-ic{transform:translateY(-3px) scale(1.08)}
+.wm-arr,.wm-zoom button{background:rgba(12,10,26,.62);border:1px solid rgba(255,255,255,.3);color:#fff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.wm-page{background:rgba(8,6,20,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.wm-card{color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid color-mix(in srgb,var(--rc) 50%,rgba(255,255,255,.25));border-radius:24px 6px 24px 6px;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px color-mix(in srgb,var(--rc) 22%,transparent),inset 0 1px 0 rgba(255,255,255,.2)}
+.wm-card .wm-pin.big{width:96px;height:96px;margin-bottom:6px}
+.wm-card small{color:rgba(255,255,255,.65)}.wm-card h3{color:#fff}
+.wm-soon{background:color-mix(in srgb,var(--rc) 22%,rgba(12,10,26,.6));color:#fff;border:1px solid color-mix(in srgb,var(--rc) 60%,transparent);box-shadow:none;border-radius:999px}
+.wm-card .btn.ghost{color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)}
+.bth-wmimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media (max-width:640px),(orientation:portrait){.wm-pin,.wm-lab .wm-ic.wm-pin{width:48px;height:48px}.wm-lab b{font-size:13px}}
+/* admin */
+.wma-prev{position:relative;width:100%;max-width:900px;border-radius:14px;overflow:hidden;background:#0f0c1e;border:1px solid rgba(255,255,255,.18)}
+.wma-prev>.wm-img,.wma-prev>.wm-svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.wma-pin{position:absolute;transform:translate(-50%,-28px);display:grid;justify-items:center;padding:0;border:0;background:none;color:#fff;cursor:grab;touch-action:none}
+.wma-pin .wm-pin{width:34px;height:34px}.wma-pin b{margin-top:3px;padding:1px 7px;border-radius:999px;font:700 10px var(--display);white-space:nowrap;background:rgba(12,10,26,.78)}
+.wma-pin:active{cursor:grabbing}
+.wma-list{display:grid;gap:8px}
+.wma-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(200px,280px);gap:12px;align-items:center;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
+.wma-row .wm-pin{width:44px;height:44px}
+.wma-f{display:grid;gap:3px}.wma-f small{font:500 12px var(--read);color:rgba(255,255,255,.7)}
+@media (max-width:720px){.wma-row{grid-template-columns:44px minmax(0,1fr)}.wma-row .afa-sl{grid-column:1/-1}}
+.wm-arr.u,.wm-arr.d{display:none}   /* swipe up / down instead: they covered region buttons */
+.wm-head .wm-tabs{justify-content:flex-start}.wm-head .wm-tabs>:first-child{margin-left:auto}.wm-head .wm-tabs>:last-child{margin-right:auto}
