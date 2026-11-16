@@ -74,12 +74,12 @@ async function mediaDel(k) {
   try { await DB.del(k); } catch (e) {}
 }
 /* standard character splash art: 1728×972 (16:9). Uploads keep that size; full-screen views cover the screen with it */
-const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968], PET_SIZE = [1254, 1254];   // pets' splash arts are square   // every character / skin art is cropped to exactly this size
+const SPLASH_MAX = 1728, SPLASH_SIZE = [1728, 968], PET_SIZE = [1254, 1254];   // pets' splash arts are square   // the sizes to upload at (uploads are no longer cropped or resized)
 /* exact = [w, h]: cover-crop to exactly that size (keeping the middle across and the upper part top to bottom, like the art views) */
 /* an uploaded icon: the see-through margin around its picture is trimmed and the picture centred on a square canvas
    with a small even margin, so it sits in the middle of every round / diamond frame however it was drawn. Pictures
    without transparency (or already centred squares) come back unchanged. */
-function centerIcon(url, size = 128, pad = .03) {
+function centerIcon(url, size, pad = .03) {   // size: unused (kept for the callers)
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
@@ -91,36 +91,23 @@ function centerIcon(url, size = 128, pad = .03) {
       if (x1 < 0) return res(url);
       const bw = x1 - x0 + 1, bh = y1 - y0 + 1, cx = (x0 + x1 + 1) / 2 - w / 2, cy = (y0 + y1 + 1) / 2 - h / 2;
       if (w === h && Math.abs(cx) < 1.5 && Math.abs(cy) < 1.5 && Math.max(bw, bh) >= w * (1 - 2 * pad) - 2) return res(url);   // already centred
-      const o = document.createElement('canvas'); o.width = o.height = size;
-      const s = size * (1 - 2 * pad) / Math.max(bw, bh), dw = bw * s, dh = bh * s;
-      o.getContext('2d').drawImage(c, x0, y0, bw, bh, (size - dw) / 2, (size - dh) / 2, dw, dh);
-      let out = o.toDataURL('image/webp', .92); if (!out.startsWith('data:image/webp')) out = o.toDataURL('image/png');
+      const side = Math.ceil(Math.max(bw, bh) / (1 - 2 * pad)), o = document.createElement('canvas'); o.width = o.height = side;   // at the picture's own resolution, never scaled
+      o.getContext('2d').drawImage(c, x0, y0, bw, bh, Math.round((side - bw) / 2), Math.round((side - bh) / 2), bw, bh);
+      const out = o.toDataURL('image/png');   // lossless
       res(out);
     };
     img.onerror = () => res(url);
     img.src = url;
   });
 }
-function resizeImage(file, max, type = 'image/webp', exact) {
+/* uploads keep their original file: no resizing, cropping or re-encoding (the owner's ask: the canvas pass lost quality;
+   they make sure every picture has the right size before uploading). The old arguments (max size, type, exact crop) are
+   kept so every caller works unchanged, but they are ignored. */
+function resizeImage(file) {
   return new Promise((res, rej) => {
     if (!file || !file.type.startsWith('image/')) return rej(new Error('That file is not an image. Pick a PNG, JPG, WebP or SVG.'));
     const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const w = img.naturalWidth || max, h = img.naturalHeight || max, k = Math.min(1, max / Math.max(w, h));
-        const c = document.createElement('canvas');
-        if (exact) {
-          c.width = exact[0]; c.height = exact[1]; const s = Math.max(c.width / w, c.height / h), dw = w * s, dh = h * s;
-          c.getContext('2d').drawImage(img, (c.width - dw) / 2, (c.height - dh) * .3, dw, dh);
-        } else { c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); }
-        let url = c.toDataURL(type, 0.9);
-        if (!url.startsWith('data:' + type)) url = c.toDataURL('image/png');
-        res(url);
-      };
-      img.onerror = () => rej(new Error('Could not read that image. Try another file.'));
-      img.src = reader.result;
-    };
+    reader.onload = () => res(reader.result);
     reader.onerror = () => rej(new Error('Could not read that file.'));
     reader.readAsDataURL(file);
   });

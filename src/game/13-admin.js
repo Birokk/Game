@@ -144,7 +144,7 @@ function renderPoolTab() {
           <div class="frame"><img id="adPrev" alt="Splash art preview"></div>
           <label class="upload">${icon('upload')}<span id="adUpLbl">Upload splash art</span><input type="file" id="adArt" accept="image/*" class="sr"></label>
           <button type="button" class="link" id="adClearArt" hidden>Remove uploaded art</button>
-          <p class="tiny">Characters and skins: every upload is cropped to exactly 1728×968 (16:9), keeping the upper middle. <b>Pets: 1254×1254 (square)</b>, including their 3★ / 6★ arts. Without art, a placeholder is shown.</p>
+          <p class="tiny">Uploads are kept exactly as they are (no resizing or cropping), so upload them at the right size: characters and skins <b>1728×968 (16:9)</b>, <b>pets 1254×1254 (square)</b>, including their 3★ / 6★ arts. Without art, a placeholder is shown.</p>
           <div class="asc-slots" id="adCardWrap"><div class="lbl-sm">Card framing</div><p class="tiny">How the art sits in every 3:4 card: Collection, profile showcase, the Skins carousel and the outfit shop. Characters can frame each splash art on its own.</p>
             <div class="row" id="adCardKs" style="gap:6px"></div>
             <div class="row" style="gap:12px;align-items:center"><span class="ad-card"><img id="adCardImg" alt=""></span>
