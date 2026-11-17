@@ -39,8 +39,8 @@ function bthInfo(id) {
   if (id === 'arena') { if (!arJoined()) return { sub: 'Join the Arena', line: `${icon('shield')}Set a defense deck`, dot: false };
     const a = arState(), R = arRankOf(a.vp); return { sub: `${R.label} · ${fmt(a.vp)} VP`, line: `${icon('swords')}${arLeft()} of ${arTickets()} battles left`, dot: arReady() }; }
   if (id === 'training') return { sub: 'Set up any match', line: `${icon('check')}Free · no rewards`, dot: false };
-  if (id === 'world') { const o = WM_REGIONS.filter(r => r.open).length;
-    return { sub: 'The Known Lands', line: `${icon('compass')}${o} of ${WM_REGIONS.length} regions open`, dot: false }; }
+  if (id === 'world') { const n = CC_REGIONS.reduce((t, c) => t + rgStars(c.region), 0);
+    return { sub: 'The Known Lands', line: `${CC_STAR_SVG.replace('<svg ', '<svg class="ic" ')}${n} / ${CC_REGIONS.length * RG_N * 3} region stars`, dot: false }; }
   const st = ccSave().stats;
   return { sub: `${QM_MODES.length} battle types · ${QM_DIFF.length} difficulties`, line: `${icon('trophy')}${st.w} W · ${st.l} L · ${st.d} D`, dot: false };
 }

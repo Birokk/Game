@@ -36,6 +36,7 @@ const ADMIN_NAV = [
     ['farm:guild', 'Guild', 'guild', 'hall shop rewards quests wallpaper', 'The guild screen wallpaper and its spots'],
     ['tree', 'Great Tree', 'tree', 'great tree picture floors buttons upload tower', 'Your Great Tree picture and where each floor button stands on it'],
     ['world', 'World map', 'compass', 'world map regions buttons upload desert volcano forest isles frozen underwater cursed fairy black desert', 'Your world map picture and where each region button stands on it'],
+    ['regions', 'Regions', 'map', 'region page map wallpaper stages campaign plains forest fairy desert volcano frozen isles cursed underwater deck cards', 'Each world map region\'s page: its map picture and where its 3 stage buttons stand'],
     ['artifacts', 'Ancient Artifacts', 'artifact', 'artifacts relics shelf showcase last stand emperor icons positions', 'The shelf wallpaper, each artifact icon, where it stands on the shelves and how big']] },
   { g: 'Look & icons', ic: 'image', items: [
     ['title', 'Title & loading', 'door', 'title screen notices loading wallpapers news', 'The title screen wallpaper, its notices and the loading screen wallpapers'],
@@ -98,6 +99,7 @@ function renderAdminTab() {
   if (adminTab === 'battle') return renderBattleTab();
   if (adminTab === 'artifacts') return renderArtifactsTab();
   if (adminTab === 'world') return renderWorldTab();
+  if (adminTab === 'regions') return renderRegionsTab();
   if (adminTab === 'tree') return renderTreeTab();
   if (adminTab === 'titles') return renderTitlesTab();
   if (adminTab === 'frames') return renderFramesTab();

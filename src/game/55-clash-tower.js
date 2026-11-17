@@ -128,7 +128,7 @@ for (let no = CC_TOWER.stages.length + 1; no <= CC_TOWER_N; no++) CC_TOWER.stage
 const ccTowerFloors = () => CC_TOWER.stages.map(s => ({ ...s, ch: CC_TOWER }));
 const ccTowerFloor = id => ccTowerFloors().find(s => s.id === id) || null;
 /* "Floor 3" for a tower floor, "Stage 1-2" for a campaign stage */
-const ccStLabel = st => st.ch && st.ch.tower ? `Floor ${st.no}` : `Stage ${st.id}`;
+const ccStLabel = st => st.ch && st.ch.tower ? `Floor ${st.no}` : st.ch && st.ch.regionCh ? `Stage ${st.no}` : `Stage ${st.id}`;   // regions (76): "Stage 1"
 /* how high you have climbed: floors cleared in a row from the bottom */
 function ccTowerTop() { let n = 0; for (const s of CC_TOWER.stages) { if (ccCampHave(s.id)[0]) n++; else break; } return n; }
 const ccTowerStars = () => CC_TOWER.stages.reduce((t, s) => t + ccCampN(s.id), 0);

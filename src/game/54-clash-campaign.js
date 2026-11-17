@@ -486,7 +486,7 @@ const ccCampMiles = ch => ch.miles.map(m => ({ ...m, ready: ccCampChN(ch) >= m.n
 const ccCampClaimable = ch => ccCampMiles(ch).some(m => m.ready && !m.got);
 /* a milestone's tooltip, like the quest gift boxes: the stars needed, each reward with its icon, and its state */
 const ccCampMileTip = m => `<b>${m.n} stars</b><span class="dq-tiprw">${Object.entries(m.reward).map(([k, v]) => `<i>${curIcon(k)}${fmt(v)} ${(REW_NAMES[k] || [k, k])[v === 1 ? 0 : 1]}</i>`).join('')}</span><em class="${m.got ? 'ok' : ''}">${m.got ? 'Claimed' : m.ready ? 'Tap to claim' : `Reach ${m.n} stars`}</em>`;
-const ccCampNext = st => { const L = st.ch && st.ch.tower ? ccTowerFloors() : ccCampStages(), i = L.findIndex(s => s.id === st.id), nx = L[i + 1]; return nx && ccCampOpen(nx) ? nx : null; };
+const ccCampNext = st => { const L = st.ch && st.ch.tower ? ccTowerFloors() : st.ch && st.ch.regionCh ? rgStages(st.ch.region) : ccCampStages(), i = L.findIndex(s => s.id === st.id), nx = L[i + 1]; return nx && ccCampOpen(nx) ? nx : null; };
 /* the Card Battle gate's red dot: a stage you can play that you haven't cleared yet, or a chapter reward waiting */
 const ccCampReady = () => CC_CAMP.some(ch => ccCampClaimable(ch) || ch.stages.some(s => ccCampOpen({ ...s, ch }) && !ccCampHave(s.id)[0]));
 /* the stage's opponent: the Training Dummy, or a character from the pool picked by the stage seed (the same every time) */
