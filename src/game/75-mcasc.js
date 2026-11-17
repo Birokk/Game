@@ -17,7 +17,9 @@ const MCA_FOE = () => (CC_CAMP_DECKS.eclipse || CC_TOWER_DECKS.spire).slice();
 const mcAscState = () => { const a = S.mcAsc = S.mcAsc && typeof S.mcAsc === 'object' ? S.mcAsc : {}; a.tries = a.tries || 0; return a; };
 const mcAscDone = () => !!(S.mcAsc && S.mcAsc.done);
 const mcaShards = () => S.wallet.mshard || 0;
-const mcaStep = () => mcAscDone() ? 3 : mcAscState().paid ? 2 : mcaShards() >= MCA_SHARDS ? 1 : 0;   // 0 gather · 1 offer · 2 trial · 3 done
+const MCA_STARS = 6;   // the questline opens when the main character reaches 6★ (shards drop before that too)
+const mcaReady = () => { const id = mcId(); return !!id && starsOf(id) >= MCA_STARS; };
+const mcaStep = () => mcAscDone() ? 4 : mcAscState().won ? 3 : mcAscState().paid ? 2 : mcaShards() >= MCA_SHARDS ? 1 : 0;   // 0 gather · 1 offer · 2 trial · 3 complete · 4 done
 
 /* the MC's rarity: SSR until ascended, UR after (the admin's stored value is kept for the content save) */
 function mcAscApply() {
@@ -40,6 +42,7 @@ mcAscApply();
 /* step 2: the offering */
 function mcAscOffer() {
   if (mcAscState().paid || mcAscDone()) return;
+  if (!mcaReady()) { toast(`The Ascension opens when your main character reaches ${MCA_STARS}★.`); return; }
   if (mcaShards() < MCA_SHARDS) { toast(`You need ${MCA_SHARDS} Mirror Shards. You have ${mcaShards()}.`); return; }
   if ((S.wallet.coins || 0) < MCA_GOLD) { toast(`The offering needs ${fmt(MCA_GOLD)} gold. You have ${fmt(S.wallet.coins || 0)}.`); return; }
   S.wallet.coins -= MCA_GOLD; S.wallet.mshard = mcaShards() - MCA_SHARDS; mcAscState().paid = Date.now();
@@ -49,7 +52,7 @@ function mcAscOffer() {
 /* step 3: the Mirror Trial (the Free Training match path, marked asc) */
 let mcaReturn = false;
 function mcAscBattle() {
-  if (!mcAscState().paid || mcAscDone()) return;
+  if (!mcAscState().paid || mcAscDone() || mcAscState().won || !mcaReady()) return;
   const me = mcId(); if (!me || !findEntry(me)) { toast('Pick your main character first.'); return; }
   const seed = (Math.random() * 4294967296) >>> 0, a = mcAscState(); a.tries++;
   const sv = ccSave(); a.autoPrev = !!sv.auto; sv.auto = false; persist();
@@ -60,12 +63,15 @@ function mcAscBattle() {
 { const o = ftSetup; ftSetup = function (seed, f, deck) { if (!f || !f.asc) return o.apply(this, arguments);
   return { foeDeck: MCA_FOE(), deckName: 'the Mirror deck', opts: { ev: null, first: 1, hp: [CC_CFG.hp, MCA_HP] } }; }; }
 const mcaMatch = () => !!(ccM && ccM.train && ccM.train.asc);
-function mcaAscend() {
-  const a = mcAscState(); if (a.done) return false;
-  a.done = Date.now(); a.show = true; persist(); return true;
+/* a win only marks the trial as passed; the player completes the questline by hand (mcaComplete) */
+function mcaWin() { const a = mcAscState(); if (a.done || a.won) return false; a.won = Date.now(); persist(); return true; }
+function mcaComplete() {
+  const a = mcAscState(); if (a.done || !a.won) return;
+  a.done = Date.now(); persist(); renderMenu(); if (csEl) renderCharacters(); renderMcAsc();
+  const e = findEntry(mcId()); if (e) mcaCelebrate(e);
 }
 { const o = ccEndScreen; ccEndScreen = function () {
-  const asc = mcaMatch(), won = asc && ccM.G.winner === 0; let fresh = false; if (won) fresh = mcaAscend();
+  const asc = mcaMatch(), won = asc && ccM.G.winner === 0; let fresh = false; if (won) fresh = mcaWin();
   const r = o.apply(this, arguments);
   if (asc && ccM && ccM.el) { const box = ccM.el.querySelector('.ccm-end .ftr'); if (box) box.outerHTML = mcaEndHTML(won, fresh);
     const ag = ccM.el.querySelector('#ftAgain'), bk = ccM.el.querySelector('#ftBack');
@@ -73,7 +79,7 @@ function mcaAscend() {
     if (bk) { bk.innerHTML = `${icon('sparkle')}Questline`; if (won) bk.className = 'btn gold'; } }
   return r; }; }
 const mcaEndHTML = (won, fresh) => { const e = findEntry(mcId()) || {};
-  return won ? `<div class="ccm-rw mca-end win"><span class="lbl-sm">${icon('sparkle')}The Mirror Trial</span><b>${esc(e.name || 'Your main character')} ascended!</b><span class="mca-rr">${rtag(4)}<i>→</i>${rtag(5)}</span><small>${fresh ? 'Your main character is UR from now on.' : 'Already ascended.'}</small></div>`
+  return won ? `<div class="ccm-rw mca-end win"><span class="lbl-sm">${icon('sparkle')}The Mirror Trial</span><b>Trial passed!</b><span class="mca-rr">${rtag(4)}<i>→</i>${rtag(5)}</span><small>${fresh ? `Open the questline and complete it to ascend ${esc(e.name || 'your main character')} to UR.` : 'The trial is already passed.'}</small></div>`
     : `<div class="ccm-rw mca-end"><span class="lbl-sm">${icon('sparkle')}The Mirror Trial</span><small>Your reflection still stands. Try again: the trial costs nothing and you can retry as often as you like.</small></div>`; };
 /* back from the trial (Leave, Questline, Try again) */
 { const o = openTraining; openTraining = function () { if (mcaReturn) { mcaReturn = false; mcaRestoreAuto(); openMcAsc(); return; } return o.apply(this, arguments); }; }
@@ -99,23 +105,26 @@ function renderMcAsc() {
   const root = $('#mcaRoot'); if (!root) return;
   const e = findEntry(mcId()), a = mcAscState(), step = mcaStep(), have = mcaShards(), gold = S.wallet.coins || 0;
   if (!e) { root.innerHTML = '<p class="desc">Pick your main character first.</p>'; return; }
-  const st = (i, cls, ic, h, body) => `<div class="mca-st ${step > i ? 'done' : step === i ? 'now' : 'lock'} ${cls}"><span class="mca-n">${step > i ? icon('check') : i + 1}</span><div class="mca-sb"><b>${icon(ic)}${h}</b>${body}</div></div>`;
+  const rd = mcaReady(), mst = starsOf(e.id);
+  const st = (i, cls, ic, h, body) => `<div class="mca-st ${step > i ? 'done' : step === i && (i === 0 || rd) ? 'now' : 'lock'} ${cls}"><span class="mca-n">${step > i ? icon('check') : i + 1}</span><div class="mca-sb"><b>${icon(ic)}${h}</b>${body}</div></div>`;
   const shards = Array.from({ length: MCA_SHARDS }, (_, i) => `<i class="${a.paid || mcAscDone() || i < have ? 'on' : ''}">${curIcon('mshard')}</i>`).join('');
   root.innerHTML = `<div class="mca ${mcAscDone() ? 'asc' : ''}">
     <div class="mca-hd"><span class="mca-ava">${baseThumb(e)}</span><div><span class="lbl-sm">Main character questline</span><h3>The Mirror Trial</h3><span class="mca-rr">${rtag(4)}<i>→</i>${rtag(5)}</span></div>
-      <p class="tiny">${mcAscDone() ? `${esc(e.name)} has ascended: your main character is <b>UR</b> now, with UR points in its CS.` : `${esc(e.name)} is <b>SSR</b>. Finish these three steps to raise your main character to <b>UR</b> for good.`}</p></div>
-    ${st(0, '', 'cards', 'Gather Mirror Shards', `<p class="tiny">Every <b>Quick match win</b> has a ${Math.round(MCA_DROP * 100)}% chance to drop a Mirror Shard (any difficulty).</p><div class="mca-sh">${shards}<span>${a.paid || mcAscDone() ? 'Offered' : `${Math.min(have, MCA_SHARDS)} / ${MCA_SHARDS}`}</span></div>${step === 0 ? '<button class="btn ghost sm" id="mcaQm">Go to Quick Match</button>' : ''}`)}
-    ${st(1, '', 'gift', 'The offering', `<p class="tiny">Give the mirror <b>${fmt(MCA_GOLD)} gold</b> and <b>${MCA_SHARDS} Mirror Shards</b>.</p><div class="mca-cost"><span class="${gold >= MCA_GOLD || step > 1 ? 'ok' : ''}">${curIcon('coins')}${fmt(MCA_GOLD)}</span><span class="${have >= MCA_SHARDS || step > 1 ? 'ok' : ''}">${curIcon('mshard')}${MCA_SHARDS}</span></div>${step === 1 ? `<button class="btn gold sm" id="mcaOffer" ${gold >= MCA_GOLD ? '' : 'disabled'}>${gold >= MCA_GOLD ? 'Make the offering' : `Need ${fmt(MCA_GOLD - gold)} more gold`}</button>` : ''}`)}
+      <p class="tiny">${mcAscDone() ? `${esc(e.name)} has ascended: your main character is <b>UR</b> now, with UR points in its CS.` : `${esc(e.name)} is <b>SSR</b>. Finish these steps to raise your main character to <b>UR</b> for good.`}</p>
+      ${!mcAscDone() && !rd ? `<div class="mca-lock">${icon('lock')}<span><b>Opens at ${MCA_STARS}★</b>Your main character is ${mst}★ (Origin Orbs give stars). You can already collect Mirror Shards (up to ${MCA_SHARDS}).</span></div>` : ''}</div>
+    ${st(0, '', 'cards', 'Gather Mirror Shards', `<p class="tiny">Every <b>Quick match win</b> has a ${Math.round(MCA_DROP * 100)}% chance to drop a Mirror Shard (any difficulty), up to ${MCA_SHARDS} at a time. They drop even before the questline opens.</p><div class="mca-sh">${shards}<span>${a.paid || mcAscDone() ? 'Offered' : `${Math.min(have, MCA_SHARDS)} / ${MCA_SHARDS}`}</span></div>${step === 0 ? '<button class="btn ghost sm" id="mcaQm">Go to Quick Match</button>' : ''}`)}
+    ${st(1, '', 'gift', 'The offering', `<p class="tiny">Give the mirror <b>${fmt(MCA_GOLD)} gold</b> and <b>${MCA_SHARDS} Mirror Shards</b>.</p><div class="mca-cost"><span class="${gold >= MCA_GOLD || step > 1 ? 'ok' : ''}">${curIcon('coins')}${fmt(MCA_GOLD)}</span><span class="${have >= MCA_SHARDS || step > 1 ? 'ok' : ''}">${curIcon('mshard')}${MCA_SHARDS}</span></div>${step === 1 ? `<button class="btn gold sm" id="mcaOffer" ${gold >= MCA_GOLD && rd ? '' : 'disabled'}>${!rd ? `Opens at ${MCA_STARS}★` : gold >= MCA_GOLD ? 'Make the offering' : `Need ${fmt(MCA_GOLD - gold)} more gold`}</button>` : ''}`)}
     ${st(2, 'trial', 'swords', 'Beat your reflection', `<p class="tiny">A <b>Hard</b> card battle against ${esc(e.name)}: it plans every turn, starts on <b>${MCA_HP} HP</b> and goes first. You play the special <b>Origin Deck</b>; no auto play. Free, retry as often as you like.</p>
       <div class="mca-chips"><span>${icon('target')}Hard</span><span>${icon('heart')}${CC_CFG.hp} vs ${MCA_HP} HP</span><span>${icon('cards')}Origin Deck</span>${a.tries ? `<span>${icon('refresh')}${a.tries} ${a.tries === 1 ? 'try' : 'tries'}</span>` : ''}</div>
       <details class="mca-deck"><summary>See the Origin Deck</summary><div>${[...new Set(MCA_DECK)].map(id => `<span>${esc(ccDef(id).name)} ×${MCA_DECK.filter(x => x === id).length}</span>`).join('')}</div></details>
-      ${step === 2 ? `<button class="btn gold" id="mcaGo">${icon('swords')}Begin the trial</button>` : ''}`)}
+      ${step === 2 ? `<button class="btn gold" id="mcaGo" ${rd ? '' : 'disabled'}>${icon('swords')}${rd ? 'Begin the trial' : `Opens at ${MCA_STARS}★`}</button>` : ''}`)}
+    ${st(3, '', 'sparkle', 'Complete the questline', `<p class="tiny">${step >= 3 ? 'You beat your reflection.' : 'Beat your reflection first.'} Complete the questline to ascend ${esc(e.name)} from <b>SSR</b> to <b>UR</b>.</p>${step === 3 ? `<button class="btn gold" id="mcaDone" data-norw>${icon('sparkle')}Complete · ascend to UR</button>` : ''}`)}
     ${mcAscDone() ? `<div class="mca-done">${icon('sparkle')}<b>Ascended</b><span>${new Date(a.done).toLocaleDateString()}</span></div>` : ''}
   </div>`;
   const q = $('#mcaQm'); if (q) q.onclick = () => { closeModal(); if (csEl) closeCharacters(); openQuickMatch(); };
   const of = $('#mcaOffer'); if (of) of.onclick = mcAscOffer;
   const go = $('#mcaGo'); if (go) go.onclick = () => { if (csEl) closeCharacters(); mcAscBattle(); };
-  if (a.show && mcAscDone()) { a.show = false; persist(); mcaCelebrate(e); }
+  const dn = $('#mcaDone'); if (dn) dn.onclick = mcaComplete;
 }
 /* the ascension moment: the MC's art, SSR turning into UR */
 function mcaCelebrate(e) {
@@ -128,7 +137,7 @@ function mcaCelebrate(e) {
   if (!c || csTab !== 'bt' || !MC_IDS[c.id] || csEl.querySelector('.mca-box')) return;
   const at = csEl.querySelector('.mco-box') || csEl.querySelector('.bt-stars'); if (!at) return;
   const step = mcaStep();
-  at.insertAdjacentHTML(at.classList.contains('mco-box') ? 'afterend' : 'beforebegin', `<div class="cs-card mca-box ${mcAscDone() ? 'asc' : ''}"><div class="mco-top"><span class="mco-ic">${curIcon('mshard')}</span><div><b>Ascension · <span data-norw>SSR → UR</span></b><span class="tiny">${mcAscDone() ? 'Ascended: your main character is UR.' : `Step ${step + 1} of 3 · ${['Gather Mirror Shards', 'The offering', 'Beat your reflection'][step]}`}</span></div><span class="mco-n">${Math.min(step, 3)} / 3</span></div><button class="btn ${mcAscDone() ? 'ghost' : 'gold'}" id="mcaOpen">${icon('sparkle')}${mcAscDone() ? 'View questline' : 'Open questline'}</button></div>`);
+  at.insertAdjacentHTML(at.classList.contains('mco-box') ? 'afterend' : 'beforebegin', `<div class="cs-card mca-box ${mcAscDone() ? 'asc' : ''}"><div class="mco-top"><span class="mco-ic">${curIcon('mshard')}</span><div><b>Ascension · <span data-norw>SSR → UR</span></b><span class="tiny">${mcAscDone() ? 'Ascended: your main character is UR.' : !mcaReady() ? `Opens at ${MCA_STARS}★ · Mirror Shards ${Math.min(mcaShards(), MCA_SHARDS)} / ${MCA_SHARDS}` : `Step ${step + 1} of 4 · ${['Gather Mirror Shards', 'The offering', 'Beat your reflection', 'Complete the questline'][step]}`}</span></div><span class="mco-n">${Math.min(step, 4)} / 4</span></div><button class="btn ${mcAscDone() ? 'ghost' : 'gold'}" id="mcaOpen">${icon(mcAscDone() || mcaReady() ? 'sparkle' : 'lock')}${mcAscDone() ? 'View questline' : mcaStep() === 3 ? 'Complete the questline' : 'Open questline'}</button></div>`);
   const b = csEl.querySelector('#mcaOpen'); if (b) b.onclick = openMcAsc; }; }
 /* the Bag */
 { const o = invItems; invItems = function () { const L = o.apply(this, arguments);

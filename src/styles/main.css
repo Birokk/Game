@@ -7140,3 +7140,9 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 @keyframes mcaIn{from{opacity:0}}@keyframes mcaSpin{to{rotate:360deg}}@keyframes mcaRise{from{opacity:0;translate:0 30px;scale:.96}}
 @keyframes mcaFade{to{opacity:.35;filter:grayscale(1)}}@keyframes mcaPop{from{opacity:0;scale:.3}}
 @media (prefers-reduced-motion:reduce){.mca-cg,.mca-ca,.mca-rr.big .o,.mca-rr.big .n{animation:none}}
+
+.mca-lock{grid-column:1/-1;display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:12px;background:rgba(255,178,74,.1);border:1px solid rgba(255,178,74,.35);font:400 12px var(--read)}.mca-lock b{display:block;font:400 14px var(--display)}.mca-lock .ic{width:16px;height:16px;flex:none;margin-top:2px}
+/* Potential: no dashed sigils behind the boards (the owner's ask); the gems above the stars a little bigger */
+.pot-lines .pot-deco{display:none}
+.cs-traits .pot-ic,.stars-big .pot-ic,.skc-st .pot-ic,.pf-sl .pot-ic{width:.72em;height:.72em;bottom:76%}
+.cs-traits:has(.pot-ic) .stars6,.stars-big:has(.pot-ic) .stars6,.skc-st:has(.pot-ic) .stars6,.pf-sl:has(.pot-ic) .stars6{padding-top:.62em}
