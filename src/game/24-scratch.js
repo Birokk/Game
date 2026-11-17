@@ -7,11 +7,11 @@
    State (player save): S.scratch = { day, n (bought today), card: { cells[9], win (icon index or -1), prize, done } } */
 const SCRATCH_PRICE = 5, SCRATCH_DAILY = 10;
 const SCRATCH_PRIZES = [
-  { p: 300, ic: 'seven', w: 12 }, { p: 100, ic: 'crown', w: 80 }, { p: 50, ic: 'diamond', w: 300 }, { p: 30, ic: 'star', w: 1200 },
-  { p: 10, ic: 'bell', w: 270000 }, { p: 7, ic: 'bag', w: 150000 }, { p: 5, ic: 'clover', w: 140000 }, { p: 3, ic: 'horseshoe', w: 90000 },
-  { p: 1, ic: 'cherry', w: 48400 }
-];
-const SCRATCH_LOSE_W = 1e6 - SCRATCH_PRIZES.reduce((t, x) => t + x.w, 0);   // 300,008 = about 30%
+  { p: 300, ic: 'seven', w: 300 }, { p: 100, ic: 'crown', w: 1500 }, { p: 50, ic: 'diamond', w: 6000 }, { p: 30, ic: 'star', w: 25000 },
+  { p: 10, ic: 'bell', w: 140000 }, { p: 7, ic: 'bag', w: 120000 }, { p: 5, ic: 'clover', w: 160000 }, { p: 3, ic: 'horseshoe', w: 140000 },
+  { p: 1, ic: 'cherry', w: 100000 }
+];   // the owner asked for the big wins to come far more often (30 pearls: 1 card in 40): about 97% back on average
+const SCRATCH_LOSE_W = 1e6 - SCRATCH_PRIZES.reduce((t, x) => t + x.w, 0);   // 307,200 = about 31%
 /* ten white line-art icons (the moon never pays: it only fills the grid) */
 const SCR_ICONS = {
   seven: '<path d="M13 11h22l-11 27"/><path d="M18 24h12"/>',

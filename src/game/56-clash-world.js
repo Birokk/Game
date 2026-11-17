@@ -20,6 +20,7 @@
    the default, on the parchment). Region icons are icon slots `wm-<id>` (default WM_ICO). */
 const WM_REGIONS = [
   { id: 'tree', name: 'The Great Tree', kind: 'Heart of the world', at: [49.38, 62.2], open: true, col: '#9dffb0' },
+  { id: 'plains', name: 'Plains', kind: 'Grassland', at: [36.5, 45.5], col: '#c8f06a' },
   { id: 'forest', name: 'Forest', kind: 'Forest', at: [37.84, 25.64], col: '#8dff7e' },
   { id: 'fairy', name: 'Fairy Forest', kind: 'Magical forest', at: [48.54, 78.47], col: '#ff9ad8' },
   { id: 'desert', name: 'Desert', kind: 'Desert', at: [29.99, 64.29], col: '#ffd36a' },
@@ -39,6 +40,7 @@ const wmMapHTML = () => MEDIA.get('world:map') ? `<img class="wm-img" src="${MED
 const WM_SHIELD = '<path d="M4 4h40v22c0 14-9 22-20 27C13 48 4 40 4 26z" fill="#3e2a17" stroke="#1f140a" stroke-width="2"/><path d="M8 8h32v18c0 11-7 17-16 21-9-4-16-10-16-21z" fill="none" stroke="#e7d7b1" stroke-width="1" opacity=".55"/>';
 const WM_ICO = {
   tree: '<path d="M22 44V31h4v13z"/><path d="M15 44c3-1 6-2 9-5 3 3 6 4 9 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M24 13c-3-4-10-3-10 2-4 0-6 5-3 8-2 3 1 7 5 6 2 3 7 3 8 0 1 3 6 3 8 0 4 1 7-3 5-6 3-3 1-8-3-8 0-5-7-6-10-2z"/>',
+  plains: '<path d="M4 38q9-8 20-3 9-6 20 3z"/><path d="M29 31V18h3v13z"/><path d="M30.5 18l-8-5.5M30.5 18l9-4M30.5 18l-1 9.5M30.5 18l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="30.5" cy="18" r="1.8"/><path d="M9 32v-4M11.5 32.5v-5M14 32v-3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
   forest: '<path d="M17 12l7 12h-3l5 9H8l5-9h-3z"/><path d="M31 16l6 10h-2.5l4 8H25l4-8h-2.5z"/><path d="M16.2 33h2v5h-2zM30.2 34h2v5h-2z"/>',
   desert: '<circle cx="30" cy="15" r="4.5"/><path d="M8 34q8-9 17-2 6-5 15 2z"/><path d="M14 30V20.5a1.6 1.6 0 0 1 3.2 0V30zM14 25h-2.5v-3.5a1.2 1.2 0 0 1 2.4 0M17.2 23.5h2.5V20a1.2 1.2 0 0 0-2.4 0"/>',
   volcano: '<path d="M8 37l10-18h12l10 18z"/><path d="M22 16c-3-3 2-5-1-8M26 15c3-3-1-5 2-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',

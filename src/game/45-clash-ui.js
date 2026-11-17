@@ -65,6 +65,7 @@ function renderDeck() {
       <span class="ccd-lbl">My decks</span>${sv.decks.map(deckRow).join('') || '<span class="tiny">No decks yet. Start one or copy a starter deck.</span>'}
       <button class="btn ghost ccd-new" id="ccdNew" ${sv.decks.length >= CC_DECK_MAX ? 'disabled' : ''}>${icon('plus')}New deck</button>
     </aside>
+    ${ccLeaderHero(deck)}
     <section class="ccd-pool">
       <div class="ccd-filters">
         <div class="ccd-frow">${chip('style', 'all', 'All')}${Object.entries(CC_STYLES).map(([k, [n, c]]) => chip('style', k, `${ccStyleDot(k)}${n}`, c)).join('')}</div>
@@ -77,7 +78,6 @@ function renderDeck() {
     <aside class="ccd-deck">
       <div class="ccd-dhead">${ro ? `<b class="ccd-dname">${esc(deck.name)}</b>` : `<input class="ccd-dname" id="ccdName" maxlength="24" value="${esc(deck.name)}" aria-label="Deck name">`}
         <span class="ccd-cnt ${v.ok ? 'ok' : cards.length > 30 ? 'bad' : ''}">${cards.length}/30</span></div>
-      ${ccLeaderBox(deck.id)}
       <div class="ccd-comp">${['unit', 'spell', 'trap', 'equipment'].map(t => `<span><b>${byType(t)}</b>${CC_TYPES[t]}${t === 'equipment' ? '' : 's'}</span>`).join('')}</div>
       <div class="ccd-bar">${Object.keys(CC_STYLES).map(s => bySt(s) ? `<i style="flex:${bySt(s)};--cs:${CC_STYLES[s][1]}" title="${CC_STYLES[s][0]} ${bySt(s)}"></i>` : '').join('') || '<i class="none"></i>'}</div>
       <div class="ccd-list">${uniq.map(id => { const d = ccDef(id); return `<button class="ccd-li" data-rem="${id}" style="--cs:${CC_STYLES[d.style][1]}" title="${esc(d.text)}">${ccIco(id, 'ccd-li-em')}<span class="ccd-li-ap"><span>${d.ap}</span></span><b>${esc(d.name)}</b><small>${CC_TYPES[d.type]}</small><span class="ccd-li-n">×${ccCount(cards, id)}</span>${ro ? '' : `<span class="ccd-li-x">${icon('close')}</span>`}</button>`; }).join('') || '<p class="tiny">Empty deck. Add 30 cards from the left.</p>'}</div>
@@ -98,7 +98,8 @@ function renderDeck() {
   one('#ccdTower').onclick = () => openWorld();
   one('#ccdHelp').onclick = () => ccRules(0);
   one('#ccdSkin').onclick = () => ccSkinPicker();
-  one('#ccdLead').onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
+  const ld = one('#ccdLead'); if (ld) ld.onclick = () => ccPickLeader(deck.id, () => { openDeck(); });
+  const fo = one('#ccdFold'); if (fo) fo.onclick = () => { sv.leadMin = !sv.leadMin; persist(); renderDeck(); };
   const lbon = one('#ccdLeadBon'); if (lbon) lbon.onclick = () => lsDetails(ccLeaderOf(deck.id));
   $$('[data-deck]').forEach(b => b.onclick = () => { sv.sel = b.dataset.deck; persist(); renderDeck(); });
   $$('[data-f]').forEach(b => b.onclick = () => { const k = b.dataset.f; ccdF[k] = k === 'ap' ? +b.dataset.v : b.dataset.v; renderDeck(); });

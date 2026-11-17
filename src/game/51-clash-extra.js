@@ -130,6 +130,42 @@ function ccLeaderBox(deckId) {
     <div class="ccd-lead-info">${e ? `<b>${esc(e.name)}</b><span class="tiny">Brings its leader skill to every match.</span>` : ''}<button class="btn ghost sm" id="ccdLead" ${ccLeaderPool().length ? '' : 'disabled'}>${icon('crown')}Change leader</button></div></div>${e ? `<div class="ccd-lead-sk">${lsInfoHTML(e)}${lsBondLine(e, (ccDeckById(deckId) || {}).cards)}<button class="btn ghost sm" id="ccdLeadBon">${icon('sparkle')}Battle bonuses</button></div>` : ''}</div>`;
 }
 
+/* the leader showcase at the top of the Deck screen (the owner found the old leader box too small): the leader's splash
+   art across the panel, its card, name, rarity / grade / CS / attribute / bond, the leader skill as a big medallion with
+   its tier and what the next tier needs, the attribute bond as a bar, the battle bonuses as four tiles and the CS brackets
+   as a track. It folds down to a slim bar while building a deck (S.cc.leadMin) */
+function ccLeaderHero(deck) {
+  const e = ccLeaderOf(deck.id), sv = ccSave(), min = !!sv.leadMin, can = ccLeaderPool().length;
+  const fold = `<button class="ccdh-fold" id="ccdFold" title="${min ? 'Show the leader' : 'Fold the leader away'}" aria-label="${min ? 'Show the leader' : 'Fold the leader away'}">${icon(min ? 'down' : 'up')}</button>`;
+  if (!e) return `<section class="ccd-hero none"><div class="ccdh-empty">${icon('crown')}<span><b>No leader yet</b><small>Own a character to lead this deck: it brings its leader skill and battle bonuses to every match.</small></span><button class="btn gold sm" id="ccdLead" ${can ? '' : 'disabled'}>${icon('crown')}Pick a leader</button></div></section>`;
+  const own = owns(e.id), cs = own ? charScore(e) : 0, gr = own ? csGrade(typeof gradeScore === 'function' ? gradeScore(e) : cs) : null;
+  const st = e.ccStyle && CC_STYLES[e.ccStyle] ? e.ccStyle : null, id = lsOf(e), S = LS[id], t = lsTierOf(e), n = lsAwake(e);
+  const b = lsBonus(e) || { src: [] }, nx = own ? csLeadNext(cs) : null, got = own ? csLeadOf(cs).length : 0;
+  const bn = st ? deck.cards.filter(c => (ccDef(c) || {}).style === st).length : 0, need = (b.bondN || CC_BOND_N), bOn = st && bn >= need;
+  const art = baseArt(e), col = lsCol(id);
+  const next = t < 3 ? `Awaken ${t === 1 ? 2 : 4} Breakthrough stars for tier ${t === 1 ? 'II' : 'III'}` : n >= 6 ? 'Max tier · cooldown −1' : 'Awaken all 6 stars for cooldown −1';
+  const tile = (k, nm, ic) => `<span class="ccdh-t ${b[k] ? 'on' : ''}">${icon(ic)}<b>${b[k] ? '+' + b[k] : '—'}</b><small>${nm}</small></span>`;
+  const bar = `<div class="ccdh-name"><small>Deck leader</small><b>${esc(e.name)}</b><span class="ccdh-tags">${charRtag(e)}${gr ? gradeTag(gr) : ''}${own ? `<span class="ccdh-cs">${fmt(cs)} CS</span>` : ''}${st ? `<span class="ccdh-attr" style="--cs:${CC_STYLES[st][1]}">${ccIco(st)}${esc(CC_STYLES[st][0])}</span>` : ''}${own ? bondTag(e.id, 'sm') : ''}</span></div>`;
+  return `<section class="ccd-hero ${min ? 'min' : ''}" style="--lc:${col}">
+    <div class="ccdh-art">${art ? `<img src="${art}" alt="">` : ''}</div>${fold}
+    ${min ? `<div class="ccdh-slim"><span class="ccdh-av">${baseThumb(e)}</span>${bar}<span class="ccdh-sk sm">${lsIc(id)}<b>${esc(S.name)} ${lsTierTag(t)}</b></span><button class="btn ghost sm" id="ccdLead" ${can ? '' : 'disabled'}>${icon('crown')}Change</button></div>` : `
+    <div class="ccdh-card">${ccLeaderCard(e)}</div>
+    <div class="ccdh-mid">${bar}
+      <div class="ccdh-skill"><span class="ccdh-med">${lsIc(id)}<i class="ccdh-ap">${S.ap[t - 1]}</i></span>
+        <span class="ccdh-skt"><small>Leader skill</small><b>${esc(S.name)} ${lsTierTag(t)}</b><em>${esc(lsMeta(id, t))}${lsCdmOf(e) ? ' (−1)' : ''}</em><span>${esc(lsDesc(id, t))}</span><i>${esc(next)}</i></span></div>
+      <div class="ccdh-bond ${bOn ? 'on' : ''}" ${st ? `style="--cs:${CC_STYLES[st][1]}"` : ''}>${st ? `${ccIco(st)}<span><b>Attribute bond ${bOn ? 'on' : `${bn} / ${need}`}</b><small>${esc(CC_BOND_TXT[st])}</small></span><i class="ccdh-bb"><i style="width:${Math.min(100, bn / need * 100)}%"></i></i>` : '<span><b>No card attribute</b><small>This leader has no attribute bond.</small></span>'}</div>
+    </div>
+    <div class="ccdh-side">
+      <span class="ccdh-lbl">Battle bonuses</span>
+      <div class="ccdh-tiles">${tile('hp', 'Hero HP', 'heart')}${tile('heal', 'Heal', 'sparkle')}${tile('cards', 'Opening cards', 'copy')}${tile('ap1', 'First-turn AP', 'bolt')}</div>
+      <span class="ccdh-lbl">CS brackets · ${got} / ${CS_LEAD.length}</span>
+      <div class="ccdh-csl">${CS_LEAD.map(([v, , , tx]) => `<i class="${own && cs >= v ? 'on' : ''}" title="${fmt(v)} CS: ${esc(tx)}"></i>`).join('')}</div>
+      <small class="ccdh-nx">${!own ? 'Own the character to use its CS' : nx ? `Next at ${fmt(nx[0])} CS: ${esc(nx[3])}` : 'Every bracket reached'}</small>
+      <div class="ccdh-btns"><button class="btn ghost sm" id="ccdLead" ${can ? '' : 'disabled'}>${icon('crown')}Change leader</button><button class="btn ghost sm" id="ccdLeadBon">${icon('sparkle')}All bonuses</button></div>
+    </div>`}
+  </section>`;
+}
+
 /* ---- rewards ---- */
 const CC_GOLD = { win: 2000, draw: 800, lose: 400 };
 /* Quick match rewards (the owner's rules): 1 pearl a win (Normal and up), at most 60 a week (resets Monday, ccSave().qmPw);

@@ -85,7 +85,9 @@ function brGain(winner) {
 }
 /* what opens at which rank */
 const BR_CHAPTER = { c1: 3, c2: 7, c3: 11, c4: 15, c5: 19, c6: 21, c7: 23, c8: 25, c9: 27, c10: 29 };
-const brStageNeed = st => { if (!st || !st.ch) return 0; if (st.ch.tower) return st.no >= 4 ? 2 * st.no : 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? BR_CHAPTER[st.ch.id] || 0 : 0; };
+/* Great Tree floor n (from floor 4) needs Battle Rank 1.4n + 2 (floor 10 → 16, floor 20 → 30), never past the top rank, so floors past 20 only ask for rank 30 */
+const twrRankNeed = no => Math.min(BR_MAX, Math.ceil(no * 1.4) + 2);
+const brStageNeed = st => { if (!st || !st.ch) return 0; if (st.ch.tower) return st.no >= 4 ? twrRankNeed(st.no) : 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? BR_CHAPTER[st.ch.id] || 0 : 0; };
 const brStageBlock = st => { const n = brStageNeed(st); if (!n || brOk(n)) return 0; if (ccCampHave(st.id)[0] || (!st.ch.tower && st.ch.stages.some(s => ccCampHave(s.id)[0]))) return 0; return n; };   // anything already cleared stays open
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !brStageBlock(st); }; }
 /* player level gates (the owner's rule): from Chapter 6 a chapter also needs a player level to start (EXP only comes from

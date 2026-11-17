@@ -1,13 +1,13 @@
 /* ---------- Card Clash: the Great Tree (a giant tree of floors; it was a stone tower, the Cloud Spire) ----------
    The owner asked for a special tower, then for it to be a big tree in the middle of the world map (56-clash-world.js):
-   every cleared floor opens the one above it, 10 floors for now, the campaign's
+   every cleared floor opens the one above it, 20 floors for now (CC_TOWER_N, see the curve below), the campaign's
    star system (3 stars per floor, every goal needs a win, stars kept once earned, 1 pearl per new star) but no
    milestone rewards. Floors are played with your own deck (like campaign Chapters 1 and 2) against a floor guardian.
    The tree is drawn floor by floor from the roots at the bottom; only the next floor or two above the one you can
    play are visible, everything higher is hidden in a bank of clouds (and not even in the page), so scrolling up never
    shows how tall the tree is. Floors reuse the campaign's stage machinery (54-clash-campaign.js): the same match
    setup (ccCampMatch), star bookkeeping (ccCampStarsOf, ccCampFinish), coach tips and end screen; a floor is a stage
-   whose chapter is CC_TOWER (`tower: true`). Stars live with the campaign's: S.cc.camp.stars['T1' … 'T10'].
+   whose chapter is CC_TOWER (`tower: true`). Stars live with the campaign's: S.cc.camp.stars['T1' … 'T20'].
    The top of this file is pure (no DOM), so Node can test it. */
 
 const CC_TOWER_DECKS = {
@@ -18,58 +18,113 @@ const CC_TOWER_DECKS = {
 const CC_TOWER = {
   id: 'tower', tower: true, own: true, name: 'The Great Tree', sub: 'Great Tree', miles: [],
   stages: [
-    { id: 'T1', no: 1, name: 'The Root Gate', twist: 'A Guardian bars the roots', hp: [20, 8], first: 0, seed: 401, botDeck: 'p-balanced',
+    { id: 'T1', no: 1, name: 'The Root Gate', twist: 'A Guardian bars the roots', hp: [20, 6], first: 0, brain: 'easy', seed: 401, botDeck: 'p-balanced',
       intro: 'Among the roots of the Great Tree a Guardian bars the door. Nobody climbs without getting past it first.',
       setup: G => { ccCampUnit(G, 1, 'DEF-U02', 1, 0); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }, { k: 'round', n: 18, t: 'Win by round 18' }],
       tips: ccOne('The Great Tree: every floor you clear opens the one above. The Guardian holds the middle, so the side lanes are open.') },
-    { id: 'T2', no: 2, name: 'The Echoing Hollow', twist: 'Arcane Surge: spells deal +1', ev: 'surge', hp: [20, 10], first: 0, seed: 402, bot: CC_CAMP_DECKS.arcane,
+    { id: 'T2', no: 2, name: 'The Echoing Hollow', twist: 'Arcane Surge: spells deal +1', ev: 'surge', hp: [20, 7], first: 0, brain: 'easy', seed: 402, bot: CC_CAMP_DECKS.arcane,
       intro: 'A hollow deep in the trunk where every spell echoes twice as loud. Battle mages wait for you, a Mage already in the back row.',
       setup: G => { ccCampUnit(G, 1, 'CON-U01', 0, 1); },
-      stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'kills', n: 6, t: 'Destroy 6 enemy units' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }],
+      stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'kills', n: 3, t: 'Destroy 3 enemy units' }, { k: 'hp', n: 10, t: 'Finish with 10 HP or more' }],
       tips: ccOne('<b>Arcane Surge</b>: spells deal +1 damage, theirs and yours. A Mage sits unguarded in the left back row.') },
-    { id: 'T3', no: 3, name: 'The Ironbark Armory', twist: 'Heavy armour · a Bulwark on guard', hp: [20, 10], first: 0, seed: 403, bot: CC_CAMP_DECKS.fort,
+    { id: 'T3', no: 3, name: 'The Ironbark Armory', twist: 'Heavy armour · a Bulwark on guard', hp: [20, 8], first: 0, brain: 'easy', seed: 403, bot: CC_CAMP_DECKS.fort,
       intro: 'Shields of ironbark hang from the branches, and the floor guardian wears all of it. A Bulwark already holds the left lane.',
       setup: G => { ccCampUnit(G, 1, 'DEF-U04', 0, 0); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'round', n: 20, t: 'Win by round 20' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }],
       tips: ccOne('The Bulwark has 8 HP: don\'t trade into it. Win the other two lanes and hit the hero.') },
-    { id: 'T4', no: 4, name: 'Windswept Boughs', twist: 'Tailwind: moving is free · rogues strike first', ev: 'wind', hp: [20, 16], first: 1, seed: 404, bot: CC_CAMP_DECKS.storm,
-      intro: 'A walkway winds round the outside of the trunk, high above the forest. The wind carries everyone, and rogues dart from lane to lane. They strike first.',
+    { id: 'T4', no: 4, name: 'Windswept Boughs', twist: 'Tailwind: moving is free · quick rogues', ev: 'wind', hp: [20, 7], first: 0, seed: 404, bot: CC_CAMP_DECKS.storm,
+      intro: 'A walkway winds round the outside of the trunk, high above the forest. The wind carries everyone, and rogues dart from lane to lane. Keep up with them.',
       setup: G => { ccCampUnit(G, 1, 'MOB-U03', 2, 0); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'kills', n: 8, t: 'Destroy 8 enemy units' }],
       tips: ccOne('<b>Tailwind</b>: moving costs no AP. Their rogues will switch lanes to find an open one, so keep every lane covered.') },
-    { id: 'T5', no: 5, name: 'The Thorn Warden', twist: 'Guardian floor: a Champion and a trap', boss: true, hp: [20, 16], first: 1, seed: 405, bot: CC_CAMP_DECKS.warlord,
+    { id: 'T5', no: 5, name: 'The Thorn Warden', twist: 'Guardian floor: a Champion and a trap', boss: true, hp: [20, 7], first: 1, seed: 405, bot: CC_CAMP_DECKS.warlord,
       intro: 'Halfway up, the Thorn Warden keeps the way. A Champion stands in the middle over a Thorns trap, and the Warden moves first.',
       setup: G => { ccCampUnit(G, 1, 'AGG-U08', 1, 0); ccCampTrap(G, 1, 'DEF-T02', 1); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }, { k: 'round', n: 16, t: 'Win by round 16' }],
       tips: ccOne('The Thorn Warden: a Champion (5 ATK) in the middle with Thorns under it, and it moves first. Don\'t attack into that lane with your best unit.') },
-    { id: 'T6', no: 6, name: 'The Starleaf Library', twist: 'Starfall: draw 3 a turn · a Counter Trap', ev: 'starfall', hp: [20, 11], first: 0, seed: 406, bot: CC_CAMP_DECKS.arcane,
+    { id: 'T6', no: 6, name: 'The Starleaf Library', twist: 'Starfall: draw 3 a turn · a Counter Trap', ev: 'starfall', hp: [20, 7], first: 0, seed: 406, bot: CC_CAMP_DECKS.arcane,
       intro: 'Shelves carved into the heartwood hold star charts on glowing leaves. Starlight gives both sides three cards a turn, and a Stormcaller studies in the right back row.',
       setup: G => { ccCampUnit(G, 1, 'CON-U04', 2, 1); ccCampTrap(G, 1, 'DEF-T01', 0); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'kills', n: 10, t: 'Destroy 10 enemy units' }, { k: 'hp', n: 8, t: 'Finish with 8 HP or more' }],
       tips: ccOne('<b>Starfall</b>: three cards a turn, so hands fill up fast. A Counter Trap waits in the left lane.') },
-    { id: 'T7', no: 7, name: 'The Dewdrop Hall', twist: 'A trap in every lane · they strike first', hp: [20, 20], first: 1, seed: 407, bot: CC_CAMP_DECKS.traps,
+    { id: 'T7', no: 7, name: 'The Dewdrop Hall', twist: 'A trap in every lane · they strike first', hp: [20, 8], first: 1, seed: 407, bot: CC_CAMP_DECKS.traps,
       intro: 'Every shining dewdrop hides a snare. A trap waits in all three lanes, a Knight guards the middle and an Archer covers the right. They strike first.',
       setup: G => { ccCampTrap(G, 1, 'MOB-T02', 0); ccCampTrap(G, 1, 'DEF-T02', 1); ccCampTrap(G, 1, 'CON-T02', 2); ccCampUnit(G, 1, 'DEF-U01', 1, 0); ccCampUnit(G, 1, 'MOB-U04', 2, 1); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'lost', n: 5, t: 'Lose no more than 5 units' }, { k: 'round', n: 16, t: 'Win by round 16' }],
       tips: ccOne('Three traps, one per lane. Spring them with cheap units before your best ones walk in.') },
-    { id: 'T8', no: 8, name: 'The Crimson Bloom', twist: 'Blood Moon · raiders strike first', ev: 'bloodmoon', hp: [20, 16], first: 1, seed: 408, bot: CC_CAMP_DECKS.raiders,
-      intro: 'Red moonlight floods a crown of crimson blossoms. Raiders charge out of the petals, a Berserker and a Raider in front, and they strike first.',
+    { id: 'T8', no: 8, name: 'The Crimson Bloom', twist: 'Blood Moon: units +1 ATK · raiders', ev: 'bloodmoon', hp: [20, 8], first: 0, seed: 408, bot: CC_CAMP_DECKS.raiders,
+      intro: 'Red moonlight floods a crown of crimson blossoms. Raiders charge out of the petals, a Berserker and a Raider already in front.',
       setup: G => { ccCampUnit(G, 1, 'AGG-U03', 0, 0); ccCampUnit(G, 1, 'AGG-U02', 2, 0); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'hp', n: 6, t: 'Finish with 6 HP or more' }, { k: 'round', n: 12, t: 'Win by round 12' }],
-      tips: ccOne('<b>Blood Moon</b>: every unit has +1 ATK, and they move first with two attackers out. Block both lanes right away.') },
-    { id: 'T9', no: 9, name: 'The Frostbough', twist: 'Rainstorm: 5 AP · the bot strikes first', ev: 'rain', hp: [20, 12], first: 1, seed: 409, bot: CC_CAMP_DECKS.frost,
-      intro: 'Icy branches ring like bells in the storm near the top of the tree. A Frost Witch hides behind a Stonewall in the middle, and they strike first.',
+      tips: ccOne('<b>Blood Moon</b>: every unit has +1 ATK, and they start with two attackers out. Block both of their lanes right away.') },
+    { id: 'T9', no: 9, name: 'The Frostbough', twist: 'Rainstorm: 5 AP · a Frost Witch', ev: 'rain', hp: [20, 6], first: 0, seed: 409, bot: CC_CAMP_DECKS.frost,
+      intro: 'Icy branches ring like bells in the storm near the top of the tree. A Frost Witch hides behind a Stonewall in the middle.',
       setup: G => { ccCampUnit(G, 1, 'DEF-U07', 1, 0); ccCampUnit(G, 1, 'CON-U02', 1, 1); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'hp', n: 6, t: 'Finish with 6 HP or more' }, { k: 'kills', n: 10, t: 'Destroy 10 enemy units' }],
       tips: ccOne('<b>Rainstorm</b>: 5 AP a turn for both. The Frost Witch stuns what she hits; the Stonewall shields her.') },
-    { id: 'T10', no: 10, name: 'The Sky Sovereign', twist: 'Guardian floor: a full war council', boss: true, hp: [20, 16], first: 1, seed: 410, bot: CC_TOWER_DECKS.spire,
-      intro: 'At the top of the known tree the Sky Sovereign holds court: a Champion and a Commander in line, traps in two lanes, 16 HP, and it moves first.',
-      setup: G => { ccCampUnit(G, 1, 'AGG-U08', 1, 0); ccCampUnit(G, 1, 'SUP-U06', 0, 0); ccCampTrap(G, 1, 'DEF-T02', 1); ccCampTrap(G, 1, 'CON-T02', 2); },
+    { id: 'T10', no: 10, name: 'The Sky Sovereign', twist: 'Guardian floor: a full war council', boss: true, hp: [20, 6], first: 1, seed: 410, bot: CC_TOWER_DECKS.spire,
+      intro: 'At the top of the trunk the Sky Sovereign holds court: a Champion in the middle, traps in two lanes, and it moves first. Above it the tree opens into the Canopy.',
+      setup: G => { ccCampUnit(G, 1, 'AGG-U08', 1, 0); ccCampTrap(G, 1, 'DEF-T02', 1); ccCampTrap(G, 1, 'CON-T02', 2); },
       stars: [{ k: 'win', t: 'Clear the floor' }, { k: 'hp', n: 6, t: 'Finish with 6 HP or more' }, { k: 'round', n: 18, t: 'Win by round 18' }],
-      tips: ccOne('The Sky Sovereign: a Champion and a Commander, Thorns in the middle and a Hex Field on the right, and it moves first. This is the hardest floor yet.') }
+      tips: ccOne('The Sky Sovereign: a Champion over Thorns in the middle, a Hex Field on the right, and it moves first. The guardian of the trunk.') }
   ]
 };
+/* ---------- More floors, and a difficulty curve that can grow to 100+ (the owner's plan) ----------
+   CC_TOWER_N = how many floors are open. Floors 1-10 are the trunk (above), floors 11-20 the Canopy (hand-made rows
+   below, like the campaign's ccHardCh rows: [name, twist, deck, bot HP, event, intro, tip, star goals, board, {first, brain}]),
+   and every floor past the rows is built by ccTowerGen(no) from the same curve, so growing the tree is only raising
+   CC_TOWER_N (and adding rows for hand-made floors). The curve (twrCurve):
+     floors 1-3   the Easy brain, the guardian on 6-8 HP, you go first: a warm-up anyone wins
+     floors 4-10  the normal bot, 10-14 HP, it moves first from floor 5
+     floors 11-20 the normal bot, 12-17 HP, events on most floors, mono decks (so the right leader finds a weak spot)
+     floor 20     the first guardian that plans its whole turn (brain 'plan', like the Hard Quick match)
+     floors 21+   HP +1 every 3 floors (max 36), more units on the board (1 → 3), every guardian floor plans,
+                  from floor 50 every floor plans, from floor 80 the guardians use the full auto play planner ('best').
+   Every 5th floor is a guardian (boss) floor. Weakness / resistance counts on every floor (lsApplyAdv), so building
+   leaders and decks for a floor's playstyle stays the way past the curve. */
+const CC_TOWER_N = 20;
+const TWR_REALMS = ['The Trunk', 'The Canopy', 'The Cloud Boughs', 'The Star Branches', 'The Moonlit Crown', 'The Sun Spire', 'The Aurora Leaves', 'The Celestial Bloom', 'The Heaven Roots', 'The World Crown'];
+const twrRealm = no => TWR_REALMS[Math.min(TWR_REALMS.length - 1, Math.floor((no - 1) / 10))];
+function twrCurve(no) {
+  const boss = no % 5 === 0;
+  const hp = no <= 3 ? [6, 7, 8][no - 1] : Math.min(36, 10 + Math.floor((no - 4) / 3) + (boss ? 3 : 0));
+  const brain = no <= 3 ? 'easy' : no >= 80 && boss ? 'best' : no >= 50 || (no >= 20 && boss) ? 'plan' : null;
+  return { boss, hp, brain, first: no >= 5 && (boss || no % 2 === 1) ? 1 : 0, units: no < 21 ? 1 : Math.min(3, 1 + Math.floor((no - 11) / 20)) };
+}
+const TWR_ROWS = [
+  ['The Canopy Gate', 'Quick storm riders', 'storm', 12, null, 'Above the trunk the tree opens into a sea of leaves: the Canopy. Storm riders guard its gate, an Assassin already in the left lane.', 'The Canopy: from here every floor leans on one playstyle. Read the twist and pick a leader whose attribute beats it.', [['hp', 10], ['kills', 6]], ccU(['MOB-U01', 0, 0])],
+  ['Sunleaf Terrace', 'Sacred Ground: units enter with Armor', 'raiders', 12, 'sanctuary', 'Wide sunlit leaves make a terrace high above the clouds. The light here gives every unit Armor as it enters.', '<b>Sacred Ground</b>: every unit enters with Armor 1. Small hits do nothing, so attack with your strongest units.', [['round', 16], ['hp', 8]], ccU(['AGG-U02', 1, 0])],
+  ['The Weaver\'s Nest', 'A trap in two lanes', 'traps', 13, null, 'Silk threads hang between the branches. Something has woven snares into two of the lanes and waits behind a Protector.', 'Two traps wait in the side lanes. Send a cheap unit in first to spring them.', [['lost', 7], ['kills', 6]], ccU(['MOB-T02', 0], ['DEF-T02', 2], ['DEF-U08', 1, 0])],
+  ['Frostdew Hollow', 'Rainstorm: 5 AP · a Frost Witch', 'frost', 7, 'rain', 'Rain freezes on the leaves into frost. A Frost Witch hides in the back row, ready to stun whatever comes close.', '<b>Rainstorm</b>: 5 AP a turn for both. The Frost Witch stuns what she hits: take her out with a spell or a Ranged unit.', [['hp', 8], ['kills', 7]], ccU(['CON-U02', 1, 1])],
+  ['The Thunder Titan', 'Guardian floor: a Titan of the storm', 'titan', 7, null, 'Halfway up the Canopy a Titan made of storm clouds blocks the way: a Champion in the middle with Thorns hidden under it, and it moves first.', 'The Thunder Titan: a Champion in the middle over Thorns, and it moves first. Win the side lanes.', [['hp', 6], ['round', 18]], ccU(['AGG-U08', 1, 0], ['DEF-T02', 1])],
+  ['The Hex Garden', 'Arcane Surge: spells +1 · hexers', 'hex', 17, 'surge', 'Twisted flowers grow in circles of runes. The hexers here curse everything that walks in, and their spells hit harder in the surge.', 'A <b>Control</b> deck: it hates being rushed. A Mobility leader finds its weak spot.', [['hp', 8], ['spells', 2]], ccU(['CON-U03', 2, 1])],
+  ['Gale Bridge', 'Tailwind: free moves · rogues', 'gale', 16, 'wind', 'A rope bridge sways between two great branches in a wild wind. Rogues dart across it from lane to lane, and they strike first.', 'A <b>Mobility</b> deck under Tailwind: their units will slip into any empty lane. Keep all three covered.', [['kills', 8], ['hp', 6]], ccU(['MOB-U06', 2, 0]), { first: 1 }],
+  ['The Ember Bloom', 'Blood Moon: units +1 ATK', 'blaze', 15, 'bloodmoon', 'Red flowers burst into flame under a blood moon. The fire raiders want a short, brutal fight.', 'An <b>Aggression</b> deck under the Blood Moon: everything hits harder. A Defense leader stands up to it.', [['hp', 6], ['lost', 5]], ccU(['AGG-U03', 0, 0])],
+  ['The Bastion Bough', 'Scorching Sun: Overtime from round 12', 'bastion', 11, 'heat', 'A fortress of living wood grows along a branch. Its walls are thick, but the sun burns everyone down early.', 'A <b>Defense</b> deck, and Overtime from round 12. Control spells get around walls: a Control leader finds its weak spot.', [['round', 16], ['kills', 6]], ccU(['DEF-U05', 1, 0]), { first: 1 }],
+  ['The Dawn Warden', 'Guardian floor: it plans every turn', 'dawn', 18, 'starfall', 'At the top of the Canopy the Dawn Warden waits in a ring of golden leaves. It plans its whole turn ahead, draws three cards a turn in the starfall, and moves first.', 'The Dawn Warden plans every turn and moves first. Starfall gives both sides 3 cards a turn: spend them, don\'t hold them.', [['hp', 6], ['round', 20]], ccU(['SUP-U06', 1, 0], ['SUP-U02', 1, 1], ['CON-T02', 0])]
+];
+const TWR_DECKS = ['storm', 'raiders', 'traps', 'frost', 'titan', 'hex', 'gale', 'blaze', 'bastion', 'dawn', 'arcane', 'fort', 'holy', 'choir', 'warlord'];
+const TWR_EVS = [null, 'rain', null, 'surge', 'bloodmoon', null, 'wind', 'starfall', null, 'heat'];
+const TWR_UNITS = ['DEF-U02', 'AGG-U07', 'CON-U04', 'MOB-U07', 'SUP-U06', 'DEF-U04', 'AGG-U08', 'CON-U02', 'MOB-U06', 'SUP-U02'];
+const TWR_GOALS = [[['hp', 8], ['kills', 7]], [['round', 18], ['hp', 6]], [['lost', 5], ['kills', 8]], [['hp', 6], ['round', 20]], [['kills', 9], ['lost', 6]]];
+const twrRoman = n => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][(n - 1) % 10];
+/* any floor from the curve (used past the hand-made rows) */
+function ccTowerGen(no) {
+  const c = twrCurve(no), realm = twrRealm(no), dk = TWR_DECKS[(no * 7) % TWR_DECKS.length], ev = TWR_EVS[no % TWR_EVS.length];
+  const cards = Array.from({ length: c.units }, (_, k) => [TWR_UNITS[(no * 3 + k * 4) % TWR_UNITS.length], k === 0 ? 1 : k === 1 ? 0 : 2, 0]);
+  if (c.boss) cards.push(['DEF-T02', 1]);
+  return { id: 'T' + no, no, name: `${realm} ${twrRoman(no)}`, twist: c.boss ? 'Guardian floor' : ev ? CC_EVENTS[ev].name + ': ' + CC_EVENTS[ev].short : 'A guardian of the ' + realm.replace('The ', ''),
+    hp: [20, c.hp], first: c.first, seed: 400 + no, bot: CC_CAMP_DECKS[dk], ...(ev ? { ev } : {}), ...(c.brain ? { brain: c.brain } : {}), ...(c.boss ? { boss: true } : {}),
+    intro: `Floor ${no}, high in ${realm.toLowerCase()}. ${c.boss ? 'A guardian holds this floor' : 'A floor guardian waits'}${c.first ? ' and moves first' : ''}.`,
+    setup: ccU(...cards), stars: [['win'], ...TWR_GOALS[no % TWR_GOALS.length]].map(ccEasyStar).map((s, i) => i ? s : { ...s, t: 'Clear the floor' }),
+    tips: ccOne(c.boss ? 'A guardian floor: it is tougher than the floors around it. Check its weak spot and pick your leader for it.' : 'Check the floor\'s weak spot and pick a leader whose attribute beats it.') };
+}
+const twrRow = (no, [nm, twist, bot, hp, ev, intro, tip, stars, setup, o = {}]) => { const c = twrCurve(no);
+  return { id: 'T' + no, no, name: nm, twist, hp: [20, hp], first: o.first != null ? o.first : c.first, seed: 400 + no,
+    ...(bot.startsWith('p-') ? { botDeck: bot } : { bot: CC_CAMP_DECKS[bot] }), ...(ev ? { ev } : {}), ...((o.brain || c.brain) ? { brain: o.brain || c.brain } : {}), ...(c.boss ? { boss: true } : {}), ...(setup ? { setup } : {}),
+    intro, stars: [['win'], ...stars].map(ccEasyStar).map((s, i) => i ? s : { ...s, t: 'Clear the floor' }), tips: ccOne(tip) }; };
+for (let no = CC_TOWER.stages.length + 1; no <= CC_TOWER_N; no++) CC_TOWER.stages.push(TWR_ROWS[no - 11] ? twrRow(no, TWR_ROWS[no - 11]) : ccTowerGen(no));
 const ccTowerFloors = () => CC_TOWER.stages.map(s => ({ ...s, ch: CC_TOWER }));
 const ccTowerFloor = id => ccTowerFloors().find(s => s.id === id) || null;
 /* "Floor 3" for a tower floor, "Stage 1-2" for a campaign stage */
@@ -383,7 +438,7 @@ function renderTower(center) {
    over it (twrFxStart). Without a picture the drawn tree below stays. */
 const twrArt = () => MEDIA.get('tree:art');
 const twrDim = () => { const d = S.treeArt; return twrArt() && d && d.w > 0 && d.h > 0 ? d : { w: 1000, h: 2000 }; };
-const TWR_PIN_DEF = n => ({ x: n % 2 ? 42 : 58, y: Math.max(5, 93 - (n - 1) * 8.8) });
+const TWR_PIN_DEF = n => ({ x: n % 2 ? 42 : 58, y: Math.max(5, 93 - (n - 1) * 88 / Math.max(1, CC_TOWER_N - 1)) });   // spread from the roots to the top over every open floor
 const twrPinAt = n => ({ ...TWR_PIN_DEF(n), ...((S.farmLayout || {})['tf:' + n] || {}) });
 function twrPinHTML(f, st, edit) {
   const s = twrFloorState(f), have = ccCampHave(f.id), p = twrPinAt(f.no);

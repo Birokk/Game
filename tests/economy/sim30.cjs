@@ -85,7 +85,7 @@ for (let c = 3; c <= 5; c++) for (let i = 0; i < 10; i++) CAMP.push({ ch: c, p: 
 [[.73, .80, .63, .73, .50, .80, .57, .83, .63, .40], [.60, .57, .63, .43, .50, .83, .33, .53, .77, .30], [.63, .37, .57, .73, .37, .73, .67, .60, .40, .27],
  [.80, .67, .57, .40, .37, .70, .57, .40, .47, .37], [.77, .83, .63, .77, .27, .57, .60, .57, .37, .23]].forEach((L, k) => L.forEach(p => CAMP.push({ ch: 6 + k, p, sx: .45 })));   // Chapters 6-10 (harder, weakness / resistance)
 CAMP.forEach((s, i) => { s.i = i; s.first = i === 0 || CAMP[i - 1].ch !== s.ch; s.last = i === CAMP.length - 1 || CAMP[i + 1].ch !== s.ch; });
-const TREE = [.60, .57, .50, .47, .30, .40, .47, .20, .13, .07].map((p, i) => ({ no: i + 1, p, sx: .5 }));
+const TREE = [.97, 1, .90, .77, .57, .57, .57, .53, .47, .47, .63, .73, .73, .40, .40, .57, .63, .47, .50, .40].map((p, i) => ({ no: i + 1, p, sx: .5 }));   // 20 floors (the Node sim's average player, neutral leader)
 const RAID_P = { gear: [.87, .84, .8, .78, .75], gold: [.85, .78, .7, .6, .5] };   // raid guardians (tuned for ~77–87%, vault V ~50%)
 
 /* ---------- profiles ---------- */
@@ -305,7 +305,7 @@ const brOf = A => { let r = 1, left = A.br; while (r < 30 && left >= BR_NEED(r))
 const brAdd = (A, k) => { let n = { w: 100, d: 60, l: 40 }[k]; if (k === 'w' && A.brDay !== A.day) { A.brDay = A.day; n += 200; } A.br += n; };
 const LV_CH = { 6: 25, 7: 29, 8: 32, 9: 36, 10: 40 };   // player level to start Chapters 6-10
 function campOpen(A, i) { const s = CAMP[i]; if (i > 0 && !A.camp.clear[i - 1]) return false; if (s.first && brOf(A) < BR_CH[s.ch]) return false; if (s.first && LV_CH[s.ch] && A.lv < LV_CH[s.ch]) return false; return true; }
-function treeOpen(A, i) { if (i > 0 && !A.camp.treeClear[i - 1]) return false; const no = i + 1; return no < 4 || brOf(A) >= 2 * no; }
+function treeOpen(A, i) { if (i > 0 && !A.camp.treeClear[i - 1]) return false; const no = i + 1; return no < 4 || brOf(A) >= Math.min(30, Math.ceil(no * 1.4) + 2); }
 function playStage(A, st, starsArr, isTree) {
   const win = R() < winP(A, st.p); brAdd(A, win ? 'w' : 'l');
   if (!win) return false;
@@ -668,6 +668,6 @@ for (const r of Object.values(res)) {
   console.log(`\n=== ${r.label} ===  $${r.usd.mean}  pearls in ${r.pearlsIn.med}  pulls ${r.pulls.med} (p10 ${r.pulls.p10}, p90 ${r.pulls.p90})`);
   console.log(`UR copies ${r.urCopies.med}, UR chars owned ${r.urChars.med}, 6★ URs ${r.six.med} (any 6★ ${Math.round(r.sixAny * 100)}%), Aria stars ${r.ariaStars.med} (owned ${Math.round(r.ariaOwned * 100)}%)`);
   console.log(`top CS ${r.topCS.med} (p10 ${r.topCS.p10} p90 ${r.topCS.p90}), 2nd ${r.top2CS.med}, 3rd ${r.top3CS.med}; grades top`, r.gradeTop, `SSS chars ${r.sssChars.med} SS+ ${r.ssPlus.med} S+ ${r.sPlus.med} UR+ ${r.urPlus.med}`);
-  console.log(`lv ${r.lv.med} vip ${r.vip.med} honor ${r.honor.med} BR ${r.br.med} camp ${r.camp.med}/${CAMP.length} stars ${r.campStars.med} tree ${r.tree.med}/10 arena ${r.arenaVP.med} farm`, Object.fromEntries(Object.entries(r.farm).map(([k, v]) => [k, v.med])), `ach ${r.ach.med} skins ${r.skins.med} pets ${r.pets.med} urMems ${r.urMems.med} gearUR ${r.gearUR.med} fullURset ${r.fullURset}`);
+  console.log(`lv ${r.lv.med} vip ${r.vip.med} honor ${r.honor.med} BR ${r.br.med} camp ${r.camp.med}/${CAMP.length} stars ${r.campStars.med} tree ${r.tree.med}/${TREE.length} arena ${r.arenaVP.med} farm`, Object.fromEntries(Object.entries(r.farm).map(([k, v]) => [k, v.med])), `ach ${r.ach.med} skins ${r.skins.med} pets ${r.pets.med} urMems ${r.urMems.med} gearUR ${r.gearUR.med} fullURset ${r.fullURset}`);
   console.log('pearl src', r.pearlSrc); console.log('pearl sink', r.pearlSink); console.log('gold src', r.goldSrc); console.log('gold sink', r.goldSink); console.log('pullsBy', r.pullsBy, 'stamLeft', r.stamLeft.med);
 }
