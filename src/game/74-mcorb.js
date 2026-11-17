@@ -9,7 +9,9 @@ REW_NAMES.mcorb = ['Origin Orb', 'Origin Orbs']; REW_R.mcorb = 5;
 const MC_ORB_SRC = [
   { id: 'c0', ch: 'c0', txt: 'Clear the tutorial chapter (Chapter 0)' },
   { id: 'c5', ch: 'c5', txt: 'Clear Chapter 5' },
+  { id: 'c10', ch: 'c10', txt: 'Clear Chapter 10' },
   { id: 'lv10', lv: 10, txt: 'Reach player level 10 (a level reward)' },
+  { id: 'lv20', lv: 20, txt: 'Reach player level 20 (a level reward)' },
 ];
 const mcOrbState = () => { const m = S.mcOrb = S.mcOrb || {}; m.got = m.got || []; return m; };
 const mcId = () => S.player && S.player.mc ? 'mc-' + S.player.mc : null;
@@ -22,7 +24,7 @@ function mcOrbCheck() {
   persist(); return add.length;
 }
 /* the level 10 reward carries one orb */
-{ const o = lvReward; lvReward = function (lv) { const r = o.apply(this, arguments); if (lv === 10) r.push(['mcorb', 1]); return r; }; }
+{ const o = lvReward; lvReward = function (lv) { const r = o.apply(this, arguments); if (lv === 10 || lv === 20) r.push(['mcorb', 1]); return r; }; }
 /* a stage clear that finishes Chapter 0 / 5 mails the orb at once; the end box says so */
 { const o = ccCampFinish; ccCampFinish = function () { const r = o.apply(this, arguments); r.mcorb = mcOrbCheck(); return r; }; }
 { const o = ccCampEndHTML; ccCampEndHTML = function () { const h = o.apply(this, arguments), r = ccM && ccM.campRes; if (!h || !r || !r.mcorb) return h;
@@ -31,14 +33,14 @@ function useMcOrb() {
   const id = mcId(), e = id && findEntry(id); if (!e) { toast('Pick your main character first.'); return; }
   const st = starsOf(id), have = S.wallet.mcorb || 0;
   if (st >= MAX_STARS) { toast(`${e.name} is already at ${MAX_STARS}★.`); return; }
-  if (!have) { toast('You have no Origin Orb. Clear the tutorial chapter, Chapter 5 or reach level 10.'); return; }
+  if (!have) { toast('You have no Origin Orb. Clear the tutorial chapter, Chapter 5 or 10, or reach level 10 or 20.'); return; }
   openModal({ title: 'Use an Origin Orb?', ic: 'sparkle', small: true, body: `<div class="mco-cf">${curIcon('mcorb')}<p class="desc">Give <b>${esc(e.name)}</b> one more star: <b>${st}★ → ${st + 1}★</b>.</p><p class="tiny">Origin Orbs ${have} → ${have - 1}</p><div class="row" style="justify-content:center;gap:8px"><button class="btn ghost" id="mcoNo">Cancel</button><button class="btn gold" id="mcoYes">${icon('sparkle')}Use · ${st + 1}★</button></div></div>`,
     onMount: () => { $('#mcoNo').onclick = closeModal; $('#mcoYes').onclick = () => { if ((S.wallet.mcorb || 0) < 1 || starsOf(id) >= MAX_STARS) return closeModal();
       S.wallet.mcorb--; S.owned[id] = Math.max(1, S.owned[id] || 1) + 1; persist(); closeModal(); renderMenu(); if (csEl) renderCharacters(); if (typeof invEl !== 'undefined' && invEl) renderInventory();
       toast(`${e.name} reached ${starsOf(id)}★!`); }; } });
 }
-const mcOrbHTML = c => { const have = S.wallet.mcorb || 0, st = starsOf(c.id), m = mcOrbState(), lvGot = lvClaimed(10);
-  const src = MC_ORB_SRC.map(s => { const done = s.lv ? lvGot : m.got.includes(s.id); return `<li class="${done ? 'ok' : ''}">${done ? icon('check') : icon('lock')}<span>${esc(s.txt)}</span></li>`; }).join('');
+const mcOrbHTML = c => { const have = S.wallet.mcorb || 0, st = starsOf(c.id), m = mcOrbState();
+  const src = MC_ORB_SRC.map(s => { const done = s.lv ? lvClaimed(s.lv) : m.got.includes(s.id); return `<li class="${done ? 'ok' : ''}">${done ? icon('check') : icon('lock')}<span>${esc(s.txt)}</span></li>`; }).join('');
   return `<div class="cs-card mco-box"><div class="mco-top"><span class="mco-ic">${curIcon('mcorb')}</span><div><b>Origin Orb</b><span class="tiny">Your main character is never summoned, so its stars come from Origin Orbs: each one gives +1★ (up to ${MAX_STARS}★).</span></div><span class="mco-n">×${fmt(have)}</span></div>
     <ul class="mco-src">${src}</ul>
     <button class="btn gold" id="mcoUse" ${have && st < MAX_STARS ? '' : 'disabled'}>${icon('sparkle')}${st >= MAX_STARS ? `Max stars (${MAX_STARS}★)` : `Use an Origin Orb · ${st}★ → ${st + 1}★`}</button></div>`; };
@@ -47,6 +49,6 @@ const mcOrbHTML = c => { const have = S.wallet.mcorb || 0, st = starsOf(c.id), m
   at.insertAdjacentHTML('beforebegin', mcOrbHTML(c)); const b = csEl.querySelector('#mcoUse'); if (b) b.onclick = useMcOrb; }; }
 /* the Bag */
 { const o = invItems; invItems = function () { const L = o.apply(this, arguments);
-  L.push({ id: 'mcorb', cat: 'use', name: 'Origin Orb', n: S.wallet.mcorb || 0, r: 5, tag: 'Key item', use: `Gives your main character +1★ (up to ${MAX_STARS}★). From clearing the tutorial chapter, Chapter 5 and the level 10 reward.`, lore: 'It hums with the first light you ever carried.', pic: curIcon('mcorb'), act: ['Use', () => useMcOrb()] });
+  L.push({ id: 'mcorb', cat: 'use', name: 'Origin Orb', n: S.wallet.mcorb || 0, r: 5, tag: 'Key item', use: `Gives your main character +1★ (up to ${MAX_STARS}★). From clearing the tutorial chapter, Chapters 5 and 10, and the level 10 and 20 rewards.`, lore: 'It hums with the first light you ever carried.', pic: curIcon('mcorb'), act: ['Use', () => useMcOrb()] });
   return L.filter(x => x.id !== 'mcorb' || x.n > 0); }; }
 if (typeof ADMIN_ART !== 'undefined') { ADMIN_ART.mcorb = () => adIconRow('mcorb', 'Origin Orb', 'Raises the main character’s stars'); if (ADMIN_ART_SECS.icons) ADMIN_ART_SECS.icons.push('mcorb'); }
