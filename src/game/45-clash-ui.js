@@ -147,7 +147,7 @@ const QM_DIFF = [
   { id: 'expert', name: 'Expert', pips: 4, hpX: 1.2, brain: 'best', gold: 2, pearls: 1, gear: true, col: '#ff8a8a', need: { hard: 3 }, desc: 'Plans like auto play and has 20% more HP.' }
 ];
 const QM_RIVALS = ['raiders', 'arcane', 'traps', 'frost', 'storm', 'holy', 'fort', 'warlord', 'p-balanced', 'p-rush', 'p-defensive'];
-const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', holy: 'Holy deck', fort: 'Fortress deck', warlord: 'Warlord deck', titan: 'Titan deck', blaze: 'Blaze deck', bastion: 'Bastion deck', hex: 'Hex deck', gale: 'Gale deck', choir: 'Choir deck', dawn: 'Dawn deck' };
+const QM_RIVAL_NM = { raiders: 'Raider deck', arcane: 'Arcane deck', traps: 'Trap deck', frost: 'Frost deck', storm: 'Storm deck', holy: 'Holy deck', fort: 'Fortress deck', warlord: 'Warlord deck', titan: 'Titan deck', blaze: 'Blaze deck', bastion: 'Bastion deck', hex: 'Hex deck', gale: 'Gale deck', choir: 'Choir deck', dawn: 'Dawn deck', skyraid: 'Sky Raider deck', tide: 'Tide deck', ironwood: 'Ironwood deck', phantom: 'Phantom deck', sanctum: 'Sanctum deck', eclipse: 'Eclipse deck' };
 const qmMode = id => QM_MODES.find(m => m.id === id) || QM_MODES[0];
 const qmDiff = id => QM_DIFF.find(d => d.id === id) || QM_DIFF[1];
 function qmState() { const sv = ccSave(); if (!sv.qm || typeof sv.qm !== 'object') sv.qm = { mode: 'mirror', diff: 'normal' }; if (!sv.qmWins || typeof sv.qmWins !== 'object') sv.qmWins = {}; return sv.qm; }

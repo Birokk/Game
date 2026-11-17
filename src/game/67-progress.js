@@ -84,7 +84,7 @@ function brGain(winner) {
   return { n, up: after > before, r: after };
 }
 /* what opens at which rank */
-const BR_CHAPTER = { c1: 3, c2: 7, c3: 11, c4: 15, c5: 19, c6: 21, c7: 23, c8: 25, c9: 27, c10: 29 };
+const BR_CHAPTER = { c1: 3, c2: 7, c3: 11, c4: 15, c5: 19, c6: 21, c11: 30 };   // the owner's rule: Chapter 6 and Chapter 11 open a block of chapters (6-10, 11-15); inside a block the next chapter only needs the one before
 /* Great Tree floor n (from floor 4) needs Battle Rank 1.4n + 2 (floor 10 → 16, floor 20 → 30), never past the top rank, so floors past 20 only ask for rank 30 */
 const twrRankNeed = no => Math.min(BR_MAX, Math.ceil(no * 1.4) + 2);
 const brStageNeed = st => { if (!st || !st.ch) return 0; if (st.ch.tower) return st.no >= 4 ? twrRankNeed(st.no) : 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? BR_CHAPTER[st.ch.id] || 0 : 0; };
@@ -92,7 +92,7 @@ const brStageBlock = st => { const n = brStageNeed(st); if (!n || brOk(n)) retur
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !brStageBlock(st); }; }
 /* player level gates (the owner's rule): from Chapter 6 a chapter also needs a player level to start (EXP only comes from
    quests and stamina, so these pace the hard chapters over a month); anything already started stays open; admins skip */
-const LV_CHAPTER = { c6: 25, c7: 29, c8: 32, c9: 36, c10: 40 };   // the economy test (quests + 5 EXP a stamina): a free player opens them about day 13 / 17 / 20 / 23 / 27 of a 30-day patch
+const LV_CHAPTER = { c6: 25, c11: 40 };   // the owner's rule: level 25 opens Chapters 6-10, level 40 opens Chapters 11-15 (the economy test: a free player reaches them about day 13 and day 27 of a 30-day patch)
 const lvStageNeed = st => { if (!st || !st.ch || st.ch.tower) return 0; const i = st.ch.stages.findIndex(s => s.id === st.id); return i === 0 ? LV_CHAPTER[st.ch.id] || 0 : 0; };
 const lvStageBlock = st => { const n = lvStageNeed(st); if (!n || playerLv().lv >= n || canAdmin()) return 0; if (st.ch.stages.some(s => ccCampHave(s.id)[0])) return 0; return n; };
 { const o0 = ccCampOpen; ccCampOpen = function (st) { return o0.apply(this, arguments) && !lvStageBlock(st); }; }

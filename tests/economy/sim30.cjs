@@ -63,7 +63,7 @@ const GEAR_TRY = { 3: 75, 4: 125, 5: 190 }, GEAR_BT = { 10: 20, 20: 50, 30: 100 
 const gearChance = n => Math.max(.35, .9 - .015 * n), gearCap = (r, st) => r === 5 ? [0, 30, 35, 40][st] : r === 4 ? 20 : 10;
 const GEAR_STAGES = [{ lv: 1, ur: 0, ssr: .30, dbl: .25 }, { lv: 10, ur: 0, ssr: .36, dbl: .30 }, { lv: 20, ur: .06, ssr: .40, dbl: .33 }, { lv: 30, ur: .09, ssr: .44, dbl: .40 }, { lv: 40, ur: .11, ssr: .48, dbl: 1 }];
 const GOLD_STAGES = [{ lv: 1, st: 5, g: 3000, x: 10 }, { lv: 10, st: 10, g: 7000, x: 15 }, { lv: 20, st: 15, g: 12000, x: 20 }, { lv: 30, st: 20, g: 18000, x: 25 }, { lv: 40, st: 25, g: 26000, x: 30 }];
-const BR_NEED = r => 200 + 50 * r, BR_CH = [0, 3, 7, 11, 15, 19, 21, 23, 25, 27, 29];
+const BR_NEED = r => 200 + 50 * r, BR_CH = [0, 3, 7, 11, 15, 19, 21, 0, 0, 0, 0, 30, 0, 0, 0, 0];   // only the first chapter of a block has a gate (6-10, 11-15)
 const AR_RANKS = [['Bronze', 0], ['Silver', 1000], ['Gold', 2000], ['Platinum', 3000], ['Diamond', 4000], ['Mythic', 5000], ['Ascendant', 5250], ['Celestial', 5500]];
 const AR_VP = [[25, 0, 25, 0], [22, -2, 22, -2], [20, -4, 20, -4], [18, -6, 18, -6], [15, -8, 15, -8], [12, -10, 12, -10], [10, -8, 10, -6], [10, -10, 10, -10]];
 const AR_WEEK = [[5, 50], [10, 80], [15, 120], [20, 160], [25, 200], [30, 260], [40, 320], [50, 400]];
@@ -84,6 +84,8 @@ const CAMP = [];
 for (let c = 3; c <= 5; c++) for (let i = 0; i < 10; i++) CAMP.push({ ch: c, p: i === 4 || i === 9 ? .8 : .9, sx: .7 });
 [[.73, .80, .63, .73, .50, .80, .57, .83, .63, .40], [.60, .57, .63, .43, .50, .83, .33, .53, .77, .30], [.63, .37, .57, .73, .37, .73, .67, .60, .40, .27],
  [.80, .67, .57, .40, .37, .70, .57, .40, .47, .37], [.77, .83, .63, .77, .27, .57, .60, .57, .37, .23]].forEach((L, k) => L.forEach(p => CAMP.push({ ch: 6 + k, p, sx: .45 })));   // Chapters 6-10 (harder, weakness / resistance)
+[[.44, .44, .72, .46, .39, .78, .61, .39, .72, .20], [.72, .56, .39, .67, .50, .83, .67, .67, .33, .50], [.56, .50, .44, .44, .28, .50, .56, .44, .50, .44],
+ [.78, .83, .39, .83, .50, .67, .39, .78, .44, .28], [.50, .78, .50, .39, .50, .78, .56, .28, .22, .22]].forEach((L, k) => L.forEach(p => CAMP.push({ ch: 11 + k, p, sx: .4 })));   // Chapters 11-15 (two-style decks, planning bosses)
 CAMP.forEach((s, i) => { s.i = i; s.first = i === 0 || CAMP[i - 1].ch !== s.ch; s.last = i === CAMP.length - 1 || CAMP[i + 1].ch !== s.ch; });
 const TREE = [.97, 1, .90, .77, .57, .57, .57, .53, .47, .47, .63, .73, .73, .40, .40, .57, .63, .47, .50, .40].map((p, i) => ({ no: i + 1, p, sx: .5 }));   // 20 floors (the Node sim's average player, neutral leader)
 const RAID_P = { gear: [.87, .84, .8, .78, .75], gold: [.85, .78, .7, .6, .5] };   // raid guardians (tuned for ~77–87%, vault V ~50%)
@@ -303,7 +305,7 @@ const buildF = A => { if (process.env.NOBOOST || A.P.noBoost) return 0; const c 
 const winP = (A, p) => 1 - (1 - p) * (1 - buildF(A));
 const brOf = A => { let r = 1, left = A.br; while (r < 30 && left >= BR_NEED(r)) { left -= BR_NEED(r); r++; } return r; };
 const brAdd = (A, k) => { let n = { w: 100, d: 60, l: 40 }[k]; if (k === 'w' && A.brDay !== A.day) { A.brDay = A.day; n += 200; } A.br += n; };
-const LV_CH = { 6: 25, 7: 29, 8: 32, 9: 36, 10: 40 };   // player level to start Chapters 6-10
+const LV_CH = { 6: 25, 11: 40 };   // player level 25 opens Chapters 6-10, level 40 opens Chapters 11-15
 function campOpen(A, i) { const s = CAMP[i]; if (i > 0 && !A.camp.clear[i - 1]) return false; if (s.first && brOf(A) < BR_CH[s.ch]) return false; if (s.first && LV_CH[s.ch] && A.lv < LV_CH[s.ch]) return false; return true; }
 function treeOpen(A, i) { if (i > 0 && !A.camp.treeClear[i - 1]) return false; const no = i + 1; return no < 4 || brOf(A) >= Math.min(30, Math.ceil(no * 1.4) + 2); }
 function playStage(A, st, starsArr, isTree) {
