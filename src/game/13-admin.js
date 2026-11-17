@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { g: 'Characters & items', ic: 'chars', items: [
     ['pool', 'Game pool', 'book', 'characters pets items collectibles backup import export card framing icon splash art', 'Every character, skin, pet, collectible and item: add, edit, frame the cards, back up and import'],
     ['skins', 'Skins', 'skins', 'outfits unlock art full art', 'Outfits per character: full art, unlock art and rarity'],
+    ['skinsets', 'Skin sets', 'skins', 'outfit sets theme buffs bonus index nurse', 'Group outfits into themed sets for the Index and give each set battle buffs'],
     ['mr', 'Marriage skins', 'ring', 'wedding mr bond marry', 'The wedding outfit each character unlocks when married'],
     ['wardrobe', 'Wardrobe', 'hanger', 'clothes sets gear raid pieces', 'Clothing sets and pieces, which raid they drop in'],
     ['memories', 'Memories', 'memory', 'memory art icon framing desc', 'Memories: art, rarity, who can equip them and their square icon']] },
@@ -100,6 +101,7 @@ function renderAdminTab() {
   if (adminTab === 'tree') return renderTreeTab();
   if (adminTab === 'titles') return renderTitlesTab();
   if (adminTab === 'frames') return renderFramesTab();
+  if (adminTab === 'skinsets') return renderSkinSetsTab();
   renderPoolTab();
 }
 /* the Base page holds five parts (Base, Expedition, Camp, Guild, House + Inside the houses): show only the one picked in
