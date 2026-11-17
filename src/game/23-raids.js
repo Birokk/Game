@@ -15,7 +15,7 @@ const GEAR_STAGES = [
   { lv: 1, ur: 0, ssr: 30, dbl: 25 }, { lv: 10, ur: 0, ssr: 36, dbl: 30 }, { lv: 20, ur: 6, ssr: 40, dbl: 33 },
   { lv: 30, ur: 9, ssr: 44, dbl: 40 }, { lv: 40, ur: 11, ssr: 48, dbl: 100 }
 ];
-const CRN = { 3: 'R', 4: 'SSR', 5: 'UR' };
+const CRN = { 3: 'R', 4: 'SSR', 5: 'UR', 7: 'XR' };
 const RAID_SETS = [
   { set: 'r', rarity: 3, name: "Wanderer's", pieces: { hat: 'Hood', top: 'Tunic', pants: 'Trousers', shoes: 'Boots', acc: 'Charm', hand: 'Gloves' } },
   { set: 'ssr', rarity: 4, name: 'Ember Guard', pieces: { hat: 'Helm', top: 'Coat', pants: 'Greaves', shoes: 'Sabatons', acc: 'Amulet', hand: 'Gauntlets' } },

@@ -150,14 +150,14 @@ function renderShop() {
     body = hotSub === 'pass' ? passShopHTML() : hotSub === 'ring' ? ringShopHTML() : e ? `<div class="mall-hot">
         <div class="mall-hot-name"><h1>${esc(e.name)}</h1><span class="mall-time">${rtag(e.rarity)}${par ? esc(par.name) : 'Outfit'}</span></div>
         <div class="mall-thumbs">${picks.map(x => `<button class="mall-thumb ${x.id === shopPick ? 'on' : ''}" data-pick="${esc(x.id)}"><img src="${baseCard(x)}" alt=""><b>${esc(x.name)}</b></button>`).join('')}</div>
-        <div class="mall-price"><span>${curIcon('pearls')}<b>${skinPrice(e)}</b><i class="mall-or">or</i>${curIcon('sktk')}<b>${sktkCost(e)}</b></span>${owns(e.id) ? '<button class="mall-go owned" disabled>Owned</button>' : `<button class="mall-go" data-skin="${esc(e.id)}">Buy ${icon('up')}</button>`}</div>
+        <div class="mall-price"><span>${curIcon('pearls')}<b>${SKIN_PRICE}</b><i class="mall-or">or</i>${curIcon('sktk')}<b>${sktkCost(e)}</b></span>${owns(e.id) ? '<button class="mall-go owned" disabled>Owned</button>' : `<button class="mall-go" data-skin="${esc(e.id)}">Buy ${icon('up')}</button>`}</div>
       </div>` : '<p class="mall-empty">No outfits for sale yet. Add skins in the admin panel.</p>';
   } else if (shopTab === 'skins') {
     const list = shopSkins();
-    body = `<p class="tiny">Every outfit costs ${SKIN_PRICE} pearls (XR ${SKIN_PRICE_XR}), or skin tickets: ${SKTK_COST[4]} for SSR, ${SKTK_COST[5]} for UR, ${SKTK_COST[7]} for XR (you have ${fmt(W.sktk || 0)}; Pearl Honor's Coral Tide gives 5 on every 10th level). Wedding (MR) outfits can't be bought; marry the character to unlock them.</p>
+    body = `<p class="tiny">Every outfit costs ${SKIN_PRICE} pearls, or skin tickets: ${SKTK_COST[4]} for SSR, ${SKTK_COST[5]} for UR (you have ${fmt(W.sktk || 0)}; Pearl Honor's Coral Tide gives 5 on every 10th level). XR outfits can't be bought, and wedding (MR) outfits come from marrying the character.</p>
       <div class="mall-skins">${list.map(x => { const par = findEntry(x.parent), own = owns(x.id);
         return `<div class="mall-skin r${x.rarity}"><img src="${baseCard(x)}" alt="" ${baseArt(x) ? `style="${cardImgStyle(x, 'base')}"` : ''}>${rtag(x.rarity)}<span class="mall-skin-nm"><b>${esc(x.name)}</b><small>${par ? esc(par.name) : ''}</small></span>
-          ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= skinPrice(x) || (W.sktk || 0) >= sktkCost(x) ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${skinPrice(x)}<i class="mall-or">or</i>${curIcon('sktk')}${sktkCost(x)}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
+          ${own ? '<button class="mall-buy" disabled>Owned</button>' : `<button class="mall-buy ${W.pearls >= SKIN_PRICE || (W.sktk || 0) >= sktkCost(x) ? 'ok' : ''}" data-skin="${esc(x.id)}">${curIcon('pearls')}${SKIN_PRICE}<i class="mall-or">or</i>${curIcon('sktk')}${sktkCost(x)}</button>`}</div>`; }).join('') || '<p class="mall-empty">No outfits for sale yet.</p>'}</div>`;
   } else if (shopTab === 'topup' && topSub !== 'pearls') body = packsHTML(topSub);
   else if (shopTab === 'topup') {
     body = `${vipShopBar()}${offerShopBanners()}<p class="tiny">${TOPUP_FREE ? 'Pearl packs. The first purchase of each pack is doubled, later purchases give +10% (not the $0.99 pack). Real payments aren\'t connected yet, so every pack is free while testing.' : 'Pearl packs. Real payments aren\'t connected yet, so these can\'t be bought for now.'}</p>

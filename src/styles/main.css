@@ -7166,3 +7166,45 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .smx-name.r7{background:linear-gradient(100deg,#fff2f0,#ff9a8f 35%,#ff1f3d 75%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
 @media (prefers-reduced-motion:reduce){.rtag.r7{animation:none}}
 .seg label.r7:has(input:checked) .rw.r7{color:#fff;text-shadow:none}
+
+/* ---------- Mystery Fountain wish animation v2 (.mfw, showMboxOpen in 25-mystery.js; the owner asked for a remake) ---------- */
+.mfw{position:fixed;inset:0;z-index:60;overflow:hidden;color:#fff;cursor:pointer;opacity:0;transition:opacity .38s;--a:#55b4ff;--b:#d6efff}
+.mfw.go{opacity:1}.mfw.out{opacity:0}
+.mfw[data-t="4"]{--a:#ff9a36;--b:#ffe3a6}.mfw[data-t="7"]{--a:#ff1f3d;--b:#ffb3a8}
+.mfw[data-t="5"]{--a:#c06bff;--b:#8ff3ff}
+.mfw-bg{position:absolute;inset:-40px;background:#05040f}
+.mfw-bg img{width:100%;height:100%;object-fit:cover;filter:blur(22px) saturate(1.1);opacity:.28;transform:scale(1.05)}
+.mfw-sky{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 78%,color-mix(in srgb,var(--a) 22%,transparent),transparent 70%),radial-gradient(ellipse at 50% 0%,rgba(40,30,90,.55),transparent 60%),linear-gradient(180deg,rgba(6,5,20,.55),rgba(3,2,10,.88));transition:background .6s}
+.mfw-sky::before{content:"";position:absolute;inset:0;background-image:radial-gradient(1.2px 1.2px at 12% 18%,#fff 50%,transparent),radial-gradient(1px 1px at 28% 8%,#fff 50%,transparent),radial-gradient(1.4px 1.4px at 44% 22%,#fff 50%,transparent),radial-gradient(1px 1px at 63% 12%,#fff 50%,transparent),radial-gradient(1.3px 1.3px at 78% 26%,#fff 50%,transparent),radial-gradient(1px 1px at 90% 9%,#fff 50%,transparent),radial-gradient(1px 1px at 6% 40%,#fff 50%,transparent),radial-gradient(1.2px 1.2px at 94% 44%,#fff 50%,transparent);opacity:.7;animation:mfwTw 3.4s ease-in-out infinite alternate}
+@keyframes mfwTw{to{opacity:.35}}
+.mfw-cv{position:absolute;inset:0;width:100%;height:100%}
+.mfw[data-t="5"] .mfw-sky,.mfw[data-t="5"] .mfw-rays,.mfw[data-t="5"] .mfw-card{animation:mfwHue 2.6s linear infinite}
+@keyframes mfwHue{to{filter:hue-rotate(360deg)}}
+.mfw-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 40%,#fff,color-mix(in srgb,var(--b) 70%,transparent) 30%,transparent 70%)}
+.mfw-flash.on.soft{animation:mfwFl .55s ease-out}.mfw-flash.on.big{animation:mfwFlB .9s ease-out}
+@keyframes mfwFl{0%{opacity:.75}100%{opacity:0}}
+@keyframes mfwFlB{0%{opacity:1;background:#fff}30%{opacity:.9}100%{opacity:0}}
+.mfw.jolt .mfw-cv{animation:mfwJolt .35s}
+@keyframes mfwJolt{20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(2px,2px)}}
+.mfw-say{position:absolute;left:0;right:0;top:calc(9vh + env(safe-area-inset-top,0px));display:grid;justify-items:center;gap:6px;text-align:center;pointer-events:none;transition:opacity .4s}
+.mfw-say small{font-family:var(--display);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,255,255,.7);padding-left:.32em}
+.mfw-say b{font-family:var(--display);font-weight:400;font-style:italic;font-size:clamp(22px,3.2vw,38px);text-shadow:0 0 22px color-mix(in srgb,var(--a) 80%,transparent),0 2px 10px rgba(0,0,0,.8)}
+.mfw-say b.pop{animation:mfwSay .5s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes mfwSay{from{opacity:0;transform:translateY(10px) scale(.94)}}
+.mfw.burst .mfw-say{opacity:0}
+.mfw-rev{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.mfw-rays{position:absolute;left:50%;top:50%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;border-radius:50%;opacity:0;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--b) 32%,transparent) 0 5deg,transparent 5deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 22%,transparent 55%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 22%,transparent 55%);transition:opacity .6s}
+.mfw.shown .mfw-rays{opacity:1;animation:mfwSpin 18s linear infinite}
+.mfw[data-t="5"].shown .mfw-rays{animation:mfwSpin 18s linear infinite,mfwHue 2.6s linear infinite}
+@keyframes mfwSpin{to{transform:rotate(360deg)}}
+.mfw-card{position:relative;display:grid;justify-items:center;gap:10px;width:min(78vw,320px);padding:30px 22px 24px;text-align:center;border-radius:28px 6px 28px 6px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(14,10,32,.55));border:1.5px solid color-mix(in srgb,var(--b) 70%,transparent);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 0 60px color-mix(in srgb,var(--a) 55%,transparent),0 24px 60px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transform:translateY(26px) scale(.8)}
+.mfw.shown .mfw-card{opacity:1;transform:none;transition:opacity .45s,transform .6s cubic-bezier(.2,.9,.3,1.25)}
+.mfw-pic{width:min(40vw,150px);aspect-ratio:1;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:radial-gradient(circle at 38% 30%,color-mix(in srgb,var(--b) 70%,#fff),var(--a) 70%,color-mix(in srgb,var(--a) 50%,#000));box-shadow:0 0 0 3px rgba(255,255,255,.85),0 0 40px var(--a);animation:mfwFloat 3s ease-in-out infinite}
+@keyframes mfwFloat{50%{transform:translateY(-6px)}}
+.mfw-pic img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.mfw-pic .cic,.mfw-pic .ic{width:48%;height:48%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
+.mfw-card b{font-family:var(--display);font-weight:400;font-size:clamp(20px,2.6vw,30px);line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.mfw-card small{font-family:var(--read);font-size:13.5px;color:rgba(255,255,255,.78)}
+.mfw-hint{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-family:var(--display);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.6);animation:mfwTw 1.6s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){.mfw-sky::before,.mfw-pic,.mfw.shown .mfw-rays,.mfw-hint{animation:none}}
+.mfw-cv{transition:opacity .7s,filter .7s}.mfw.shown .mfw-cv{opacity:.4;filter:blur(3px)}

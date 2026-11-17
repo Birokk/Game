@@ -617,7 +617,7 @@ function renderSkinsTab() {
         ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head">
             <input class="input sk-nm" data-sknm="${esc(k.id)}" maxlength="30" value="${esc(short(k, c))}" aria-label="Skin name">
             ${k.rarity === 6 ? `<span class="row" style="gap:6px">${rtag(6)}<span class="tiny">Unlocked by marriage</span></span>`
-              : `<div class="seg sk-rar">${[4, 5, 7].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div><span class="tiny">Buyable for ${skinPrice(k)} pearls</span>`}
+              : `<div class="seg sk-rar">${[4, 5, 7].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div><span class="tiny">${+k.rarity === 7 ? 'XR: can\'t be bought' : `Buyable for ${SKIN_PRICE} pearls`}</span>`}
             <span class="row" style="gap:10px"><button class="link" data-skpv="${esc(k.id)}">Preview</button>${k.rarity === 6 ? '' : `<button class="link" data-skdel="${esc(k.id)}" style="color:${skDelArm === k.id ? '#ff6b81' : ''}">${skDelArm === k.id ? 'Tap again to delete' : 'Delete'}</button>`}</span></div>
           ${slot(k, 'art', 'Full art', 'Shown everywhere')}${slot(k, 'getArt', 'Unlock art', 'Only when bought or received')}</div>`).join('') : '<p class="tiny">No skins yet.</p>'}</div>`; }).join('')}
   </div>`;

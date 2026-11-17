@@ -20,8 +20,7 @@ const hatchCost = inc => Math.max(2, Math.ceil((inc.ends - Date.now()) / 12e4));
 const fmtLeft = ms => { const m = Math.ceil(ms / 6e4); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
 /* duplicate rules shared by summons and hatching: first copy 0 stars, +1 star per copy up to 6, then pearls */
 /* skins can also be bought outright */
-const SKIN_PRICE = 60, SKIN_PRICE_XR = 120;   // XR outfits cost double
-const skinPrice = e => e && +e.rarity === 7 ? SKIN_PRICE_XR : SKIN_PRICE;
+const SKIN_PRICE = 60;
 /* black-and-white preview of a character's MR wedding skin, shown in full once you own it */
 function previewMR(c) {
   const k = mrSkinOf(c); if (!k) return;
@@ -33,12 +32,13 @@ function previewMR(c) {
   document.body.appendChild(el);
   setTimeout(() => el.onclick = () => el.remove(), 300);
 }
-const buyable = e => e && e.type === 'skin' && e.rarity !== 6;
+const buyable = e => e && e.type === 'skin' && +e.rarity !== 6 && +e.rarity !== 7;   // MR (marriage) and XR outfits can't be bought
+const skinLockTxt = (e, c) => +e.rarity === 7 ? 'XR outfit · can\'t be bought' : `Unlocked by marrying ${c ? c.name : 'the character'}`;
 function buySkin(id) {
   const e = findEntry(id); if (!e || e.type !== 'skin' || owns(id)) return;
-  if (!buyable(e)) { toast(`${e.name} can't be bought. Marry ${(findEntry(e.parent) || {}).name || 'the character'} to unlock it.`); return; }
-  if (S.wallet.pearls < skinPrice(e)) { toast(`${e.name} costs ${skinPrice(e)} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
-  S.wallet.pearls -= skinPrice(e); S.owned[id] = 1; persist(); renderMenu(); refreshSummon(); refreshCharacters();
+  if (!buyable(e)) { toast(+e.rarity === 7 ? `${e.name} is an XR outfit: XR outfits can't be bought.` : `${e.name} can't be bought. Marry ${(findEntry(e.parent) || {}).name || 'the character'} to unlock it.`); return; }
+  if (S.wallet.pearls < SKIN_PRICE) { toast(`${e.name} costs ${SKIN_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
+  S.wallet.pearls -= SKIN_PRICE; S.owned[id] = 1; persist(); renderMenu(); refreshSummon(); refreshCharacters();
   if ($('#colRoot')) renderDetail(id, 'skin');
   showSkinGet(e);
 }

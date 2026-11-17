@@ -52,8 +52,8 @@ function selectSkin(c, id) {
   $('#skAct').innerHTML = `<div class="sk-title"><b>${esc(label)}</b>${o.stars ? `<span class="chip">${o.stars}★ splash art</span>` : rtag(o.rarity)}</div>
     ${o.own ? (o.on ? `<button class="btn ghost" disabled>${icon('check')}Equipped</button>` : `<button class="btn gold" id="skEquip">${icon('hanger')}Equip ${esc(label.toLowerCase() === 'default outfit' ? 'default outfit' : label)}</button>`)
       : o.stars ? `<div class="cs-pill">${icon('lock')} Unlocks at ${o.stars} stars · ${esc(c.name)} has ${starsOf(c.id)}</div>`
-      : !buyable(o.entry) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
-      : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(skinPrice(o.entry))}</button>`}
+      : !buyable(o.entry) ? `<div class="cs-pill" style="color:${+o.entry.rarity === 7 ? '#ff5a6e' : '#ff9ec4'}">${+o.entry.rarity === 7 ? icon('lock') : curIcon('rings')} ${esc(skinLockTxt(o.entry, c))}</div>`
+      : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>`}
     ${o.own ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === wallId ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
   const eb = $('#skEquip'); if (eb) eb.onclick = () => {
     if (o.kind === 'skin') S.equip[c.id] = o.entry.id;
@@ -113,8 +113,8 @@ function renderCharacters() {
       ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb rk-row ${rk <= 3 ? 'top top' + rk : 'top10'}" data-csrank="${esc(c.id)}" aria-label="Open the ranking"><span class="rk-n"><i><b>${rk}</b></i></span><b class="cs-rankt">#${rk} ${esc(c.name)} Server CS Ranking</b></button>` : ''; })()}
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
-        : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
-        : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(skinPrice(shown))}</button>`
+        : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:${+shown.rarity === 7 ? '#ff5a6e' : '#ff9ec4'}">${+shown.rarity === 7 ? icon('lock') : curIcon('rings')} ${esc(skinLockTxt(shown, c))}</div>`
+        : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
   } else if (csTab === 'skins') {
     const cards = outfitCards(c);

@@ -365,7 +365,7 @@ function showSkinGet(e, o = {}) {
     <button class="sg-x" aria-label="Close">${icon('close')}</button>
     <button class="sg-share" aria-label="Share">${icon('send')}</button>`;
   document.body.appendChild(el);
-  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 350); };
+  let shut = false; const close = () => { if (shut) return; shut = true; el.classList.add('out'); setTimeout(() => { el.remove(); o.onClose && o.onClose(); }, 350); };
   setTimeout(() => el.addEventListener('click', ev => { if (!ev.target.closest('button, .sg-item')) close(); }), 700);
   el.querySelector('.sg-x').onclick = close;
   el.querySelector('#sgGo').onclick = () => {
