@@ -42,20 +42,34 @@ function buyPot(c, k) {
   persist(); renderMenu(); renderCharacters();
   toast(a[k] >= POT_STEPS ? `Plan #${k + 1} complete! ${k ? 'A potential gem lights up above star ' + k + '.' : ''}` : `Upgrade ${a[k]} / ${POT_STEPS} unlocked · +${POT_CS} CS`);
 }
-const POT_POS = [[16, 24], [50, 14], [84, 24], [84, 70], [50, 84], [50, 48]];   // the 6th (core) sits in the middle
+/* every plan has its own board (the owner's ask): a shape (POT_LAYOUTS, the 6th = the core), a colour theme and node style
+   (POT_THEMES, .pot-board.pt-<k>) and a faint drawn sigil behind it (potDeco) */
+const POT_LAYOUTS = [[[16,24],[50,14],[84,24],[84,70],[50,84],[50,48]],[[50.0,10.0],[82.3,36.3],[70.0,78.7],[30.0,78.7],[17.7,36.3],[50,48]],[[12,82],[32,60],[16,32],[44,18],[70,40],[80,72]],[[50,10],[86,84],[14,84],[36,60],[64,60],[50,36]],[[14,48],[50,12],[86,48],[50,84],[28,72],[50,48]],[[12,18],[86,20],[86,80],[16,80],[28,48],[60,48]],[[50.0,10.0],[71.2,78.7],[15.8,36.3],[84.2,36.3],[28.8,78.7],[50,48]]];
+const POT_POS = POT_LAYOUTS[0];
+const POT_THEMES = ['Crown', 'Halo', 'Ascent', 'Pyramid', 'Compass', 'Spiral', 'Starfall'];
+function potDeco(k) {
+  const g = 'class="pot-deco"';
+  if (k === 0) return `<path ${g} d="M10 70 L22 28 L38 50 L50 16 L62 50 L78 28 L90 70 Z"/>`;
+  if (k === 1) return `<ellipse ${g} cx="50" cy="48" rx="34" ry="38"/><ellipse ${g} cx="50" cy="48" rx="22" ry="25"/><ellipse ${g} cx="50" cy="48" rx="44" ry="46"/>`;
+  if (k === 2) return `<path ${g} d="M4 92 L30 62 L46 72 L70 34 L84 46 L96 8"/><path ${g} d="M4 96 L96 96"/>`;
+  if (k === 3) return `<path ${g} d="M50 6 L94 88 L6 88 Z"/><path ${g} d="M50 34 L72 76 L28 76 Z"/>`;
+  if (k === 4) return `<path ${g} d="M50 4 L58 40 L96 48 L58 56 L50 92 L42 56 L4 48 L42 40 Z"/><ellipse ${g} cx="50" cy="48" rx="30" ry="32"/>`;
+  if (k === 5) return `<path ${g} d="M60 50 C60 38 44 36 40 46 C34 60 56 70 68 58 C84 42 66 18 44 22 C18 28 14 66 36 80 C60 94 92 80 94 50"/>`;
+  return `<path ${g} d="${[0, 1, 2, 3, 4, 5].map(i => { const a = (-90 + 144 * i) * Math.PI / 180; return `${i ? 'L' : 'M'}${(50 + 46 * Math.cos(a)).toFixed(1)} ${(48 + 46 * Math.sin(a)).toFixed(1)}`; }).join(' ')}"/><ellipse ${g} cx="50" cy="48" rx="46" ry="46"/>`;
+}
 function potTabHTML(c) {
   const pages = potPages(c); if (potPage >= POT_PAGES) potPage = 0;
   const k = potPage, a = potOf(c.id), n = Math.min(POT_STEPS, a[k]), open = potOpen(c, k), total = potTotal(c.id);
-  const lines = POT_POS.slice(0, -1).map((p, i) => { const q = POT_POS[i + 1]; return `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" class="${i + 1 < n ? 'on' : ''}"/>`; }).join('');
-  const nodes = POT_POS.map(([x, y], i) => { const done = i < n, next = open && i === n, core = i === POT_STEPS - 1;
+  const PP = POT_LAYOUTS[k] || POT_POS, lines = potDeco(k) + PP.slice(0, -1).map((p, i) => { const q = PP[i + 1]; return `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" class="${i + 1 < n ? 'on' : ''}"/>`; }).join('');
+  const nodes = PP.map(([x, y], i) => { const done = i < n, next = open && i === n, core = i === POT_STEPS - 1;
     return `<div class="pot-node ${core ? 'core' : ''} ${done ? 'done' : next ? 'next' : 'locked'}" style="left:${x}%;top:${y}%">
       <span class="pot-orb">${done ? (core ? potIcon() : icon('check')) : next ? (core ? potIcon() : `<b>${i + 1}</b>`) : icon('lock')}</span>
       <span class="pot-lbl">${core ? 'Core' : `Upgrade ${i + 1}`}<small>+${POT_CS} CS</small></span>${next ? '<span class="pot-next">NEXT</span>' : ''}</div>`; }).join('');
   return `<div class="pot">
     <div class="pot-head"><span class="pot-gem-big">${potIcon()}</span><div><b>Potential</b><span class="tiny">${total} / ${POT_PAGES * POT_STEPS} upgrades · +${fmt(total * POT_CS)} CS · ${potDoneN(c.id)} / ${POT_PAGES} plans complete</span></div></div>
     <div class="pot-pages">${Array.from({ length: POT_PAGES }, (_, i) => { const locked = i >= pages, done = potDone(c.id, i);
-      return `<button class="pot-pg ${i === k ? 'on' : ''} ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-potpg="${i}" title="${locked ? `Opens at ${i}★` : `Plan #${i + 1}`}">#${i + 1}${locked ? `<small>${i}★</small>` : done ? `<small>${icon('check')}</small>` : ''}</button>`; }).join('')}</div>
-    <div class="pot-board ${open ? '' : 'shut'}"><svg class="pot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}
+      return `<button class="pot-pg pt-${i} ${i === k ? 'on' : ''} ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-potpg="${i}" title="${locked ? `Opens at ${i}★` : `Plan #${i + 1}`}">#${i + 1}${locked ? `<small>${i}★</small>` : done ? `<small>${icon('check')}</small>` : ''}</button>`; }).join('')}</div>
+    <div class="pot-board pt-${k} ${open ? '' : 'shut'}"><span class="pot-theme">Plan #${k + 1} · ${POT_THEMES[k]}</span><svg class="pot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}
       ${open ? '' : `<div class="pot-shut">${icon('lock')}<span>${k >= pages ? `Plan #${k + 1} opens when ${esc(c.name)} reaches ${k}★` : `Complete plan #${k} to open this one`}</span></div>`}</div>
     <div class="pot-foot">${n >= POT_STEPS ? `<span class="chip pot-ok">${icon('check')}Plan #${k + 1} complete</span>`
       : `<button class="btn gold" id="potBuy" ${open ? '' : 'disabled'}>Unlock ${n === POT_STEPS - 1 ? 'the core' : `upgrade ${n + 1}`} · ${costHTML(potCost(n))}</button>`}</div>

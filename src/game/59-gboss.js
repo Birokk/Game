@@ -5,7 +5,7 @@
    - The dragon's HP is shared by the guild (every member's damage comes off the same bar) and grows with the guild
      (the owner's rule): 500 HP with 1 member up to 2,000 with 50, in even steps (gbBaseHp, ~30.6 HP a member, rounded to
      10). When it falls a stronger one takes its place in the same fight (+25% a level, gbLvHp), so you can always fight
-     it, and every member gets 20 pearls + 60 stamina by mail for each dragon the guild defeats (GB_KILL, gbMailKills).
+     it, and every member gets 10 pearls + 60 stamina by mail for each dragon the guild defeats (GB_KILL, gbMailKills).
      There is no guild server yet: the other members are practice players whose battles are seeded (gbMateHits: 80% fight
      twice, damage 8-58 by their CS, spread over the 48 hours), so the bar goes down over the two days; a full guild of
      30 usually brings the first dragon down, 20 now and then, 10 never.
@@ -26,7 +26,7 @@ const GB_HP = 500, GB_HP_MAX = 2000, GB_HP_N = 50, GB_LV_UP = .25, GB_HITX = 3, 
 const GB_AI = { ...CC_AUTO, slip: 0, noise: 0 };   // the boss plays like auto play at its best
 // [from damage, gear pieces, UR chance per piece, gold, Standard tickets] — stamina is gbStam(damage)
 const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [15, 1, .3, 9000, 1], [30, 2, .35, 14000, 2], [45, 2, .45, 20000, 2], [60, 3, .5, 26000, 3], [75, 3, .6, 32000, 3]];
-const GB_KILL = { pearls: 20, stamina: 60 };   // mailed to every member for each dragon the guild defeats
+const GB_KILL = { pearls: 10, stamina: 60 };   // mailed to every member for each dragon the guild defeats
 const GB_STAM_MAXV = 50, gbStam = d => Math.min(GB_STAM_MAXV, 5 + Math.round(d * .6));
 const gbTier = d => GB_TIERS.filter(t => d >= t[0]).pop();
 const r10 = x => Math.round(x / 10) * 10;

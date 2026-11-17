@@ -7,8 +7,8 @@ function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthK
 const SW_MATS = [
   ['thread', 'thread', 20, 30, 10, 'Thread ×20', 3],
   ['coins', 'coins', 10000, 25, 10, '10,000 gold', 3],
-  ['bottle', 'bottles', 1, 60, 5, 'Stamina bottle', 4],
-  ['ictk', 'ictk', 1, 40, 5, 'Instant clear ticket', 4],
+  ['bottle', 'bottles', 1, 60, 1, 'Stamina bottle', 4],
+  ['ictk', 'ictk', 2, 40, 15, 'Instant clear tickets ×2', 4],
   ['cfssr', 'cfssr', 5, 50, 6, 'SSR character fragments ×5', 4],
   ['fragssr', 'fragssr', 2, 40, 5, 'SSR egg fragments ×2', 4],
   ['cfur', 'cfur', 2, 120, 5, 'UR character fragments ×2', 5],

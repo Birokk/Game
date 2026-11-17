@@ -488,7 +488,7 @@ function exchanges(A) {
   while (A.w.starlight >= 400 + 10) { A.w.starlight -= 10; gain(A, 'tickets', 1, 'Coral exchange'); }
   if (!A.monthly) { A.monthly = 0; } while (A.monthly < 10 && A.w.dust >= 75) { A.w.dust -= 75; A.monthly++; gain(A, A.monthly <= 5 ? 'tickets' : 'wishes', 1, 'Seaweed monthly pulls'); }
   // Seaweeds monthly materials (07-shop.js SW_MATS: [wallet key, amount, Seaweeds, buys a month]); keep 75 Seaweeds back for nothing, buy the best value first
-  if (!A.swm) A.swm = {}; for (const [k, n, c, lim] of [['cfur', 2, 120, 5], ['fragur', 1, 80, 5], ['bottles', 1, 60, 5], ['ictk', 1, 40, 5], ['cfssr', 5, 50, 6], ['fragssr', 2, 40, 5], ['thread', 20, 30, 10], ['coins', 10000, 25, 10]])
+  if (!A.swm) A.swm = {}; for (const [k, n, c, lim] of [['cfur', 2, 120, 5], ['fragur', 1, 80, 5], ['bottles', 1, 60, 1], ['ictk', 2, 40, 15], ['cfssr', 5, 50, 6], ['fragssr', 2, 40, 5], ['thread', 20, 30, 10], ['coins', 10000, 25, 10]])
     while ((A.swm[k] || 0) < lim && A.w.dust >= c) { A.w.dust -= c; A.swm[k] = (A.swm[k] || 0) + 1; gain(A, k, n, 'Seaweed materials'); }
   // skin tickets (only from Pearl Honor's paid track now) → outfits of owned characters (UR outfits 120 tickets, SSR 60)
   for (const c of focusList(A)) { if (c.r !== 5 || c.kind === 'mc' || c.idx >= 6) continue;

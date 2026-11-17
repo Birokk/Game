@@ -76,6 +76,7 @@ function renderMenu() {
   $('#hmTitle').innerHTML = titleHTML();
   $('#wallet').innerHTML = `<div class="cur" id="stamPill" title="Stamina">${curIcon('stamina')}<b id="stamVal"></b><button class="plus" id="stamPlus" aria-label="Get more stamina">${icon('plus')}</button></div>` + [['coins', 'Gold coins'], ['pearls', 'Pearls']].map(([k, l]) =>
     `<div class="cur" data-k="${k}" title="${l}">${curIcon(k)}<b>${fmt(S.wallet[k])}</b><button class="plus" data-open="${k === 'tickets' || k === 'wishes' ? 'buytickets' : k === 'coins' ? 'vault' : 'shop'}" data-tkbk="${k === 'wishes' ? 'standard' : 'limited'}" ${k === 'pearls' ? 'data-shoptab="topup"' : ''} aria-label="Get more ${l.toLowerCase()}">${icon('plus')}</button></div>`).join('');
+  if (booted) safely(mcOrbCheck, 'origin orb');   // Origin Orbs for chapters already cleared (main character stars)
   const unread = mailList().filter(mailOpen).length;
   const badge = $('#mailBadge'); badge.textContent = unread; badge.hidden = !unread;
   $('#sumDot').hidden = !bannerKeys().some(k => canPull(10, k) || freeReady(k));

@@ -7061,3 +7061,42 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .mall-hot-name{max-width:min(620px,48vw)}
 .mall-hot-name h1{overflow-wrap:anywhere}
 @media (min-width:761px){.mall-hot .mall-price{justify-self:end}}
+
+/* Potential: every plan has its own board (shape in POT_LAYOUTS, colours and node style here, a faint sigil behind) */
+.pot-board{--pa:#f5afe8;--pgl:#c8a2ff;--pgr:var(--cry-grad);--pr:50%}
+.pot-board.pt-1{--pa:#8ff0ff;--pgl:#4ec8ff;--pgr:linear-gradient(135deg,#eafdff,#8ff0ff 50%,#4aa8ff)}
+.pot-board.pt-2{--pa:#ffd772;--pgl:#ffb340;--pgr:linear-gradient(135deg,#fff6d6,#ffd772 50%,#f0a03a);--pr:10px}
+.pot-board.pt-3{--pa:#8ef0b4;--pgl:#3cc48a;--pgr:linear-gradient(135deg,#e6fff0,#8ef0b4 50%,#2fae7a);--pr:30%}
+.pot-board.pt-4{--pa:#c9a2ff;--pgl:#8a5cff;--pgr:linear-gradient(135deg,#f3e8ff,#c49bff 50%,#7a4cff);--pr:10px}
+.pot-board.pt-5{--pa:#ff9fb6;--pgl:#ff4f7a;--pgr:linear-gradient(135deg,#ffe6ec,#ff9fb6 50%,#e8486e);--pr:50% 50% 50% 14%}
+.pot-board.pt-6{--pa:#fff;--pgl:#ff9ae6;--pgr:conic-gradient(from var(--pta,0deg),#ff9ae6,#ffe28a,#8ff0ff,#b99bff,#ff9ae6)}
+@property --pta{syntax:'<angle>';inherits:true;initial-value:0deg}
+@keyframes ptaSpin{to{--pta:360deg}}
+.pot-board.pt-6{animation:ptaSpin 6s linear infinite}
+.pot-lines line.on{stroke:var(--pa);filter:drop-shadow(0 0 3px var(--pgl))}
+.pot-lines .pot-deco{fill:none;stroke:var(--pa);stroke-opacity:.2;stroke-width:1.2;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
+.pot-board.pt-6 .pot-lines .pot-deco{stroke:#ff9ae6;stroke-opacity:.28}
+.pot-board .pot-orb{border-radius:var(--pr)}
+.pot-board.pt-2 .pot-orb,.pot-board.pt-4 .pot-orb{width:42px;height:42px;rotate:45deg}
+.pot-board.pt-2 .pot-orb>*,.pot-board.pt-4 .pot-orb>*{rotate:-45deg}
+.pot-board.pt-2 .pot-node.core .pot-orb,.pot-board.pt-4 .pot-node.core .pot-orb{width:62px;height:62px}
+.pot-board.pt-2 .pot-node .pot-lbl,.pot-board.pt-4 .pot-node .pot-lbl{margin-top:8px}
+.pot-board.pt-1 .pot-orb{outline:1px solid color-mix(in srgb,var(--pa) 45%,transparent);outline-offset:4px}
+.pot-board .pot-node.done .pot-orb{background:var(--pgr);border-color:#fff;box-shadow:0 0 14px var(--pgl)}
+.pot-board:not(.pt-0) .pot-node.next .pot-orb{background:radial-gradient(circle,#fff 0 30%,color-mix(in srgb,var(--pa) 70%,#fff) 60%,var(--pgl))}
+.pot-board.pt-6 .pot-node.next .pot-orb{background:var(--pgr)}
+.pot-theme{position:absolute;left:50%;top:-6px;translate:-50% -100%;padding:3px 12px;border-radius:999px;font:400 11px var(--display);letter-spacing:.08em;color:var(--pa);background:rgba(10,10,20,.45);border:1px solid color-mix(in srgb,var(--pa) 40%,transparent);white-space:nowrap;pointer-events:none}
+.pot-board{margin-top:34px}
+.pot-pg.pt-1:not(.on):not(.locked){border-color:#8ff0ff88}.pot-pg.pt-2:not(.on):not(.locked){border-color:#ffd77288}.pot-pg.pt-3:not(.on):not(.locked){border-color:#8ef0b488}
+.pot-pg.pt-4:not(.on):not(.locked){border-color:#c9a2ff88}.pot-pg.pt-5:not(.on):not(.locked){border-color:#ff9fb688}.pot-pg.pt-6:not(.on):not(.locked){border-color:#ffe28a88}
+@media (prefers-reduced-motion:reduce){.pot-board.pt-6{animation:none}}
+/* Origin Orb box on the main character's Breakthrough tab */
+.mco-box{display:grid;gap:10px}
+.mco-top{display:flex;align-items:center;gap:12px}.mco-top b{display:block;font:400 18px var(--display)}
+.mco-ic{width:46px;height:46px;flex:none;filter:drop-shadow(0 0 10px #c9a8ff)}.mco-ic .cic{width:100%;height:100%}
+.mco-n{margin-left:auto;font:400 22px var(--display)}
+.mco-src{list-style:none;margin:0;padding:0;display:grid;gap:4px;font:400 13px var(--read)}
+.mco-src li{display:flex;align-items:center;gap:8px;opacity:.7}.mco-src li.ok{opacity:1;color:#bff3d4}
+.mco-src .ic{width:14px;height:14px}
+.mco-cf{display:grid;justify-items:center;gap:8px;text-align:center}.mco-cf>.cic{width:64px;height:64px;filter:drop-shadow(0 0 12px #c9a8ff)}
+.mco-note .cic{width:18px;height:18px;vertical-align:-4px;margin-right:4px}
