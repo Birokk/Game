@@ -5,8 +5,8 @@
    Instant clear tickets (wallet ictk): once the day's free instant clears are used, each extra instant clear uses one
    (23-raids.js raidUseClears). They work on every raid stage you got 3 stars on. From the Pearl Shop (2 pearls each),
    the Arena and Guild shops and special offers. */
-const SKTK_COST = { 4: 60, 5: 120 };
-const sktkCost = e => SKTK_COST[Math.max(4, Math.min(5, +(e && e.rarity) || 4))];
+const SKTK_COST = { 4: 60, 5: 120, 7: 240 };   // XR outfits 240
+const sktkCost = e => SKTK_COST[+(e && e.rarity)] || SKTK_COST[4];
 const ICTK_PEARLS = 2;
 CUR_SVG.sktk = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="sktkG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd9f4"/><stop offset=".5" stop-color="#ff8fcf"/><stop offset="1" stop-color="#b06bff"/></linearGradient></defs><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5v2a2.5 2.5 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5v-2a2.5 2.5 0 0 0 0-5z" fill="url(#sktkG)" stroke="#fff" stroke-width=".9"/><path d="M12 9.2l1 1.1h1.6l1.4 1.3-.9 1.2-.7-.5V16h-4.8v-3.7l-.7.5-.9-1.2 1.4-1.3H11z" fill="#fff" opacity=".95"/></svg>';
 CUR_SVG.ictk = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="ictkG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6f0ff"/><stop offset=".5" stop-color="#6fc3ff"/><stop offset="1" stop-color="#7a6bff"/></linearGradient></defs><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5v2a2.5 2.5 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5v-2a2.5 2.5 0 0 0 0-5z" fill="url(#ictkG)" stroke="#fff" stroke-width=".9"/><path d="M13.2 8.2L9.6 12.6h2.3l-1.1 3.4 3.6-4.5h-2.3z" fill="#fff"/></svg>';
@@ -37,17 +37,17 @@ ADMIN_ART_SECS.icons.push('sktk', 'ictk');
   buySkin = function (id) {
     const e = findEntry(id); if (!e || e.type !== 'skin' || owns(id)) return;
     if (!buyable(e)) return b0.apply(this, arguments);   // MR outfits: its own message
-    const W = S.wallet, tk = sktkCost(e), canP = W.pearls >= SKIN_PRICE, canT = (W.sktk || 0) >= tk, par = findEntry(e.parent);
+    const W = S.wallet, tk = sktkCost(e), canP = W.pearls >= skinPrice(e), canT = (W.sktk || 0) >= tk, par = findEntry(e.parent);
     const art = baseArt(e);
     openModal({ title: 'Buy outfit', ic: 'skins', small: true, kind: 'skinbuy', body: `<div class="skb">
       <div class="skb-top"><span class="skb-art r${e.rarity}"><img src="${baseCard(e)}" alt="" ${art ? `style="${cardImgStyle(e, 'base')}"` : ''}>${rtag(e.rarity)}</span>
         <span class="skb-nm"><b>${esc(e.name)}</b><small>${par ? esc(par.name) : 'Outfit'}</small></span></div>
       <p class="desc">How do you want to pay?</p>
       <div class="skb-pay">
-        <button class="skb-o ${canP ? '' : 'no'}" data-skpay="p" ${canP ? '' : 'disabled'}><span class="skb-ic">${curIcon('pearls')}</span><b>${SKIN_PRICE} pearls</b><small>You have ${fmt(W.pearls)}</small></button>
+        <button class="skb-o ${canP ? '' : 'no'}" data-skpay="p" ${canP ? '' : 'disabled'}><span class="skb-ic">${curIcon('pearls')}</span><b>${skinPrice(e)} pearls</b><small>You have ${fmt(W.pearls)}</small></button>
         <button class="skb-o ${canT ? '' : 'no'}" data-skpay="t" ${canT ? '' : 'disabled'}><span class="skb-ic">${curIcon('sktk')}</span><b>${tk} skin tickets</b><small>You have ${fmt(W.sktk || 0)}</small></button>
       </div>
-      <p class="tiny">Skin tickets: ${SKTK_COST[4]} for an SSR outfit, ${SKTK_COST[5]} for a UR one. Pearl Honor's Coral Tide (the paid track) gives 5 on every 10th level.</p>
+      <p class="tiny">Skin tickets: ${SKTK_COST[4]} for an SSR outfit, ${SKTK_COST[5]} for a UR one, ${SKTK_COST[7]} for an XR one. Pearl Honor's Coral Tide (the paid track) gives 5 on every 10th level.</p>
       <div class="row rcf-btns"><button class="btn ghost" id="skbNo">Cancel</button>${canT ? '' : '<button class="btn ghost" id="skbGet">Get skin tickets</button>'}</div></div>`,
       onMount: b => {
         b.querySelector('#skbNo').onclick = closeModal;

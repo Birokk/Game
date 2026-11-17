@@ -212,7 +212,7 @@ function applyWallpaper(fade) {
   });
   wpEl.classList.toggle('has-char', !!e);
   wpEl.classList.toggle('chibi', !!e && !wpHasArt(w));
-  wpEl.classList.remove('r3', 'r4', 'r5'); if (e) wpEl.classList.add('r' + e.rarity);
+  wpEl.classList.remove('r3', 'r4', 'r5', 'r6', 'r7'); if (e) wpEl.classList.add('r' + e.rarity);
   [$('#wpSplash'), $('#wpBlur')].forEach(img => {
     if (e) { const src = wpSrc(w); if (img.getAttribute('src') !== src) img.src = src; img.hidden = false; }
     else { img.hidden = true; img.removeAttribute('src'); }

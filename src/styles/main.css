@@ -7146,3 +7146,23 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .pot-lines .pot-deco{display:none}
 .cs-traits .pot-ic,.stars-big .pot-ic,.skc-st .pot-ic,.pf-sl .pot-ic{width:.72em;height:.72em;bottom:76%}
 .cs-traits:has(.pot-ic) .stars6,.stars-big:has(.pot-ic) .stars6,.skc-st:has(.pot-ic) .stars6,.pf-sl:has(.pot-ic) .stars6{padding-top:.62em}
+
+/* ---------- XR: the top skin rarity, bright red, above UR (RNAME[7]; skins only) ---------- */
+:root{--r7:#ff1f3d;--xr:linear-gradient(120deg,#ff0022,#ff3b30 40%,#ff7a6a 70%,#ff0022)}
+.r7{--rc:var(--r7)}
+.rtag.r7{background:linear-gradient(90deg,#ff0022,#ff4b3a,#ffb0a4,#ff0022);background-size:200% 100%;color:#fff;font-weight:700;text-shadow:0 1px 1px rgba(90,0,10,.6);box-shadow:0 0 14px rgba(255,31,61,.75),0 0 0 1px rgba(255,190,180,.55) inset;animation:shimmer 2.4s linear infinite}
+.card.r7,.scard.r7,.detail.r7 .detail-art,.ad-preview.r7 .frame,.pf-slot.r7{border-color:transparent;background:linear-gradient(180deg,color-mix(in srgb,#ff1f3d 32%,var(--ink-2)),var(--ink-2)) padding-box,var(--xr) border-box}
+.card.r7,.scard.r7{box-shadow:0 0 18px rgba(255,31,61,.55)}
+.dt-hero.r7{border-color:transparent;background:linear-gradient(160deg,color-mix(in srgb,#ff1f3d 30%,var(--ink-2)),#14060a) padding-box,var(--xr) border-box}
+.seg label.r7:has(input:checked){background:var(--xr);color:#fff;box-shadow:0 0 12px rgba(255,31,61,.55)}
+.sg.r7{--sg1:#ff9a8f;--sg2:#ff1f3d}
+.rw.r7{color:#ff3348;text-shadow:0 0 8px rgba(255,31,61,.55)}
+.inv-cell.r7 .inv-pic,.mall-ic.r7{background:linear-gradient(180deg,#2c2c38 0%,#2c2c38 45%,#ff1f3d 78%,#ff8a7a 100%)}
+.pf-thumb.r7,.skb-art.r7,.ex-av.r7{border-color:#ff1f3d;box-shadow:0 0 12px rgba(255,31,61,.55)}
+.cp-card.r7{border-color:rgba(255,60,80,.6)}
+.ofp-fc.r7{border-color:#ff1f3d;box-shadow:0 0 14px rgba(255,31,61,.55)}
+.rv.r7 .rv-flash{background:radial-gradient(circle,#fff 0 10%,transparent 60%),conic-gradient(rgba(255,0,34,.85),rgba(255,122,106,.85),rgba(255,0,34,.85))}
+.rv.r7 .rv-splash{animation:rvZoom .9s cubic-bezier(.2,.9,.3,1) both,impact .45s .05s ease-out}
+.smx-name.r7{background:linear-gradient(100deg,#fff2f0,#ff9a8f 35%,#ff1f3d 75%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+@media (prefers-reduced-motion:reduce){.rtag.r7{animation:none}}
+.seg label.r7:has(input:checked) .rw.r7{color:#fff;text-shadow:none}

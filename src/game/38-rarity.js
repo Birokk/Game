@@ -2,7 +2,7 @@
    Every "UR" / "SSR" written in the game's text (also "UR+", "URs", "SSR → UR", milestone and shop text, toasts…) is shown
    in its rarity colour: UR in the prism gradient, SSR in orange (.rw.r5 / .rw.r4). Done once for the whole page by a
    MutationObserver that wraps the words in new text; rarity badges and places that already style them are skipped (RW_SKIP). */
-const RW_RE = /\b(SSR|UR)(\+)?(?=s?(?:[^A-Za-z0-9]|$))/g;
+const RW_RE = /\b(SSR|UR|XR)(\+)?(?=s?(?:[^A-Za-z0-9]|$))/g;
 const RW_SKIP = '.rtag,.cs-badge,.rw,.u,.stamp,.sx-word,.mall-word,.grade,.up-pre,.up-word,.rp-tag,.inv-rt,.vipb,.ctag,.sum-mw,[data-norw],input,textarea,select,option,script,style,svg,canvas,[contenteditable]';
 function rwText(node) {
   const t = node.nodeValue; if (!t || t.indexOf('R') < 0) return;
@@ -11,7 +11,7 @@ function rwText(node) {
   const frag = document.createDocumentFragment(); let last = 0; RW_RE.lastIndex = 0; let m;
   while ((m = RW_RE.exec(t))) {
     if (m.index > last) frag.appendChild(document.createTextNode(t.slice(last, m.index)));
-    const sp = document.createElement('span'); sp.className = `rw ${m[1] === 'UR' ? 'r5' : 'r4'}`; sp.textContent = m[0]; frag.appendChild(sp);
+    const sp = document.createElement('span'); sp.className = `rw ${m[1] === 'UR' ? 'r5' : m[1] === 'XR' ? 'r7' : 'r4'}`; sp.textContent = m[0]; frag.appendChild(sp);
     last = m.index + m[0].length;
   }
   if (last < t.length) frag.appendChild(document.createTextNode(t.slice(last)));

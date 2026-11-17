@@ -165,7 +165,7 @@ function renderPoolTab() {
           <label class="field"><span>Name</span><input class="input" id="adName" maxlength="40" placeholder="e.g. Sora"><span class="err" id="adNameErr" hidden>Give it a name first.</span></label>
           <label class="field" id="adParentWrap" hidden><span>Skin for</span><select class="input" id="adParent"></select></label>
           <div id="adSkins" hidden></div>
-          <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5, 6].map(r => `<label class="r${r}" ${r === 6 ? 'id="adMR"' : ''}><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
+          <div class="field"><span>Rarity</span><div class="seg" id="adRarity">${[4, 5, 7, 6].map(r => `<label class="r${r}" ${r === 6 ? 'id="adMR"' : r === 7 ? 'id="adXR"' : ''}><input type="radio" name="adR" value="${r}">${RNAME[r]}</label>`).join('')}</div></div>
           <label class="field"><span>Description</span><textarea class="input" id="adDesc" maxlength="240" placeholder="One or two lines of lore"></textarea></label>
           <fieldset class="looks"><legend class="lbl-sm" id="lkLegend">Plaza look</legend>
             <label id="lkKindWrap" hidden>Pet<select class="input" id="lkKind">${Object.entries(PET_KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label><label id="adPbWrap" hidden>Pet bonus<select class="input" id="adPb"><option value="">By its kind</option>${Object.entries(PB_TYPES).map(([k, v]) => `<option value="${k}">${v[0]} · ${v[2]}% ${v[1]}</option>`).join('')}</select></label>
@@ -311,8 +311,8 @@ function adminPreview() {
   $('#adSigWrap').hidden = r !== 5 || $('#adType').value !== 'character';
   $('#adSigMemWrap').hidden = $('#adAttrWrap').hidden = $('#adSkillWrap').hidden = $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
-  $('#adMR').hidden = $('#adType').value !== 'skin';
-  if ($('#adType').value !== 'skin' && r === 6) document.querySelector('input[name=adR][value="5"]').checked = true;
+  $('#adMR').hidden = $('#adXR').hidden = $('#adType').value !== 'skin';
+  if ($('#adType').value !== 'skin' && (r === 6 || r === 7)) document.querySelector('input[name=adR][value="5"]').checked = true;
 }
 async function saveAdmin(ev) {
   ev.preventDefault();
@@ -453,7 +453,7 @@ function showImport() {
     const pool = d && (Array.isArray(d) ? d : d.pool);
     if (!Array.isArray(pool) || !pool.every(e => e && e.name && e.id)) { err.hidden = false; err.textContent = 'That text is not valid game data. Paste the full text from Copy data.'; return; }
     for (const e of pool) {
-      e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) || (+e.rarity === 6 && e.type === 'skin') ? +e.rarity : 4;
+      e.type = TYPES[e.type] ? e.type : e.type === 'weapon' ? 'item' : 'character'; e.rarity = [4, 5].includes(+e.rarity) || ([6, 7].includes(+e.rarity) && e.type === 'skin') ? +e.rarity : 4;
       delete e.element; e.look = { ...blankLook(), ...e.look }; if (e.pullable === undefined) e.pullable = true;
       for (const k of ['art', 'art3', 'art6', 'getArt', 'icon']) { const mk = `${k === 'getArt' ? 'get' : k === 'icon' ? 'face' : k}:${e.id}`; if (e[k] && e[k].startsWith('data:')) { await mediaSet(mk, e[k]); e[k] = `idb:${mk}`; } else if (e[k] && !MEDIA.has(e[k].slice(4))) e[k] = null; }
     }
@@ -617,7 +617,7 @@ function renderSkinsTab() {
         ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head">
             <input class="input sk-nm" data-sknm="${esc(k.id)}" maxlength="30" value="${esc(short(k, c))}" aria-label="Skin name">
             ${k.rarity === 6 ? `<span class="row" style="gap:6px">${rtag(6)}<span class="tiny">Unlocked by marriage</span></span>`
-              : `<div class="seg sk-rar">${[4, 5].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div><span class="tiny">Buyable for ${SKIN_PRICE} pearls</span>`}
+              : `<div class="seg sk-rar">${[4, 5, 7].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div><span class="tiny">Buyable for ${skinPrice(k)} pearls</span>`}
             <span class="row" style="gap:10px"><button class="link" data-skpv="${esc(k.id)}">Preview</button>${k.rarity === 6 ? '' : `<button class="link" data-skdel="${esc(k.id)}" style="color:${skDelArm === k.id ? '#ff6b81' : ''}">${skDelArm === k.id ? 'Tap again to delete' : 'Delete'}</button>`}</span></div>
           ${slot(k, 'art', 'Full art', 'Shown everywhere')}${slot(k, 'getArt', 'Unlock art', 'Only when bought or received')}</div>`).join('') : '<p class="tiny">No skins yet.</p>'}</div>`; }).join('')}
   </div>`;

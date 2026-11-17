@@ -208,7 +208,7 @@ const ICON_SLOTS = [
 const CUR_KEYS = ['coins', 'pearls', 'tickets', 'wishes', 'rings', 'bottles', 'dust', 'starlight'];
 
 const RARITY = { 3:{ color:'#74c7ff' }, 4:{ color:'#ffaa5c' }, 5:{ color:'#c77dff' }, 6:{ color:'#ff4f7b' } };
-const RNAME = { 4: 'SSR', 5: 'UR', 6: 'MR' };
+const RNAME = { 4: 'SSR', 5: 'UR', 6: 'MR', 7: 'XR' };   // XR (7): the top skin rarity, bright red, above UR (skins only)
 const rtag = (r, cls = '') => RNAME[r] ? `<span class="rtag r${r} ${cls}">${RNAME[r]}</span>` : '';
 const TYPES = { character:'Character', skin:'Skin', pet:'Pet', collectible:'Collectible', item:'Item' };
 const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Ponytail', 'Bun'];
@@ -330,7 +330,7 @@ let S = (() => {
         s.bond = d.bond || {}; s.monthly = { ...fresh.monthly, ...(d.monthly || {}) }; s.ach = d.ach || []; s.redeemed = d.redeemed || []; s.equip = d.equip || {}; s.clothes = d.clothes || []; s.wear = d.wear || {}; s.memories = d.memories || []; s.memEq = d.memEq || {}; s.bt = d.bt || {}; s.btPaid = d.btPaid || {}; s.freePull = d.freePull || {}; s.support = d.support || []; s.artPick = d.artPick || {}; s.spin = { ...fresh.spin, ...(d.spin || {}) }; s.gifts = { ...fresh.gifts, ...(d.gifts || {}) };
         s.stamina = { ...fresh.stamina, ...(d.stamina || {}) }; s.login = { ...fresh.login, ...(d.login || {}) };
         s.profile = { ...fresh.profile, ...(d.profile || {}) }; if (!Array.isArray(s.profile.showcase)) s.profile.showcase = []; s.profile.showcase = Array.from({ length: 5 }, (_, i) => s.profile.showcase[i] || null);
-        s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if (+e.rarity === 6 && e.type !== 'skin') e.rarity = 5; });
+        s.pool.forEach(e => { delete e.element; if (e.type === 'weapon') e.type = 'item'; if (e.pullable === undefined) e.pullable = true; if (+e.rarity < 4) e.rarity = 4; if ((+e.rarity === 6 || +e.rarity === 7) && e.type !== 'skin') e.rarity = 5; });
         if ((d.version || 1) < 3 && !s.pool.some(e => e.standard)) fresh.pool.filter(e => e.standard && !s.pool.some(x => x.id === e.id)).forEach(e => s.pool.push(e));
         if ((d.version || 1) < 4 && !s.pool.some(e => e.type === 'pet')) fresh.pool.filter(e => e.type === 'pet').forEach(e => s.pool.push(e));
         s.pets = { ...fresh.pets, ...(d.pets || {}) }; s.pets.frags = { ...fresh.pets.frags, ...s.pets.frags };

@@ -3,7 +3,7 @@
      owning it        SSR 1,000 · UR 2,000
      each star        SSR   300 · UR   500   (up to 6)
      each awakened    SSR   500 · UR   800   (Breakthrough stars switched on)
-     each owned skin  SSR   400 · UR   800 · MR 1,000   (by the skin's rarity; 3★ / 6★ splash arts don't count)
+     each owned skin  SSR   400 · UR   800 · MR 1,000 · XR 1,500   (by the skin's rarity; 3★ / 6★ splash arts don't count)
      each worn piece  R 100 · SSR 250 · UR 600 / 800 / 1,000 by star, and a full 6-piece set of the same clothes adds R 2,000 · SSR 3,000 · UR 4,000 (5,000 if all 3★)
      pet with them    SSR   600 · UR 1,200, plus SSR 100 · UR 200 per pet star
      memory equipped  SSR   500 · UR 1,000
@@ -12,7 +12,7 @@
    character's stars get a "+" in the grade's colour (csPlus). */
 const CS_PTS = {
   base: { 4: 1000, 5: 2000 }, star: { 4: 300, 5: 500 }, bt: { 4: 500, 5: 800 },
-  skin: { 4: 400, 5: 800, 6: 1000 }, cloth: { 3: 100, 4: 250, 5: 600 }, set: { 3: 2000, 4: 3000, 5: 4000 },
+  skin: { 4: 400, 5: 800, 6: 1000, 7: 1500 }, cloth: { 3: 100, 4: 250, 5: 600 }, set: { 3: 2000, 4: 3000, 5: 4000 },
   pet: { 4: 600, 5: 1200 }, petStar: { 4: 100, 5: 200 }, mem: { 4: 500, 5: 1000 }, bond: { 4: 250, 5: 400 }
 };
 /* worn pieces: R 100, SSR 250, UR by its star 600 / 800 / 1,000; a full set of one set: R 2,000, SSR 3,000, UR 4,000, all 3★ UR 5,000 */
@@ -106,14 +106,14 @@ function csCard(c) {
     <div class="cs-parts">${parts.map(x => `<span class="${x.extra ? 'cs-extra' : ''}"><em>${esc(x.label)}</em><b>+${fmt(x.pts)}</b></span>`).join('')}</div></div>`;
 }
 function openCSInfo() {
-  const row = (l, k, rs) => `<tr><td>${l}</td>${[3, 4, 5, 6].map(r => `<td>${rs.includes(r) && CS_PTS[k][r] ? fmt(CS_PTS[k][r]) : '–'}</td>`).join('')}</tr>`;
+  const row = (l, k, rs) => `<tr><td>${l}</td>${[3, 4, 5, 6, 7].map(r => `<td>${rs.includes(r) && CS_PTS[k][r] ? fmt(CS_PTS[k][r]) : '–'}</td>`).join('')}</tr>`;
   openModal({ title: 'Character Score (CS)', ic: 'info', kind: 'csinfo', body: `<div class="stack">
     <p class="desc">Every character has a <b>CS</b>: points for everything it owns or wears. Rarer things give more. The total sets its grade, from F up to SSS.</p>
     <div class="cs-grades">${CS_GRADES.map(([g, min], i) => `<div>${gradeTag(g)}<b>${fmt(min)}</b><small>${CS_GRADES[i + 1] ? `to ${fmt(CS_GRADES[i + 1][1] - 1)}` : 'and up'}</small></div>`).join('')}<div class="cs-urplus ssr"><span class="rtag r4 plus">SSR<i>+</i></span><b>${fmt(SSR_PLUS_CS)}</b><small>SSR characters</small></div><div class="cs-urplus"><span class="rtag r5 plus">UR<i>+</i></span><b>${fmt(UR_PLUS_CS)}</b><small>UR characters</small></div></div>
-    <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th></tr></thead><tbody>
+    <table class="cs-table"><thead><tr><th>Source</th><th>R</th><th>SSR</th><th>UR</th><th>MR</th><th>XR</th></tr></thead><tbody>
       ${row('Owning the character', 'base', [4, 5])}${row('Each star (up to 6)', 'star', [4, 5])}${row('Each awakened Breakthrough star', 'bt', [4, 5])}
-      ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td></tr>
-      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Each star of the equipped memory</td><td>–</td><td>200</td><td>200</td><td>–</td></tr><tr><td>Equipped memory is one of the character's signature memories</td><td>–</td><td>500</td><td>500</td><td>–</td></tr><tr><td>Each Potential upgrade</td><td>–</td><td>100</td><td>100</td><td>–</td></tr><tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td></tr>
+      ${row('Each owned skin (by its rarity; star splash arts don\'t count)', 'skin', [4, 5, 6, 7])}<tr><td>Each worn wardrobe piece (UR: 1★ 600 · 2★ 800 · 3★ 1,000)</td><td>100</td><td>250</td><td>600–1,000</td><td>–</td><td>–</td></tr>${row('Full 6-piece set of the same clothes', 'set', [3, 4, 5])}<tr><td>Full set of 3★ UR pieces</td><td>–</td><td>–</td><td>5,000</td><td>–</td><td>–</td></tr>
+      ${row('Pet with the character', 'pet', [4, 5])}${row('Each star of that pet', 'petStar', [4, 5])}${row('Equipped memory', 'mem', [4, 5])}${row('Each bond level (up to 10)', 'bond', [4, 5])}<tr><td>Each star of the equipped memory</td><td>–</td><td>200</td><td>200</td><td>–</td><td>–</td></tr><tr><td>Equipped memory is one of the character's signature memories</td><td>–</td><td>500</td><td>500</td><td>–</td><td>–</td></tr><tr><td>Each Potential upgrade</td><td>–</td><td>100</td><td>100</td><td>–</td><td>–</td></tr><tr><td>Wearing the character's full signature set</td><td>–</td><td>–</td><td>1,000</td><td>–</td><td>–</td></tr><tr><td>Each SSS star (SSS grade only; not counted toward the grade)</td><td>–</td><td>1,000</td><td>1,000</td><td>–</td><td>–</td></tr>
     </tbody></table>
     <h4 class="cs-lh">CS brackets in Card Battles</h4><p class="tiny">A deck's leader brings extra battle stats for its CS: every 5,000 CS up to 30,000, then at 40,000 and 50,000 (on top of the other build bonuses' caps).</p>${typeof csLeadTable === 'function' ? csLeadTable(null) : ''}
     <p class="tiny">The rarity in each column is the rarity of the character, skin, clothing piece, pet or memory. A brand-new UR starts at 2,000 CS (grade E). SSS takes a fully built UR: 6★ with every star awakened, a full UR set, a UR pet, a UR memory, max bond and several skins. From grade S a <b>+</b> appears after the character's stars, gold for S, prism for SS and red for SSS.</p>

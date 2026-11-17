@@ -53,7 +53,7 @@ function selectSkin(c, id) {
     ${o.own ? (o.on ? `<button class="btn ghost" disabled>${icon('check')}Equipped</button>` : `<button class="btn gold" id="skEquip">${icon('hanger')}Equip ${esc(label.toLowerCase() === 'default outfit' ? 'default outfit' : label)}</button>`)
       : o.stars ? `<div class="cs-pill">${icon('lock')} Unlocks at ${o.stars} stars · ${esc(c.name)} has ${starsOf(c.id)}</div>`
       : !buyable(o.entry) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
-      : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>`}
+      : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(skinPrice(o.entry))}</button>`}
     ${o.own ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === wallId ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
   const eb = $('#skEquip'); if (eb) eb.onclick = () => {
     if (o.kind === 'skin') S.equip[c.id] = o.entry.id;
@@ -114,7 +114,7 @@ function renderCharacters() {
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
         : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:#ff9ec4">${curIcon('rings')} Unlocked by marrying ${esc(c.name)}</div>`
-        : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
+        : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(skinPrice(shown))}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
   } else if (csTab === 'skins') {
     const cards = outfitCards(c);
