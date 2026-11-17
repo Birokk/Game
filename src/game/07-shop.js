@@ -1,7 +1,20 @@
 /* ---------- shop: Corals exchange, Seaweeds shop, monthly pulls ---------- */
 const SHOP_TICKET = 10, MONTHLY_LIMIT = 5, MONTHLY_PRICE = 75;
 const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthKey(), limited: 0, standard: 0 }; return S.monthly; }
+function monthly() { if (S.monthly.key !== monthKey()) S.monthly = { key: monthKey(), limited: 0, standard: 0, mats: {} }; S.monthly.mats = S.monthly.mats || {}; return S.monthly; }
+/* Seaweeds shop materials with a monthly limit (the owner's ask): [id, wallet key, amount, Seaweeds, buys a month, name, rarity].
+   Bought counts in S.monthly.mats {id: n}, reset with the monthly pulls on the 1st; granted through guildGrant / bpGrant. */
+const SW_MATS = [
+  ['thread', 'thread', 20, 30, 10, 'Thread ×20', 3],
+  ['coins', 'coins', 10000, 25, 10, '10,000 gold', 3],
+  ['bottle', 'bottles', 1, 60, 5, 'Stamina bottle', 4],
+  ['ictk', 'ictk', 1, 40, 5, 'Instant clear ticket', 4],
+  ['cfssr', 'cfssr', 5, 50, 6, 'SSR character fragments ×5', 4],
+  ['fragssr', 'fragssr', 2, 40, 5, 'SSR egg fragments ×2', 4],
+  ['cfur', 'cfur', 2, 120, 5, 'UR character fragments ×2', 5],
+  ['fragur', 'fragur', 1, 80, 5, 'UR egg fragment', 5],
+];
+const swMatLeft = x => x[4] - (monthly().mats[x[0]] || 0);
 const nextMonthIn = () => { const n = new Date(), r = new Date(n.getFullYear(), n.getMonth() + 1, 1), d = Math.ceil((r - n) / 864e5); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
 const DUST_GIFTS = { sweets: 5, bracelet: 10, plush: 20 };
 /* full-screen shop: sidebar of sub-shops on the left, the chosen one on the right (Hot Picks = featured outfits over their art) */
@@ -175,6 +188,9 @@ function renderShop() {
     <h3 class="mall-h">Monthly pulls</h3><p class="tiny">${MONTHLY_LIMIT} pulls per banner every month for ${MONTHLY_PRICE} Seaweeds each. Stock resets on the 1st (${nextMonthIn()}).</p>
     <div class="mall-grid">${['limited', 'standard'].map(bk => { const left = MONTHLY_LIMIT - m[bk];
       return item('mo-' + bk, TK(bk), `Monthly ${TK_NAME[TK(bk)]}`, `${left} / ${MONTHLY_LIMIT} left this month`, MONTHLY_PRICE, 'dust', left <= 0 ? 'soldout' : '', bk === 'limited' ? 5 : 4); }).join('')}</div>
+    <h3 class="mall-h">Monthly materials</h3><p class="tiny">Materials for Seaweeds, each with its own limit every month. Stock resets on the 1st (${nextMonthIn()}).</p>
+    <div class="mall-grid">${SW_MATS.map(x => { const left = swMatLeft(x);
+      return item('sm-' + x[0], x[1], x[5], `${left} / ${x[4]} left this month`, x[3], 'dust', left <= 0 ? 'soldout' : '', x[6]); }).join('')}</div>
     <h3 class="mall-h">Gifts</h3><p class="tiny">Tap one to choose how many to buy.</p>
     <div class="mall-grid">${Object.entries(DUST_GIFTS).map(([k, p], i) => item('dg-' + k, 'g' + k, GIFTS[k].name, `Gift · +${GIFTS[k].xp} bond · ${S.gifts[k]} in bag`, p, 'dust', '', 3 + i)).join('')}</div>`;
   const oldBg = shopEl.querySelector('.mallx-bg'), ob = shopEl.querySelector('.mall-body'), os = shopEl.querySelector('.mall-side');
@@ -301,6 +317,7 @@ function buyShop(id) {
   else if (id === 'pn-name') { if (W.pearls < NAMETK_PEARLS) { toast(`A name change ticket costs ${NAMETK_PEARLS} pearls. You have ${fmt(W.pearls)}.`); return; } W.pearls -= NAMETK_PEARLS; W.nametk = (W.nametk || 0) + 1; msg = 'Bought 1 name change ticket.'; }
   else if (id === 'sn-name') { if (!pay('starlight', NAMETK_CORALS)) return; W.nametk = (W.nametk || 0) + 1; msg = 'Bought 1 name change ticket.'; }
   else if (id === 'pr-ring') { buyRing('pearls'); return; }
+  else if (id.startsWith('sm-')) { const x = SW_MATS.find(r => r[0] === id.slice(3)); if (!x || swMatLeft(x) <= 0) return; if (!pay('dust', x[3])) return; const m = monthly(); m.mats[x[0]] = (m.mats[x[0]] || 0) + 1; guildGrant({ [x[1]]: x[2] }); msg = `Bought ${x[5]}.`; }
   else if (id.startsWith('mo-')) { const bk = id.slice(3), m = monthly(); if (m[bk] >= MONTHLY_LIMIT) return; if (!pay('dust', MONTHLY_PRICE)) return; m[bk]++; W[TK(bk)]++; msg = `Bought 1 monthly ${TK_NAME[TK(bk)].toLowerCase()}.`; }
   persist(); renderMenu(); refreshSummon(); renderShop(); toast(msg);
 }

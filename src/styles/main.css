@@ -7056,3 +7056,8 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .ssa-skin .rtag{font-size:9px}
 .ssa-skin.on{background:linear-gradient(90deg,color-mix(in srgb,var(--ssc) 35%,transparent),rgba(255,255,255,.05));border-color:var(--ssc)}
 .ssa-skin>i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--ssc);color:#120c26}.ssa-skin>i svg{width:11px;height:11px}
+
+/* shop Hot Picks: a long outfit name widened the right column and stretched the price bar over the art (the owner's screenshot) */
+.mall-hot-name{max-width:min(620px,48vw)}
+.mall-hot-name h1{overflow-wrap:anywhere}
+@media (min-width:761px){.mall-hot .mall-price{justify-self:end}}
