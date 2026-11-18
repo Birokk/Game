@@ -6,3 +6,4 @@ dist
 backups/
 tests/economy/*.json
 public/backup/
+blank-project-source.zip
