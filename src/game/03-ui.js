@@ -16,12 +16,20 @@ function toast(msg, error) {
    broken feature (a weekly settlement, a simulation) can't stop the home screen from drawing. */
 const ERR_LOG = [];
 let errToastAt = 0;
+/* what a rejection reason says: an Error's message, or for a DOM event (an image / file / database error) its type and target */
+function errText(err) {
+  if (err && err.message) return String(err.message);
+  if (err && typeof Event !== 'undefined' && err instanceof Event) { const t = err.target || {}; return `${err.type} event on ${t.tagName || t.constructor && t.constructor.name || 'object'}${t.src ? ' ' + String(t.src).slice(0, 80) : ''}${t.error && t.error.message ? ': ' + t.error.message : ''}`; }
+  if (err && typeof err === 'object') { try { return JSON.stringify(err).slice(0, 200); } catch (e) {} }
+  return String(err == null ? 'Unknown error (no reason given)' : err);
+}
 function noteError(err, where) {
-  const msg = String(err && err.message || err || 'Unknown error');
-  if (/ResizeObserver loop|^Script error\.?$/.test(msg)) return;   // harmless browser noise
+  const msg = errText(err);
+  if (/ResizeObserver loop|^Script error\.?$|\[vite\]|WebSocket closed without opened|Failed to fetch dynamically imported module/.test(msg)) return;   // harmless browser / dev server noise
+  try { console.error('[game error]', where || '', err); } catch (e) {}
   ERR_LOG.unshift({ t: Date.now(), msg: msg.slice(0, 300), where: where || '', stack: String(err && err.stack || '').split('\n').slice(1, 4).join(' | ').slice(0, 300) });
   if (ERR_LOG.length > 30) ERR_LOG.length = 30;
-  if (Date.now() - errToastAt > 15000) { errToastAt = Date.now(); toast(`Something went wrong${where ? ` (${where})` : ''}. If it keeps happening, tell us in Support.`, true); }
+  if (Date.now() - errToastAt > 15000) { errToastAt = Date.now(); toast(`Something went wrong${where ? ` (${where})` : ''}: ${msg.slice(0, 120)}`, true); }
 }
 addEventListener('error', e => noteError(e.error || e.message, e.filename ? 'script' : ''));
 addEventListener('unhandledrejection', e => noteError(e.reason, 'async'));

@@ -366,7 +366,7 @@ function applyContent(c) {
   if (typeof titleSync === 'function') titleSync();   // the titles editor (71-titles.js)
   if (typeof frameSync === 'function') frameSync();   // the avatar frames editor (72-frames.js)
   lastContentJSON = JSON.stringify(splitState(S).content);
-  localStorage.setItem(CONTENT_KEY, lastContentJSON);
+  try { localStorage.setItem(CONTENT_KEY, lastContentJSON); } catch (e) { console.warn('Content too big for browser storage', e); }
 }
 const featured = () => S.pool.find(e => e.id === S.featuredId) || S.pool.find(e => e.type === 'character' && e.rarity === 5) || S.pool[0];
 /* the two main characters are pool entries mc-f / mc-m; only the chosen one (and its skins) counts as owned */
