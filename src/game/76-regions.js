@@ -1,4 +1,8 @@
-/* ---------- World map regions: a page of their own with a map and a short campaign (the owner's ask) ----------
+/* ---------- World map regions: a page of their own with a map, places on it and a short campaign (the owner's ask) ----------
+   v2 (the owner's ask: "the main tab is a map of the region with buttons for specific stuff like a main lobby, battles…"):
+   the page opens on its **Map** tab = the region's own map picture (`region:<id>`) with a button per place (RG_SPOTS, placed
+   by the admin, S.farmLayout['rgp:<id>:<spot>']); for now the only place is **Battles**, which opens the **Battles** tab =
+   the 3 stages on their own picture (`region:b:<id>`, size S.regionMaps['b:<id>']). More places (main lobby…) come later.
    Tapping a region on the world map (56-clash-world.js) opens its page: the admin's own wallpaper for that region
    (media `region:<id>`, its size in content S.regionMaps[id] = {w, h}; without one a drawn backdrop in the region's
    colour) used as a map, with one button per stage placed by the admin (S.farmLayout['rg:<id>:<n>'] = {x, y}, % of the
@@ -93,22 +97,32 @@ const rgState = s => { const k = ccCampN(s.id); return ccCampOpen(s) ? (ccCampHa
 { const o = startClash; startClash = function () { if (rgEl) { rgEl.remove(); rgEl = null; } return o.apply(this, arguments); }; }
 
 /* ---------- the region page: its map with the stage buttons, and the stage panel ---------- */
-let rgEl = null, rgId = null, rgSel = null;
-const rgDim = id => { const d = (S.regionMaps || {})[id]; return MEDIA.get('region:' + id) && d && d.w > 0 && d.h > 0 ? d : { w: 1600, h: 900 }; };
+let rgEl = null, rgId = null, rgSel = null, rgView = 'map';
+/* the two pictures: the region map (`region:<id>`, dims key <id>) and the battles map (`region:b:<id>`, dims key b:<id>) */
+const rgKey = (id, bat) => bat ? 'region:b:' + id : 'region:' + id;
+const rgDim = (id, bat) => { const d = (S.regionMaps || {})[(bat ? 'b:' : '') + id]; return MEDIA.get(rgKey(id, bat)) && d && d.w > 0 && d.h > 0 ? d : { w: 1600, h: 900 }; };
+/* the places on the region map (more later: a main lobby, shops…) */
+const RG_SPOTS = [{ id: 'battles', name: 'Battles', ic: 'swords', at: [50, 58], sub: id => `${RG_N} stages · ${rgStars(id)} / ${RG_N * 3} stars`, dot: id => rgReady(id) }];
+const rgSpotAt = (id, sp) => { const p = (S.farmLayout || {})[`rgp:${id}:${sp.id}`]; return p ? [p.x, p.y] : sp.at; };
+const rgSpotIc = (id, sp) => customIcon(`rgs-${id}-${sp.id}`) ? `<img src="${customIcon(`rgs-${id}-${sp.id}`)}" alt="">` : icon(sp.ic);
 const RG_POS_DEF = [[22, 66], [50, 40], [78, 60]];
 const rgAt = (id, n) => { const p = (S.farmLayout || {})[`rg:${id}:${n}`]; return p ? [p.x, p.y] : RG_POS_DEF[n - 1]; };
-function openRegion(id, sel) {
+function openRegion(id, sel, view) {
   const r = wmReg(id); if (!r || !rgCh(id)) return;
   closeModal(); ccSave(); if (wmEl) { wmEl.remove(); wmEl = null; }
   if (!rgEl) { rgEl = document.createElement('div'); rgEl.className = 'cmp rgn'; rgEl.setAttribute('role', 'dialog'); document.body.appendChild(rgEl); }
   rgEl.setAttribute('aria-label', r.name);
   const L = rgStages(id), open = L.filter(ccCampOpen);
   if (rgId !== id) rgSel = null;
+  rgView = view || (sel ? 'battles' : 'map');
   rgId = id; rgSel = sel || (L.find(s => s.id === rgSel) ? rgSel : null) || (open.find(s => !ccCampHave(s.id)[0]) || open[open.length - 1] || L[0]).id;
   renderRegion();
 }
 function closeRegion(toMap = true) { if (rgEl) { rgEl.remove(); rgEl = null; } removeEventListener('resize', rgFit); if (toMap) openWorld(); }
-const rgBack = r => MEDIA.get('region:' + r.id) || MEDIA.get('world:map') || '';
+const rgBack = (r, bat) => (bat && MEDIA.get(rgKey(r.id, true))) || MEDIA.get(rgKey(r.id)) || MEDIA.get('world:map') || '';
+const rgDrawn = id => `<div class="rgn-draw"><i class="rgn-dglow"></i><span class="rgn-dic">${wmPin(id)}</span><i class="rgn-dmist m1"></i><i class="rgn-dmist m2"></i></div>`;
+function rgSpotHTML(id, sp) { const a = rgSpotAt(id, sp);
+  return `<button class="rgn-spot" data-rgspot="${sp.id}" style="left:${a[0]}%;top:${a[1]}%" aria-label="${esc(sp.name)}"><span class="rgn-sic">${rgSpotIc(id, sp)}${sp.dot(id) ? '<i class="cmp-dot"></i>' : ''}</span><b>${esc(sp.name)}</b><small>${esc(sp.sub(id))}</small></button>`; }
 function rgPinHTML(s, sel) {
   const k = rgState(s), a = rgAt(s.ch.region, s.no);
   return `<button class="rgn-pin ${k} ${s.boss ? 'boss' : ''} ${s.id === sel ? 'sel' : ''}" data-rgs="${s.id}" style="left:${a[0]}%;top:${a[1]}%" aria-label="Stage ${s.no}: ${esc(s.name)}${k === 'locked' ? ', locked' : ''}">
@@ -117,36 +131,58 @@ function rgPinHTML(s, sel) {
 }
 function renderRegion() {
   if (!rgEl) return;
-  const r = wmReg(rgId), ch = rgCh(rgId), L = rgStages(rgId), st = L.find(s => s.id === rgSel) || L[0], D = rgDim(rgId), up = MEDIA.get('region:' + rgId), back = rgBack(r);
-  const pts = L.map(s => rgAt(rgId, s.no)), path = pts.map((p, i) => `${i ? 'L' : 'M'}${(p[0] * D.w / 100).toFixed(1)} ${(p[1] * D.h / 100).toFixed(1)}`).join(' ');
-  const lit = Math.max(0, L.filter(s => ccCampHave(s.id)[0]).length);
+  const r = wmReg(rgId), ch = rgCh(rgId), L = rgStages(rgId), st = L.find(s => s.id === rgSel) || L[0], bat = rgView === 'battles', D = rgDim(rgId, bat), up = MEDIA.get(rgKey(rgId, bat)), back = rgBack(r, bat);
   rgEl.style.setProperty('--rc', r.col);
-  rgEl.innerHTML = `<div class="cmp-bg rgn-bg ${back ? 'has-art' : ''}">${back ? `<img class="cmp-bgart" src="${back}" alt="">` : ''}<i class="cmp-glow g1"></i><i class="cmp-glow g2"></i><i class="cmp-glow g3"></i></div>
-    <header class="cmp-head rgn-head"><div class="inv-title"><span class="inv-badge rgn-badge">${wmPin(rgId)}</span><h2 class="ts">${esc(r.name)}</h2></div>
-      <div class="twr-stats"><span class="twr-chip">${icon('map')}<small>Stages</small><b>${rgCleared(rgId)} / ${RG_N}</b></span><span class="twr-chip st">${CC_STAR_SVG}<b>${rgStars(rgId)}</b><small>/ ${RG_N * 3}</small></span></div>
-      <span class="cmp-sp"></span>${canAdmin() ? `<button class="btn ghost" id="rgAdm" title="Admin: the region's map and stage buttons">${icon('wrench')}<span class="twr-bl">Edit region</span></button>` : ''}
-      <button class="btn ghost" id="rgDeckB" title="Region deck">${icon('cards')}<span class="twr-bl">Region deck</span>${rgDeckOk(rgId) ? '' : '<i class="cmp-dot"></i>'}</button>
-      <button class="btn ghost" id="rgWorld" title="World map">${icon('compass')}<span class="twr-bl">World map</span></button>
-      <button class="inv-x" id="rgClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="rgn-stage"><div class="rgn-map ${up ? 'up' : ''}" style="--ar:${D.w}/${D.h}">
-        ${up ? `<img class="rgn-img" src="${up}" alt="" draggable="false">` : `<div class="rgn-draw"><i class="rgn-dglow"></i><span class="rgn-dic">${wmPin(rgId)}</span><i class="rgn-dmist m1"></i><i class="rgn-dmist m2"></i></div>`}
+  rgEl.classList.toggle('mapv', !bat);
+  const tab = (v, ic, txt, dot) => `<button class="cmp-cht ${rgView === v ? 'on' : ''}" data-rgv="${v}">${icon(ic)}${txt}${dot ? '<i class="cmp-dot"></i>' : ''}</button>`;
+  let body;
+  if (bat) {
+    const pts = L.map(s => rgAt(rgId, s.no)), path = pts.map((p, i) => `${i ? 'L' : 'M'}${(p[0] * D.w / 100).toFixed(1)} ${(p[1] * D.h / 100).toFixed(1)}`).join(' ');
+    const lit = L.filter(s => ccCampHave(s.id)[0]).length;
+    body = `<section class="rgn-stage"><div class="rgn-map ${up ? 'up' : ''}" data-w="${D.w}" data-h="${D.h}">
+        ${up ? `<img class="rgn-img" src="${up}" alt="" draggable="false">` : rgDrawn(rgId)}
         <svg class="rgn-path" viewBox="0 0 ${D.w} ${D.h}" preserveAspectRatio="none" aria-hidden="true"><path d="${path}" class="bg"/><path d="${path}" class="lit" pathLength="${Math.max(1, L.length - 1)}" style="stroke-dasharray:${lit} ${L.length}"/></svg>
         ${L.map(s => rgPinHTML(s, st.id)).join('')}
-        <span class="rgn-kind">${esc(r.kind)} · ${esc(ch.name)} campaign</span></div></section>
-    <aside class="cmp-side rgn-side">${rgPanel(st)}</aside>`;
+        <span class="rgn-kind">${icon('swords')}${esc(r.name)} · Battles</span></div></section>
+      <aside class="cmp-side rgn-side">${rgPanel(st)}</aside>`;
+  } else {
+    body = `<section class="rgn-stage"><div class="rgn-map ${up ? 'up' : ''}" data-w="${D.w}" data-h="${D.h}">
+        ${up ? `<img class="rgn-img" src="${up}" alt="" draggable="false">` : rgDrawn(rgId)}
+        ${RG_SPOTS.map(sp => rgSpotHTML(rgId, sp)).join('')}
+        <span class="rgn-kind">${icon('map')}${esc(r.kind)} · Region map</span></div></section>`;
+  }
+  rgEl.innerHTML = `<div class="cmp-bg rgn-bg ${back ? 'has-art' : ''}">${back ? `<img class="cmp-bgart" src="${back}" alt="">` : ''}<i class="cmp-glow g1"></i><i class="cmp-glow g2"></i><i class="cmp-glow g3"></i></div>
+    <header class="cmp-head rgn-head"><div class="inv-title"><span class="inv-badge rgn-badge">${wmPin(rgId)}</span><h2 class="ts">${esc(r.name)}</h2></div>
+      ${bat ? `<div class="twr-stats"><span class="twr-chip">${icon('map')}<small>Stages</small><b>${rgCleared(rgId)} / ${RG_N}</b></span><span class="twr-chip st">${CC_STAR_SVG}<b>${rgStars(rgId)}</b><small>/ ${RG_N * 3}</small></span></div>` : ''}
+      <span class="cmp-sp"></span>${canAdmin() ? `<button class="btn ghost" id="rgAdm" title="Admin: the region's maps and buttons">${icon('wrench')}<span class="twr-bl">Edit region</span></button>` : ''}
+      ${bat ? `<button class="btn ghost" id="rgDeckB" title="Region deck">${icon('cards')}<span class="twr-bl">Region deck</span>${rgDeckOk(rgId) ? '' : '<i class="cmp-dot"></i>'}</button>` : ''}
+      <button class="btn ghost" id="rgWorld" title="World map">${icon('compass')}<span class="twr-bl">World map</span></button>
+      <button class="inv-x" id="rgClose" aria-label="Close">${icon('close')}</button>
+      <nav class="cmp-chtabs rgn-tabs">${tab('map', 'map', 'Map')}${RG_SPOTS.map(sp => tab(sp.id, sp.ic, esc(sp.name), sp.dot(rgId))).join('')}</nav></header>
+    ${body}`;
   const q = s => rgEl.querySelector(s);
   q('#rgClose').onclick = () => closeRegion(false) || bthHome();
   q('#rgWorld').onclick = () => closeRegion(true);
-  q('#rgDeckB').onclick = () => rgDeckEdit(rgId);
-  const adm = q('#rgAdm'); if (adm) adm.onclick = () => openAdmin('regions');
+  const db = q('#rgDeckB'); if (db) db.onclick = () => rgDeckEdit(rgId);
+  const adm = q('#rgAdm'); if (adm) adm.onclick = () => { rgaId = rgId; openAdmin('regions'); };
+  rgEl.querySelectorAll('[data-rgv]').forEach(b => b.onclick = () => { rgView = b.dataset.rgv; renderRegion(); });
+  rgEl.querySelectorAll('[data-rgspot]').forEach(b => b.onclick = () => { rgView = b.dataset.rgspot; renderRegion(); });
   rgEl.querySelectorAll('[data-rgs]').forEach(b => b.onclick = () => { rgSel = b.dataset.rgs; renderRegion(); });
-  rgBindPanel(st); rgFit(); removeEventListener('resize', rgFit); addEventListener('resize', rgFit);
+  if (bat) rgBindPanel(st);
+  rgFit(); removeEventListener('resize', rgFit); addEventListener('resize', rgFit);
 }
 /* the map keeps the picture's shape and fits the stage (contain) */
 function rgFit() {
   const sg = rgEl && rgEl.querySelector('.rgn-stage'), m = sg && sg.querySelector('.rgn-map'); if (!m) return;
-  const D = rgDim(rgId), cs = getComputedStyle(sg), pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-  if (matchMedia('(max-width:640px),(orientation:portrait)').matches) sg.style.height = Math.round((sg.clientWidth - pad) * D.h / D.w + pad) + 'px'; else sg.style.height = '';   // portrait: the box hugs the map
+  const D = { w: +m.dataset.w || 1600, h: +m.dataset.h || 900 }, cs = getComputedStyle(sg), pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const port = matchMedia('(max-width:640px),(orientation:portrait)').matches, mapv = rgView !== 'battles';
+  if (port && mapv) {   // portrait, region map: the map fills the screen's height and scrolls sideways (it starts in the middle)
+    const h = Math.max(260, Math.round(innerHeight - sg.getBoundingClientRect().top - 14)); sg.style.height = h + 'px';
+    const k = (h - pad) / D.h; m.style.width = Math.floor(D.w * k) + 'px'; m.style.height = Math.floor(D.h * k) + 'px';
+    if (!sg._c) { sg._c = 1; sg.scrollLeft = (sg.scrollWidth - sg.clientWidth) / 2; }
+    return;
+  }
+  if (port) sg.style.height = Math.round((sg.clientWidth - pad) * D.h / D.w + pad) + 'px'; else sg.style.height = '';   // portrait battles: the box hugs the map
   const k = Math.min((sg.clientWidth - pad) / D.w, (sg.clientHeight - pad) / D.h);
   m.style.width = Math.floor(D.w * k) + 'px'; m.style.height = Math.floor(D.h * k) + 'px';
 }
@@ -210,38 +246,49 @@ WM_REGIONS.forEach(r => { r.open = true; });
 
 /* ---------- admin → Regions: each region's map picture and where its 3 stage buttons stand ---------- */
 let rgaId = 'plains';
+/* two sections per region: the region map (its picture + where each place button stands) and the battles map (its picture + the 3 stages) */
 function renderRegionsTab() {
   const p = $('#adPanel'); if (!p) return;
-  const R = WM_REGIONS.filter(r => rgCh(r.id)), r = wmReg(rgaId) || R[0], id = r.id, ch = rgCh(id), key = 'region:' + id, has = !!MEDIA.get(key), D = rgDim(id);
-  p.innerHTML = `<div class="stack"><p class="tiny">Every region on the world map opens its own page with a map and a campaign of ${RG_N} stages. Upload a picture for the region (any shape, it is shown whole; e.g. 1920×1080) and drag each stage button onto it. The region's set cards and its stages are listed below.</p>
+  const R = WM_REGIONS.filter(r => rgCh(r.id)), r = wmReg(rgaId) || R[0], id = r.id, ch = rgCh(id);
+  const sec = (bat) => { const key = rgKey(id, bat), has = !!MEDIA.get(key), D = rgDim(id, bat), sk = bat ? 'b' : 'm';
+    const items = bat ? ch.stages.map(s => ({ k: String(s.no), at: rgAt(id, s.no), pin: `<b>${s.no}</b>`, name: `Stage ${s.no} · ${s.name}`, sub: `${s.twist} · bot ${s.hp[1]} HP${s.boss ? ' · region boss' : ' · easy'}` }))
+      : RG_SPOTS.map(sp => ({ k: sp.id, at: rgSpotAt(id, sp), pin: rgSpotIc(id, sp), name: sp.name, sub: 'Opens the region\'s ' + sp.name.toLowerCase(), slot: `rgs-${id}-${sp.id}` }));
+    return `<h3 class="rga-h">${bat ? `${icon('swords')}Battles map` : `${icon('map')}Region map`}</h3>
+      <p class="tiny">${bat ? `What players see after tapping Battles: the ${RG_N} stages on their own picture.` : `The region's main tab: its own map with a button for each place (only Battles for now; more places like a main lobby come later).`} Any shape, shown whole (e.g. 1920×1080). Drag the buttons onto your picture.</p>
+      <div class="setx-list ad-art">${setRow(`${esc(r.name)} · ${bat ? 'battles' : 'region'} map`, `<label class="sx-btn">${icon('upload')}${has ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" data-rgaup="${sk}"></label>${has ? `<button type="button" class="sx-btn" data-rgadel="${sk}">${icon('trash')}Remove</button>` : ''}`, has ? `Your picture · ${D.w}×${D.h}` : 'Without one a drawn backdrop in the region\'s colour')}</div>
+      <div class="wma-prev rga-prev" style="aspect-ratio:${D.w}/${D.h};--rc:${r.col}">${has ? `<img class="wm-img" src="${MEDIA.get(key)}" alt="" draggable="false">` : rgDrawn(id)}
+        ${items.map(x => `<button class="wma-pin rga-pin" data-rgdrag="${sk}:${x.k}" style="left:${x.at[0]}%;top:${x.at[1]}%;--rc:${r.col}"><span class="wm-pin">${x.pin}</span><b>${esc(x.name)}</b></button>`).join('')}</div>
+      <div class="wma-list">${items.map(x => `<div class="wma-row" style="--rc:${r.col}"><span class="wm-pin">${x.pin}</span><div class="wma-f"><b>${esc(x.name)}</b><small>${esc(x.sub)}</small>
+          ${x.slot ? `<div class="afa-btns"><label class="sx-btn">${icon('upload')}${customIcon(x.slot) ? 'Replace icon' : 'Upload icon'}<input type="file" accept="image/*" class="sr" data-iconup="${x.slot}"></label>${customIcon(x.slot) ? `<button type="button" class="sx-btn" data-iconreset="${x.slot}">${icon('trash')}Default icon</button>` : ''}</div>` : ''}</div>
+        <div class="afa-sl">${[['x', 'Left / right', x.at[0]], ['y', 'Up / down', x.at[1]]].map(([k, n, v]) => `<label><span>${n}</span><input type="range" min="0" max="100" step=".25" value="${v}" data-rgk="${k}" data-rgn="${sk}:${x.k}"><em>${v}%</em></label>`).join('')}</div></div>`).join('')}</div>
+      <div class="row" style="gap:8px"><button class="btn ghost sm" data-rgareset="${sk}">${icon('refresh')}Default places</button><button class="btn sm" data-rgaopen="${bat ? 'battles' : 'map'}">${icon('compass')}Open ${bat ? 'Battles' : 'the region'}</button></div>`; };
+  p.innerHTML = `<div class="stack"><p class="tiny">Every region on the world map opens its own page. Its <b>Map</b> tab is the region's own map with buttons for its places; <b>Battles</b> opens a campaign of ${RG_N} stages played with the region deck.</p>
     <div class="row" style="gap:6px;flex-wrap:wrap">${R.map(x => `<button class="chip ${x.id === id ? 'on' : ''}" data-rga="${x.id}" style="--rc:${x.col}">${esc(x.name)}</button>`).join('')}</div>
-    <div class="setx-list ad-art">${setRow(`${esc(r.name)} map picture`, `<label class="sx-btn">${icon('upload')}${has ? 'Replace' : 'Upload'}<input type="file" accept="image/*" class="sr" id="rgaUp"></label>${has ? `<button type="button" class="sx-btn" id="rgaDel">${icon('trash')}Remove</button>` : ''}`, has ? `Your picture · ${D.w}×${D.h}` : 'Without one a drawn backdrop in the region\'s colour')}</div>
-    <div class="wma-prev rga-prev" id="rgaPrev" style="aspect-ratio:${D.w}/${D.h};--rc:${r.col}">${has ? `<img class="wm-img" src="${MEDIA.get(key)}" alt="" draggable="false">` : `<div class="rgn-draw"><i class="rgn-dglow"></i><span class="rgn-dic">${wmPin(id)}</span></div>`}
-      ${ch.stages.map(s => { const a = rgAt(id, s.no); return `<button class="wma-pin rga-pin" data-rgdrag="${s.no}" style="left:${a[0]}%;top:${a[1]}%;--rc:${r.col}"><span class="wm-pin"><b>${s.no}</b></span><b>${esc(s.name)}</b></button>`; }).join('')}</div>
-    <div class="wma-list">${ch.stages.map(s => { const a = rgAt(id, s.no);
-      return `<div class="wma-row" style="--rc:${r.col}"><span class="wm-pin"><b>${s.no}</b></span><div class="wma-f"><b>Stage ${s.no} · ${esc(s.name)}</b><small>${esc(s.twist)} · bot ${s.hp[1]} HP${s.boss ? ' · region boss' : ' · easy'}</small></div>
-        <div class="afa-sl">${[['x', 'Left / right', a[0]], ['y', 'Up / down', a[1]]].map(([k, n, v]) => `<label><span>${n}</span><input type="range" min="0" max="100" step=".25" value="${v}" data-rgk="${k}" data-rgn="${s.no}"><em>${v}%</em></label>`).join('')}</div></div>`; }).join('')}</div>
-    <div class="rga-cards"><b>Set cards (${RG_LOCK})</b><span>${[...new Set(ch.lock)].map(x => esc(ccDef(x).name) + ' ×2').join(' · ')}</span><b>Suggested picks (${RG_PICK})</b><span>${[...new Set(ch.picks)].map(x => esc(ccDef(x).name) + ' ×2').join(' · ')}</span></div>
-    <div class="row" style="gap:8px"><button class="btn ghost sm" id="rgaReset">${icon('refresh')}Default places</button><button class="btn sm" id="rgaOpen">${icon('compass')}Open the region</button></div></div>`;
+    ${sec(false)}${sec(true)}
+    <div class="rga-cards"><b>Set cards (${RG_LOCK})</b><span>${[...new Set(ch.lock)].map(x => esc(ccDef(x).name) + ' ×2').join(' · ')}</span><b>Suggested picks (${RG_PICK})</b><span>${[...new Set(ch.picks)].map(x => esc(ccDef(x).name) + ' ×2').join(' · ')}</span></div></div>`;
   p.querySelectorAll('[data-rga]').forEach(b => b.onclick = () => { rgaId = b.dataset.rga; renderRegionsTab(); });
-  const setPos = (n, x, y, save) => {
-    S.farmLayout = { ...(S.farmLayout || {}), [`rg:${id}:${n}`]: { x: Math.round(clamp(x, 0, 100) * 4) / 4, y: Math.round(clamp(y, 0, 100) * 4) / 4 } };
-    const a = rgAt(id, n), pin = p.querySelector(`[data-rgdrag="${n}"]`); pin.style.left = a[0] + '%'; pin.style.top = a[1] + '%';
-    p.querySelectorAll(`[data-rgn="${n}"]`).forEach(i => { const v = i.dataset.rgk === 'x' ? a[0] : a[1]; i.value = v; i.nextElementSibling.textContent = v + '%'; });
+  const lkey = sk => sk.startsWith('b:') ? `rg:${id}:${sk.slice(2)}` : `rgp:${id}:${sk.slice(2)}`;
+  const cur = sk => { const L = (S.farmLayout || {})[lkey(sk)]; if (L) return [L.x, L.y]; return sk.startsWith('b:') ? rgAt(id, +sk.slice(2)) : rgSpotAt(id, RG_SPOTS.find(x => x.id === sk.slice(2))); };
+  const setPos = (sk, x, y, save) => {
+    S.farmLayout = { ...(S.farmLayout || {}), [lkey(sk)]: { x: Math.round(clamp(x, 0, 100) * 4) / 4, y: Math.round(clamp(y, 0, 100) * 4) / 4 } };
+    const a = cur(sk), pin = p.querySelector(`[data-rgdrag="${sk}"]`); pin.style.left = a[0] + '%'; pin.style.top = a[1] + '%';
+    p.querySelectorAll(`[data-rgn="${sk}"]`).forEach(i => { const v = i.dataset.rgk === 'x' ? a[0] : a[1]; i.value = v; i.nextElementSibling.textContent = v + '%'; });
     if (save) { persist(); if (rgEl) renderRegion(); }
   };
-  p.querySelectorAll('[data-rgk]').forEach(i => { const n = +i.dataset.rgn;
-    i.oninput = () => { const a = rgAt(id, n); setPos(n, i.dataset.rgk === 'x' ? +i.value : a[0], i.dataset.rgk === 'y' ? +i.value : a[1], false); };
+  p.querySelectorAll('[data-rgk]').forEach(i => { const sk = i.dataset.rgn;
+    i.oninput = () => { const a = cur(sk); setPos(sk, i.dataset.rgk === 'x' ? +i.value : a[0], i.dataset.rgk === 'y' ? +i.value : a[1], false); };
     i.onchange = () => { persist(); if (rgEl) renderRegion(); }; });
   p.querySelectorAll('[data-rgdrag]').forEach(pin => pin.onpointerdown = e => {
     e.preventDefault(); pin.setPointerCapture(e.pointerId); const box = pin.parentElement, r0 = pin.querySelector('.wm-pin').getBoundingClientRect();
-    const ox = e.clientX - (r0.left + r0.width / 2), oy = e.clientY - (r0.top + r0.height / 2), n = +pin.dataset.rgdrag;
-    const move = ev => { const rr = box.getBoundingClientRect(); setPos(n, (ev.clientX - ox - rr.left) / rr.width * 100, (ev.clientY - oy - rr.top) / rr.height * 100, false); };
-    pin.onpointermove = move; pin.onpointerup = ev => { move(ev); pin.onpointermove = pin.onpointerup = null; const a = rgAt(id, n); setPos(n, a[0], a[1], true); };
+    const ox = e.clientX - (r0.left + r0.width / 2), oy = e.clientY - (r0.top + r0.height / 2), sk = pin.dataset.rgdrag;
+    const move = ev => { const rr = box.getBoundingClientRect(); setPos(sk, (ev.clientX - ox - rr.left) / rr.width * 100, (ev.clientY - oy - rr.top) / rr.height * 100, false); };
+    pin.onpointermove = move; pin.onpointerup = ev => { move(ev); pin.onpointermove = pin.onpointerup = null; const a = cur(sk); setPos(sk, a[0], a[1], true); };
   });
-  $('#rgaUp').onchange = async ev => { try { const u = await resizeImage(ev.target.files[0]), d = await wmImgSize(u);
-    if (d && await mediaSet(key, u)) { S.regionMaps = { ...(S.regionMaps || {}), [id]: d }; persist(); renderRegionsTab(); if (rgEl) renderRegion(); toast(`${r.name} map saved (${d.w}×${d.h}).`); } } catch (e) { toast(e.message, true); } };
-  const del = $('#rgaDel'); if (del) del.onclick = async () => { await mediaDel(key); const M = { ...(S.regionMaps || {}) }; delete M[id]; S.regionMaps = M; persist(); renderRegionsTab(); if (rgEl) renderRegion(); toast('Back to the drawn backdrop.'); };
-  $('#rgaReset').onclick = () => { const L = { ...(S.farmLayout || {}) }; Object.keys(L).filter(k => k.startsWith(`rg:${id}:`)).forEach(k => delete L[k]); S.farmLayout = L; persist(); renderRegionsTab(); if (rgEl) renderRegion(); };
-  $('#rgaOpen').onclick = () => { closeModal(); openRegion(id); };
+  p.querySelectorAll('[data-rgaup]').forEach(inp => inp.onchange = async ev => { const bat = inp.dataset.rgaup === 'b', key = rgKey(id, bat);
+    try { const u = await resizeImage(ev.target.files[0]), d = await wmImgSize(u);
+      if (d && await mediaSet(key, u)) { S.regionMaps = { ...(S.regionMaps || {}), [(bat ? 'b:' : '') + id]: d }; persist(); renderRegionsTab(); if (rgEl) renderRegion(); toast(`${r.name} ${bat ? 'battles' : 'region'} map saved (${d.w}×${d.h}).`); } } catch (e) { toast(e.message, true); } });
+  p.querySelectorAll('[data-rgadel]').forEach(b => b.onclick = async () => { const bat = b.dataset.rgadel === 'b'; await mediaDel(rgKey(id, bat)); const M = { ...(S.regionMaps || {}) }; delete M[(bat ? 'b:' : '') + id]; S.regionMaps = M; persist(); renderRegionsTab(); if (rgEl) renderRegion(); toast('Back to the drawn backdrop.'); });
+  p.querySelectorAll('[data-rgareset]').forEach(b => b.onclick = () => { const pre = b.dataset.rgareset === 'b' ? `rg:${id}:` : `rgp:${id}:`; const L = { ...(S.farmLayout || {}) }; Object.keys(L).filter(k => k.startsWith(pre)).forEach(k => delete L[k]); S.farmLayout = L; persist(); renderRegionsTab(); if (rgEl) renderRegion(); });
+  p.querySelectorAll('[data-rgaopen]').forEach(b => b.onclick = () => { closeModal(); openRegion(id, null, b.dataset.rgaopen); });
+  bindAdminArt(p, () => { renderRegionsTab(); if (rgEl) renderRegion(); });
 }

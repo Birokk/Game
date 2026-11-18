@@ -2624,3 +2624,30 @@ b.ccd-dname{border:0}
 .rga-prev .wm-pin b{font:400 18px var(--display)}
 .rga-cards{display:grid;gap:4px;font-size:13px}.rga-cards span{font-family:var(--read);opacity:.85}
 @media (max-width:640px),(orientation:portrait){.rgn-stage{height:auto}.rgn-kind{display:none}.rgn-plq{max-width:108px;white-space:normal;text-align:center}.rgn-plq>span{font-size:10.5px;line-height:1.15}.rgn-new{right:-14px}}
+/* region page v2: the Map tab (the region's own map with place buttons) and the tab strip */
+.rgn.mapv{grid-template-columns:minmax(0,1fr)}
+.rgn-head .rgn-tabs{order:10;flex:1 1 100%;width:100%;margin-left:0;justify-content:center}
+.rgn-tabs .cmp-cht{gap:7px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.rgn-tabs .cmp-cht svg{width:15px;height:15px}
+.rgn-tabs .cmp-cht.on{border-color:color-mix(in srgb,var(--rc) 70%,#fff);background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 30%,transparent),rgba(255,255,255,.04));box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--rc) 80%,#fff),0 0 14px color-mix(in srgb,var(--rc) 35%,transparent)}
+.rgn-tabs .cmp-cht .cmp-dot{position:absolute;top:-2px;right:-2px}
+.rgn-kind{display:inline-flex;align-items:center;gap:6px}.rgn-kind svg{width:13px;height:13px}
+.rgn-spot{position:absolute;z-index:2;translate:-50% -36px;display:grid;justify-items:center;gap:3px;border:0;padding:0;background:none;color:#fff;cursor:pointer;font:inherit}
+.rgn-sic{position:relative;display:grid;place-items:center;width:84px;height:84px;border-radius:50%;color:#fff;
+  background:radial-gradient(circle at 38% 30%,rgba(255,255,255,.34),color-mix(in srgb,var(--rc) 45%,#141030) 66%);border:2px solid color-mix(in srgb,var(--rc) 55%,#fff);
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--rc) 22%,transparent),0 0 30px color-mix(in srgb,var(--rc) 60%,transparent),0 10px 24px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .2s var(--u2-ease,ease);animation:rgnSpot 3.2s ease-in-out infinite}
+.rgn-sic>svg{width:44%;height:44%;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}.rgn-sic>img{width:100%;height:100%;object-fit:contain}
+.rgn-sic .cmp-dot{position:absolute;top:2px;right:2px}
+@keyframes rgnSpot{50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--rc) 8%,transparent),0 0 40px color-mix(in srgb,var(--rc) 70%,transparent),0 10px 24px rgba(0,0,0,.55)}}
+.rgn-spot:hover .rgn-sic,.rgn-spot:focus-visible .rgn-sic{transform:translateY(-3px) scale(1.06)}
+.rgn-spot b{margin-top:4px;padding:5px 16px;border-radius:999px;font:400 17px var(--display);letter-spacing:.06em;background:rgba(10,8,26,.66);border:1px solid color-mix(in srgb,var(--rc) 50%,rgba(255,255,255,.3));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap}
+.rgn-spot small{padding:2px 10px;border-radius:999px;font:600 11.5px var(--read);background:rgba(10,8,26,.5);white-space:nowrap}
+.rga-h{display:flex;align-items:center;gap:8px;margin:10px 0 0}.rga-h svg{width:18px;height:18px}
+.rga-pin .wm-pin img,.wma-row .wm-pin img{width:70%;height:70%;object-fit:contain}.rga-pin .wm-pin svg,.wma-row .wm-pin svg{width:52%;height:52%}
+@media (max-width:640px),(orientation:portrait){.rgn-sic{width:62px;height:62px}.rgn-spot{translate:-50% -26px}.rgn-spot b{font-size:14px;padding:4px 12px}.rgn-spot small{font-size:10px}}
+@media (max-height:500px) and (orientation:landscape){.rgn-head .rgn-tabs{order:0;flex:0 1 auto;width:auto}.rgn-sic{width:52px;height:52px}.rgn-spot{translate:-50% -22px}.rgn-spot b{font-size:13px;padding:3px 10px}.rgn-spot small{display:none}}
+@media (prefers-reduced-motion:reduce){.rgn-sic{animation:none}}
+.rgn-tabs .cmp-cht.on{color:#fff}
+@media (max-height:500px) and (orientation:landscape){.rgn-head .rgn-tabs{display:flex}}
+@media (max-width:640px),(orientation:portrait){.rgn.mapv .rgn-stage{display:flex;align-items:center;justify-content:safe center;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.rgn.mapv .rgn-stage::-webkit-scrollbar{display:none}.rgn.mapv .rgn-map{flex:none}}
+@media (max-width:640px),(orientation:portrait){.rgn-kind{display:none}}
