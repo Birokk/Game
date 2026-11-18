@@ -19,6 +19,7 @@ document.addEventListener('click', e => {
   else if (k === 'guild') openFarm('guild');
   else if (k === 'arena') openArena();
   else if (k === 'brank') openBrInfo();
+  else if (k === 'qlog') openQuestLog();
   else if (k === 'friends') openFriends();
   else if (k === 'chat') openChat('world');
   else if (k === 'offer') openOffer(t.dataset.offer);

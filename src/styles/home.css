@@ -226,7 +226,7 @@
    so the icons fit under it; Plaza / Battle bigger; the profile pill reads "Lv.n [VIP n] Name" with the title under it.
    ========================================================================== */
 .menu .hm-icons{grid-template-columns:repeat(4,86px)}
-.menu .hm-icons .hi-q{grid-column:4;grid-row:2}.menu .hm-icons .hi-g{grid-column:3;grid-row:2}
+.menu .hm-icons .hi-q{grid-column:4;grid-row:2}.menu .hm-icons .hi-g{grid-column:3;grid-row:2}.menu .hm-icons .hi-ql{grid-column:2;grid-row:2}
 .hbx{width:365px}   /* 4 × 86 + 3 × 7 */
 .menu .hm-rc .hm-drop::before{top:30px;bottom:auto}
 /* profile pill */
@@ -512,3 +512,6 @@
 @media (max-width:380px) and (orientation:portrait){.menu .hm-bot .tabb{width:62px}}
 /* the Ancient Artifacts button: its whole name on two short lines (the owner's ask) */
 .menu .hm-ql .ev .el.el2{white-space:normal;line-height:1.05;text-align:center}
+
+/* row under the profile on narrow portrait phones: 7 buttons (with Admin) fit from 360 px */
+@media (max-width:400px) and (orientation:portrait){.menu .hm-ql .ev{min-width:42px}}
