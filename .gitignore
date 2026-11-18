@@ -5,3 +5,4 @@ dist
 *.log
 backups/
 tests/economy/*.json
+public/backup/

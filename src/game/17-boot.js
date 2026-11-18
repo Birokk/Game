@@ -4,6 +4,8 @@
   catch (e) { console.warn('Image storage unavailable', e); }
   // images kept in the preview's file storage (see mediaSet)
   for (const [k, v] of Object.entries(S.media || {})) { const src = assetSrc(v); if (src) MEDIA.set(k, src); }
+  // a PC copy of the project: content and images from public/backup/ (80-pcbackup.js)
+  try { await pcFolderLoad(); } catch (e) { console.warn('PC backup folder could not be read', e); }
   // connect to the server (if configured) before anything is drawn; give up after 8 s and play offline
   const cloud = await Promise.race([initBackend(), new Promise(r => setTimeout(() => r('timeout'), 8000))]);
   if (cloud === 'reload') return;
