@@ -148,19 +148,19 @@ function claimGuildDaily() {
 /* the guild shop: GSHOP_N items a day from the pool (weighted, the same for everyone), each with a daily limit */
 const GSHOP_N = 6;
 const GSHOP_POOL = [
-  { id: 'gs-tk', got: { tickets: 1 }, price: 50, lim: 1, w: 1 },
-  { id: 'gs-wi', got: { wishes: 1 }, price: 40, lim: 1, w: 1.2 },
-  { id: 'gs-bo', got: { bottles: 1 }, price: 10, lim: 1, w: 1.4 },   // stamina bottles: 1 a day (the owner's rule)
-  { id: 'gs-co', got: { coins: 5000 }, price: 8, lim: 3, w: 1.4 },
-  { id: 'gs-cs', got: { cfssr: 3 }, price: 15, lim: 2, w: 1 },
-  { id: 'gs-cu', got: { cfur: 1 }, price: 25, lim: 2, w: .8 },
-  { id: 'gs-fs', got: { fragssr: 3 }, price: 10, lim: 2, w: 1 },
-  { id: 'gs-fu', got: { fragur: 1 }, price: 20, lim: 1, w: .7 },
-  { id: 'gs-gp', got: { gplush: 1 }, price: 15, lim: 2, w: .9 },
-  { id: 'gs-gb', got: { gbracelet: 2 }, price: 10, lim: 2, w: .9 },
-  { id: 'gs-th', got: { thread: 20 }, price: 10, lim: 2, w: .9 },   // Thread (EXP left the shops: EXP only from quests and stamina)
-  { id: 'gs-nt', got: { nametk: 1 }, price: 60, lim: 1, w: .25 },
-  { id: 'gs-mt', got: { memtk: 1 }, price: 450, lim: 1, w: .15 }
+  { id: 'gs-tk', got: { tickets: 1 }, price: 150, lim: 1, w: 1 },
+  { id: 'gs-wi', got: { wishes: 1 }, price: 120, lim: 1, w: 1.2 },
+  { id: 'gs-bo', got: { bottles: 1 }, price: 30, lim: 1, w: 1.4 },   // stamina bottles: 1 a day (the owner's rule)
+  { id: 'gs-co', got: { coins: 5000 }, price: 24, lim: 3, w: 1.4 },
+  { id: 'gs-cs', got: { cfssr: 3 }, price: 45, lim: 2, w: 1 },
+  { id: 'gs-cu', got: { cfur: 1 }, price: 75, lim: 2, w: .8 },
+  { id: 'gs-fs', got: { fragssr: 3 }, price: 30, lim: 2, w: 1 },
+  { id: 'gs-fu', got: { fragur: 1 }, price: 60, lim: 1, w: .7 },
+  { id: 'gs-gp', got: { gplush: 1 }, price: 45, lim: 2, w: .9 },
+  { id: 'gs-gb', got: { gbracelet: 2 }, price: 30, lim: 2, w: .9 },
+  { id: 'gs-th', got: { thread: 20 }, price: 30, lim: 2, w: .9 },   // Thread (EXP left the shops: EXP only from quests and stamina)
+  { id: 'gs-nt', got: { nametk: 1 }, price: 180, lim: 1, w: .25 },
+  { id: 'gs-mt', got: { memtk: 1 }, price: 1350, lim: 1, w: .15 }
 ];
 function guildShopToday() {
   const ref = guildShopState().ref || 0, r = seeded('gshop:' + dayKey() + (ref ? ':' + ref : '')), pool = [...GSHOP_POOL], out = [], N = gshopN();

@@ -178,6 +178,7 @@ function renderPoolTab() {
             <label id="lkPantsWrap">Bottom<input type="color" id="lkPants"></label>
           </fieldset>
           <label class="switch">Can be pulled from summons<input type="checkbox" id="adPull"><i></i></label>
+          <label class="switch" id="adShopW" title="SSR and UR outfits only: MR and XR are never sold">Sold in the shop (outfits)<input type="checkbox" id="adShop"><i></i></label>
           <label class="switch" id="adStdWrap">On the permanent banner<input type="checkbox" id="adStd"><i></i></label>
           <label class="field" id="adAttrWrap"><span>Card attribute (Card Clash playstyle)</span><select class="input" id="adAttr"><option value="">None yet</option>${Object.entries(CC_STYLES).map(([k, [n]]) => `<option value="${k}">${n}</option>`).join('')}</select><small class="tiny">The same five attributes as the cards. As a deck leader it turns on the attribute bond when 12+ of the 30 cards share it, and picks the default leader skill.</small></label>
           <label class="field" id="adSkillWrap"><span>Leader skill (Card Battle)</span><select class="input" id="adSkill"></select><small class="tiny" id="adSkillTx"></small></label>
@@ -247,6 +248,7 @@ function fillAdminForm(entry) {
     $('#adSigMem').querySelectorAll('[data-sigmem]').forEach(b => b.onclick = () => { const id = b.dataset.sigmem, i = adminSigMems.indexOf(id); if (i >= 0) adminSigMems.splice(i, 1); else adminSigMems.push(id); drawSigMem(); }); };
   drawSigMem();
   $('#adPull').checked = entry ? entry.pullable !== false : true;
+  $('#adShop').checked = entry ? entry.shop !== false : true;
   $('#adStd').checked = entry ? !!entry.standard : false;
   $('#adTitle').textContent = entry ? `Editing ${entry.name}` : 'Add to the game pool';
   $('#adSave').innerHTML = entry ? `${icon('edit')}Save changes` : `${icon('plus')}Add to pool`;
@@ -314,6 +316,7 @@ function adminPreview() {
   $('#adSigMemWrap').hidden = $('#adAttrWrap').hidden = $('#adSkillWrap').hidden = $('#adType').value !== 'character';
   $('#adPull').parentElement.hidden = isMC;
   $('#adMR').hidden = $('#adXR').hidden = $('#adType').value !== 'skin';
+  $('#adShopW').hidden = $('#adType').value !== 'skin';
   if ($('#adType').value !== 'skin' && (r === 6 || r === 7)) document.querySelector('input[name=adR][value="5"]').checked = true;
 }
 async function saveAdmin(ev) {
@@ -322,7 +325,7 @@ async function saveAdmin(ev) {
   if (!name) { $('#adNameErr').hidden = false; $('#adName').focus(); return; }
   const type = $('#adType').value;
   const data = { type, name, rarity: adminRarity(), desc: $('#adDesc').value.trim(),
-    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null, ccStyle: type === 'character' ? ($('#adAttr').value || null) : null, ccSkill: type === 'character' && LS[$('#adSkill').value] ? $('#adSkill').value : null, petBonus: type === 'pet' && PB_TYPES[$('#adPb').value] ? $('#adPb').value : null };
+    parent: type === 'skin' ? ($('#adParent').value || null) : null, look: readLook(), pullable: $('#adPull').checked, standard: adminRarity() === 5 && $('#adStd').checked, sigSet: type === 'character' && adminRarity() === 5 ? ($('#adSig').value || null) : null, sigMems: type === 'character' && adminSigMems.length ? [...adminSigMems] : null, ccStyle: type === 'character' ? ($('#adAttr').value || null) : null, ccSkill: type === 'character' && LS[$('#adSkill').value] ? $('#adSkill').value : null, petBonus: type === 'pet' && PB_TYPES[$('#adPb').value] ? $('#adPb').value : null, shop: type === 'skin' && !$('#adShop').checked ? false : undefined };
   if (adminEditId && (findEntry(adminEditId) || {}).mc) Object.assign(data, { type: 'character', pullable: false, standard: false });
   const wasEdit = !!adminEditId;
   let entry;
@@ -619,7 +622,7 @@ function renderSkinsTab() {
         ${list.length ? list.map(k => `<div class="sk-row r${k.rarity}"><div class="sk-head">
             <input class="input sk-nm" data-sknm="${esc(k.id)}" maxlength="30" value="${esc(short(k, c))}" aria-label="Skin name">
             ${k.rarity === 6 ? `<span class="row" style="gap:6px">${rtag(6)}<span class="tiny">Unlocked by marriage</span></span>`
-              : `<div class="seg sk-rar">${[4, 5, 7].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div><span class="tiny">${+k.rarity === 7 ? 'XR: can\'t be bought' : `Buyable for ${SKIN_PRICE} pearls`}</span>`}
+              : `<div class="seg sk-rar">${[4, 5, 7].map(r => `<label class="r${r}"><input type="radio" name="skr-${esc(k.id)}" value="${r}" data-skr="${esc(k.id)}" ${k.rarity === r ? 'checked' : ''}>${RNAME[r]}</label>`).join('')}</div>${+k.rarity === 7 ? '<span class="tiny">XR: can\'t be bought</span>' : `<label class="switch sk-shop" title="Sold in the Outfit Shop and Hot Picks for ${SKIN_PRICE} pearls or skin tickets">Sold in the shop<input type="checkbox" data-skshop="${esc(k.id)}" ${k.shop !== false ? 'checked' : ''}><i></i></label>`}`}
             <span class="row" style="gap:10px"><button class="link" data-skpv="${esc(k.id)}">Preview</button>${k.rarity === 6 ? '' : `<button class="link" data-skdel="${esc(k.id)}" style="color:${skDelArm === k.id ? '#ff6b81' : ''}">${skDelArm === k.id ? 'Tap again to delete' : 'Delete'}</button>`}</span></div>
           ${slot(k, 'art', 'Full art', 'Shown everywhere')}${slot(k, 'getArt', 'Unlock art', 'Only when bought or received')}</div>`).join('') : '<p class="tiny">No skins yet.</p>'}</div>`; }).join('')}
   </div>`;
@@ -636,6 +639,7 @@ function renderSkinsTab() {
     const k = findEntry(inp.dataset.sknm), c = findEntry(k.parent), v = inp.value.trim() || 'Outfit';
     k.name = c ? `${c.name} · ${v}` : v; persist(); renderMenu(); toast('Skin renamed.');
   });
+  document.querySelectorAll('[data-skshop]').forEach(inp => inp.onchange = () => { const k = findEntry(inp.dataset.skshop); k.shop = inp.checked; persist(); renderMenu(); toast(inp.checked ? `${k.name} is sold in the shop.` : `${k.name} is no longer sold in the shop.`); });
   document.querySelectorAll('[data-skr]').forEach(inp => inp.onchange = () => { findEntry(inp.dataset.skr).rarity = +inp.value; persist(); renderSkinsTab(); renderMenu(); });
   document.querySelectorAll('[data-skpv]').forEach(b => b.onclick = () => { const k = findEntry(b.dataset.skpv); closeModal(); showSkinGet(k, k.rarity === 6 ? { vow: true } : {}); });
   document.querySelectorAll('[data-skdel]').forEach(b => b.onclick = async () => {

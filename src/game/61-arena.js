@@ -263,21 +263,21 @@ const arVpOf = name => { const b = arBoard().find(p => p.bot && p.name === name)
 /* ---- the Arena Shop: items picked every day (the same for everyone), each with a daily limit, paid with arena tokens ---- */
 const AR_SHOP_N = 8, AR_SHOP_REF = 30;
 const AR_SHOP_POOL = [
-  { id: 'as-tk', got: { tickets: 1 }, price: 100, lim: 2, w: 1 },
-  { id: 'as-wi', got: { wishes: 1 }, price: 80, lim: 2, w: 1.2 },
-  { id: 'as-bo', got: { bottles: 1 }, price: 20, lim: 1, w: 1.4 },   // stamina bottles: 1 a day (the owner's rule)
-  { id: 'as-co', got: { coins: 10000 }, price: 15, lim: 3, w: 1.4 },
-  { id: 'as-pe', got: { pearls: 1 }, price: 60, lim: 1, w: .7 },   // 1 pearl for 60 tokens (the owner's rule)
-  { id: 'as-st', got: { starlight: 10 }, price: 40, lim: 2, w: .8 },
-  { id: 'as-cs', got: { cfssr: 3 }, price: 30, lim: 2, w: 1 },
-  { id: 'as-cu', got: { cfur: 1 }, price: 50, lim: 2, w: .8 },
-  { id: 'as-fs', got: { fragssr: 3 }, price: 25, lim: 2, w: 1 },
-  { id: 'as-fu', got: { fragur: 1 }, price: 40, lim: 1, w: .7 },
-  { id: 'as-gp', got: { gplush: 1 }, price: 25, lim: 2, w: .9 },
-  { id: 'as-th', got: { thread: 40 }, price: 20, lim: 2, w: .9 },   // Thread (EXP left the shops: EXP only from quests and stamina)
-  { id: 'as-nt', got: { nametk: 1 }, price: 120, lim: 1, w: .25 },
-  { id: 'as-eg', got: { eggur: 1 }, price: 350, lim: 1, w: .2 },
-  { id: 'as-mt', got: { memtk: 1 }, price: 900, lim: 1, w: .15 }
+  { id: 'as-tk', got: { tickets: 1 }, price: 300, lim: 2, w: 1 },
+  { id: 'as-wi', got: { wishes: 1 }, price: 240, lim: 2, w: 1.2 },
+  { id: 'as-bo', got: { bottles: 1 }, price: 60, lim: 1, w: 1.4 },   // stamina bottles: 1 a day (the owner's rule)
+  { id: 'as-co', got: { coins: 10000 }, price: 45, lim: 3, w: 1.4 },
+  { id: 'as-pe', got: { pearls: 1 }, price: 180, lim: 1, w: .7 },   // 1 pearl (60 tokens before every arena shop price went ×3, the owner's ask)
+  { id: 'as-st', got: { starlight: 10 }, price: 120, lim: 2, w: .8 },
+  { id: 'as-cs', got: { cfssr: 3 }, price: 90, lim: 2, w: 1 },
+  { id: 'as-cu', got: { cfur: 1 }, price: 150, lim: 2, w: .8 },
+  { id: 'as-fs', got: { fragssr: 3 }, price: 75, lim: 2, w: 1 },
+  { id: 'as-fu', got: { fragur: 1 }, price: 120, lim: 1, w: .7 },
+  { id: 'as-gp', got: { gplush: 1 }, price: 75, lim: 2, w: .9 },
+  { id: 'as-th', got: { thread: 40 }, price: 60, lim: 2, w: .9 },   // Thread (EXP left the shops: EXP only from quests and stamina)
+  { id: 'as-nt', got: { nametk: 1 }, price: 360, lim: 1, w: .25 },
+  { id: 'as-eg', got: { eggur: 1 }, price: 1050, lim: 1, w: .2 },
+  { id: 'as-mt', got: { memtk: 1 }, price: 2700, lim: 1, w: .15 }
 ];
 const AR_ITEM_NM = { tickets: 'Limited ticket', wishes: 'Standard ticket', bottles: 'Stamina bottle', coins: 'Gold', pearls: 'Pearls', starlight: 'Corals', cfssr: 'SSR character fragments', cfur: 'UR character fragment',
   fragssr: 'SSR egg fragments', fragur: 'UR egg fragment', gplush: 'Star Plushie', exp: 'EXP', thread: 'Thread', nametk: 'Name change ticket', eggur: 'UR egg', memtk: 'UR memory ticket' };

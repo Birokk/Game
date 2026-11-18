@@ -52,7 +52,7 @@ function selectSkin(c, id) {
   $('#skAct').innerHTML = `<div class="sk-title"><b>${esc(label)}</b>${o.stars ? `<span class="chip">${o.stars}★ splash art</span>` : rtag(o.rarity)}</div>
     ${o.own ? (o.on ? `<button class="btn ghost" disabled>${icon('check')}Equipped</button>` : `<button class="btn gold" id="skEquip">${icon('hanger')}Equip ${esc(label.toLowerCase() === 'default outfit' ? 'default outfit' : label)}</button>`)
       : o.stars ? `<div class="cs-pill">${icon('lock')} Unlocks at ${o.stars} stars · ${esc(c.name)} has ${starsOf(c.id)}</div>`
-      : !buyable(o.entry) ? `<div class="cs-pill" style="color:${+o.entry.rarity === 7 ? '#ff5a6e' : '#ff9ec4'}">${+o.entry.rarity === 7 ? icon('lock') : curIcon('rings')} ${esc(skinLockTxt(o.entry, c))}</div>`
+      : !buyable(o.entry) ? `<div class="cs-pill" style="color:${skinNoShop(o.entry) ? '#ff5a6e' : '#ff9ec4'}">${skinNoShop(o.entry) ? icon('lock') : curIcon('rings')} ${esc(skinLockTxt(o.entry, c))}</div>`
       : `<button class="btn gold" id="skBuy">${icon('skins')}Buy · ${costHTML(SKIN_PRICE)}</button>`}
     ${o.own ? `<button class="btn ghost sm" id="skWall">${icon('image')}${S.wallpaper === wallId ? 'Wallpaper set' : 'Set as wallpaper'}</button>` : ''}`;
   const eb = $('#skEquip'); if (eb) eb.onclick = () => {
@@ -113,7 +113,7 @@ function renderCharacters() {
       ${(() => { const rk = typeof charRank === 'function' && c.type === 'character' && !c.mc ? charRank(c.id) : null; return rk && rk <= 10 ? `<button class="cs-rankb rk-row ${rk <= 3 ? 'top top' + rk : 'top10'}" data-csrank="${esc(c.id)}" aria-label="Open the ranking"><span class="rk-n"><i><b>${rk}</b></i></span><b class="cs-rankt">#${rk} ${esc(c.name)} Server CS Ranking</b></button>` : ''; })()}
       ${csCard(c)}
       ${shownOwned ? `<div class="cs-actions"><button class="btn mint" id="csWall">${icon('image')}${S.wallpaper === shownWall ? 'Wallpaper set' : 'Set as wallpaper'}</button></div>`
-        : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:${+shown.rarity === 7 ? '#ff5a6e' : '#ff9ec4'}">${+shown.rarity === 7 ? icon('lock') : curIcon('rings')} ${esc(skinLockTxt(shown, c))}</div>`
+        : shown.type === 'skin' && !buyable(shown) ? `<div class="cs-pill" style="color:${skinNoShop(shown) ? '#ff5a6e' : '#ff9ec4'}">${skinNoShop(shown) ? icon('lock') : curIcon('rings')} ${esc(skinLockTxt(shown, c))}</div>`
         : shown.type === 'skin' ? `<button class="btn gold" id="csBuySkin">${icon('skins')}Buy ${esc(shown.name.replace(c.name + ' · ', ''))} · ${costHTML(SKIN_PRICE)}</button>`
         : `<button class="btn gold" data-open="summon" data-banner="${c.id === S.featuredId ? 'limited' : 'standard'}">${icon('sparkle')}Find ${esc(shown.name)} on the banner</button>`}`;
   } else if (csTab === 'skins') {
@@ -195,7 +195,7 @@ function renderCharacters() {
   const enter = csShown !== `${c.id}|${csTab}`; csShown = `${c.id}|${csTab}`;
   const keepList = U.querySelector('.cs-list') ? U.querySelector('.cs-list').scrollTop : 0;
   U.innerHTML = `
-    <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Help">?</button></div>
+    <div class="cs-top cs-ui"><button class="cs-back" id="csBack">${icon('back')}Back</button><button class="cs-help" id="csHelp" aria-label="Character guide" title="Character guide">?</button></div>
     <nav class="cs-list cs-ui" aria-label="Characters">${charList().map(e => { const o = owns(e.id); return `<button class="cs-av r${e.rarity} ${e.id === c.id ? 'on' : ''} ${o ? '' : 'locked'}" data-cs="${esc(e.id)}" aria-label="${esc(e.name)}">
         <span class="ring"><span>${thumbImg(e)}</span></span>${isFav(e.id) ? `<span class="cs-fav">${icon('star')}</span>` : ''}${bondLv(e.id) ? bondTag(e.id, 'av') : ''}${o ? '' : `<span class="lockic">${icon('lock')}</span>`}${starsFor(e)}</button>`; }).join('')}</nav>
     <nav class="cs-tabs cs-ui">${tabs.map(([k, ic, l]) => `<button class="cs-tab ts ${csTab === k ? 'on' : ''}" data-cstab="${k}"><span class="ti">${icon(ic)}</span>${l}</button>`).join('')}</nav>
@@ -207,10 +207,7 @@ function renderCharacters() {
   U.querySelector('.cs-list').scrollTop = keepList;
   $('#csBack').onclick = closeCharacters;
   $('#csFavBtn').onclick = () => toggleFav(c.id);
-  $('#csHelp').onclick = () => openModal({ title: 'Characters', ic: 'chars', body: `<div class="stack">
-      <p class="desc">Pick a character on the left. <b>Home</b> shows stars and outfits, <b>Bond</b> is where you give gifts and, at bond level 10, propose with a ring, and <b>Character Info</b> has their profile. Badges under the name show what you've achieved with each character.</p>
-      <p class="desc">Every duplicate copy adds a star, up to ${MAX_STARS}. After that each copy from a summon gives ${STARLIGHT_MAX[5]} Corals for a UR or ${STARLIGHT_MAX[4]} for an SSR.</p>
-      <p class="desc"><b>Skins</b> lists every outfit: scroll through them to see each one full screen. Outfits you don't own are shown in black and white. The eye button hides the menu so you can look at the art.</p></div>` });
+  $('#csHelp').onclick = () => openCharGuide(CHG_FROM_TAB[csTab]);   // the full character guide (78-charguide.js)
   csEl.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { csId = b.dataset.cs; csSkin = null; renderCharacters(); });
   csEl.classList.toggle('bw', !owns(shown.id));
   csEl.querySelectorAll('[data-csrank]').forEach(b => b.onclick = () => openRanking('char', b.dataset.csrank));

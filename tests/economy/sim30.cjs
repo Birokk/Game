@@ -69,10 +69,10 @@ const AR_VP = [[25, 0, 25, 0], [22, -2, 22, -2], [20, -4, 20, -4], [18, -6, 18, 
 const AR_WEEK = [[5, 50], [10, 80], [15, 120], [20, 160], [25, 200], [30, 260], [40, 320], [50, 400]];
 const AR_WIN = [.80, .72, .60, .52, .42, .34, .22, .15];              // assumed win chance against your own rank's brains (easy → expert planner)
 const arRank = vp => AR_RANKS.filter(r => vp >= r[1]).length - 1;
-const AR_SHOP = [['tickets', 1, 100, 2, 1], ['wishes', 1, 80, 2, 1.2], ['bottles', 1, 20, 1, 1.4], ['coins', 1e4, 15, 3, 1.4], ['pearls', 1, 60, 1, .7], ['starlight', 10, 40, 2, .8], ['cfssr', 3, 30, 2, 1],
-  ['cfur', 1, 50, 2, .8], ['fragssr', 3, 25, 2, 1], ['fragur', 1, 40, 1, .7], ['gplush', 1, 25, 2, .9], ['thread', 40, 20, 2, .9], ['nametk', 1, 120, 1, .25], ['eggur', 1, 350, 1, .2], ['memtk', 1, 900, 1, .15], ['ictk', 2, 30, 2, 1]];
-const G_SHOP = [['tickets', 1, 50, 1, 1], ['wishes', 1, 40, 1, 1.2], ['bottles', 1, 10, 1, 1.4], ['coins', 5000, 8, 3, 1.4], ['cfssr', 3, 15, 2, 1], ['cfur', 1, 25, 2, .8], ['fragssr', 3, 10, 2, 1], ['fragur', 1, 20, 1, .7],
-  ['gplush', 1, 15, 2, .9], ['gbracelet', 2, 10, 2, .9], ['thread', 20, 10, 2, .9], ['nametk', 1, 60, 1, .25], ['memtk', 1, 450, 1, .15], ['ictk', 1, 12, 2, 1]];
+const AR_SHOP = [['tickets', 1, 300, 2, 1], ['wishes', 1, 240, 2, 1.2], ['bottles', 1, 60, 1, 1.4], ['coins', 1e4, 45, 3, 1.4], ['pearls', 1, 180, 1, .7], ['starlight', 10, 120, 2, .8], ['cfssr', 3, 90, 2, 1],
+  ['cfur', 1, 150, 2, .8], ['fragssr', 3, 75, 2, 1], ['fragur', 1, 120, 1, .7], ['gplush', 1, 75, 2, .9], ['thread', 40, 60, 2, .9], ['nametk', 1, 360, 1, .25], ['eggur', 1, 1050, 1, .2], ['memtk', 1, 2700, 1, .15], ['ictk', 2, 90, 2, 1]];
+const G_SHOP = [['tickets', 1, 150, 1, 1], ['wishes', 1, 120, 1, 1.2], ['bottles', 1, 30, 1, 1.4], ['coins', 5000, 24, 3, 1.4], ['cfssr', 3, 45, 2, 1], ['cfur', 1, 75, 2, .8], ['fragssr', 3, 30, 2, 1], ['fragur', 1, 60, 1, .7],
+  ['gplush', 1, 45, 2, .9], ['gbracelet', 2, 30, 2, .9], ['thread', 20, 30, 2, .9], ['nametk', 1, 180, 1, .25], ['memtk', 1, 1350, 1, .15], ['ictk', 1, 36, 2, 1]];
 const SHOP_PRIO = ['memtk', 'eggur', 'cfur', 'pearls', 'tickets', 'wishes', 'fragur', 'ictk', 'sktk', 'cfssr', 'starlight', 'fragssr', 'gplush', 'bottles', 'thread', 'coins', 'gbracelet'];
 const GB_TIERS = [[0, 0, 0, 2000, 0], [1, 1, .2, 5000, 1], [15, 1, .3, 9000, 1], [30, 2, .35, 14000, 2], [45, 2, .45, 20000, 2], [60, 3, .5, 26000, 3], [75, 3, .6, 32000, 3]];
 

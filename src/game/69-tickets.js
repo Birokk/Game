@@ -14,8 +14,8 @@ REW_NAMES.sktk = ['skin ticket', 'skin tickets']; REW_R.sktk = 4;
 REW_NAMES.ictk = ['instant clear ticket', 'instant clear tickets']; REW_R.ictk = 4;
 REW_NAMES.thread = REW_NAMES.thread || ['Thread', 'Thread']; REW_R.thread = REW_R.thread || 4;
 OFFER_KEYS.push('ictk');   // skin tickets only come from Pearl Honor's paid track
-AR_SHOP_POOL.push({ id: 'as-ic', got: { ictk: 2 }, price: 30, lim: 2, w: 1 });
-GSHOP_POOL.push({ id: 'gs-ic', got: { ictk: 1 }, price: 12, lim: 2, w: 1 });
+AR_SHOP_POOL.push({ id: 'as-ic', got: { ictk: 2 }, price: 90, lim: 2, w: 1 });
+GSHOP_POOL.push({ id: 'gs-ic', got: { ictk: 1 }, price: 36, lim: 2, w: 1 });
 ADMIN_ART.sktk = () => adIconRow('sktk', 'Skin ticket icon', `Buys outfits instead of pearls: ${SKTK_COST[4]} for SSR, ${SKTK_COST[5]} for UR`);
 ADMIN_ART.ictk = () => adIconRow('ictk', 'Instant clear ticket icon', 'One more raid instant clear after the free ones of the day (3★ stages)');
 ADMIN_ART_SECS.icons.push('sktk', 'ictk');

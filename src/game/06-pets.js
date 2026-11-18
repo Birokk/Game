@@ -32,11 +32,12 @@ function previewMR(c) {
   document.body.appendChild(el);
   setTimeout(() => el.onclick = () => el.remove(), 300);
 }
-const buyable = e => e && e.type === 'skin' && +e.rarity !== 6 && +e.rarity !== 7;   // MR (marriage) and XR outfits can't be bought
-const skinLockTxt = (e, c) => +e.rarity === 7 ? 'XR outfit · can\'t be bought' : `Unlocked by marrying ${c ? c.name : 'the character'}`;
+const buyable = e => e && e.type === 'skin' && +e.rarity !== 6 && +e.rarity !== 7 && e.shop !== false;   // MR (marriage) and XR outfits can't be bought, nor an outfit the admin took out of the shop (entry.shop = false)
+const skinNoShop = e => +e.rarity === 7 || (+e.rarity !== 6 && e.shop === false);   // not buyable for a reason other than marriage
+const skinLockTxt = (e, c) => +e.rarity === 7 ? 'XR outfit · can\'t be bought' : e.shop === false && +e.rarity !== 6 ? 'Not sold in the shop' : `Unlocked by marrying ${c ? c.name : 'the character'}`;
 function buySkin(id) {
   const e = findEntry(id); if (!e || e.type !== 'skin' || owns(id)) return;
-  if (!buyable(e)) { toast(+e.rarity === 7 ? `${e.name} is an XR outfit: XR outfits can't be bought.` : `${e.name} can't be bought. Marry ${(findEntry(e.parent) || {}).name || 'the character'} to unlock it.`); return; }
+  if (!buyable(e)) { toast(+e.rarity === 7 ? `${e.name} is an XR outfit: XR outfits can't be bought.` : skinNoShop(e) ? `${e.name} isn't sold in the shop.` : `${e.name} can't be bought. Marry ${(findEntry(e.parent) || {}).name || 'the character'} to unlock it.`); return; }
   if (S.wallet.pearls < SKIN_PRICE) { toast(`${e.name} costs ${SKIN_PRICE} pearls. You have ${fmt(S.wallet.pearls)}.`); return; }
   S.wallet.pearls -= SKIN_PRICE; S.owned[id] = 1; persist(); renderMenu(); refreshSummon(); refreshCharacters();
   if ($('#colRoot')) renderDetail(id, 'skin');
