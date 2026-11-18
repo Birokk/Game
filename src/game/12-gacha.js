@@ -35,8 +35,11 @@ function weeklyUR(w = weekIndex()) {
   return list[perm[w % len]];
 }
 /* outfit banner: pulls give skins (MR wedding skins never); the admin can feature one UR skin */
-const pullableSkins = r => S.pool.filter(e => e.type === 'skin' && e.rarity === r && e.pullable !== false);
-const skinFeatured = () => { const k = findEntry(S.banners.skins && S.banners.skins.featured); return k && k.type === 'skin' && k.rarity === 5 && k.pullable !== false ? k : null; };
+const pullableSkins = r => S.pool.filter(e => e.type === 'skin' && +e.rarity === r && e.pullable !== false);
+/* every outfit the admin can put on a banner: UR slot = UR + XR, SSR slot = SSR (MR wedding outfits never), pullable or not, grouped by character */
+const bannerSkinCands = r => S.pool.filter(e => e.type === 'skin' && (r === 5 ? [5, 7].includes(+e.rarity) : +e.rarity === r)).sort((a, b) => ((findEntry(a.parent) || {}).name || '').localeCompare((findEntry(b.parent) || {}).name || '') || (+b.rarity - +a.rarity) || a.name.localeCompare(b.name));
+const skinLabel = k => { const c = findEntry(k.parent); return `${k.name}${c && !k.name.includes(c.name) ? ' · ' + c.name : ''}${+k.rarity === 7 ? ' (XR)' : ''}${k.pullable === false ? ' · not pullable' : ''}`; };
+const skinFeatured = () => { const k = findEntry(S.banners.skins && S.banners.skins.featured); return k && k.type === 'skin' && [5, 7].includes(+k.rarity) ? k : null; };
 const skinsEnd = () => S.banners.skins && S.banners.skins.end ? +new Date(S.banners.skins.end + 'T23:59:00') : null;
 /* ---------- special banners ----------
    Beginner Banner (beginner): 50 pulls in total, ×10 only, 20% off (8 Standard tickets or 24 pearls per ×10). No UR character
@@ -149,7 +152,7 @@ function bannerInfo(bk) {
   if (bk === 'stepup') { const f = stepFeat(), lose = std.filter(e => e.type === 'character'); return { bk, kind: 'feat', word: 'STEP-UP', tab: 'Step-Up', feat: f, lose, ur: lose, ssr: ssr.filter(e => e.type === 'character'), ends: null, title: f ? `${f.name} Step-Up` : bannerName('stepup'), step: true }; }
   if (bk === 'limited') { const f = limitedUR(); return { bk, kind: 'feat', word: 'LIMITED', tab: 'Limited', feat: f, lose: std, ur: std, ssr, ends: +new Date((S.banners.limited.end || '2026-11-11') + 'T23:59:00'), title: `${f ? f.name : 'Limited'} Summon` }; }
   if (bk === 'weekly') { const f = weeklyUR(); return { bk, kind: 'feat', word: 'WEEKLY', tab: 'Weekly', feat: f, lose: std, ur: std, ssr, ends: weekEnds(), title: f ? `${f.name} Spotlight` : bannerName('weekly'), note: 'A new random UR every Monday' }; }
-  if (bk === 'skins') { const urs = pullableSkins(5), f = skinFeatured(); return { bk, kind: f ? 'feat' : 'pool', word: 'OUTFITS', tab: 'Outfits', feat: f, lose: urs, ur: urs, ssr: pullableSkins(4), ends: skinsEnd(), title: bannerName('skins'), skins: true }; }
+  if (bk === 'skins') { const f = skinFeatured(), u0 = pullableSkins(5), urs = f && !u0.length ? [f] : u0; return { bk, kind: f ? 'feat' : 'pool', word: 'OUTFITS', tab: 'Outfits', feat: f, lose: urs, ur: urs, ssr: pullableSkins(4), ends: skinsEnd(), title: bannerName('skins'), skins: true }; }
   if (bk === 'memories') { const urs = pullableMems(5); return { bk, kind: 'pool', word: 'MEMORIES', tab: 'Memories', feat: null, lose: urs, ur: urs, ssr: pullableMems(4), ends: null, title: bannerName('memories'), mems: true, note: 'Double UR and SSR rates' }; }
   return { bk, kind: 'pool', word: 'PEARL WISH', tab: 'Permanent', feat: null, lose: std, ur: std, ssr, ends: null, title: bannerName('standard') };
 }

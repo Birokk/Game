@@ -26,13 +26,15 @@ function cbPool(kind, r) {
   if (kind === 'mem') return pullableMems(r).filter(Boolean);
   return S.pool.filter(e => e.type === 'character' && !e.mc && +e.rarity === r && e.pullable !== false);
 }
+/* what the admin can choose from (outfits: also XR in the UR slot and ones not pullable); the default pools stay cbPool */
+function cbCands(kind, r) { return kind === 'skin' ? bannerSkinCands(r) : cbPool(kind, r); }
 function cbInfo(bk) {
-  const c = cbOf(bk), K = CB_KINDS[c.kind] || CB_KINDS.char, urs = cbPool(c.kind, 5), ssrs = cbPool(c.kind, 4);
-  const feat = urs.find(e => e.id === c.feat) || null;
+  const c = cbOf(bk), K = CB_KINDS[c.kind] || CB_KINDS.char, urs = cbPool(c.kind, 5), ssrs = cbPool(c.kind, 4), uc = cbCands(c.kind, 5), sc = cbCands(c.kind, 4);
+  const feat = uc.find(e => e.id === c.feat) || null;
   const pick = (ids, all) => { const L = (ids || []).map(id => all.find(e => e.id === id)).filter(Boolean); return L.length ? L : null; };
-  let ur = pick(c.ur, urs) || (feat && c.kind === 'char' ? standardURs().filter(e => e.type === 'character') : urs);
-  if (feat && !ur.length) ur = urs;
-  const ssr = pick(c.ssr, ssrs) || ssrs;
+  let ur = pick(c.ur, uc) || (feat && c.kind === 'char' ? standardURs().filter(e => e.type === 'character') : urs);
+  if (feat && !ur.length) ur = urs.length ? urs : [feat];
+  const ssr = pick(c.ssr, sc) || ssrs;
   return { bk, kind: feat ? 'feat' : 'pool', word: K.tag.toUpperCase(), tab: c.tag || K.tag, feat, lose: ur, ur: feat ? ur : ur.filter(e => e), ssr,
     ends: cbEnd(c), title: c.name || `New ${K.name} Banner`, skins: c.kind === 'skin', mems: c.kind === 'mem', note: c.note || (+c.rate > 1 ? `${c.rate}× UR and SSR rates` : ''),
     art: MEDIA.get('banner:' + c.id) || null, col: c.col || K.col, cb: true };
@@ -91,13 +93,15 @@ function bnNew(kind, from) {
   cbList().push(c); bnSel = 'cb:' + c.id; persist(); renderBannersTab();
   toast(from ? 'Banner copied (switched off).' : `New ${K.name.toLowerCase()} banner. Pick a featured UR, set the dates and switch it on.`);
 }
+const bnLbl = e => e.type === 'skin' ? skinLabel(e) : e.name;
+const bnSub = e => { if (e.type !== 'skin') return ''; const c = findEntry(e.parent); return `<small class="bna-pks">${c ? esc(c.name) : ''}${+e.rarity === 7 ? ' · XR' : ''}${e.pullable === false ? ' · not pullable' : ''}</small>`; };
 const bnThumb = e => { const m = e.type === 'memory' && (S.memories || []).find(x => x.id === e.id); return `<span class="bna-th">${m ? memCellPic(m, 0) : baseThumb(e)}</span>`; };
 function bnEditor(ed, c) {
-  const K = CB_KINDS[c.kind], urs = cbPool(c.kind, 5), ssrs = cbPool(c.kind, 4), B = bannerInfo('cb:' + c.id), st = cbState(c);
+  const K = CB_KINDS[c.kind], urs = cbCands(c.kind, 5), ssrs = cbCands(c.kind, 4), B = bannerInfo('cb:' + c.id), st = cbState(c);
   const O = bannerOdds('cb:' + c.id), tier = r => (O.tiers.find(t => t.r === r) || { p: 0 }).p, featP = B.feat ? (O.groups.find(g => g.key === 'feat') || { items: [{ p: 0 }] }).items[0].p : 0;
   const seg = (key, opts) => `<div class="bna-seg">${opts.map(([v, l]) => `<button type="button" class="${String(c[key]) === String(v) ? 'on' : ''}" data-cbset="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
   const sw = (key, label, sub, on) => `<label class="bna-sw"><input type="checkbox" data-cbchk="${key}" ${on ? 'checked' : ''}><i></i><span><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</span></label>`;
-  const chips = (key, list, all) => list.length ? `<div class="bna-picks">${list.map(e => { const on = (c[key] || []).includes(e.id); return `<button type="button" class="bna-pk ${on ? 'on' : ''}" data-cbpick="${key}" data-id="${esc(e.id)}" title="${esc(e.name)}">${bnThumb(e)}<span>${esc(e.name)}</span>${on ? `<i>${icon('check')}</i>` : ''}</button>`; }).join('')}</div><p class="tiny">${(c[key] || []).length ? `${(c[key] || []).length} chosen.` : all} Tap to choose; none chosen uses the default.</p>` : `<p class="tiny">No ${K.many} of this rarity yet.</p>`;
+  const chips = (key, list, all) => list.length ? `<div class="bna-picks">${list.map(e => { const on = (c[key] || []).includes(e.id); return `<button type="button" class="bna-pk ${on ? 'on' : ''}" data-cbpick="${key}" data-id="${esc(e.id)}" title="${esc(bnLbl(e))}">${bnThumb(e)}<span>${esc(e.name)}${bnSub(e)}</span>${on ? `<i>${icon('check')}</i>` : ''}</button>`; }).join('')}</div><p class="tiny">${(c[key] || []).length ? `${(c[key] || []).length} chosen.` : all} Tap to choose; none chosen uses the default.</p>` : `<p class="tiny">No ${K.many} of this rarity yet.</p>`;
   const art = MEDIA.get('banner:' + c.id), e = B.feat || B.ur.find(x => baseArt(x)) || B.ur[0], pv = art || (e && baseArt(e));
   ed.innerHTML = `<div class="bna-ce" style="--bc:${B.col}">
     <div class="bna-form">
@@ -108,7 +112,7 @@ function bnEditor(ed, c) {
       <div class="bna-blk"><h5>When</h5>${sw('active', 'Banner is on', st === 'live' ? 'Players can summon on it now' : st === 'soon' ? 'Starts on its start date' : st === 'ended' ? 'Its end date has passed' : 'Hidden from players', c.active)}
         <div class="bna-row2"><label class="field"><span>Starts on</span><input class="input" type="date" id="cbStart" value="${esc(c.start || '')}"></label><label class="field"><span>Ends on</span><input class="input" type="date" id="cbEnd" value="${esc(c.end || '')}"></label></div></div>
       <div class="bna-blk"><h5>Featured UR ${K.name.toLowerCase()}<span>a 50/50 on every UR, then a guarantee</span></h5>
-        <div class="bna-picks feat"><button type="button" class="bna-pk none ${c.feat ? '' : 'on'}" data-cbfeat=""><span class="bna-th">${icon('sparkle')}</span><span>None · equal chance</span></button>${urs.map(x => `<button type="button" class="bna-pk ${c.feat === x.id ? 'on' : ''}" data-cbfeat="${esc(x.id)}" title="${esc(x.name)}">${bnThumb(x)}<span>${esc(x.name)}</span>${c.feat === x.id ? `<i>${icon('star')}</i>` : ''}</button>`).join('')}</div></div>
+        <div class="bna-picks feat"><button type="button" class="bna-pk none ${c.feat ? '' : 'on'}" data-cbfeat=""><span class="bna-th">${icon('sparkle')}</span><span>None · equal chance</span></button>${urs.map(x => `<button type="button" class="bna-pk ${c.feat === x.id ? 'on' : ''}" data-cbfeat="${esc(x.id)}" title="${esc(bnLbl(x))}">${bnThumb(x)}<span>${esc(x.name)}${bnSub(x)}</span>${c.feat === x.id ? `<i>${icon('star')}</i>` : ''}</button>`).join('')}</div></div>
       <div class="bna-blk"><h5>${c.feat ? `Other UR ${K.many} (when the 50/50 is lost)` : `UR ${K.many} on this banner`}</h5>${chips('ur', urs.filter(x => x.id !== c.feat), c.feat && c.kind === 'char' ? 'Default: the permanent banner\'s URs.' : `Default: every UR ${K.name.toLowerCase()}.`)}</div>
       <div class="bna-blk"><h5>SSR ${K.many}</h5>${chips('ssr', ssrs, `Default: every SSR ${K.name.toLowerCase()}.`)}</div>
       <div class="bna-blk"><h5>Rules</h5>

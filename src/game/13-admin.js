@@ -539,8 +539,8 @@ function renderBannersTab() {
         <label class="field"><span>Banner name</span><input class="input" id="bnSkName" maxlength="30" value="${esc(bannerName('skins'))}"></label>
         <label class="field"><span>Ends on (optional)</span><input class="input" type="date" id="bnSkEnd" value="${esc(S.banners.skins.end || '')}"></label>
       </div>
-      <label class="field"><span>Featured UR outfit</span><select class="input" id="bnSkFeat"><option value="">None (equal chance)</option>${pullableSkins(5).map(k => `<option value="${esc(k.id)}" ${k.id === S.banners.skins.featured ? 'selected' : ''}>${esc(k.name)}</option>`).join('')}</select></label>
-      <p class="tiny">${pullableSkins(5).length} UR and ${pullableSkins(4).length} SSR outfits are on this banner.</p>
+      <label class="field"><span>Featured UR outfit</span><select class="input" id="bnSkFeat"><option value="">None (equal chance)</option>${bannerSkinCands(5).map(k => `<option value="${esc(k.id)}" ${k.id === S.banners.skins.featured ? 'selected' : ''}>${esc(skinLabel(k))}</option>`).join('')}</select></label>
+      <p class="tiny">${pullableSkins(5).length} UR and ${pullableSkins(4).length} SSR outfits are on this banner. The list above has every UR and XR outfit (${bannerSkinCands(5).length}), also ones switched off as "Pullable" in the Game pool; a featured one is always on the banner.</p>
     </section>
   </div>`;
   document.querySelectorAll('[data-selur]').forEach(b => b.onclick = () => { const id = b.dataset.selur, cur = S.banners.standard.sel || []; S.banners.standard.sel = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]; persist(); renderBannersTab(); });
