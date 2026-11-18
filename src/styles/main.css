@@ -7208,3 +7208,79 @@ button.rpb-side{cursor:pointer}button.rpb-side:hover{border-color:rgba(255,255,2
 .mfw-hint{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-family:var(--display);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.6);animation:mfwTw 1.6s ease-in-out infinite alternate}
 @media (prefers-reduced-motion:reduce){.mfw-sky::before,.mfw-pic,.mfw.shown .mfw-rays,.mfw-hint{animation:none}}
 .mfw-cv{transition:opacity .7s,filter .7s}.mfw.shown .mfw-cv{opacity:.4;filter:blur(3px)}
+
+/* ---- Battle screen: Adventure / Versus sub tabs (57-battle.js BTH_TABS) ---- */
+.bth{grid-template-rows:auto auto minmax(0,1fr)}
+.bth-tabs{position:relative;z-index:2;justify-self:center;display:flex;gap:6px;padding:5px;border-radius:22px 6px 22px 6px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 10px 30px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.bth-tab{position:relative;display:flex;align-items:center;gap:10px;min-width:220px;padding:8px 18px 8px 9px;border:0;border-radius:17px 4px 17px 4px;background:transparent;color:rgba(255,255,255,.72);cursor:pointer;text-align:left;transition:background .25s,color .25s}
+.bth-tab:hover{background:rgba(255,255,255,.07);color:#fff}
+.bth-tbi{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);transition:background .25s,box-shadow .25s}
+.bth-tbi .ic{width:19px;height:19px}
+.bth-tbt{display:grid;gap:1px;min-width:0}
+.bth-tbt b{font:700 17px var(--display);letter-spacing:.04em}
+.bth-tbt small{font:600 11.5px var(--read);opacity:.7;white-space:nowrap}
+.bth-tab.on{color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.07));box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 0 0 1px rgba(255,255,255,.22)}
+.bth-tab.on .bth-tbi{background:var(--cry-grad);color:var(--cry-ink);border-color:transparent;box-shadow:0 0 16px var(--cry-glow)}
+.bth-tab.on::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:99px;background:var(--cry-grad);box-shadow:0 0 10px var(--cry-glow)}
+.bth-tdot{position:absolute;top:6px;right:8px}
+@media (max-width:820px) and (orientation:portrait){
+  .bth-tabs{justify-self:stretch}.bth-tab{flex:1;min-width:0;padding:6px 10px 6px 6px;gap:8px}
+  .bth-tbi{width:32px;height:32px}.bth-tbi .ic{width:16px;height:16px}.bth-tbt b{font-size:15px}.bth-tbt small{font-size:10px;white-space:normal;line-height:1.15}
+}
+@media (max-width:420px) and (orientation:portrait){.bth-tbt small{display:none}}
+@media (max-height:500px) and (orientation:landscape){
+  .bth-tabs{padding:3px}.bth-tab{min-width:0;padding:4px 14px 4px 4px;gap:7px}.bth-tbi{width:28px;height:28px}.bth-tbi .ic{width:14px;height:14px}
+  .bth-tbt b{font-size:14px}.bth-tbt small{display:none}
+}
+
+/* ---- Battle Rank: the chip is a button that opens the Battle Rank window (67-progress.js openBrInfo) ---- */
+button.br-chip{font:inherit;color:inherit;cursor:pointer;transition:background .2s,border-color .2s,transform .15s}
+button.br-chip:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.32)}
+button.br-chip:active{transform:scale(.97)}
+.br-chip>.ic{width:15px;height:15px;opacity:.65;flex:none}
+@media (max-width:820px){.br-chip>.ic{display:none}}
+.modal-back[data-kind=brank] .modal{width:min(720px,calc(100vw - 24px))}
+.brx{display:grid;gap:14px}
+.brx-hero{display:flex;align-items:center;gap:20px;padding:16px 18px;border-radius:22px 6px 22px 6px;background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.brx-medal{position:relative;flex:none;width:104px;height:104px;border-radius:50%;display:grid;place-content:center;justify-items:center;background:radial-gradient(circle at 50% 35%,#2c2357,#110d2a 70%)}
+.brx-medal i{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#ffd6ec,#d7c2ff,#bfe8ff,#ffd6ec);-webkit-mask:radial-gradient(circle,transparent 56%,#000 57%);mask:radial-gradient(circle,transparent 56%,#000 57%);animation:brxSpin 9s linear infinite;box-shadow:0 0 24px var(--cry-glow)}
+.brx-medal b{position:relative;font:700 40px/1 var(--display);background:var(--cry-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brx-medal small{position:relative;font:700 11px var(--read);opacity:.7;letter-spacing:.08em}
+@keyframes brxSpin{to{transform:rotate(360deg)}}
+.brx-me{display:grid;gap:6px;min-width:0;flex:1}
+.brx-k{font:700 11px var(--read);letter-spacing:.14em;text-transform:uppercase;opacity:.65}
+.brx-me h3{margin:0;font-size:26px}
+.brx-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.4)}
+.brx-bar i{display:block;height:100%;border-radius:inherit;background:var(--cry-grad);box-shadow:0 0 12px var(--cry-glow)}
+.brx-xp{font:600 12.5px var(--read);opacity:.82}.brx-xp b{font-family:var(--display)}
+.brx-today{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px 4px 16px 4px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
+.brx-today>.ic{flex:none;width:26px;height:26px;opacity:.7}
+.brx-today span{display:grid;gap:2px}.brx-today b{font-size:14px}.brx-today small{font:600 12px var(--read);opacity:.72}
+.brx-today.on{background:linear-gradient(90deg,rgba(255,214,236,.16),rgba(191,232,255,.08));border-color:rgba(255,214,236,.4)}
+.brx-today.on>.ic{opacity:1;color:#ffd6ec;filter:drop-shadow(0 0 8px var(--cry-glow))}
+.brx-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 2px -4px;font:700 15px var(--display);letter-spacing:.04em}
+.brx-h span{font:600 12px var(--read);opacity:.75;letter-spacing:0}
+.brx-tiles,.brx-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.brx-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.brx-tile{display:grid;justify-items:center;gap:2px;padding:10px 6px;border-radius:14px 4px 14px 4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:center}
+.brx-tile>span .ic{width:18px;height:18px;opacity:.75}
+.brx-tile b{font:700 20px var(--display)}.brx-tile small{font:600 11px var(--read);opacity:.7}
+.brx-tile.hi{background:linear-gradient(180deg,rgba(255,214,236,.18),rgba(191,232,255,.06));border-color:rgba(255,214,236,.35)}
+.brx-note{margin:0;font:500 12.5px/1.5 var(--read);opacity:.78}
+.brx-gates{display:grid;gap:6px}
+.brx-gate{display:grid;grid-template-columns:38px 30px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:14px 4px 14px 4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+.brx-gr{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:700 16px var(--display);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+.brx-gi .ic{width:20px;height:20px;opacity:.75}
+.brx-gt{display:grid;gap:1px;min-width:0}.brx-gt b{font-size:13.5px}.brx-gt small{font:600 11.5px var(--read);opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brx-gs{display:inline-flex;align-items:center;gap:5px;font:700 12px var(--read);white-space:nowrap;opacity:.85}.brx-gs .ic{width:14px;height:14px}
+.brx-gate.open .brx-gr,.brx-gate.done .brx-gr{background:var(--cry-grad);color:var(--cry-ink);border-color:transparent}
+.brx-gate.done{opacity:.72}.brx-gate.done .brx-gs{color:#9ff5d6}.brx-gate.open .brx-gs{color:#bfe8ff}
+.brx-gate.lock .brx-gt,.brx-gate.lock .brx-gi{opacity:.6}
+.brx-gate.next{border-color:rgba(255,214,236,.5);background:linear-gradient(90deg,rgba(255,214,236,.12),rgba(255,255,255,.03));box-shadow:0 0 18px rgba(255,180,230,.15)}
+.brx-gate.next .brx-gr{border-color:rgba(255,214,236,.7);box-shadow:0 0 12px var(--cry-glow)}
+@media (max-width:560px){
+  .brx-hero{gap:12px;padding:12px}.brx-medal{width:78px;height:78px}.brx-medal b{font-size:30px}.brx-me h3{font-size:20px}
+  .brx-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .brx-gate{grid-template-columns:32px minmax(0,1fr) auto;gap:8px}.brx-gi{display:none}.brx-gr{width:32px;height:32px;font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){.brx-medal i{animation:none}}

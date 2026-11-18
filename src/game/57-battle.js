@@ -20,6 +20,15 @@ const BTH_MODES = [
   { id: 'gboss', name: 'Guild Boss', kind: 'Card Battle · Guild', ic: 'dragon', col: '#ffb07a', col2: '#e0384f' },
   { id: 'arena', name: 'Arena', kind: 'Card Battle · Versus', ic: 'arena', col: '#ff9ab8', col2: '#ffcf6a' }
 ];
+/* two sub tabs (the owner's ask): Adventure (the story and co-op modes, first) and Versus (fights against other
+   players' decks and practice); bthTab is kept while you come back from a mode, a fresh open from home starts on Adventure */
+const BTH_TABS = [
+  { id: 'adv', name: 'Adventure', ic: 'map', sub: 'Story, climbs, raids & bosses', modes: ['campaign', 'raids', 'tree', 'world', 'gboss'] },
+  { id: 'vs', name: 'Versus', ic: 'swords', sub: 'Duels, Arena & practice', modes: ['quick', 'arena', 'training'] }
+];
+let bthTab = 'adv';
+const bthTabOf = id => BTH_TABS.find(t => t.id === id) || BTH_TABS[0];
+const bthModesOf = t => bthTabOf(t).modes.map(id => BTH_MODES.find(m => m.id === id)).filter(Boolean);
 /* the drawn scene of a card: BTH_ART, or for the World Map the parchment map itself (WM_SVG, centred on the tree) */
 const bthScene = id => id === 'world' && MEDIA.get('world:map') ? `<img class="bth-svg bth-wmimg" src="${MEDIA.get('world:map')}" alt="">` : id === 'world' ? WM_SVG.replace('class="wm-svg"', 'class="wm-svg bth-svg bth-wm"') : BTH_ART[id] || '';
 const bthArt = (id, bg) => { const u = MEDIA.get('battle:' + id); if (u) return artImg('battle:' + id);
@@ -48,6 +57,7 @@ let bthEl = null, bthBack = false, bthHov = 'campaign';
 function openBattle() {
   closeModal();
   if (!bthEl) { bthEl = document.createElement('div'); bthEl.className = 'bth'; bthEl.setAttribute('role', 'dialog'); bthEl.setAttribute('aria-label', 'Battle'); document.body.appendChild(bthEl); }
+  if (!bthBack) { bthTab = 'adv'; bthScrollX = 0; bthHov = bthTabOf('adv').modes[0]; }
   bthBack = false; renderBattle();
 }
 function closeBattle() { if (bthEl) { bthEl.remove(); bthEl = null; } bthBack = false; renderMenu(); }
@@ -84,12 +94,16 @@ function renderBattle() {
       <div class="bth-curs">${cur('stamina', 'Stamina', `<button class="plus" id="bthStam" aria-label="Get more stamina">${icon('plus')}</button>`)}${cur('coins', 'Gold coins', `<button class="plus" data-open="vault" aria-label="Get more gold: Golden Vault">${icon('plus')}</button>`)}${cur('pearls', 'Pearls', `<button class="plus" data-open="shop" data-shoptab="topup" aria-label="Get more pearls">${icon('plus')}</button>`)}</div>
       ${canAdmin() ? `<button class="btn ghost bth-adm" id="bthAdm" title="Admin: card wallpapers">${icon('image')}<span>Wallpapers</span></button>` : ''}
       <button class="inv-x" id="bthClose" aria-label="Close">${icon('close')}</button></header>
-    <section class="bth-stage"><button class="bth-arr l" id="bthL" aria-label="Scroll left" hidden>${icon('back')}</button><div class="bth-row">${BTH_MODES.map(bthCard).join('')}</div><button class="bth-arr r" id="bthR" aria-label="Scroll right" hidden>${icon('back')}</button></section>`;
+    <nav class="bth-tabs" role="tablist" aria-label="Battle modes">${BTH_TABS.map(t => { const dot = bthModesOf(t.id).some(m => bthInfo(m.id).dot);
+      return `<button class="bth-tab ${t.id === bthTab ? 'on' : ''}" role="tab" aria-selected="${t.id === bthTab}" data-btab="${t.id}"><span class="bth-tbi">${icon(t.ic)}</span><span class="bth-tbt"><b>${t.name}</b><small>${t.sub}</small></span>${dot ? '<i class="cmp-dot bth-tdot"></i>' : ''}</button>`; }).join('')}</nav>
+    <section class="bth-stage"><button class="bth-arr l" id="bthL" aria-label="Scroll left" hidden>${icon('back')}</button><div class="bth-row" data-tab="${bthTab}">${bthModesOf(bthTab).map(bthCard).join('')}</div><button class="bth-arr r" id="bthR" aria-label="Scroll right" hidden>${icon('back')}</button></section>`;
   const q = s => bthEl.querySelector(s);
   q('#bthClose').onclick = closeBattle;
   q('#bthStam').onclick = openStamina;
   const ad = q('#bthAdm'); if (ad) ad.onclick = () => openAdmin('battle');
+  bthEl.querySelectorAll('[data-btab]').forEach(b => b.onclick = () => { if (b.dataset.btab === bthTab) return; bthTab = b.dataset.btab; bthScrollX = 0; bthHov = bthTabOf(bthTab).modes[0]; renderBattle(); });
   bthEl.querySelectorAll('[data-bt]').forEach(b => { b.onclick = () => bthGo(b.dataset.bt); b.onpointerenter = b.onfocus = () => { bthHov = b.dataset.bt; bthBg(bthHov); }; });
+  if (!bthTabOf(bthTab).modes.includes(bthHov)) bthHov = bthTabOf(bthTab).modes[0];
   bthBg(bthHov);
   bthScroller();
 }
@@ -109,7 +123,7 @@ function bthScroller() {
   upd(); requestAnimationFrame(upd);
 }
 addEventListener('resize', () => { if (bthEl) { const row = bthEl.querySelector('.bth-row'); if (row) row.dispatchEvent(new Event('scroll')); } });
-INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in one place. Pick a mode:</p>
+INFO.battle = () => ({ title: 'Battle', body: `<p class="desc">Every fight in one place, in two tabs: <b>Adventure</b> (Campaign, Raids, the Great Tree, the World Map and the Guild Boss) and <b>Versus</b> (Quick Match, the Arena and Free Training). Tap <b>Battle Rank</b> in the header to see how your rank grows and what it opens. Pick a mode:</p>
   <ul class="info-list"><li><b>Campaign</b>: Card Battle stages in chapters, each teaching or twisting the rules. Up to 3 stars per stage (1 pearl each) and star rewards per chapter.</li>
   <li><b>Raids</b>: spend stamina in the gear raids for clothes, or in the Golden Vault for gold.</li>
   <li><b>The Great Tree</b>: climb floor by floor with your own deck; each cleared floor opens the next. Stars give pearls, there are no milestone rewards.</li>

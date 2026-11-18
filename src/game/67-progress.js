@@ -103,5 +103,39 @@ const brLockHTML = st => lvLockHTML(st) + brLockOnly(st);
 const brLockOnly = st => { const n = brStageBlock(st); return n ? `<div class="br-lock">${icon('lock')}<span><b>Needs Battle Rank ${n}</b><small>You are rank ${brLv()}. Every Card Battle match gives Battle Rank EXP (a win 100, the first win of the day +200).</small></span></div>` : ''; };
 function brChipHTML() {
   const o = brOf(brState().xp);
-  return `<span class="br-chip" title="Battle Rank ${o.r}${o.need ? ` · ${o.xp} / ${o.need} EXP to rank ${o.r + 1}` : ' · max'}. Win, lose or draw, every match gives Battle Rank EXP; it opens campaign chapters, Great Tree floors, the Expert challenger and the Arena."><b>${o.r}</b><span><small>Battle Rank</small><i style="--p:${o.need ? (o.xp / o.need * 100).toFixed(1) : 100}%"></i></span></span>`;
+  return `<button class="br-chip" data-open="brank" title="Battle Rank ${o.r}${o.need ? ` · ${o.xp} / ${o.need} EXP to rank ${o.r + 1}` : ' · max'} · tap for details" aria-label="Battle Rank ${o.r}: how it works"><b>${o.r}</b><span><small>Battle Rank</small><i style="--p:${o.need ? (o.xp / o.need * 100).toFixed(1) : 100}%"></i></span>${icon('info')}</button>`;
+}
+/* the Battle Rank window (the owner's ask: tap the chip to see how it works and where you stand) */
+function brGates() {
+  const L = [{ r: 5, ic: 'arena', t: 'The Arena', d: 'Join and attack other players\' defense decks', ok: arJoined() },
+    { r: 10, ic: 'bolt', t: 'Quick Match · Expert', d: 'The strongest challenger (also needs 3 Hard wins)', ok: ((ccSave().qmWins || {}).expert || 0) > 0 }];
+  Object.entries(BR_CHAPTER).forEach(([id, r]) => { const ch = CC_CAMP.find(c => c.id === id); if (!ch) return;
+    const blk = id === 'c6' ? ' (opens Chapters 6–10)' : id === 'c11' ? ' (opens Chapters 11–15)' : '';
+    L.push({ r, ic: 'map', t: `Campaign · Chapter ${ch.no}`, d: esc(ch.name) + blk, ok: ch.stages.some(st => ccCampHave(st.id)[0]) }); });
+  const F = ccTowerFloors(), fl = F.filter(f => f.no >= 4 && [4, 10, 15].includes(f.no) || f.no === F.length);
+  fl.forEach(f => L.push({ r: twrRankNeed(f.no), ic: 'tree', t: `The Great Tree · Floor ${f.no}`, d: esc(f.name), ok: !!ccCampHave(f.id)[0] }));
+  return L.sort((a, b) => a.r - b.r);
+}
+function openBrInfo() {
+  const b = brState(), o = brOf(b.xp), st = ccSave().stats || {}, first = b.day !== dayKey(), le = pbLeader(), owl = le ? petPct(le.id, 'exp') : 0;
+  const pct = o.need ? o.xp / o.need * 100 : 100, toMax = (() => { let t = o.need ? o.need - o.xp : 0; for (let r = o.r + 1; r < BR_MAX; r++) t += brNeed(r); return t; })();
+  const G = brGates(), nxt = G.find(g => g.r > o.r);
+  const tile = (ic, v, l, cls = '') => `<div class="brx-tile ${cls}"><span>${icon(ic)}</span><b>${v}</b><small>${l}</small></div>`;
+  const body = `<div class="brx">
+    <div class="brx-hero"><div class="brx-medal"><i></i><b>${o.r}</b><small>of ${BR_MAX}</small></div>
+      <div class="brx-me"><span class="brx-k">Your Battle Rank</span><h3 class="ts">Rank ${o.r}${o.r >= BR_MAX ? ' · Max' : ''}</h3>
+        <div class="brx-bar"><i style="width:${pct.toFixed(1)}%"></i></div>
+        <span class="brx-xp">${o.need ? `<b>${fmt(o.xp)}</b> / ${fmt(o.need)} EXP to rank ${o.r + 1} · ${fmt(o.need - o.xp)} to go` : 'Top rank reached'}</span>
+        <span class="brx-xp">${fmt(b.xp)} Battle Rank EXP earned${toMax ? ` · ${fmt(toMax)} more to rank ${BR_MAX}` : ''}</span></div></div>
+    <div class="brx-today ${first ? 'on' : ''}">${icon(first ? 'gift' : 'check')}<span><b>${first ? `First win of the day: +${BR_FIRST_WIN} EXP waiting` : 'First win of the day: claimed'}</b><small>${first ? 'Your next Card Battle win today gives it on top of the win.' : 'It comes back at midnight.'}</small></span></div>
+    <h4 class="brx-h">EXP per match</h4>
+    <div class="brx-tiles">${tile('trophy', '+' + BR_XP.win, 'Win')}${tile('swords', '+' + BR_XP.draw, 'Draw')}${tile('shield', '+' + BR_XP.lose, 'Loss')}${tile('gift', '+' + BR_FIRST_WIN, 'First win a day', 'hi')}</div>
+    <p class="brx-note">Every Card Battle match counts, win, lose or draw: Campaign stages, Raids, the Great Tree, Quick Match, the Arena, the Guild Boss and the region battles. Free Training gives nothing. ${owl ? `<b>Your leader's ${esc(le.name)} pet adds +${owl}%</b> (Owl pets boost Battle Rank EXP).` : 'An Owl pet on your deck leader adds a bonus %.'} There are no daily limits: only your rank holds you back.</p>
+    <div class="brx-stats">${tile('trophy', fmt(st.w || 0), 'Wins')}${tile('swords', fmt(st.d || 0), 'Draws')}${tile('shield', fmt(st.l || 0), 'Losses')}</div>
+    <h4 class="brx-h">What your rank opens${nxt ? `<span>Next: rank ${nxt.r} · ${esc(nxt.t)}</span>` : ''}</h4>
+    <div class="brx-gates">${G.map(g => { const reach = o.r >= g.r, cls = g.ok ? 'done' : reach ? 'open' : 'lock';
+      return `<div class="brx-gate ${cls} ${g === nxt ? 'next' : ''}"><span class="brx-gr">${g.r}</span><span class="brx-gi">${icon(g.ic)}</span><span class="brx-gt"><b>${g.t}</b><small>${g.d}</small></span><span class="brx-gs">${g.ok ? `${icon('check')}Done` : reach ? `${icon('check')}Open` : `${icon('lock')}Rank ${g.r}`}</span></div>`; }).join('')}</div>
+    <p class="brx-note">Great Tree floors from floor 4 need rank 1.4 × the floor + 2 (floor 10 → 16, floor 20 → ${BR_MAX}). Anything you already cleared, won or joined stays open.${canAdmin() ? ' Admins skip every rank gate.' : ''}</p>
+  </div>`;
+  openModal({ title: 'Battle Rank', ic: 'trophy', kind: 'brank', body });
 }
