@@ -137,7 +137,7 @@ function renderSettings() {
     + setRow('Skip summon animation', setOnOff('skipPull'), 'Jump straight to the results')
     + setRow('Redeem code', btn('setRedeem', `${icon('gift')}Redeem`))
     + setRow('Title screen', btn('setTitle', `${icon('back')}Go to title screen`))
-    + (canAdmin() ? setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`), 'Art, icons, wallpapers and every other admin setting') : '');
+    + (canAdmin() ? setRow('Admin panel', btn('setAdmin', `${icon('wrench')}Open`), 'Art, icons, wallpapers and every other admin setting') + setRow('Backup for PC', btn('setPcBackup', `${icon('upload')}Open`), 'Download your content and every uploaded image as a zip, to run the game on your computer') : '');
   else if (setTab === 'account') {
     const acct = Backend.user ? esc(Backend.user.email || 'Signed in') : 'Guest · this browser only';
     rows = setRow('Account', Backend.on ? btn('setAcct', Backend.user ? 'Sign out' : 'Sign in') : `<span class="sx-val">${acct}</span>`, Backend.on ? acct : '')
@@ -161,6 +161,7 @@ function renderSettings() {
   const ab = on('setAcct'); if (ab) ab.onclick = () => Backend.user ? confirmSignOut() : openSignIn(true);
   const mb = on('setMC'); if (mb) mb.onclick = () => { if (!mcSwitchLeft()) openMCPick(true); };
   const ad = on('setAdmin'); if (ad) ad.onclick = () => { closeSettings(); openAdmin(); };
+  const pb = on('setPcBackup'); if (pb) pb.onclick = () => { closeSettings(); openAdmin('backup'); };
 }
 
 /* wallpaper picker */

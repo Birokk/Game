@@ -45,6 +45,7 @@ const ADMIN_NAV = [
     ['icons', 'Interface icons', 'grid', 'replace any icon ui', 'Replace any icon of the interface with a picture'],
     ['art', 'Item icons', 'coin', 'exp egg memory ticket name selector fragments summon points guild points currency vip level skin instant clear thread gear honor participation quest', 'Icons of currencies and items: EXP, eggs, tickets, fragments, points']] },
   { g: 'Testing & server', ic: 'wrench', items: [
+    ['backup', 'Backup for PC', 'upload', 'backup download zip pc computer localhost images pictures export save copy', 'Download all your content and every uploaded image as a zip, to run the game on your PC'],
     ['wallet', 'Test tools', 'wrench', 'wallet currencies reset pity unlock level vip honor guild farm stamina rankings', 'Test balances and resets for every feature (only this browser)'],
     ['server', 'Server', 'upload', 'publish supabase cloud support inbox connection', 'The server connection, publishing content and the support inbox']] }
 ];
@@ -89,6 +90,7 @@ function renderAdminTab() {
   if (adminTab === 'wardrobe') return renderWardrobeTab();
   if (adminTab === 'memories') return renderMemoriesTab();
   if (adminTab === 'server') return renderServerTab();
+  if (adminTab === 'backup') return renderBackupTab();
   if (adminTab.startsWith('farm')) return renderFarmTab();
   if (adminTab === 'events') return renderEventsTab();
   if (adminTab === 'raids') return renderRaidsTab();

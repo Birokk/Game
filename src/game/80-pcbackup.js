@@ -130,3 +130,21 @@ async function pcFolderLoad() {
     host.appendChild(box); $('#adPcZip2').onclick = () => downloadPcBackup($('#adPcArea'));
     return r;
   }; }
+
+/* its own admin page (Testing & server → Backup for PC), the owner couldn't find the button inside Game pool */
+function renderBackupTab() {
+  const keys = [...MEDIA.keys()], chars = S.pool.filter(e => e.type === 'character').length;
+  $('#adPanel').innerHTML = `<div class="pcb">
+    <div class="pcb-card main"><div><h3>Backup for PC</h3><p class="tiny">One zip with everything you made here and every picture you uploaded, so the game runs on your computer at localhost with all of it.</p></div>
+      <div class="row" style="gap:10px;flex-wrap:wrap;margin:10px 0"><span class="chip">${icon('image')}${keys.length} images</span><span class="chip">${icon('chars')}${chars} characters</span><span class="chip">${icon('book')}${S.pool.length} pool entries</span></div>
+      <div class="row"><button type="button" class="btn gold" id="adPcZip3">${icon('upload')}Download backup for PC (.zip)</button></div><div id="adPcArea3"></div></div>
+    <div class="pcb-card"><div><h3>What is inside</h3><p class="tiny">A folder <b>backup</b> with <b>content.json</b> (characters, banners, outfits, events, offers, layouts, settings and your progress), <b>images/</b> (every uploaded picture as its own file, under its own path: art:aria → images/art/aria.png) and <b>README.txt</b>.</p></div></div>
+    <div class="pcb-card"><div><h3>How to use it on your PC</h3><ol class="tiny" style="margin:6px 0 0;padding-left:18px;line-height:1.7">
+      <li>Install Node.js from nodejs.org, once.</li>
+      <li>Unzip the project zip (the game's code).</li>
+      <li>Unzip this backup into the project's <b>public</b> folder (make the folder if it isn't there), so you have <b>public/backup/content.json</b>.</li>
+      <li>Double-click <b>start-windows.bat</b> (Mac / Linux: <b>sh start-mac-linux.sh</b>). The game opens at localhost and loads the backup by itself.</li></ol>
+      <p class="tiny" style="margin-top:8px">Make the backup in the same browser where you uploaded your pictures: they are kept in that browser.${pcLoaded ? ` This page loaded a backup from ${esc(new Date(pcLoaded.at).toLocaleString())}.` : ''}</p></div></div>
+  </div>`;
+  $('#adPcZip3').onclick = () => downloadPcBackup($('#adPcArea3'));
+}

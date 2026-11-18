@@ -7653,3 +7653,13 @@ button.br-chip:active{transform:scale(.97)}
 }
 @media (prefers-reduced-motion:reduce){.qlx-hart{animation:none}}
 .bna-pks{display:block;font:600 9px/1.2 var(--read);opacity:.7;margin-top:1px}
+
+/* admin → Backup for PC (80-pcbackup.js) */
+.pcb{display:flex;flex-direction:column;gap:14px;max-width:860px}
+.pcb-card{padding:18px 20px;border-radius:20px 6px 20px 6px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.15)}
+.pcb-card.main{border-color:rgba(255,179,214,.4);box-shadow:0 0 24px rgba(255,122,184,.12)}
+.pcb-card h3{margin:0 0 6px;font-family:var(--display);font-size:18px}
+.pcb-card .tiny{font-size:13.5px;line-height:1.55;color:#ddd6ff}
+.pcb-card .chip{display:inline-flex;align-items:center;gap:6px}
+.pcb-card .chip svg{width:15px;height:15px}
+.pcb-card .btn{display:inline-flex;align-items:center;gap:8px}
