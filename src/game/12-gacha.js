@@ -10,10 +10,10 @@ const pullableSSRs = () => S.pool.filter(e => e.rarity === 4 && e.pullable !== f
 const BANNER_DEFAULT_NAME = { beginner: 'Beginner Banner', stepup: 'Step-Up Summon', limited: 'Limited Banner', weekly: 'Weekly Spotlight', skins: 'Outfit Banner', memories: 'Memory Banner', standard: 'Pearl Banner' };
 /* memory banner: pulls give memories at double the usual UR / SSR rates, paid with Standard tickets */
 const pullableMems = r => (S.memories || []).filter(m => +m.rarity === r).map(m => memEntry(m.id));
-const RATE_X = bk => bk === 'memories' ? 2 : 1;
+const RATE_X = bk => cbOf(bk) ? +cbOf(bk).rate || 1 : bk === 'memories' ? 2 : 1;
 /* the banners used to be called "… Wish" (the owner renamed them to "… Banner"): an old default name in saved content shows the new one */
 const BANNER_OLD_NAME = { 'Beginner Wish': 'Beginner Banner', 'Outfit Wish': 'Outfit Banner', 'Memory Wish': 'Memory Banner', 'Pearl Wish': 'Pearl Banner' };
-const bannerName = bk => { const n = (S.banners[bk] && S.banners[bk].name) || BANNER_DEFAULT_NAME[bk]; return BANNER_OLD_NAME[n] || n; };
+const bannerName = bk => { if (String(bk).startsWith('cb:')) { const c = cbOf(bk); return c ? c.name || 'New banner' : 'Past banner'; } const n = (S.banners[bk] && S.banners[bk].name) || BANNER_DEFAULT_NAME[bk]; return BANNER_OLD_NAME[n] || n; };
 /* weekly banner: a random pullable UR character, the same for every player, changes every Monday 00:00 UTC */
 const WEEK_MS = 7 * 864e5, WEEK_EPOCH = Date.UTC(2024, 0, 1);   // 1 Jan 2024 was a Monday
 const weekIndex = (t = Date.now()) => Math.floor((t - WEEK_EPOCH) / WEEK_MS);
@@ -61,7 +61,7 @@ function stepState() { const g = S.gacha.stepup; if (g.key !== stepKey()) { g.ke
 const stepIdx = () => stepState().step || 0;
 const stepDone = () => stepIdx() >= STEP_N;
 const bannerOpen = bk => bk === 'beginner' ? !beginDone() && beginPicks().length > 0 : bk === 'stepup' ? !!stepFeat() && !stepDone() : true;
-const bannerKeys = () => BANNER_KEYS.filter(k => k !== 'beginner' || !beginDone());
+const bannerKeys = () => { const L = BANNER_KEYS.filter(k => k !== 'beginner' || !beginDone()), i = L.indexOf('limited') + 1; L.splice(i, 0, ...cbLiveKeys()); return L; };   // the admin's own banners (77-banners.js) come right after the Limited one
 /* tickets / pearls a summon needs: special banners only do ×10 (the Step-Up takes pearls only) */
 const tkNeed = (n, bk) => bk === 'beginner' ? BEGIN_TK : bk === 'stepup' ? Infinity : n;
 const pearlNeed = (n, bk) => bk === 'beginner' ? BEGIN_PEARLS : bk === 'stepup' ? STEP_COST[Math.min(stepIdx(), STEP_N - 1)] : COST[n];
@@ -143,6 +143,7 @@ CUR_SVG.sptp = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><l
 CUR_SVG.spt = '<svg class="cic" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="sptG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2fb"/><stop offset=".5" stop-color="#d9b8ff"/><stop offset="1" stop-color="#8fd8ff"/></linearGradient></defs><circle cx="12" cy="12" r="10" fill="#2b1855" stroke="url(#sptG)" stroke-width="2"/><path d="M12 5.2l1.9 4.3 4.6.4-3.5 3 1.1 4.6L12 15l-4.1 2.5 1.1-4.6-3.5-3 4.6-.4z" fill="url(#sptG)"/></svg>';
 /* everything a banner needs: featured UR (50/50 with a guarantee), the UR pool otherwise, the SSR pool, look and timer */
 function bannerInfo(bk) {
+  if (cbOf(bk)) return cbInfo(bk);
   const std = standardURs(), ssr = pullableSSRs();
   if (bk === 'beginner') { const p = beginPicks(); return { bk, kind: 'pool', word: 'BEGINNER', tab: 'Beginner', feat: null, lose: p, ur: p, ssr: ssr.filter(e => e.type === 'character'), ends: null, title: bannerName('beginner'), begin: true }; }
   if (bk === 'stepup') { const f = stepFeat(), lose = std.filter(e => e.type === 'character'); return { bk, kind: 'feat', word: 'STEP-UP', tab: 'Step-Up', feat: f, lose, ur: lose, ssr: ssr.filter(e => e.type === 'character'), ends: null, title: f ? `${f.name} Step-Up` : bannerName('stepup'), step: true }; }
@@ -154,12 +155,12 @@ function bannerInfo(bk) {
 }
 /* a summon is paid with summon tickets (1 ticket = 1 pull) when you have enough, otherwise with pearls */
 /* each banner has its own ticket: Limited tickets for the limited banner, Standard tickets for the permanent one */
-const TK = bk => bk === 'standard' || bk === 'memories' || bk === 'beginner' ? 'wishes' : 'tickets';
+const TK = bk => cbOf(bk) ? (cbOf(bk).tk === 'wishes' ? 'wishes' : 'tickets') : bk === 'standard' || bk === 'memories' || bk === 'beginner' ? 'wishes' : 'tickets';
 const TK_NAME = { tickets: 'Limited ticket', wishes: 'Standard ticket' };
 const payFor = (n, bk = curBanner) => S.wallet[TK(bk)] >= tkNeed(n, bk) ? { k: TK(bk), amt: tkNeed(n, bk) } : { k: 'pearls', amt: pearlNeed(n, bk) };
 const canPull = (n, bk = curBanner) => (!isSpecial(bk) || (n === 10 && bannerOpen(bk))) && (S.wallet[TK(bk)] >= tkNeed(n, bk) || S.wallet.pearls >= pearlNeed(n, bk));
 const payHTML = (n, bk = curBanner) => { const p = payFor(n, bk); return `<span class="cost">${curIcon(p.k)}${p.k === 'pearls' ? p.amt : '×' + p.amt}</span>`; };
-const freeReady = bk => !isSpecial(bk) && S.freePull[bk] !== dayKey();
+const freeReady = bk => !isSpecial(bk) && (!cbOf(bk) || !!cbOf(bk).free) && S.freePull[bk] !== dayKey();
 /* a UR from a banner: featured banners use the 50/50 (a guarantee after a loss), pool banners pick evenly */
 function pickUR(B, g) {
   if (B.feat) {
@@ -186,7 +187,7 @@ function upgradeSSR(B, g, res) {
 /* force: 5 = a UR, 'up' = an SSR that is always upgraded to a UR (Max Win), 'mem' = a UR memory, 'feat' = the featured UR
    (Step-Up guarantees); urX scales only the UR rate (Step-Up steps 1 and 5) */
 function rollOne(bk, force, urX = 1) {
-  const g = S.gacha[bk]; g.pity5++; g.pity4++; g.total++;
+  const g = S.gacha[bk] || (S.gacha[bk] = { pity5: 0, pity4: 0, guarantee: false, total: 0 }); g.pity5++; g.pity4++; g.total++;
   const r = Math.random(), x = RATE_X(bk), p5 = Math.min(1, rate5(g.pity5) * x * urX);
   const beginUR = bk === 'beginner' && g.total >= BEGIN_PULLS;   // the Beginner Banner's pull 50
   let rarity = 3;
@@ -203,7 +204,7 @@ function rollOne(bk, force, urX = 1) {
     else ({ item, lost } = pickUR(B, g));
   }
   else if (rarity === 4) {
-    const sm = SSR_MEM_BK.includes(bk) && Math.random() < SSR_MEM_CHANCE ? pullableMems(4).filter(Boolean) : [];   // character banners sometimes give an SSR memory
+    const sm = ssrMemOn(bk) && Math.random() < SSR_MEM_CHANCE ? pullableMems(4).filter(Boolean) : [];   // character banners sometimes give an SSR memory
     if (sm.length) item = rpick(sm); else if (B.ssr.length) item = rpick(B.ssr);
   }
   // the lowest tier: 500 gold coins, an egg fragment or a character fragment (LOW_DROPS)
@@ -269,7 +270,7 @@ function doPull(n, bk = curBanner, free = false) {
   else results = (maxwin && maxWinResults(bk)) || Array.from({ length: n }, () => rollOne(bk));
   if (n === 10 && !maxwin) fragFloor(results, bk);   // every ×10: at least 1 UR and 2 SSR character fragments
   addPoints(bk, n);   // summon points: 1 per pull (not on the Beginner Banner or Step-Up)
-  if (QUEST_CHAR_BANNERS.includes(bk)) questAdd('summon', n);
+  if (QUEST_CHAR_BANNERS.includes(bk) || (cbOf(bk) && cbOf(bk).kind === 'char')) questAdd('summon', n);
   persist(); renderMenu(); refreshSummon();
   showPull(results, n, bk, { maxwin, bonus });
   // remember the best ×10 pulls so they can be replayed: Max Wins, upgrades, and pulls with 2+ URs (with or without the double animation)
@@ -305,16 +306,16 @@ function refreshSummon() { if (smEl) renderSummon(); }
 function renderSummon() {
   if (!smEl) return;
   if (!bannerKeys().includes(curBanner)) curBanner = 'limited';   // the Beginner Banner is gone once finished
-  const bk = curBanner, g = S.gacha[bk], B = bannerInfo(bk), f = B.feat;
+  const bk = curBanner, g = cbGacha(bk), B = bannerInfo(bk), f = B.feat;
   // lineup for banners without uploaded art: the featured UR in the middle with SSRs beside it, or the banner's URs
   let line = f ? [f] : B.ur.slice(0, 5);
   if (f) { const side = B.ssr.filter(e => B.skins || e.type === 'character').slice(0, 4); line = [side[1], side[0], ...line, side[2], side[3]].filter(Boolean); }
   const mid = f ? line.indexOf(f) : Math.floor((line.length - 1) / 2);
   const left = HARD_PITY - g.pity5;
   const dotFor = k => canPull(10, k) || freeReady(k) ? '<span class="dot-n"></span>' : '';
-  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = hero && baseArt(hero);
+  const hero = f || B.ur[smFocus % Math.max(1, B.ur.length)], heroArt = B.art || hero && baseArt(hero);
   const tab = k => { const I = bannerInfo(k), on = k === bk, art = I.feat || I.ur[0];
-    return `<button class="smx-tab ${on ? 'on' : ''}" data-bk="${k}" aria-pressed="${on}">${art ? `<img src="${baseSplash(art)}" alt="" class="${baseArt(art) ? '' : 'chibi'}">` : ''}<i class="smx-tsh"></i>
+    return `<button class="smx-tab ${on ? 'on' : ''}" data-bk="${k}" aria-pressed="${on}" ${I.col ? `style="--tc:${I.col}"` : ''}>${I.art ? `<img src="${I.art}" alt="">` : art ? `<img src="${baseSplash(art)}" alt="" class="${baseArt(art) ? '' : 'chibi'}">` : ''}<i class="smx-tsh"></i>
       <small>${I.tab}${I.ends ? ` · ${shortLeft(I.ends)}` : ''}</small><b>${esc(I.feat ? I.feat.name : bannerName(k))}</b>${dotFor(k)}</button>`; };
   const pts = PT_FEAT.includes(bk) && ptKey(bk) ? bk : 'perm';
   const left0 = B.ends && shortLeft(B.ends), time = B.ends ? `<span class="smx-time">${icon('clock')}${left0 === 'Ended' ? 'Ended' : `${bk === 'weekly' ? 'Changes in' : 'Ends in'} ${left0}`}</span>` : '';
@@ -337,7 +338,7 @@ function renderSummon() {
       + `<button class="smx-pts" id="sxPts" title="Summon points: 1 per pull, spend ${PT_PRICE} in the shop">${curIcon(pts === 'perm' ? 'sptp' : 'spt')}<span>Summon points <b>${fmt(ptOf(pts))}</b></span><em>Exchange</em></button>`;
   }
   smEl.className = 'smx';
-  smEl.dataset.bk = bk;
+  smEl.dataset.bk = bk; smEl.style.cssText = B.col ? `--tc:${B.col}` : '';
   smEl.innerHTML = `<div class="smx-bg" aria-hidden="true">${heroArt ? `<img src="${heroArt}" alt="">` : ''}<i></i></div>
     <header class="smx-head">
       <button class="smx-back" id="sxBack" aria-label="Back">${icon('back')}</button>
@@ -523,7 +524,7 @@ function bannerOdds(bk) {
   const item = (e, p, type) => ({ e, p, type: type || (e.type === 'memory' ? 'Memory' : e.type === 'skin' ? 'Outfit' : e.type === 'pet' ? 'Pet' : e.type === 'character' ? 'Character' : 'Item') });
   const split = (list, p, type) => list.map(e => item(e, p / list.length, type));
   // SSR results
-  const sMem = SSR_MEM_BK.includes(bk) ? pullableMems(4).filter(Boolean) : [], sShare = sMem.length ? SSR_MEM_CHANCE : 0;
+  const sMem = ssrMemOn(bk) ? pullableMems(4).filter(Boolean) : [], sShare = sMem.length ? SSR_MEM_CHANCE : 0;
   let ssrMain = B.ssr.slice(), ssrP = p4 * (1 - sShare), urFromSsr = 0, gold4 = 0, gold5 = 0;
   const canUp = bk !== 'beginner' && (B.feat || B.ur.length) && !B.mems;
   if (!ssrMain.length) { gold4 = ssrP; ssrP = 0; }
@@ -568,7 +569,7 @@ function closeProb() { if (prbEl) { prbEl.remove(); prbEl = null; } }
 addEventListener('keydown', e => { if (prbEl && e.key === 'Escape' && !document.querySelector('.modal-back')) { e.stopPropagation(); closeProb(); } }, true);
 function renderProb() {
   if (!prbEl) return;
-  const bk = prbBk, O = bannerOdds(bk), B = O.B, g = S.gacha[bk], f = B.feat, hero = f || B.ur[0], art = hero && baseArt(hero);
+  const bk = prbBk, O = bannerOdds(bk), B = O.B, g = cbGacha(bk), f = B.feat, hero = f || B.ur[0], art = hero && baseArt(hero);
   const kinds = B.skins ? ['Outfits'] : B.mems ? ['Memories'] : B.begin || B.step ? ['Characters', ...(B.begin && urMems().length ? ['UR memories'] : [])] : ['Characters', ...(O.sMem ? ['Memories'] : [])];
   const tierName = { 5: `${B.skins ? 'UR outfits' : B.mems ? 'UR memories' : B.begin ? 'UR memories (pull 50: a UR character)' : 'UR characters'}`, 4: `SSR ${B.skins ? 'outfits' : B.mems ? 'memories' : O.sMem ? 'characters and memories' : 'characters'}`, 3: 'Gold and fragments' };
   const ava = x => {
@@ -625,7 +626,7 @@ function renderProb() {
 }
 /* the draw record: best pulls to replay + the history of this banner (what the old Rates window also held) */
 function openDrawRecord(bk) {
-  const g = S.gacha[bk], B = bannerInfo(bk);
+  const g = cbGacha(bk), B = bannerInfo(bk);
   const t = e => new Date(e.t).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const hist = S.gacha.history.filter(h => (h.banner || 'limited') === bk);
   openModal({ title: `Draw record · ${B.title}`, ic: 'clock', wide: true, body: `<div class="stack">

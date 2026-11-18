@@ -153,12 +153,12 @@ function renderRegion() {
   }
   rgEl.innerHTML = `<div class="cmp-bg rgn-bg ${back ? 'has-art' : ''}">${back ? `<img class="cmp-bgart" src="${back}" alt="">` : ''}<i class="cmp-glow g1"></i><i class="cmp-glow g2"></i><i class="cmp-glow g3"></i></div>
     <header class="cmp-head rgn-head"><div class="inv-title"><span class="inv-badge rgn-badge">${wmPin(rgId)}</span><h2 class="ts">${esc(r.name)}</h2></div>
-      ${bat ? `<div class="twr-stats"><span class="twr-chip">${icon('map')}<small>Stages</small><b>${rgCleared(rgId)} / ${RG_N}</b></span><span class="twr-chip st">${CC_STAR_SVG}<b>${rgStars(rgId)}</b><small>/ ${RG_N * 3}</small></span></div>` : ''}
-      <span class="cmp-sp"></span>${canAdmin() ? `<button class="btn ghost" id="rgAdm" title="Admin: the region's maps and buttons">${icon('wrench')}<span class="twr-bl">Edit region</span></button>` : ''}
+      ${bat ? `<div class="twr-stats rgn-hs"><span class="twr-chip">${icon('map')}<small>Stages</small><b>${rgCleared(rgId)} / ${RG_N}</b></span><span class="twr-chip st">${CC_STAR_SVG}<b>${rgStars(rgId)}</b><small>/ ${RG_N * 3}</small></span></div>` : ''}
+      <nav class="cmp-chtabs rgn-tabs">${tab('map', 'map', 'Map')}${RG_SPOTS.map(sp => tab(sp.id, sp.ic, esc(sp.name), sp.dot(rgId))).join('')}</nav>
+      <div class="rgn-hr">${canAdmin() ? `<button class="btn ghost" id="rgAdm" title="Admin: the region's maps and buttons">${icon('wrench')}<span class="twr-bl">Edit region</span></button>` : ''}
       ${bat ? `<button class="btn ghost" id="rgDeckB" title="Region deck">${icon('cards')}<span class="twr-bl">Region deck</span>${rgDeckOk(rgId) ? '' : '<i class="cmp-dot"></i>'}</button>` : ''}
       <button class="btn ghost" id="rgWorld" title="World map">${icon('compass')}<span class="twr-bl">World map</span></button>
-      <button class="inv-x" id="rgClose" aria-label="Close">${icon('close')}</button>
-      <nav class="cmp-chtabs rgn-tabs">${tab('map', 'map', 'Map')}${RG_SPOTS.map(sp => tab(sp.id, sp.ic, esc(sp.name), sp.dot(rgId))).join('')}</nav></header>
+      <button class="inv-x" id="rgClose" aria-label="Close">${icon('close')}</button></div></header>
     ${body}`;
   const q = s => rgEl.querySelector(s);
   q('#rgClose').onclick = () => closeRegion(false) || bthHome();

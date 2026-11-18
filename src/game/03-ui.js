@@ -5,7 +5,7 @@ let toastErrUntil = 0;
 function toast(msg, error) {
   if (!error && Date.now() < toastErrUntil) return;
   document.querySelectorAll('.toast').forEach(t => t.remove());
-  const t = document.createElement('div'); t.className = `toast glass-deep ${error ? 'err' : ''}`; t.textContent = msg; t.setAttribute('role', error ? 'alert' : 'status');
+  const t = document.createElement('div'); t.className = `toast glass-deep ${error ? 'err' : ''}`; const tx = document.createElement('span'); tx.textContent = msg; t.appendChild(tx); t.setAttribute('role', error ? 'alert' : 'status');   // one text box, so a coloured UR / SSR word can't split it into flex items
   if (error) toastErrUntil = Date.now() + 6000;
   document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), error ? 6000 : 3000);
 }

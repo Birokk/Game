@@ -2651,3 +2651,28 @@ b.ccd-dname{border:0}
 @media (max-height:500px) and (orientation:landscape){.rgn-head .rgn-tabs{display:flex}}
 @media (max-width:640px),(orientation:portrait){.rgn.mapv .rgn-stage{display:flex;align-items:center;justify-content:safe center;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}.rgn.mapv .rgn-stage::-webkit-scrollbar{display:none}.rgn.mapv .rgn-map{flex:none}}
 @media (max-width:640px),(orientation:portrait){.rgn-kind{display:none}}
+
+/* ---- region header v3 (the owner: the top buttons were out of place): title · stats | Map / Battles tabs | buttons · close ---- */
+.cmp.rgn .rgn-head{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"a s t r";align-items:center;gap:12px;flex-wrap:initial}
+.rgn-head>.inv-title{grid-area:a;min-width:0}
+.rgn-head>.rgn-hs{grid-area:s;margin:0;width:auto;order:0}
+.cmp.rgn .rgn-head>.rgn-tabs{grid-area:t;order:0;display:flex;justify-self:center;width:auto;flex:none;margin:0;gap:8px;min-width:0}
+.rgn-hr{grid-area:r;display:flex;align-items:center;gap:8px;justify-self:end}
+.rgn-hr .btn{white-space:nowrap}
+@media (max-width:1100px){.rgn-hr .btn .twr-bl{display:none}.rgn-hr .btn{padding:8px 11px}}
+@media (max-width:640px),(orientation:portrait){
+  .cmp.rgn .rgn-head{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"a r" "t s";gap:8px 6px}
+  .cmp.rgn .rgn-head>.rgn-tabs{justify-self:start}
+  .rgn-head>.rgn-hs{justify-self:end}
+  .rgn-hr{gap:6px}.rgn-head>.inv-title h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .cmp.rgn .rgn-head{gap:8px}.rgn-hr{gap:6px}.rgn-hr .btn .twr-bl{display:none}
+}
+@media (max-width:640px),(orientation:portrait){
+  .cmp.rgn .rgn-head{display:flex;flex-wrap:wrap;gap:8px 6px}
+  .rgn-head>.inv-title{order:1;flex:1 1 0;padding-right:12px}.rgn-head>.inv-title::after{display:none}.rgn-head>.inv-title h2{font-size:18px}
+  .rgn-hr{order:2}.rgn-hr .btn{padding:7px 9px}.rgn-hr .inv-x{width:38px;height:38px}
+  .cmp.rgn .rgn-head>.rgn-tabs{order:3;gap:6px}.rgn-tabs .cmp-cht{padding:5px 10px}
+  .rgn-head>.rgn-hs{order:4;margin-left:auto;gap:6px}.rgn-head>.rgn-hs .twr-chip small{display:none}.rgn-head>.rgn-hs .twr-chip{padding:4px 9px}
+}
